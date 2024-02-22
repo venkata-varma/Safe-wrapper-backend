@@ -123,7 +123,8 @@ exports.validateuser = asyncWrapper(async (req, res) => {
     const user = await usersModel.findOne({ $or: [{ email: mobileEmail }, { mobileNumber: mobileEmail }] });
     const user_details = await registrtionModel.findById(user.registrationId, { password: 0, _id: 0 });
     userDetails.userRegestrionDetails = user_details
-    userDetails.user = user
+    userDetails.user = user.toObject()
+    userDetails.user.companyName = user_details.companyName
     if (!user || user.password !== password) {
         return res.status(401).json({ status: customConstants.messages.MESSAGE_FAIL, message: customConstants.messages.MESSAGE_INVALID });
     }
@@ -134,7 +135,6 @@ exports.validateuser = asyncWrapper(async (req, res) => {
     req.body.expirationTime = jwtTokenExpires.exp;
     req.body.userId = user._id
 
-
     let sesssionDetails = await sessionModel.create(req.body)
     userDetails.sesssionDetails = sesssionDetails
 
@@ -144,6 +144,7 @@ exports.validateuser = asyncWrapper(async (req, res) => {
         data: userDetails
     });
 });
+
 
 exports.globalConstants = asyncWrapper(async (req, res) => {
 
