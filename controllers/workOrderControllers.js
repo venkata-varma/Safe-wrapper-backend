@@ -122,7 +122,8 @@ exports.validateuser = asyncWrapper(async (req, res) => {
 
     const user = await usersModel.findOne({ $or: [{ email: mobileEmail }, { mobileNumber: mobileEmail }] });
     const user_details = await registrtionModel.findById(user.registrationId, { password: 0, _id: 0 });
-    userDetails.user = user_details
+    userDetails.userRegestrionDetails = user_details
+    userDetails.user = user
     if (!user || user.password !== password) {
         return res.status(401).json({ status: customConstants.messages.MESSAGE_FAIL, message: customConstants.messages.MESSAGE_INVALID });
     }
