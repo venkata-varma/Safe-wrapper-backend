@@ -288,7 +288,6 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
         cronjobType: "manual",
         corrigo_pull_newWorkOrders: 0,
         serviceChannel_push_newWorkorders: 0,
-        status: "completed"
     };
 
     const promises = configs.map(async (configData) => {
@@ -299,12 +298,6 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
 
         if (config_integration_type === "corrigo-pro") {
             let corrigoToken = await authentication.authentication(configData.credentials.client_id, configData.credentials.client_secret, configData.credentials.grant_type, configData.credentials.baseUrl);
-            if (corrigoToken.access_token) {
-                cronData.status = "inprogress";
-            } else {
-                cronData.status = "declined";
-            }
-
             const workOrderResponse = await axios.post(
                 'https://am-api.corrigopro.com/Direct/api/workOrder/search',
                 {
@@ -440,6 +433,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
     });
 
     await Promise.all(promises);
+    cronData.status = "completed"
 
     cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, cronData, { new: true, upsert: true });
     console.log("cron_Details:=========", cron_Details);

@@ -43,12 +43,6 @@ async function workOrderAndInvoiceDetailsUpdate() {
                 if (configData.config_integration_type === "corrigo-pro") {
                     const corrigoToken = await authentication.authentication(configData.credentials.client_id, configData.credentials.client_secret, configData.credentials.grant_type, configData.credentials.baseUrl);
 
-                    if (corrigoToken.access_token) {
-                        cronData.status = "inprogress"
-                    } else {
-                        cronData.status = "declined"
-                    }
-
                     const workOrderResponse = await axios.post(
                         'https://am-api.corrigopro.com/Direct/api/workOrder/search',
                         {
