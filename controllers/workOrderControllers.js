@@ -107,7 +107,7 @@ exports.createUser = asyncWrapper(async (req, res) => {
     else {
         const userData = await registrtionModel.create(req.body)
         req.body.registrationId = userData._id
-        const myData = await usersModel.create(req.body)
+        const user_details = await usersModel.create(req.body)
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_USER_CREATED,
