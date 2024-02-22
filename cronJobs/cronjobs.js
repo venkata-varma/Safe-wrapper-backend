@@ -81,9 +81,9 @@ async function workOrderAndInvoiceDetailsUpdate() {
                             workDetails.status = "completed"
                             workDetails.cronJobId = cronJobId
 
-                            const work_details = await workOrderModel.findOne({ "workOrders.WorkOrderId": work.WorkOrderId })
+                            const work_details = await workOrderModel.findOne({ "workOrders.WorkOrderId": work.WorkOrderId, registrationId:configData.registrationId })
                             if (work_details) {
-                                await workOrderModel.findOneAndUpdate({ "workOrders.WorkOrderId": work.WorkOrderId }, {
+                                await workOrderModel.findOneAndUpdate({ "workOrders.WorkOrderId": work.WorkOrderId, registrationId:configData.registrationId }, {
                                     workOrders: workDetails.workOrders,
                                     MessageId: workDetails.MessageId,
                                     status: workDetails.status
@@ -107,7 +107,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                     if (workOrder_Details.length > 0) {
                         for (const workData of workOrder_Details) {
                             if (workData.workOrders) {
-                                const serviceChannelWorksOrders = await serviceChannelWorkOrdersModel.findOne({ WorkOrderId: workData.workOrders.WorkOrderId })
+                                const serviceChannelWorksOrders = await serviceChannelWorkOrdersModel.findOne({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId:configData.registrationId })
                                 let workResponse
                                 try {
                                     workResponse = await axios.post(
@@ -138,7 +138,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
 
                                     const configWorkOrder = JSON.parse(workResponse.config.data)
                                     if (serviceChannelWorksOrders) {
-                                        await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId }, {
+                                        await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId:configData.registrationId }, {
                                             WorkOrderId: workData.workOrders.WorkOrderId,
                                             workOrders: configWorkOrder,
                                             workOrderStatus: workData.workOrders.Status,
@@ -158,7 +158,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                 } catch (err) {
                                     const errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                     if (serviceChannelWorksOrders) {
-                                        await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId }, {
+                                        await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId:configData.registrationId }, {
                                             WorkOrderId: workData.workOrders.WorkOrderId,
                                             errorMessage: errorMessage,
                                             status: "error"
@@ -240,9 +240,9 @@ async function invoicesUpdate() {
                                 invoice_details.corrigoProWorkOrderId = workOrderId;
                                 invoice_details.cronJobId = cronJobsDetails[0]._id;
                                 invoice_details.status = "completed"
-                                const invoiceResponse = await corrigoProInvoiceModel.findOne({ corrigoProWorkOrderId: workOrderId });
+                                const invoiceResponse = await corrigoProInvoiceModel.findOne({ corrigoProWorkOrderId: workOrderId, registrationId:work.registrationId });
                                 if (invoiceResponse) {
-                                    await corrigoProInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: workOrderId },
+                                    await corrigoProInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: workOrderId,registrationId: work.registrationId },
                                         {
                                             invoiceDetails: invoiceDetails.data.Invoice,
                                             MessageId: invoiceDetails.data.MessageId,
@@ -273,7 +273,7 @@ async function invoicesUpdate() {
                     let invoices = await corrigoProInvoiceModel.find({ registrationId: integration.registrationId });
                     await Promise.all(invoices.map(async (invoice) => {
                         let SC_WorkOrders = await serviceChannelWorkOrdersModel.findOne({ WorkOrderId: invoice.corrigoProWorkOrderId }, { serviceChannelWorkOrderId: 1 })
-                        const SC_invoices = await serviceChannelInvoiceModel.findOne({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId });
+                        const SC_invoices = await serviceChannelInvoiceModel.findOne({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId:invoice.registrationId });
                         const date = parseInt(moment(new Date()).format('YYYYMMDDss'))
                         let invoiceResponse;
                         let invoiceSC;
@@ -322,7 +322,7 @@ async function invoicesUpdate() {
                                     serviceChannelInvoicesPush.push(invoiceResponse.config.data)
                                 }
                                 else {
-                                    await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId }, {
+                                    await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId:invoice.registrationId }, {
                                         corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
                                         MessageId: invoice.MessageId,
                                         serviceChannelInvoiceNumber: invoiceResponse.data.id,
@@ -342,7 +342,7 @@ async function invoicesUpdate() {
                                 if (!SC_invoices) {
                                     await serviceChannelInvoiceModel.create(serviceChannelInvoices)
                                 } else {
-                                    await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId },
+                                    await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId:invoice.registrationId },
                                         {
                                             corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
                                             status: "error",
@@ -358,7 +358,7 @@ async function invoicesUpdate() {
                     let quickBooksToken = await authentication.quickbooksAuth(config.credentials.baseUrl, refresh_token = process.env.QUICK_BOOKS_REFRSH_TOKEN, config.credentials.grant_type, config.credentials.Authorization);
                     let invoices = await corrigoProInvoiceModel.find({ registrationId: integration.registrationId });
                     await Promise.all(invoices.map(async (invoice) => {
-                        const QB_invoices = await quickBooksInvoiceModel.findOne({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId });
+                        const QB_invoices = await quickBooksInvoiceModel.findOne({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId:invoice.registrationId });
                         const date = parseInt(moment(new Date()).format('YYYYMMDDss'))
                         let invoiceResponse;
                         let invoiceSC;
@@ -402,7 +402,7 @@ async function invoicesUpdate() {
                                     quickBooksInvoicesPush.push(invoiceResponse.data.Invoice)
                                 }
                                 else {
-                                    await quickBooksInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId }, {
+                                    await quickBooksInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId:invoice.registrationId }, {
                                         corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
                                         MessageId: invoice.MessageId,
                                         quickBooksInvoiceDetails: invoiceSC,
@@ -421,7 +421,7 @@ async function invoicesUpdate() {
                                 if (!QB_invoices) {
                                     await quickBooksInvoiceModel.create(quickBooksInvoices)
                                 } else {
-                                    await quickBooksInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId },
+                                    await quickBooksInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId:invoice.registrationId },
                                         {
                                             corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
                                             status: "error",
