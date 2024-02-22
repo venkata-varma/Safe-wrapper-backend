@@ -162,7 +162,6 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                             registrationId: configData.registrationId,
                                             WorkOrderId: workData.workOrders.WorkOrderId,
                                             workOrderStatus: workData.workOrders.Status,
-                                            cronJobId: cronJobId,
                                             errorMessage: errorMessage,
                                             status: "error"
                                         })
@@ -256,7 +255,6 @@ async function invoicesUpdate() {
                                 invoiceDetails.corrigoProWorkOrderId = workOrderId
                                 invoiceDetails.errorMessage = errorMessage
                                 invoiceDetails.status = "error",
-                                    invoiceDetails.cronJobId = cronJobsDetails[0]._id
                                 await corrigoProInvoiceModel.create(invoiceDetails)
                             }
                         }
@@ -330,7 +328,6 @@ async function invoicesUpdate() {
                                 serviceChannelInvoices.registrationId = invoice.registrationId
                                 serviceChannelInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
                                 serviceChannelInvoices.status = "error"
-                                serviceChannelInvoices.cronJobId = cronJobsDetails[0]._id
                                 serviceChannelInvoices.MessageId = invoice.MessageId
                                 serviceChannelInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                 if (!SC_invoices) {
@@ -409,7 +406,6 @@ async function invoicesUpdate() {
                                 quickBooksInvoices.registrationId = invoice.registrationId
                                 quickBooksInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
                                 quickBooksInvoices.status = "error"
-                                quickBooksInvoices.cronJobId = cronJobsDetails[0]._id
                                 quickBooksInvoices.MessageId = invoice.MessageId
                                 quickBooksInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                 if (!QB_invoices) {
