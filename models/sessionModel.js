@@ -2,18 +2,22 @@ const mongoose = require('mongoose')
 
 const sessionSchema = new mongoose.Schema({
     accessToken:{
-        type:String
+        type:String,
+        default:""
     },
     userId: {
         type: mongoose.Schema.ObjectId,
         ref: 'users',
+        default:null
     },
     registrationId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"registration"
+        ref:"registration",
+        default:null
     },
     expirationTime: {
         type: String,
+        default:""
     },
     statusCode:{
         type:Number,

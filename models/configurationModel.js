@@ -3,11 +3,13 @@ const mongoose = require('mongoose')
 const configurationModelSchema = new mongoose.Schema({
     config_integration_type:{
         type:String,
-        enum:['corrigo-pro','service-channel','quick-books']
+        enum:['corrigo-pro','service-channel','quick-books'],
+        default:""
     },
     registrationId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"registration"
+        ref:"registration",
+        default:null
     },
     integrationId:{
         type:mongoose.Schema.Types.ObjectId,
@@ -15,7 +17,8 @@ const configurationModelSchema = new mongoose.Schema({
         default:null
     },
     credentials: {
-        type:mongoose.Schema.Types.Mixed
+        type:mongoose.Schema.Types.Mixed,
+        default:{}
     },
     status:{
         type:String,

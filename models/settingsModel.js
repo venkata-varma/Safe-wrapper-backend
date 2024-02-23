@@ -9,10 +9,12 @@ const settingsDetailSchema = new mongoose.Schema({
     },
     periodType:{
         type:String,
-        enum:["hours","days","weeks","months","years"]
+        enum:["hours","days","weeks","months","years"],
+        default:""
     },
     periodSettings:{
-        type:mongoose.Schema.Types.Mixed
+        type:mongoose.Schema.Types.Mixed,
+        default:{}
     }
 },{timestamps:true});
 

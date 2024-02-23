@@ -2,30 +2,34 @@ const { mongoose, schema } = require('mongoose')
 
 const workOrderModelSchema = mongoose.Schema(
     {
-        registrationId:{
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"registration"
+        registrationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "registration",
+            default: null
         },
-        workOrders:{
-            type:mongoose.Schema.Types.Mixed
+        workOrders: {
+            type: mongoose.Schema.Types.Mixed,
+            default: null
         },
         MessageId: {
-            type: String
+            type: String,
+            default: ""
         },
-        cronJobId:{
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"cronjobs"
+        cronJobId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "cronjobs",
+            default: null
         },
-        status:{
-            type:String,
-            enum:["initiated","pending","completed","error"],
-            default:"initiated"
+        status: {
+            type: String,
+            enum: ["initiated", "pending", "completed", "error"],
+            default: "initiated"
         },
-        errorMessage:{
-            type:String,
-            default:null
+        errorMessage: {
+            type: String,
+            default: null
         }
-    },{ timestamps: true });
+    }, { timestamps: true });
 
-module.exports = mongoose.model('corrigoproworkorders',workOrderModelSchema)
+module.exports = mongoose.model('corrigoproworkorders', workOrderModelSchema)
 

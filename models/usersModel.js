@@ -6,23 +6,29 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'registration',
         index: true,
+        default:null
     },
     fullName:{
-        type:String
+        type:String,
+        default:""
     },
     email:{
-        type:String
+        type:String,
+        default:""
     },
     mobileNumber:{
         type:String,
-        require:[true, 'mobile number is required.']
+        require:[true, 'mobile number is required.'],
+        default:""
     },
     password:{
         type:String,
-        require:[true, 'password is required.']
+        require:[true, 'password is required.'],
+        default:""
     },
     status:{
-        type:String
+        type:String,
+        default:""
     }
 },{timestamps:true});
 

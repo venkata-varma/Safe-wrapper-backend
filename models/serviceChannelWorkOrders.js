@@ -3,17 +3,20 @@ const mongoose = require('mongoose')
 const serviceChannelWorkOrdersSchema = new mongoose.Schema({
     registrationId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"registration"
+        ref:"registration",
+        default:null
     },
     WorkOrderId:{
-        type:Number
+        type:Number,
+        default:null
     },
     workOrders:{
-        type:mongoose.Schema.Types.Mixed
+        type:mongoose.Schema.Types.Mixed,
+        default:{}
     },
     corrigoProworkOrderStatus:{
         type:String,
-        default:"new"
+        default:"New"
     },
     status:{
         type:String,
@@ -22,10 +25,12 @@ const serviceChannelWorkOrdersSchema = new mongoose.Schema({
     },
     cronJobId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"cronjobs"
+        ref:"cronjobs",
+        default:null
     },
     serviceChannelWorkOrderId:{
-        type:Number
+        type:Number,
+        default:null
     },
     errorMessage:{
         type:String,

@@ -2,18 +2,22 @@ const mongoose = require('mongoose')
 
 const IntegrationsSchema = new mongoose.Schema({
     name:{
-        type:String
+        type:String,
+        default:""
     },
     description:{
-        type:String
+        type:String,
+        default:""
     },
     registrationId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"registration"
+        ref:"registration",
+        default:null
     },
     userId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"user"
+        ref:"user",
+        default:null
     },
     status:{
         type:String,

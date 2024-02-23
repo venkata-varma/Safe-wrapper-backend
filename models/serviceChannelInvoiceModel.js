@@ -3,22 +3,29 @@ const mongoose = require('mongoose');
 const serviceChannelInvoiceSchema = mongoose.Schema({
     registrationId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"registration"
+        ref:"registration",
+        default:null
     },
     corrigoProWorkOrderId:{
         type:Number,
         default:null
     },
     invoiceDetails:{
-        type:mongoose.Schema.Types.Mixed
+        type:mongoose.Schema.Types.Mixed,
+        default:{}
     },
-    MessageId: { type: String },
+    MessageId: { 
+        type: String,
+        default:""
+    },
     cronJobId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"cronjobs"
+        ref:"cronjobs",
+        default:null
     },
     serviceChannelInvoiceNumber:{
-        type:Number
+        type:Number,
+        default:null
     },
     status:{
         type:String,

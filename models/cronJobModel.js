@@ -7,7 +7,8 @@ const cronJobsSchema = new mongoose.Schema({
     },
     registrationId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"registration"
+        ref:"registration",
+        default:null
     },
     integrationId:{
         type:mongoose.Schema.Types.ObjectId,
@@ -16,7 +17,8 @@ const cronJobsSchema = new mongoose.Schema({
     },
     cronjobType:{
         type:String,
-        enum:["manual",'cron-job']
+        enum:["manual",'cron-job'],
+        default:""
     },
     corrigo_pull_newWorkOrders:{
         type:Number,
