@@ -242,7 +242,7 @@ exports.configIntegration = asyncWrapper(async (req, res) => {
             req.body.status = "rejected";
     }
     else if (config_integration_type == 'quick-books') {
-        const token = await authentication.quickbooksAuth(credentials.baseUrl, refresh_token=process.env.QUICK_BOOKS_REFRSH_TOKEN, credentials.grant_type, credentials.Authorization);
+        const token = await authentication.quickbooksAuth(credentials.baseUrl, refresh_token=process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, credentials.Authorization);
         console.log('token:=======', token)
         if (token === 'error')
             req.body.status = "rejected";
@@ -279,17 +279,18 @@ exports.configIntegration = asyncWrapper(async (req, res) => {
 exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
     const { registrationId } = req.params;
     const configs = await configurationModel.find({ registrationId });
+
     const cronJobsDetails = await cronJobsModel.insertMany({
-        status: "initiated"
+        status: "initiated",
+        cronjobType: "manual",
     });
 
     let cronData = {
         date_created: new Date(),
-        cronjobType: "manual",
         corrigo_pull_newWorkOrders: 0,
         serviceChannel_push_newWorkorders: 0,
     };
-
+    console.log("cronData:===========",cronData)
     const promises = configs.map(async (configData) => {
         let workDetails = {};
         let config_integration_type = configData.config_integration_type;
@@ -348,12 +349,6 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
             }
         } else if (config_integration_type === "service-channel") {
             let serviceChannelToken = await authentication.serviceChannelAuth(configData.credentials.username, configData.credentials.password, configData.credentials.grant_type, configData.credentials.baseUrl, configData.credentials.Authorization);
-            if (serviceChannelToken.access_token) {
-                cronData.status = "inprogress";
-            } else {
-                cronData.status = "declined";
-            }
-
             let workOrder_Details = await workOrderModel.find({ registrationId: configData.registrationId }).lean();
             for (workData of workOrder_Details) {
                 if (workData.workOrders) {
@@ -659,7 +654,7 @@ exports.editConfigurationByIntegrationId = asyncWrapper(async (req, res) => {
             req.body.status = "rejected";
     }
     else if (config_integration_type == 'quick-books') {
-        const token = await authentication.quickbooksAuth(credentials.baseUrl, refresh_token=process.env.QUICK_BOOKS_REFRSH_TOKEN, credentials.grant_type, credentials.Authorization);
+        const token = await authentication.quickbooksAuth(credentials.baseUrl, refresh_token=process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, credentials.Authorization);
         console.log('token:=======', token)
         if (token === 'error')
             req.body.status = "rejected";

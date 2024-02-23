@@ -27,7 +27,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                 cronjobType: "cron-job"
             })
 
-            console.log("cronJobsDetails:====", cronJobsDetails)
+            // console.log("cronJobsDetails:====", cronJobsDetails)
             const cronData = {
                 date_created: new Date(),
                 corrigo_pull_newWorkOrders: [],
@@ -184,7 +184,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                 status: "completed"
             }, { new: true, upsert: true })
 
-            console.log("cron_Details:============", cron_Details)
+            console.log("cron_DetailsWorkOrders:============", cron_Details)
         }
     }
 }
@@ -346,7 +346,7 @@ async function invoicesUpdate() {
                 }
                 else if (config.config_integration_type == "quick-books") {
                     console.log("configtype:======", config.config_integration_type)
-                    let quickBooksToken = await authentication.quickbooksAuth(config.credentials.baseUrl, refresh_token = process.env.QUICK_BOOKS_REFRSH_TOKEN, config.credentials.grant_type, config.credentials.Authorization);
+                    let quickBooksToken = await authentication.quickbooksAuth(config.credentials.baseUrl, refresh_token = process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, config.credentials.Authorization);
                     let invoices = await corrigoProInvoiceModel.find({ registrationId: integration.registrationId });
                     await Promise.all(invoices.map(async (invoice) => {
                         const QB_invoices = await quickBooksInvoiceModel.findOne({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId:invoice.registrationId });
@@ -433,7 +433,7 @@ async function invoicesUpdate() {
                 quick_books_push_newInvoices: quickBooksInvoicesPush.length,
                 status: "completed"
             }, { new: true, upsert: true })
-            console.log("cronJobsDetails:=======", cronJobs_Details)
+            console.log("cronJobsDetailsInvoices:=======", cronJobs_Details)
         }
     }
 }
