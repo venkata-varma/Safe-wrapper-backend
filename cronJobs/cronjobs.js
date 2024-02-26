@@ -164,14 +164,14 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                         }, { new: true, upsert: true })
                                         console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
                                     } else {
-                                        await serviceChannelWorkOrdersModel.create({
+                                        const SC_workOrder = await serviceChannelWorkOrdersModel.create({
                                             registrationId: configData.registrationId,
                                             WorkOrderId: workData.workOrders.WorkOrderId,
                                             workOrderStatus: workData.workOrders.Status,
                                             errorMessage: errorMessage,
                                             status: "error"
                                         });
-                                        cronData.serviceChannel_push_newWorkorders.push(configWorkOrder)
+                                        cronData.serviceChannel_push_newWorkorders.push(SC_workOrder)
                                         console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
                                     }
                                 }
@@ -267,7 +267,7 @@ async function invoicesUpdate() {
                                 invoiceDetails.corrigoProWorkOrderId = workOrderId
                                 invoiceDetails.errorMessage = errorMessage
                                 invoiceDetails.status = "error",
-                                    await corrigoProInvoiceModel.create(invoiceDetails)
+                                await corrigoProInvoiceModel.create(invoiceDetails)
                             }
                         }
                     }));
@@ -326,7 +326,7 @@ async function invoicesUpdate() {
                                 serviceChannelInvoices.status = "completed"
                                 if (!SC_invoices) {
                                     await serviceChannelInvoiceModel.create(serviceChannelInvoices)
-                                    serviceChannelInvoicesPush.push(invoiceResponse.config.data)
+                                    serviceChannelInvoicesPush.push(serviceChannelInvoices)
                                 }
                                 else {
                                     await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId }, {
@@ -347,7 +347,7 @@ async function invoicesUpdate() {
                                 serviceChannelInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                 if (!SC_invoices) {
                                     await serviceChannelInvoiceModel.create(serviceChannelInvoices)
-                                    serviceChannelInvoicesPush.push(invoiceResponse.config.data)
+                                    serviceChannelInvoicesPush.push(serviceChannelInvoices)
                                 } else {
                                     await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                         {
@@ -428,7 +428,7 @@ async function invoicesUpdate() {
                                 quickBooksInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                 if (!QB_invoices) {
                                     await quickBooksInvoiceModel.create(quickBooksInvoices)
-                                    quickBooksInvoicesPush.push(invoiceResponse.data.Invoice)
+                                    quickBooksInvoicesPush.push(quickBooksInvoices)
                                 } else {
                                     await quickBooksInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                         {
