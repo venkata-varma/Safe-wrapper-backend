@@ -327,7 +327,7 @@ exports.configIntegration = asyncWrapper(async (req, res) => {
 //                 workDetails.MessageId = workOrderResponse.data.MessageId;
 //                 workDetails.registrationId = configData.registrationId;
 //                 workDetails.status = "completed";
-//                 workDetails.cronJobId = cronJobsDetails[0]._id;
+//                 workDetails.cronJobId = cronJobsDetails._id;
 
 //                 const work_details = await workOrderModel.findOne({ "workOrders.WorkOrderId": work.WorkOrderId, registrationId: registrationId });
 //                 if (work_details) {
@@ -398,7 +398,7 @@ exports.configIntegration = asyncWrapper(async (req, res) => {
 //                                 corrigoProworkOrderStatus: workData.workOrders.Status,
 //                                 serviceChannelWorkOrderId: workResponse.data.id,
 //                                 errorMessage: null,
-//                                 cronJobId: cronJobsDetails[0]._id,
+//                                 cronJobId: cronJobsDetails._id,
 //                                 status: "completed"
 //                             });
 //                             cronData.serviceChannel_push_newWorkorders++;
@@ -427,7 +427,7 @@ exports.configIntegration = asyncWrapper(async (req, res) => {
 //         }
 //         cronData.status = "completed"
 
-//         cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, cronData, { new: true, upsert: true });
+//         cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails._id, cronData, { new: true, upsert: true });
 //         console.log("cron_Details:=========", cron_Details);
 //     });
 
@@ -447,9 +447,9 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
         const configs = await configurationModel.find({ integrationId: integration._id })
         let cronJobsDetails;
         if (configs.length > 0) {
-            cronJobsDetails = await cronJobsModel.insertMany({
+            cronJobsDetails = await cronJobsModel.create({
                 status: "initiated",
-                cronjobType: "cron-job",
+                cronjobType: "manual",
                 date_created: new Date(),
                 integrationId: integration._id,
                 registrationId: integration.registrationId
@@ -457,15 +457,15 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
 
             console.log("cronJobsDetailsWO:====", cronJobsDetails)
             const cronData = {
-                corrigo_pull_newWorkOrders: [],
-                serviceChannel_push_newWorkorders: []
+                corrigo_pull_newWorkOrdersCount: 0,
+                serviceChannel_push_newWorkordersCount: 0
             }
             // cronData.registrationId = integration.registrationId
             // cronData.integrationId = integration._id
             const promises = configs.map(async configData => {
                 const workDetails = {}
                 const invoiceDetails = {}
-                const cronJobId = cronJobsDetails[0]._id
+                const cronJobId = cronJobsDetails._id
                 if (configData.config_integration_type === "corrigo-pro") {
                     console.log("config_integration_typeCPD:=======", configData.config_integration_type)
                     const corrigoToken = await authentication.authentication(configData.credentials.client_id, configData.credentials.client_secret, configData.credentials.grant_type, configData.credentials.baseUrl);
@@ -508,7 +508,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
                                     MessageId: workDetails.MessageId,
                                     status: workDetails.status
                                 }, { new: true, upsert: true })
-                                console.log('CronId-CPD_WO:=', cronJobsDetails[0]._id)
+                                console.log('CronId-CPD_WO:=', cronJobsDetails._id)
                             } else {
                                 await workOrderModel.create({
                                     registrationId: workDetails.registrationId,
@@ -517,8 +517,8 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
                                     status: workDetails.status,
                                     cronJobId: workDetails.cronJobId
                                 })
-                                cronData.corrigo_pull_newWorkOrders.push(work)
-                                console.log('CronId-CPD_WO:=', cronJobsDetails[0]._id)
+                                cronData.corrigo_pull_newWorkOrdersCount++
+                                console.log('CronId-CPD_WO:=', cronJobsDetails._id)
                             }
                         }
                     }
@@ -576,8 +576,8 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
                                             cronJobId: cronJobId,
                                             status: "completed"
                                         })
-                                        cronData.serviceChannel_push_newWorkorders.push(configWorkOrder)
-                                        console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
+                                        cronData.serviceChannel_push_newWorkordersCount++
+                                        console.log('CronId-SC_WO:=', cronJobsDetails._id)
                                     }
                                 } catch (err) {
                                     const errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
@@ -587,17 +587,18 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
                                             errorMessage: errorMessage,
                                             status: "error"
                                         }, { new: true, upsert: true })
-                                        console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
+                                        console.log('CronId-SC_WO:=', cronJobsDetails._id)
                                     } else {
                                         const SC_workOrder = await serviceChannelWorkOrdersModel.create({
                                             registrationId: configData.registrationId,
                                             WorkOrderId: workData.workOrders.WorkOrderId,
                                             workOrderStatus: workData.workOrders.Status,
+                                            cronJobId: cronJobId,
                                             errorMessage: errorMessage,
                                             status: "error"
                                         });
-                                        cronData.serviceChannel_push_newWorkorders.push(SC_workOrder)
-                                        console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
+                                        cronData.serviceChannel_push_newWorkordersCount++
+                                        console.log('CronId-SC_WO:=', cronJobsDetails._id)
                                     }
                                 }
                             }
@@ -608,9 +609,9 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
 
             await Promise.all(promises)
 
-            const cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, {
-                corrigo_pull_newWorkOrders: cronData.corrigo_pull_newWorkOrders.length,
-                serviceChannel_push_newWorkorders: cronData.serviceChannel_push_newWorkorders.length,
+            const cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails._id, {
+                corrigo_pull_newWorkOrders: cronData.corrigo_pull_newWorkOrdersCount,
+                serviceChannel_push_newWorkorders: cronData.serviceChannel_push_newWorkordersCount,
                 status: "completed"
             }, { new: true, upsert: true })
 

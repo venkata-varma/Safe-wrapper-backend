@@ -22,7 +22,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
         const configs = await configurationModel.find({ integrationId: integration._id })
         let cronJobsDetails;
         if (configs.length > 0) {
-            cronJobsDetails = await cronJobsModel.insertMany({
+            cronJobsDetails = await cronJobsModel.create({
                 status: "initiated",
                 cronjobType: "cron-job",
                 date_created: new Date(),
@@ -32,15 +32,15 @@ async function workOrderAndInvoiceDetailsUpdate() {
 
             console.log("cronJobsDetailsWO:====", cronJobsDetails)
             const cronData = {
-                corrigo_pull_newWorkOrders: [],
-                serviceChannel_push_newWorkorders: []
+                corrigo_pull_newWorkOrdersCount: 0,
+                serviceChannel_push_newWorkordersCount: 0
             }
             // cronData.registrationId = integration.registrationId
             // cronData.integrationId = integration._id
             const promises = configs.map(async configData => {
                 const workDetails = {}
                 const invoiceDetails = {}
-                const cronJobId = cronJobsDetails[0]._id
+                const cronJobId = cronJobsDetails._id
                 if (configData.config_integration_type === "corrigo-pro") {
                     console.log("config_integration_typeCPD:=======", configData.config_integration_type)
                     const corrigoToken = await authentication.authentication(configData.credentials.client_id, configData.credentials.client_secret, configData.credentials.grant_type, configData.credentials.baseUrl);
@@ -83,7 +83,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                     MessageId: workDetails.MessageId,
                                     status: workDetails.status
                                 }, { new: true, upsert: true })
-                                console.log('CronId-CPD_WO:=', cronJobsDetails[0]._id)
+                                console.log('CronId-CPD_WO:=', cronJobsDetails._id)
                             } else {
                                 await workOrderModel.create({
                                     registrationId: workDetails.registrationId,
@@ -92,8 +92,8 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                     status: workDetails.status,
                                     cronJobId: workDetails.cronJobId
                                 })
-                                cronData.corrigo_pull_newWorkOrders.push(work)
-                                console.log('CronId-CPD_WO:=', cronJobsDetails[0]._id)
+                                cronData.corrigo_pull_newWorkOrdersCount++
+                                console.log('CronId-CPD_WO:=', cronJobsDetails._id)
                             }
                         }
                     }
@@ -151,8 +151,8 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                             cronJobId: cronJobId,
                                             status: "completed"
                                         })
-                                        cronData.serviceChannel_push_newWorkorders.push(configWorkOrder)
-                                        console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
+                                        cronData.serviceChannel_push_newWorkordersCount++
+                                        console.log('CronId-SC_WO:=', cronJobsDetails._id)
                                     }
                                 } catch (err) {
                                     const errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
@@ -162,17 +162,18 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                             errorMessage: errorMessage,
                                             status: "error"
                                         }, { new: true, upsert: true })
-                                        console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
+                                        console.log('CronId-SC_WO:=', cronJobsDetails._id)
                                     } else {
                                         const SC_workOrder = await serviceChannelWorkOrdersModel.create({
                                             registrationId: configData.registrationId,
                                             WorkOrderId: workData.workOrders.WorkOrderId,
                                             workOrderStatus: workData.workOrders.Status,
+                                            cronJobId: cronJobId,
                                             errorMessage: errorMessage,
                                             status: "error"
                                         });
-                                        cronData.serviceChannel_push_newWorkorders.push(SC_workOrder)
-                                        console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
+                                        cronData.serviceChannel_push_newWorkordersCount++
+                                        console.log('CronId-SC_WO:=', cronJobsDetails._id)
                                     }
                                 }
                             }
@@ -183,9 +184,9 @@ async function workOrderAndInvoiceDetailsUpdate() {
 
             await Promise.all(promises)
 
-            const cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, {
-                corrigo_pull_newWorkOrders: cronData.corrigo_pull_newWorkOrders.length,
-                serviceChannel_push_newWorkorders: cronData.serviceChannel_push_newWorkorders.length,
+            const cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails._id, {
+                corrigo_pull_newWorkOrders: cronData.corrigo_pull_newWorkOrdersCount,
+                serviceChannel_push_newWorkorders: cronData.serviceChannel_push_newWorkordersCount,
                 status: "completed"
             }, { new: true, upsert: true })
 
@@ -201,7 +202,7 @@ async function invoicesUpdate() {
         const configDetails = await configurationModel.find({ integrationId: integration._id })
         let cronJobsDetails;
         if (configDetails.length > 0) {
-            cronJobsDetails = await cronJobsModel.insertMany({
+            cronJobsDetails = await cronJobsModel.create({
                 status: "initiated",
                 cronjobType: "cron-job",
                 date_created: new Date(),
@@ -211,11 +212,11 @@ async function invoicesUpdate() {
             console.log("cronJobsDetailsIV:====", cronJobsDetails)
 
             let cronData = {}
-            let corrigoPullInvoices = []
+            let corrigoPullInvoicesCount = 0
             let serviceChannelInvoices = {}
-            let serviceChannelInvoicesPush = []
+            let serviceChannelInvoicesPushCount = 0
             let quickBooksInvoices = {}
-            let quickBooksInvoicesPush = []
+            let quickBooksInvoicesPushCount = 0
             // cronData.date_created = new Date()
             // cronData.registrationId = integration.registrationId
             // cronData.integrationId = integration._id
@@ -237,13 +238,13 @@ async function invoicesUpdate() {
                                         }
                                     }
                                 );
-                                console.log('CronId-CPD_In:=', cronJobsDetails[0]._id)
+                                console.log('CronId-CPD_In:=', cronJobsDetails._id)
                                 let invoice_details = {}
                                 invoice_details = invoiceDetails.data.Invoice;
                                 invoice_details.registrationId = work.registrationId;
                                 invoice_details.MessageId = invoiceDetails.data.MessageId;
                                 invoice_details.corrigoProWorkOrderId = workOrderId;
-                                invoice_details.cronJobId = cronJobsDetails[0]._id;
+                                invoice_details.cronJobId = cronJobsDetails._id;
                                 invoice_details.status = "completed"
                                 const invoiceResponse = await corrigoProInvoiceModel.findOne({ corrigoProWorkOrderId: workOrderId, registrationId: work.registrationId });
                                 if (invoiceResponse) {
@@ -257,7 +258,7 @@ async function invoicesUpdate() {
                                 }
                                 else {
                                     await corrigoProInvoiceModel.create(invoice_details)
-                                    corrigoPullInvoices.push(invoice_details)
+                                    corrigoPullInvoicesCount++
                                 }
                             }
                             catch (err) {
@@ -266,8 +267,10 @@ async function invoicesUpdate() {
                                 invoiceDetails.registrationId = work.registrationId;
                                 invoiceDetails.corrigoProWorkOrderId = workOrderId
                                 invoiceDetails.errorMessage = errorMessage
-                                invoiceDetails.status = "error",
+                                invoiceDetails.cronJobId = cronJobsDetails._id;
+                                invoiceDetails.status = "error";
                                 await corrigoProInvoiceModel.create(invoiceDetails)
+                                corrigoPullInvoicesCount++
                             }
                         }
                     }));
@@ -314,11 +317,11 @@ async function invoicesUpdate() {
                                         }
                                     }
                                 )
-                                console.log('CronId-SC_In:=', cronJobsDetails[0]._id)
+                                console.log('CronId-SC_In:=', cronJobsDetails._id)
                                 invoiceSC = JSON.parse(invoiceResponse.config.data)
                                 serviceChannelInvoices.registrationId = invoice.registrationId
                                 serviceChannelInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
-                                serviceChannelInvoices.cronJobId = cronJobsDetails[0]._id
+                                serviceChannelInvoices.cronJobId = cronJobsDetails._id
                                 serviceChannelInvoices.MessageId = invoice.MessageId
                                 serviceChannelInvoices.serviceChannelInvoiceNumber = date
                                 serviceChannelInvoices.invoiceDetails = invoiceSC
@@ -326,7 +329,7 @@ async function invoicesUpdate() {
                                 serviceChannelInvoices.status = "completed"
                                 if (!SC_invoices) {
                                     await serviceChannelInvoiceModel.create(serviceChannelInvoices)
-                                    serviceChannelInvoicesPush.push(serviceChannelInvoices)
+                                    serviceChannelInvoicesPushCount++
                                 }
                                 else {
                                     await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId }, {
@@ -343,11 +346,12 @@ async function invoicesUpdate() {
                                 serviceChannelInvoices.registrationId = invoice.registrationId
                                 serviceChannelInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
                                 serviceChannelInvoices.status = "error"
+                                serviceChannelInvoices.cronJobId = cronJobsDetails._id
                                 serviceChannelInvoices.MessageId = invoice.MessageId
                                 serviceChannelInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                 if (!SC_invoices) {
                                     await serviceChannelInvoiceModel.create(serviceChannelInvoices)
-                                    serviceChannelInvoicesPush.push(serviceChannelInvoices)
+                                    serviceChannelInvoicesPushCount++
                                 } else {
                                     await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                         {
@@ -355,7 +359,7 @@ async function invoicesUpdate() {
                                             status: "error",
                                             errorMessage: serviceChannelInvoices.errorMessage
                                         }, { new: true, upsert: true })
-                                }
+                                    }
                             }
                         }
                     }));
@@ -398,17 +402,17 @@ async function invoicesUpdate() {
                                         }
                                     }
                                 )
-                                console.log('CronId-QB_In:=', cronJobsDetails[0]._id)
+                                console.log('CronId-QB_In:=', cronJobsDetails._id)
                                 quickBooksInvoices.registrationId = invoice.registrationId
                                 quickBooksInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
-                                quickBooksInvoices.cronJobId = cronJobsDetails[0]._id
+                                quickBooksInvoices.cronJobId = cronJobsDetails._id
                                 quickBooksInvoices.MessageId = invoice.MessageId
                                 quickBooksInvoices.quickBooksInvoiceDetails = invoiceResponse.data.Invoice
                                 quickBooksInvoices.errorMessage = null
                                 quickBooksInvoices.status = "completed"
                                 if (!QB_invoices) {
                                     await quickBooksInvoiceModel.create(quickBooksInvoices)
-                                    quickBooksInvoicesPush.push(invoiceResponse.data.Invoice)
+                                    quickBooksInvoicesPushCount++
                                 }
                                 else {
                                     await quickBooksInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId }, {
@@ -424,11 +428,12 @@ async function invoicesUpdate() {
                                 quickBooksInvoices.registrationId = invoice.registrationId
                                 quickBooksInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
                                 quickBooksInvoices.status = "error"
+                                quickBooksInvoices.cronJobId = cronJobsDetails._id
                                 quickBooksInvoices.MessageId = invoice.MessageId
                                 quickBooksInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                 if (!QB_invoices) {
                                     await quickBooksInvoiceModel.create(quickBooksInvoices)
-                                    quickBooksInvoicesPush.push(quickBooksInvoices)
+                                    quickBooksInvoicesPushCount++
                                 } else {
                                     await quickBooksInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                         {
@@ -442,11 +447,12 @@ async function invoicesUpdate() {
                     }));
                 }
             }
+            console.log('serviceChannelInvoicesPushCount:======',serviceChannelInvoicesPushCount)
 
-            const cronJobs_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, {
-                corrigo_pull_newInvoice: corrigoPullInvoices.length,
-                serviceChannel_push_newInvoice: serviceChannelInvoicesPush.length,
-                quick_books_push_newInvoices: quickBooksInvoicesPush.length,
+            const cronJobs_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails._id, {
+                corrigo_pull_newInvoice: corrigoPullInvoicesCount,
+                serviceChannel_push_newInvoice: serviceChannelInvoicesPushCount,
+                quick_books_push_newInvoices: quickBooksInvoicesPushCount,
                 status: "completed"
             }, { new: true, upsert: true })
             console.log("cronJobsDetailsInvoices:=======", cronJobs_Details)
