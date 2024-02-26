@@ -362,7 +362,7 @@ async function invoicesUpdate() {
                 }
                 else if (config.config_integration_type == "quick-books") {
                     console.log("config_integration_typeQB-IN:==", config.config_integration_type)
-                    let quickBooksToken = await authentication.quickbooksAuth(config.credentials.baseUrl, refresh_token = process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, config.credentials.Authorization);
+                    let quickBooksToken = await authentication.quickbooksAuth(config.credentials.baseUrl,process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, config.credentials.Authorization);
                     let invoices = await corrigoProInvoiceModel.find({ registrationId: integration.registrationId });
                     console.log("registrationId:=======", integration.registrationId)
                     await Promise.all(invoices.map(async (invoice) => {
