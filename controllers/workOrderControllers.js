@@ -276,163 +276,348 @@ exports.configIntegration = asyncWrapper(async (req, res) => {
     }
 });
 
+// exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
+//     const { registrationId } = req.params;
+//     const configs = await configurationModel.find({ registrationId });
+
+//     const cronJobsDetails = await cronJobsModel.insertMany({
+//         status: "initiated",
+//         cronjobType: "manual",
+//     });
+
+//     let cronData = {
+//         date_created: new Date(),
+//         corrigo_pull_newWorkOrders: 0,
+//         serviceChannel_push_newWorkorders: 0,
+//     };
+//     console.log("cronData:===========",cronData)
+//     const promises = configs.map(async (configData) => {
+//         let workDetails = {};
+//         let config_integration_type = configData.config_integration_type;
+//         cronData.registrationId = configData.registrationId;
+//         cronData.integrationId = configData.integrationId;
+
+//         if (config_integration_type === "corrigo-pro") {
+//             let corrigoToken = await authentication.authentication(configData.credentials.client_id, configData.credentials.client_secret, configData.credentials.grant_type, configData.credentials.baseUrl);
+//             const workOrderResponse = await axios.post(
+//                 'https://am-api.corrigopro.com/Direct/api/workOrder/search',
+//                 {
+//                     "Parameters": {
+//                         //"WorkOrderNumber":"POS4L20001", /*Search by work order number
+//                         /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
+//                         "Created": {
+//                             "From": "2024-02-06T00:00:00Z",
+//                             "To": new Date()
+//                             // "To": "2024-02-07T24:00:00.000Z"
+//                         }
+//                         /*Search by work order status -> New,Accepted,Recalled,Rejected,CheckedIn,Paused,CheckedOut,OnHold,Verified,NeedsCompletionDetails*/
+//                         // ,"Statuses": [ "Accepted","CheckedIn" ]
+//                         //,"CustomerId" :"90256"
+//                     },
+//                     "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
+//                 },
+//                 {
+//                     headers: {
+//                         Authorization: `bearer ${corrigoToken.access_token}`
+//                     }
+//                 }
+//             );
+//             for (let work of workOrderResponse.data.WorkOrders) {
+//                 workDetails.workOrders = work;
+//                 workDetails.MessageId = workOrderResponse.data.MessageId;
+//                 workDetails.registrationId = configData.registrationId;
+//                 workDetails.status = "completed";
+//                 workDetails.cronJobId = cronJobsDetails[0]._id;
+
+//                 const work_details = await workOrderModel.findOne({ "workOrders.WorkOrderId": work.WorkOrderId, registrationId: registrationId });
+//                 if (work_details) {
+//                     await workOrderModel.findOneAndUpdate({ WorkOrderId: work.WorkOrderId, registrationId: registrationId }, {
+//                         workOrders: workDetails.workOrders,
+//                         MessageId: workDetails.MessageId,
+//                         status: workDetails.status
+//                     });
+//                 } else {
+//                     await workOrderModel.create({
+//                         registrationId: workDetails.registrationId,
+//                         workOrders: workDetails.workOrders,
+//                         MessageId: workDetails.MessageId,
+//                         status: workDetails.status,
+//                         cronJobId: workDetails.cronJobId
+//                     });
+//                     cronData.corrigo_pull_newWorkOrders++;
+//                 }
+//             }
+//         } else if (config_integration_type === "service-channel") {
+//             let serviceChannelToken = await authentication.serviceChannelAuth(configData.credentials.username, configData.credentials.password, configData.credentials.grant_type, configData.credentials.baseUrl, configData.credentials.Authorization);
+//             let workOrder_Details = await workOrderModel.find({ registrationId: configData.registrationId }).lean();
+//             for (workData of workOrder_Details) {
+//                 if (workData.workOrders) {
+//                     let workResponse;
+//                     const serviceChannelWorksOrders = await serviceChannelWorkOrdersModel.findOne({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: registrationId });
+//                     try {
+//                         workResponse = await axios.post(
+//                             'https://sb2api.servicechannel.com/v3/workorders',
+//                             {
+//                                 "ContractInfo": {
+//                                     "StoreId": "102",
+//                                     "TradeName": "HVAC",
+//                                     "ProviderId": 2000090505
+//                                 },
+//                                 "Category": 'MAINTENANCE',
+//                                 "Priority": "P2 - 8 Hours",
+//                                 "Nte": 0,
+//                                 "CallDate": workData.workOrders.Created,
+//                                 "ScheduledDate": workData.workOrders.Sla.OnSiteBy,
+//                                 "Description": `${workData.workOrders.WorkOrderNumber}-${workData.workOrders.WorkType.Name}`,
+//                                 "Status": {
+//                                     "Primary": "Open",
+//                                     "Extended": ""
+//                                 }
+//                             },
+//                             {
+//                                 headers: {
+//                                     Authorization: `Bearer ${serviceChannelToken.access_token}`
+//                                 }
+//                             }
+//                         );
+
+//                         let configWorkOrder = JSON.parse(workResponse.config.data);
+//                         if (serviceChannelWorksOrders) {
+//                             await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: registrationId }, {
+//                                 WorkOrderId: workData.workOrders.WorkOrderId,
+//                                 workOrders: configWorkOrder,
+//                                 errorMessage: null,
+//                                 corrigoProworkOrderStatus: workData.workOrders.Status,
+//                                 status: "completed"
+//                             }, { new: true, upsert: true });
+//                         } else {
+//                             await serviceChannelWorkOrdersModel.create({
+//                                 registrationId: configData.registrationId,
+//                                 WorkOrderId: workData.workOrders.WorkOrderId,
+//                                 workOrders: configWorkOrder,
+//                                 corrigoProworkOrderStatus: workData.workOrders.Status,
+//                                 serviceChannelWorkOrderId: workResponse.data.id,
+//                                 errorMessage: null,
+//                                 cronJobId: cronJobsDetails[0]._id,
+//                                 status: "completed"
+//                             });
+//                             cronData.serviceChannel_push_newWorkorders++;
+//                         }
+//                     } catch (err) {
+//                         let errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data";
+//                         if (serviceChannelWorksOrders) {
+//                             console.log('IfErrorr:============');
+//                             await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: registrationId }, {
+//                                 WorkOrderId: workData.workOrders.WorkOrderId,
+//                                 errorMessage: errorMessage,
+//                                 status: "error"
+//                             }, { new: true, upsert: true });
+//                         } else {
+//                             console.log('ElseErrorr:============');
+//                             await serviceChannelWorkOrdersModel.create({
+//                                 registrationId: configData.registrationId,
+//                                 WorkOrderId: workData.workOrders.WorkOrderId,
+//                                 errorMessage: errorMessage,
+//                                 status: "error"
+//                             });
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//         cronData.status = "completed"
+
+//         cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, cronData, { new: true, upsert: true });
+//         console.log("cron_Details:=========", cron_Details);
+//     });
+
+//     await Promise.all(promises);
+    
+//     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+//         status: customConstants.messages.MESSAGE_SUCCESS,
+//         message: customConstants.messages.MESSAGE_CRON_MANUAL
+//     });
+// });
+
 exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
     const { registrationId } = req.params;
-    const configs = await configurationModel.find({ registrationId });
+    const integrations = await integrationsModel.find({registrationId,status: "active" });
 
-    const cronJobsDetails = await cronJobsModel.insertMany({
-        status: "initiated",
-        cronjobType: "manual",
-    });
+    for (const integration of integrations) {
+        const configs = await configurationModel.find({ integrationId: integration._id })
+        let cronJobsDetails;
+        if (configs.length > 0) {
+            cronJobsDetails = await cronJobsModel.insertMany({
+                status: "initiated",
+                cronjobType: "cron-job",
+                date_created: new Date(),
+                integrationId: integration._id,
+                registrationId: integration.registrationId
+            })
 
-    let cronData = {
-        date_created: new Date(),
-        corrigo_pull_newWorkOrders: 0,
-        serviceChannel_push_newWorkorders: 0,
-    };
-    console.log("cronData:===========",cronData)
-    const promises = configs.map(async (configData) => {
-        let workDetails = {};
-        let config_integration_type = configData.config_integration_type;
-        cronData.registrationId = configData.registrationId;
-        cronData.integrationId = configData.integrationId;
-
-        if (config_integration_type === "corrigo-pro") {
-            let corrigoToken = await authentication.authentication(configData.credentials.client_id, configData.credentials.client_secret, configData.credentials.grant_type, configData.credentials.baseUrl);
-            const workOrderResponse = await axios.post(
-                'https://am-api.corrigopro.com/Direct/api/workOrder/search',
-                {
-                    "Parameters": {
-                        //"WorkOrderNumber":"POS4L20001", /*Search by work order number
-                        /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
-                        "Created": {
-                            "From": "2024-02-06T00:00:00Z",
-                            "To": new Date()
-                            // "To": "2024-02-07T24:00:00.000Z"
-                        }
-                        /*Search by work order status -> New,Accepted,Recalled,Rejected,CheckedIn,Paused,CheckedOut,OnHold,Verified,NeedsCompletionDetails*/
-                        // ,"Statuses": [ "Accepted","CheckedIn" ]
-                        //,"CustomerId" :"90256"
-                    },
-                    "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
-                },
-                {
-                    headers: {
-                        Authorization: `bearer ${corrigoToken.access_token}`
-                    }
-                }
-            );
-            for (let work of workOrderResponse.data.WorkOrders) {
-                workDetails.workOrders = work;
-                workDetails.MessageId = workOrderResponse.data.MessageId;
-                workDetails.registrationId = configData.registrationId;
-                workDetails.status = "completed";
-                workDetails.cronJobId = cronJobsDetails[0]._id;
-
-                const work_details = await workOrderModel.findOne({ "workOrders.WorkOrderId": work.WorkOrderId, registrationId: registrationId });
-                if (work_details) {
-                    await workOrderModel.findOneAndUpdate({ WorkOrderId: work.WorkOrderId, registrationId: registrationId }, {
-                        workOrders: workDetails.workOrders,
-                        MessageId: workDetails.MessageId,
-                        status: workDetails.status
-                    });
-                } else {
-                    await workOrderModel.create({
-                        registrationId: workDetails.registrationId,
-                        workOrders: workDetails.workOrders,
-                        MessageId: workDetails.MessageId,
-                        status: workDetails.status,
-                        cronJobId: workDetails.cronJobId
-                    });
-                    cronData.corrigo_pull_newWorkOrders++;
-                }
+            console.log("cronJobsDetailsWO:====", cronJobsDetails)
+            const cronData = {
+                corrigo_pull_newWorkOrders: [],
+                serviceChannel_push_newWorkorders: []
             }
-        } else if (config_integration_type === "service-channel") {
-            let serviceChannelToken = await authentication.serviceChannelAuth(configData.credentials.username, configData.credentials.password, configData.credentials.grant_type, configData.credentials.baseUrl, configData.credentials.Authorization);
-            let workOrder_Details = await workOrderModel.find({ registrationId: configData.registrationId }).lean();
-            for (workData of workOrder_Details) {
-                if (workData.workOrders) {
-                    let workResponse;
-                    const serviceChannelWorksOrders = await serviceChannelWorkOrdersModel.findOne({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: registrationId });
-                    try {
-                        workResponse = await axios.post(
-                            'https://sb2api.servicechannel.com/v3/workorders',
-                            {
-                                "ContractInfo": {
-                                    "StoreId": "102",
-                                    "TradeName": "HVAC",
-                                    "ProviderId": 2000090505
-                                },
-                                "Category": 'MAINTENANCE',
-                                "Priority": "P2 - 8 Hours",
-                                "Nte": 0,
-                                "CallDate": workData.workOrders.Created,
-                                "ScheduledDate": workData.workOrders.Sla.OnSiteBy,
-                                "Description": `${workData.workOrders.WorkOrderNumber}-${workData.workOrders.WorkType.Name}`,
-                                "Status": {
-                                    "Primary": "Open",
-                                    "Extended": ""
+            // cronData.registrationId = integration.registrationId
+            // cronData.integrationId = integration._id
+            const promises = configs.map(async configData => {
+                const workDetails = {}
+                const invoiceDetails = {}
+                const cronJobId = cronJobsDetails[0]._id
+                if (configData.config_integration_type === "corrigo-pro") {
+                    console.log("config_integration_typeCPD:=======", configData.config_integration_type)
+                    const corrigoToken = await authentication.authentication(configData.credentials.client_id, configData.credentials.client_secret, configData.credentials.grant_type, configData.credentials.baseUrl);
+
+                    const workOrderResponse = await axios.post(
+                        'https://am-api.corrigopro.com/Direct/api/workOrder/search',
+                        {
+                            "Parameters": {
+                                //"WorkOrderNumber":"POS4L20001", /*Search by work order number
+                                /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
+                                "Created": {
+                                    "From": "2024-02-06T00:00:00Z",
+                                    "To": new Date()
+                                    // "To": "2024-02-07T24:00:00.000Z"
                                 }
+                                /*Search by work order status -> New,Accepted,Recalled,Rejected,CheckedIn,Paused,CheckedOut,OnHold,Verified,NeedsCompletionDetails*/
+                                // ,"Statuses": [ "Accepted","CheckedIn" ]
+                                //,"CustomerId" :"90256"
                             },
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${serviceChannelToken.access_token}`
+                            "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
+                        },
+                        {
+                            headers: {
+                                Authorization: `bearer ${corrigoToken.access_token}`
+                            }
+                        }
+                    );
+
+                    if (workOrderResponse.data.WorkOrders.length > 0) {
+                        for (const work of workOrderResponse.data.WorkOrders) {
+                            workDetails.workOrders = work;
+                            workDetails.MessageId = workOrderResponse.data.MessageId;
+                            workDetails.registrationId = configData.registrationId;
+                            workDetails.status = "completed"
+                            workDetails.cronJobId = cronJobId
+                            const work_details = await workOrderModel.findOne({ "workOrders.WorkOrderId": work.WorkOrderId, registrationId: configData.registrationId })
+                            if (work_details) {
+                                await workOrderModel.findOneAndUpdate({ "workOrders.WorkOrderId": work.WorkOrderId, registrationId: configData.registrationId }, {
+                                    workOrders: workDetails.workOrders,
+                                    MessageId: workDetails.MessageId,
+                                    status: workDetails.status
+                                }, { new: true, upsert: true })
+                                console.log('CronId-CPD_WO:=', cronJobsDetails[0]._id)
+                            } else {
+                                await workOrderModel.create({
+                                    registrationId: workDetails.registrationId,
+                                    workOrders: workDetails.workOrders,
+                                    MessageId: workDetails.MessageId,
+                                    status: workDetails.status,
+                                    cronJobId: workDetails.cronJobId
+                                })
+                                cronData.corrigo_pull_newWorkOrders.push(work)
+                                console.log('CronId-CPD_WO:=', cronJobsDetails[0]._id)
+                            }
+                        }
+                    }
+                } else if (configData.config_integration_type === "service-channel") {
+                    console.log("config_integration_typeSC:=====", configData.config_integration_type)
+                    const serviceChannelToken = await authentication.serviceChannelAuth(configData.credentials.username, configData.credentials.password, configData.credentials.grant_type, configData.credentials.baseUrl, configData.credentials.Authorization);
+                    const workOrder_Details = await workOrderModel.find({ registrationId: configData.registrationId });
+
+                    if (workOrder_Details.length > 0) {
+                        for (const workData of workOrder_Details) {
+                            if (workData.workOrders) {
+                                const serviceChannelWorksOrders = await serviceChannelWorkOrdersModel.findOne({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: configData.registrationId })
+                                let workResponse
+                                try {
+                                    workResponse = await axios.post(
+                                        'https://sb2api.servicechannel.com/v3/workorders',
+                                        {
+                                            "ContractInfo": {
+                                                "StoreId": "102",
+                                                "TradeName": "HVAC",
+                                                "ProviderId": 2000090505
+                                            },
+                                            "Category": 'MAINTENANCE',
+                                            "Priority": "P2 - 8 Hours",
+                                            "Nte": 0,
+                                            "CallDate": workData.workOrders.Created,
+                                            "ScheduledDate": workData.workOrders.Sla.OnSiteBy,
+                                            "Description": `${workData.workOrders.WorkOrderNumber}-${workData.workOrders.WorkType.Name}`,
+                                            "Status": {
+                                                "Primary": "Open",
+                                                "Extended": ""
+                                            }
+                                        },
+                                        {
+                                            headers: {
+                                                Authorization: `Bearer ${serviceChannelToken.access_token}`
+                                            }
+                                        }
+                                    )
+
+                                    const configWorkOrder = JSON.parse(workResponse.config.data)
+                                    if (serviceChannelWorksOrders) {
+                                        await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: configData.registrationId }, {
+                                            WorkOrderId: workData.workOrders.WorkOrderId,
+                                            workOrders: configWorkOrder,
+                                            workOrderStatus: workData.workOrders.Status,
+                                            status: "completed"
+                                        }, { new: true, upsert: true })
+                                    } else {
+                                        await serviceChannelWorkOrdersModel.create({
+                                            registrationId: configData.registrationId,
+                                            WorkOrderId: workData.workOrders.WorkOrderId,
+                                            workOrders: configWorkOrder,
+                                            workOrderStatus: workData.workOrders.Status,
+                                            cronJobId: cronJobId,
+                                            status: "completed"
+                                        })
+                                        cronData.serviceChannel_push_newWorkorders.push(configWorkOrder)
+                                        console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
+                                    }
+                                } catch (err) {
+                                    const errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
+                                    if (serviceChannelWorksOrders) {
+                                        await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: configData.registrationId }, {
+                                            WorkOrderId: workData.workOrders.WorkOrderId,
+                                            errorMessage: errorMessage,
+                                            status: "error"
+                                        }, { new: true, upsert: true })
+                                        console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
+                                    } else {
+                                        const SC_workOrder = await serviceChannelWorkOrdersModel.create({
+                                            registrationId: configData.registrationId,
+                                            WorkOrderId: workData.workOrders.WorkOrderId,
+                                            workOrderStatus: workData.workOrders.Status,
+                                            errorMessage: errorMessage,
+                                            status: "error"
+                                        });
+                                        cronData.serviceChannel_push_newWorkorders.push(SC_workOrder)
+                                        console.log('CronId-SC_WO:=', cronJobsDetails[0]._id)
+                                    }
                                 }
                             }
-                        );
-
-                        let configWorkOrder = JSON.parse(workResponse.config.data);
-                        if (serviceChannelWorksOrders) {
-                            await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: registrationId }, {
-                                WorkOrderId: workData.workOrders.WorkOrderId,
-                                workOrders: configWorkOrder,
-                                errorMessage: null,
-                                corrigoProworkOrderStatus: workData.workOrders.Status,
-                                status: "completed"
-                            }, { new: true, upsert: true });
-                        } else {
-                            await serviceChannelWorkOrdersModel.create({
-                                registrationId: configData.registrationId,
-                                WorkOrderId: workData.workOrders.WorkOrderId,
-                                workOrders: configWorkOrder,
-                                corrigoProworkOrderStatus: workData.workOrders.Status,
-                                serviceChannelWorkOrderId: workResponse.data.id,
-                                errorMessage: null,
-                                cronJobId: cronJobsDetails[0]._id,
-                                status: "completed"
-                            });
-                            cronData.serviceChannel_push_newWorkorders++;
-                        }
-                    } catch (err) {
-                        let errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data";
-                        if (serviceChannelWorksOrders) {
-                            console.log('IfErrorr:============');
-                            await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: registrationId }, {
-                                WorkOrderId: workData.workOrders.WorkOrderId,
-                                errorMessage: errorMessage,
-                                status: "error"
-                            }, { new: true, upsert: true });
-                        } else {
-                            console.log('ElseErrorr:============');
-                            await serviceChannelWorkOrdersModel.create({
-                                registrationId: configData.registrationId,
-                                WorkOrderId: workData.workOrders.WorkOrderId,
-                                errorMessage: errorMessage,
-                                status: "error"
-                            });
                         }
                     }
                 }
-            }
+            })
+
+            await Promise.all(promises)
+
+            const cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, {
+                corrigo_pull_newWorkOrders: cronData.corrigo_pull_newWorkOrders.length,
+                serviceChannel_push_newWorkorders: cronData.serviceChannel_push_newWorkorders.length,
+                status: "completed"
+            }, { new: true, upsert: true })
+
+            console.log("cron_DetailsWorkOrders:============", cron_Details)
         }
-    });
-
-    await Promise.all(promises);
-    cronData.status = "completed"
-
-    cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, cronData, { new: true, upsert: true });
-    console.log("cron_Details:=========", cron_Details);
-
+    }
+    
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_CRON_MANUAL
