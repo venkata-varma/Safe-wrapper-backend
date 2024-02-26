@@ -24,17 +24,19 @@ async function workOrderAndInvoiceDetailsUpdate() {
         if (configs.length > 0) {
             cronJobsDetails = await cronJobsModel.insertMany({
                 status: "initiated",
-                cronjobType: "cron-job"
+                cronjobType: "cron-job",
+                date_created:new Date(),
+                integrationId:integration._id,
+                registrationId:integration.registrationId
             })
 
             // console.log("cronJobsDetails:====", cronJobsDetails)
             const cronData = {
-                date_created: new Date(),
                 corrigo_pull_newWorkOrders: [],
                 serviceChannel_push_newWorkorders: []
             }
-            cronData.registrationId = integration.registrationId
-            cronData.integrationId = integration._id
+            // cronData.registrationId = integration.registrationId
+            // cronData.integrationId = integration._id
             const promises = configs.map(async configData => {
                 const workDetails = {}
                 const invoiceDetails = {}
@@ -177,9 +179,6 @@ async function workOrderAndInvoiceDetailsUpdate() {
             await Promise.all(promises)
 
             const cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, {
-                date_created: cronData.date_created,
-                registrationId: cronData.registrationId,
-                integrationId: cronData.integrationId,
                 corrigo_pull_newWorkOrders: cronData.corrigo_pull_newWorkOrders.length,
                 serviceChannel_push_newWorkorders: cronData.serviceChannel_push_newWorkorders.length,
                 status: "completed"
@@ -199,7 +198,10 @@ async function invoicesUpdate() {
         if (configDetails.length > 0) {
             cronJobsDetails = await cronJobsModel.insertMany({
                 status: "initiated",
-                cronjobType: "cron-job"
+                cronjobType: "cron-job",
+                date_created:new Date(),
+                integrationId:integration._id,
+                registrationId:integration.registrationId
             })
             let cronData = {}
             let corrigoPullInvoices = []
@@ -207,9 +209,9 @@ async function invoicesUpdate() {
             let serviceChannelInvoicesPush = []
             let quickBooksInvoices = {}
             let quickBooksInvoicesPush = []
-            cronData.date_created = new Date()
-            cronData.registrationId = integration.registrationId
-            cronData.integrationId = integration._id
+            // cronData.date_created = new Date()
+            // cronData.registrationId = integration.registrationId
+            // cronData.integrationId = integration._id
             for (let config of configDetails) {
                 let token
                 if (config.config_integration_type === "corrigo-pro") {
@@ -429,9 +431,6 @@ async function invoicesUpdate() {
             }
 
             const cronJobs_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails[0]._id, {
-                date_created: cronData.date_created,
-                registrationId: cronData.registrationId,
-                integrationId: cronData.integrationId,
                 corrigo_pull_newInvoice: corrigoPullInvoices.length,
                 serviceChannel_push_newInvoice: serviceChannelInvoicesPush.length,
                 quick_books_push_newInvoices: quickBooksInvoicesPush.length,
