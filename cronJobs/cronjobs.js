@@ -418,7 +418,7 @@ async function invoicesUpdate() {
                                     await quickBooksInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId }, {
                                         corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
                                         MessageId: invoice.MessageId,
-                                        quickBooksInvoiceDetails: invoiceSC,
+                                        quickBooksInvoiceDetails: invoiceResponse.data.Invoice,
                                         status: "completed",
                                         errorMessage: null,
                                     }, { new: true, upsert: true })
