@@ -186,21 +186,21 @@ exports.globalConstants = asyncWrapper(async (req, res) => {
     ]
 
     const credentials = [{
-        corrigo_pro_crdentials:{
+        corrigo_pro_crdentials: {
             "client_id": "F68C77D715A71E558E1D7292FD25E682",
             "client_secret": "84CF7EAF69A0189AA65A812B6DE0EF32849E7C5DF1C50164CFD49069F7C4A281D396307F47580E5573DD30BA25F3E7AE2E400D5FA88890BFCE1ADF9510AFA3E2",
             "grant_type": "client_credentials",
             "baseUrl": "http://oauth-pro-v2.corrigo.com/OAuth/Token",
             "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
         },
-        service_channel_credentials:{
+        service_channel_credentials: {
             "baseUrl": "https://sb2login.servicechannel.com/oauth/token",
             "username": "SC-Dev1",
             "password": "servicechannel1",
             "grant_type": "password",
             "Authorization": "Basic U0IuMjAxNDkxNzI0My5ENEQyODUzMC1FRjE0LTQ5NjctOTkxOC1GMTNGN0U5MDc2REY6N0Y3MDJFRDEtQUYwRi00ODRBLTkwM0EtRThFRTMwNTUxODUw"
         },
-        quick_books_credentials:{
+        quick_books_credentials: {
             "baseUrl": "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
             "client_id": "ABZk1zO4yKkebi0zbDqu4F2iRf6CQNkrsn0gODR2Lapa24sFZ7",
             "client_secret": "2RCek8ohiB3hI1Fb2Io7B76ku6oA9egDS0aGdZ9O",
@@ -242,7 +242,7 @@ exports.configIntegration = asyncWrapper(async (req, res) => {
             req.body.status = "rejected";
     }
     else if (config_integration_type == 'quick-books') {
-        const token = await authentication.quickbooksAuth(credentials.baseUrl, refresh_token=process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, credentials.Authorization);
+        const token = await authentication.quickbooksAuth(credentials.baseUrl, refresh_token = process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, credentials.Authorization);
         console.log('token:=======', token)
         if (token === 'error')
             req.body.status = "rejected";
@@ -432,7 +432,7 @@ exports.configIntegration = asyncWrapper(async (req, res) => {
 //     });
 
 //     await Promise.all(promises);
-    
+
 //     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
 //         status: customConstants.messages.MESSAGE_SUCCESS,
 //         message: customConstants.messages.MESSAGE_CRON_MANUAL
@@ -441,7 +441,7 @@ exports.configIntegration = asyncWrapper(async (req, res) => {
 
 exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
     const { registrationId } = req.params;
-    const integrations = await integrationsModel.find({registrationId,status: "active" });
+    const integrations = await integrationsModel.find({ registrationId, status: "active" });
 
     for (const integration of integrations) {
         const configs = await configurationModel.find({ integrationId: integration._id })
@@ -618,7 +618,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
             console.log("cron_DetailsWorkOrders:============", cron_Details)
         }
     }
-    
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_CRON_MANUAL
@@ -641,7 +641,7 @@ exports.getInvoicesByRegistraionId = asyncWrapper(async (req, res) => {
     const { registrationId } = req.params
     const corrigo_pro_invoices = await corrigoProInvoiceModel.find({ registrationId }).lean();
     const service_channel_invoices = await serviceChannelInvoiceModel.find({ registrationId }).lean();
-    const quick_books_invoices = await quickBooksInvoiceModel.find({registrationId}).lean();
+    const quick_books_invoices = await quickBooksInvoiceModel.find({ registrationId }).lean();
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
@@ -673,7 +673,7 @@ exports.getStatastics = asyncWrapper(async (req, res) => {
     const totalServiceChannelWorkOrders = await serviceChannelWorkOrdersModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] });
     const usersCount = await usersModel.find({ registrationId });
     const cronjobsCount = await cronJobsModel.find({ registrationId });
-    const totalIntegrations = await integrationsModel.find({registrationId}).lean();
+    const totalIntegrations = await integrationsModel.find({ registrationId }).lean();
     const totalInvoices = await corrigoProInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
     const service_channel_invoices = await serviceChannelInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
     const quick_books_invoices = await quickBooksInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
@@ -681,7 +681,7 @@ exports.getStatastics = asyncWrapper(async (req, res) => {
     let integrations = []
 
     for (const integration of totalIntegrations) {
-        const configDetails = await configurationModel.find({ registrationId,integrationId: integration._id }, { config_integration_type: 1, registrationId: 1, status: 1 }).populate('registrationId');
+        const configDetails = await configurationModel.find({ registrationId, integrationId: integration._id }, { config_integration_type: 1, registrationId: 1, status: 1 }).populate('registrationId');
         integration.configDetails = configDetails
         integrations.push(integration);
         configCount.push(...configDetails)
@@ -742,30 +742,48 @@ exports.getsingleInegration = asyncWrapper(async (req, res) => {
     const { integrationId } = req.params;
     const integrationDetails = await integrationsModel.findById(integrationId);
     const configDetails = await configurationModel.find({ integrationId })
+    
     const cronjobDetails = await cronJobsModel.find({ integrationId });
-
     const cronJobIds = cronjobDetails.map(({ _id }) => _id);
+    let ServiceProvidersWorkOrders,ServiceProvidersInvoices,serviceProvidersWorkOrderslength,serviceprovidersInvoiceslength
+    for (let config of configDetails) {
+        if (config.config_integration_type === 'service-channel') {
+            ServiceProvidersWorkOrders = await serviceChannelWorkOrdersModel.find({ "cronJobId": { $in: cronJobIds } });
+            ServiceProvidersInvoices = await serviceChannelInvoiceModel.find({ "cronJobId": { $in: cronJobIds } });
+            serviceProvidersWorkOrderslength = ServiceProvidersWorkOrders.length
+        }
+        if (config.config_integration_type === 'quick-books') {
+            ServiceProvidersInvoices = await quickBooksInvoiceModel.find({ "cronJobId": { $in: cronJobIds } })
+        }
+    }
+    if(ServiceProvidersWorkOrders === "undefined" ){
+        serviceProvidersWorkOrderslength = 0;
+    }
+    if(ServiceProvidersInvoices === "undefined"){
+        serviceprovidersInvoiceslength = 0
+    }
+    else{
+        serviceprovidersInvoiceslength = ServiceProvidersInvoices.length
+    }
+
     const CPDWorkOrders = await workOrderModel.find({ "cronJobId": { $in: cronJobIds } });
-    const SCWorkOrders = await serviceChannelWorkOrdersModel.find({ "cronJobId": { $in: cronJobIds } });
     const CPDInvoices = await corrigoProInvoiceModel.find({ "cronJobId": { $in: cronJobIds } });
-    const SCInvoices = await serviceChannelInvoiceModel.find({ "cronJobId": { $in: cronJobIds } });
-    const QBInvoices = await quickBooksInvoiceModel.find({ "cronJobId": { $in: cronJobIds } })
     const settingsDetails = await settingsModel.find({ integrationId })
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_INTEGRATIONS,
         data: {
-            totalCorrigoProWorkOrders: CPDWorkOrders.length, totalServiceChannelWorkOrders: SCWorkOrders.length,
-            totalCorrigoProInvoices: CPDInvoices.length, totalServiceChannelInvoices: SCInvoices.length,
-            totalQuickBooksInvoices:QBInvoices.length,
+            totalCorrigoProWorkOrders: CPDWorkOrders.length, totalServiceProvidersWorkOrders: serviceProvidersWorkOrderslength,
+            totalCorrigoProInvoices: CPDInvoices.length, totalServiceProvidersInvoices: serviceprovidersInvoiceslength,
+            // totalQuickBooksInvoices: QBInvoices.length,
             cronjobsCount: cronjobDetails.length, integrationDetails,
             configDetails, cronjobDetails,
             settingsDetails: settingsDetails,
-            corrigoWorkOrders: CPDWorkOrders, ServiceChannelWorkOrders: SCWorkOrders,
+            corrigoWorkOrders: CPDWorkOrders,
+            ServiceProvidersWorkOrders:  ServiceProvidersWorkOrders ,
             corrigoProInvoices: CPDInvoices,
-            serviceChannelInvoices: SCInvoices,
-            quickBoksInvoices:QBInvoices
+            serviceprovidersInvoices: ServiceProvidersInvoices
         }
     });
 });
@@ -840,7 +858,7 @@ exports.editConfigurationByIntegrationId = asyncWrapper(async (req, res) => {
             req.body.status = "rejected";
     }
     else if (config_integration_type == 'quick-books') {
-        const token = await authentication.quickbooksAuth(credentials.baseUrl, refresh_token=process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, credentials.Authorization);
+        const token = await authentication.quickbooksAuth(credentials.baseUrl, refresh_token = process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, credentials.Authorization);
         console.log('token:=======', token)
         if (token === 'error')
             req.body.status = "rejected";
@@ -854,7 +872,7 @@ exports.editConfigurationByIntegrationId = asyncWrapper(async (req, res) => {
     }
     else {
         req.body.status = "verified"
-        let clientDetails = await configurationModel.findOneAndUpdate({$and:[{_id:configurationId},{integrationId:integrationId}]},req.body,{new:true,upsert:true})
+        let clientDetails = await configurationModel.findOneAndUpdate({ $and: [{ _id: configurationId }, { integrationId: integrationId }] }, req.body, { new: true, upsert: true })
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_CONFIGURATION_UPDATE,
