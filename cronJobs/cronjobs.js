@@ -195,7 +195,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                         }
                     }
                 }));
-
+                console.log('-----------Work Orders Cron End---------------')
                 const cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails._id, {
                     corrigo_pull_newWorkOrders: cronData.corrigo_pull_newWorkOrdersCount,
                     serviceChannel_push_newWorkorders: cronData.serviceChannel_push_newWorkordersCount,
@@ -480,6 +480,8 @@ async function invoicesUpdate() {
                         }
                     }
                 }
+                console.log('-----------Invoices Cron End---------------')
+
                 console.log('serviceChannelInvoicesPushCount:======', serviceChannelInvoicesPushCount)
 
                 const cronJobs_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails._id, {
