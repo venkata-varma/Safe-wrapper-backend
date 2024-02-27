@@ -196,6 +196,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                     }
                 }));
                 console.log('-----------Work Orders Cron End---------------')
+                try{
                 const cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails._id, {
                     corrigo_pull_newWorkOrders: cronData.corrigo_pull_newWorkOrdersCount,
                     serviceChannel_push_newWorkorders: cronData.serviceChannel_push_newWorkordersCount,
@@ -203,6 +204,9 @@ async function workOrderAndInvoiceDetailsUpdate() {
                 }, { new: true, upsert: true })
 
                 console.log("cron_DetailsWorkOrders:============", cron_Details)
+            }catch(error){
+                console.log("WorkOrders_CronError:====",error)
+            }
             }
             catch (error) {
                 console.error("Error in workOrderAndInvoiceDetailsUpdate:", error);
@@ -483,7 +487,7 @@ async function invoicesUpdate() {
                 console.log('-----------Invoices Cron End---------------')
 
                 console.log('serviceChannelInvoicesPushCount:======', serviceChannelInvoicesPushCount)
-
+                try{
                 const cronJobs_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails._id, {
                     corrigo_pull_newInvoice: corrigoPullInvoicesCount,
                     serviceChannel_push_newInvoice: serviceChannelInvoicesPushCount,
@@ -491,6 +495,10 @@ async function invoicesUpdate() {
                     status: "completed"
                 }, { new: true, upsert: true })
                 console.log("cronJobsDetailsInvoices:=======", cronJobs_Details)
+            }
+            catch(error){
+                console.log('Invoices-Cron-End-Error:==',error)
+            }
             }
             catch (error) {
                 console.error("Error in workOrderAndInvoiceDetailsUpdate:", error);
