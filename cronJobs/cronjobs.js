@@ -21,6 +21,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
     for (const integration of integrations) {
         const configs = await configurationModel.find({ integrationId: integration._id })
         let cronJobsDetails;
+        try{
         if (configs.length > 0) {
             cronJobsDetails = await cronJobsModel.create({
                 status: "initiated",
@@ -191,6 +192,9 @@ async function workOrderAndInvoiceDetailsUpdate() {
             }, { new: true, upsert: true })
 
             console.log("cron_DetailsWorkOrders:============", cron_Details)
+        }}
+        catch(error){
+            console.error("Error in workOrderAndInvoiceDetailsUpdate:", error);
         }
     }
 }
@@ -201,6 +205,7 @@ async function invoicesUpdate() {
     for (let integration of integrations) {
         const configDetails = await configurationModel.find({ integrationId: integration._id })
         let cronJobsDetails;
+        try{
         if (configDetails.length > 0) {
             cronJobsDetails = await cronJobsModel.create({
                 status: "initiated",
@@ -456,6 +461,9 @@ async function invoicesUpdate() {
                 status: "completed"
             }, { new: true, upsert: true })
             console.log("cronJobsDetailsInvoices:=======", cronJobs_Details)
+        }}
+        catch(error){
+            console.error("Error in workOrderAndInvoiceDetailsUpdate:", error);
         }
     }
 }
