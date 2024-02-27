@@ -215,7 +215,7 @@ const integrationsModel = require('../models/integrationsModel');
 //     }
 // }
 
-async function processWorkOrder(work, registrationId, cronJobId) {
+async function processWorkOrder(work, registrationId, cronJobId,cronData) {
     // Process work orders
     const workDetails = {};
     workDetails.workOrders = work;
@@ -244,7 +244,7 @@ async function processWorkOrder(work, registrationId, cronJobId) {
     }
 }
 
-async function processServiceChannelWorkOrder(workData, registrationId, cronJobId) {
+async function processServiceChannelWorkOrder(workData, registrationId, cronJobId,cronData) {
     // Process service channel work orders
     const serviceChannelWorksOrders = await serviceChannelWorkOrdersModel.findOne({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: registrationId });
     let workResponse;
@@ -368,7 +368,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                 if (workOrderResponse.data.WorkOrders.length > 0) {
                                     for (const work of workOrderResponse.data.WorkOrders) {
                                         // Process work orders
-                                        await processWorkOrder(work, configData.registrationId, cronJobsDetails._id);
+                                        await processWorkOrder(work, configData.registrationId, cronJobsDetails._id,cronData);
                                     }
                                 }
                             } else if (configData.config_integration_type === "service-channel") {
@@ -379,7 +379,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                 if (workOrder_Details.length > 0) {
                                     for (const workData of workOrder_Details) {
                                         // Process service channel work orders
-                                        await processServiceChannelWorkOrder(workData, configData.registrationId, cronJobsDetails._id);
+                                        await processServiceChannelWorkOrder(workData, configData.registrationId, cronJobsDetails._id,cronData);
                                     }
                                 }
                             }
