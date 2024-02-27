@@ -756,10 +756,11 @@ exports.getsingleInegration = asyncWrapper(async (req, res) => {
             ServiceProvidersInvoices = await quickBooksInvoiceModel.find({ "cronJobId": { $in: cronJobIds } })
         }
     }
-    if(ServiceProvidersWorkOrders === "undefined" ){
-        serviceProvidersWorkOrderslength = 0;
+    if(ServiceProvidersWorkOrders === undefined ){
+    console.log("totalServiceProvidersWorkOrders:==",ServiceProvidersWorkOrders)
+    serviceProvidersWorkOrderslength = 0;
     }
-    if(ServiceProvidersInvoices === "undefined"){
+    if(ServiceProvidersInvoices === undefined){
         serviceprovidersInvoiceslength = 0
     }
     else{
@@ -769,7 +770,6 @@ exports.getsingleInegration = asyncWrapper(async (req, res) => {
     const CPDWorkOrders = await workOrderModel.find({ "cronJobId": { $in: cronJobIds } });
     const CPDInvoices = await corrigoProInvoiceModel.find({ "cronJobId": { $in: cronJobIds } });
     const settingsDetails = await settingsModel.find({ integrationId })
-
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_INTEGRATIONS,
