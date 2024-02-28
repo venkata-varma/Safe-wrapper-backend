@@ -21,6 +21,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
     for (const integration of integrations) {
         const configs = await configurationModel.find({ integrationId: integration._id })
         let cronJobsDetails;
+        console.log("integrationIdWOs:===",integration._id)
 
         if (configs.length > 0) {
             try {
@@ -47,6 +48,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
 
                     if (configData.config_integration_type === "corrigo-pro") {
                         try {
+                            console.log('integrationIdCPD-WO:===',integration._id)
                             console.log("config_integration_typeCPD:=======", configData.config_integration_type)
                             const corrigoToken = await authentication.authentication(configData.credentials.client_id, configData.credentials.client_secret, configData.credentials.grant_type, configData.credentials.baseUrl);
 
@@ -88,7 +90,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                             MessageId: workDetails.MessageId,
                                             status: workDetails.status
                                         }, { new: true, upsert: true })
-                                        console.log('CronId-CPD_WO:=', cronJobsDetails._id)
+                                        console.log('CronId-CPD_WO:=', integration._id)
                                     } else {
                                         await workOrderModel.create({
                                             registrationId: workDetails.registrationId,
@@ -98,7 +100,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                             cronJobId: workDetails.cronJobId
                                         })
                                         cronData.corrigo_pull_newWorkOrdersCount++
-                                        console.log('CronId-CPD_WO:=', cronJobsDetails._id)
+                                        console.log('CronId-CPD_WO:=', integration._id)
                                     }
                                 }
                             }
@@ -158,11 +160,12 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                                     WorkOrderId: workData.workOrders.WorkOrderId,
                                                     workOrders: configWorkOrder,
                                                     workOrderStatus: workData.workOrders.Status,
+                                                    serviceChannelWorkOrderId:workResponse.data.id,
                                                     cronJobId: cronJobId,
                                                     status: "completed"
                                                 })
                                                 cronData.serviceChannel_push_newWorkordersCount++
-                                                console.log('CronId-SC_WO:=', cronJobsDetails._id)
+                                                console.log('CronId-SC_WO:=', integration._id)
                                             }
                                         } catch (err) {
                                             const errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
@@ -172,18 +175,19 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                                     errorMessage: errorMessage,
                                                     status: "error"
                                                 }, { new: true, upsert: true })
-                                                console.log('CronId-SC_WO:=', cronJobsDetails._id)
+                                                console.log('CronId-SC_WO:=', integration._id)
                                             } else {
                                                 const SC_workOrder = await serviceChannelWorkOrdersModel.create({
                                                     registrationId: configData.registrationId,
                                                     WorkOrderId: workData.workOrders.WorkOrderId,
                                                     workOrderStatus: workData.workOrders.Status,
                                                     cronJobId: cronJobId,
+                                                    serviceChannelWorkOrderId:workResponse.data.id,
                                                     errorMessage: errorMessage,
                                                     status: "error"
                                                 });
                                                 cronData.serviceChannel_push_newWorkordersCount++
-                                                console.log('CronId-SC_WO:=', cronJobsDetails._id)
+                                                console.log('CronId-SC_WO:=', integration._id)
                                             }
                                         }
                                     }
@@ -195,6 +199,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
                         }
                     }
                 }));
+                console.log('integrationIdWO-END:===',integration._id)
                 console.log('-----------Work Orders Cron End---------------')
                 try{
                 const cron_Details = await cronJobsModel.findByIdAndUpdate(cronJobsDetails._id, {
@@ -222,6 +227,7 @@ async function invoicesUpdate() {
     for (let integration of integrations) {
         const configDetails = await configurationModel.find({ integrationId: integration._id })
         let cronJobsDetails;
+        console.log("integrationId:===",integration._id)
 
         if (configDetails.length > 0) {
             try {
@@ -247,6 +253,7 @@ async function invoicesUpdate() {
                     let token
                     if (config.config_integration_type === "corrigo-pro") {
                         try {
+                            console.log('integrationIdCPD-IN:===',integration._id)
                             console.log("config_integration_typeCPD-IN:==", config.config_integration_type)
                             token = await authentication.authentication(config.credentials.client_id, config.credentials.client_secret, config.credentials.grant_type, config.credentials.baseUrl);
                             const work_details = await workOrderModel.find({})
@@ -262,7 +269,7 @@ async function invoicesUpdate() {
                                                 }
                                             }
                                         );
-                                        console.log('CronId-CPD_In:=', cronJobsDetails._id)
+                                        console.log('CronId-CPD_In:=', integration._id)
                                         let invoice_details = {}
                                         invoice_details = invoiceDetails.data.Invoice;
                                         invoice_details.registrationId = work.registrationId;
@@ -305,6 +312,7 @@ async function invoicesUpdate() {
                     }
                     else if (config.config_integration_type == "service-channel") {
                         try {
+                            console.log('integrationIdSC-IN:===',integration._id)
                             console.log("config_integration_typeSC-IN:==", config.config_integration_type)
 
                             let serviceChannelToken = await authentication.serviceChannelAuth(process.env.PROVIDERNAME, process.env.PROVIDERPASSWORD, process.env.GRANT_TYPE, process.env.BASE_URL, process.env.AUTHORIZATION);
@@ -399,6 +407,7 @@ async function invoicesUpdate() {
                     }
                     else if (config.config_integration_type == "quick-books") {
                         try {
+                            console.log('integrationIdQB-IN:===',integration._id)
                             console.log("config_integration_typeQB-IN:==", config.config_integration_type)
                             let quickBooksToken = await authentication.quickbooksAuth(config.credentials.baseUrl, process.env.QUICK_BOOKS_REFRSH_TOKEN, process.env.QUICK_BOOKS_GRANT_TYPE, config.credentials.Authorization);
                             let invoices = await corrigoProInvoiceModel.find({ registrationId: integration.registrationId });
@@ -485,6 +494,7 @@ async function invoicesUpdate() {
                         }
                     }
                 }
+                console.log('integrationIdIN-END:===',integration._id)
                 console.log('-----------Invoices Cron End---------------')
 
                 console.log('serviceChannelInvoicesPushCount:======', serviceChannelInvoicesPushCount)
