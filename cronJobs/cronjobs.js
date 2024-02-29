@@ -14,7 +14,7 @@ const serviceChannelInvoiceModel = require('../models/serviceChannelInvoiceModel
 const quickBooksInvoiceModel = require('../models/quickBooksInvoiceModel');
 const integrationsModel = require('../models/integrationsModel');
 
-
+  
 async function workOrderAndInvoiceDetailsUpdate() {
     const integrations = await integrationsModel.find({ status: "active" })
 
@@ -322,22 +322,24 @@ async function invoicesUpdate() {
                                 const date = parseInt(moment(new Date()).format('YYYYMMDDss'))
                                 let invoiceResponse;
                                 let invoiceSC;
+                                let count = 0
                                 if (invoice.invoiceDetails) {
                                     try {
+                                        count++
                                         invoiceResponse = await axios.post('https://sb2api.servicechannel.com/v3/invoices',
                                             {
-                                                "InvoiceNumber": `${date}`,
+                                                "InvoiceNumber": `${date + count}`,
                                                 "WoIdentifier": `${SC_WorkOrders.serviceChannelWorkOrderId}`,
                                                 "InvoiceTax": 0,
-                                                "InvoiceTotal": invoice.invoiceDetails.TotalAmount,
+                                                "InvoiceTotal": 0,
                                                 "InvoiceText": "HVAC leak",
                                                 "InvoiceAmountsDetails": {
-                                                    "LaborAmount": invoice.invoiceDetails.LineItems[0].Subtotal || 0,
+                                                    "LaborAmount": 0,
                                                     "MaterialAmount": 0,
                                                     "TravelAmount": 0,
                                                     "FreightAmount": 0,
                                                     "OtherAmount": 0,
-                                                    "OtherDescription": invoice.invoiceDetails.LineItems[0].Description || ""
+                                                    "OtherDescription": "General Maintenance"
                                                 },
                                                 "InvoiceTaxesDetails": {
                                                     "LaborTax": 0,
