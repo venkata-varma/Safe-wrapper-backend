@@ -394,6 +394,7 @@ async function invoicesUpdate() {
                                             await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                                 {
                                                     corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
+                                                    status:"completed",
                                                     errorMessage: serviceChannelInvoices.errorMessage
                                                 }, { new: true, upsert: true })
                                         }
