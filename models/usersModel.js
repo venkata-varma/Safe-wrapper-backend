@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken')
 const userSchema = new mongoose.Schema({
     registrationId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'registration',
+        ref: 'registrations',
         index: true,
         default:null
     },

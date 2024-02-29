@@ -4,7 +4,7 @@ const workOrderModelSchema = mongoose.Schema(
     {
         registrationId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "registration",
+            ref: "registrations",
             default: null
         },
         workOrders: {

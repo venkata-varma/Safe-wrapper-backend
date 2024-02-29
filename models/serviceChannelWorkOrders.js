@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const serviceChannelWorkOrdersSchema = new mongoose.Schema({
     registrationId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"registration",
+        ref:"registrations",
         default:null
     },
     WorkOrderId:{
