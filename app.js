@@ -24,7 +24,7 @@ const cronRoute = require('./cronJobs/cronjobs')
 
 
 app.use('/api', workOrderRoute);
-app.use('/cron',cronRoute.invoicesUpdate)
+// app.use('/cron',cronRoute.invoicesUpdate)
 
 module.exports = app;
 

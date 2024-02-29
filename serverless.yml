@@ -12,7 +12,6 @@ provider:
   runtime: nodejs18.x
   stage: dev
   region: us-west-1
-  timeout: 600
   environment:
     timeout: 899  # must be <= 900
   plugins:
@@ -35,6 +34,7 @@ functions:
           cors: true
   cronJobs:
     handler: handler/workOrderAndInvoiceDetailsUpdate.handler
+    timeout: 899
     events:
       - schedule:
           rate: rate(15 minutes)
