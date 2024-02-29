@@ -29,7 +29,7 @@ const registrationSchema = new mongoose.Schema({
     },
     registrationId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "registration",
+        ref: "registrations",
         default:null
     },
     status:{
@@ -44,4 +44,4 @@ registrationSchema.pre('save', function(next) {
     next();
 });
 
-module.exports = mongoose.model('registration',registrationSchema)
+module.exports = mongoose.model('registrations',registrationSchema)
