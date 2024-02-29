@@ -7,7 +7,7 @@ const cronJobsSchema = new mongoose.Schema({
     },
     registrationId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"registration",
+        ref:"registrations",
         default:null
     },
     integrationId:{
