@@ -173,7 +173,6 @@ async function workOrderAndInvoiceDetailsUpdate() {
                                                 await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: configData.registrationId }, {
                                                     WorkOrderId: workData.workOrders.WorkOrderId,
                                                     errorMessage: errorMessage,
-                                                    status: "error"
                                                 }, { new: true, upsert: true })
                                                 console.log('CronId-SC_WO:=', integration._id)
                                             } else {
@@ -393,7 +392,6 @@ async function invoicesUpdate() {
                                             await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                                 {
                                                     corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
-                                                    status: "error",
                                                     errorMessage: serviceChannelInvoices.errorMessage
                                                 }, { new: true, upsert: true })
                                         }
@@ -473,7 +471,7 @@ async function invoicesUpdate() {
                                         quickBooksInvoices.status = "error"
                                         quickBooksInvoices.cronJobId = cronJobsDetails._id
                                         quickBooksInvoices.MessageId = invoice.MessageId
-                                        quickBooksInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
+                                        quickBooksInvoices.errorMessage = err.response !== undefined ? err.response.data.fault.error[0].message : "Invalid Data"
                                         if (!QB_invoices) {
                                             await quickBooksInvoiceModel.create(quickBooksInvoices)
                                             quickBooksInvoicesPushCount++
@@ -481,7 +479,6 @@ async function invoicesUpdate() {
                                             await quickBooksInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                                 {
                                                     corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
-                                                    status: "error",
                                                     errorMessage: quickBooksInvoices.errorMessage
                                                 }, { new: true, upsert: true })
                                         }
