@@ -12,6 +12,7 @@ provider:
   runtime: nodejs18.x
   stage: dev
   region: us-west-1
+  timeout: 400
   environment:
     timeout: 899  # must be <= 900
   plugins:
