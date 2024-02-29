@@ -585,7 +585,6 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
                                         await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: configData.registrationId }, {
                                             WorkOrderId: workData.workOrders.WorkOrderId,
                                             errorMessage: errorMessage,
-                                            status: "error"
                                         }, { new: true, upsert: true })
                                         console.log('CronId-SC_WO:=', cronJobsDetails._id)
                                     } else {
