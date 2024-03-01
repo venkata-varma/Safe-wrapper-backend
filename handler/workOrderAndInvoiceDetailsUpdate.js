@@ -1,8 +1,8 @@
-const {workOrderAndInvoiceDetailsUpdate,invoicesUpdate} = require('../cronJobs/cronjobs')
+const {workOrdersIntegrations,invoicesIntegrations} = require('../cronJobs/cronjobs')
 
 module.exports.handler = async(event, context,callback)=>{
 
-    workOrderAndInvoiceDetailsUpdate()
-    invoicesUpdate()
+    workOrdersIntegrations()
+    invoicesIntegrations()
     callback(null)
 };

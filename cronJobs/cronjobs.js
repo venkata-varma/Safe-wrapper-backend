@@ -15,7 +15,7 @@ const quickBooksInvoiceModel = require('../models/quickBooksInvoiceModel');
 const integrationsModel = require('../models/integrationsModel');
 
   
-async function workOrderAndInvoiceDetailsUpdate() {
+async function workOrdersIntegrations() {
     const integrations = await integrationsModel.find({ status: "active" })
 
     for (const integration of integrations) {
@@ -221,7 +221,7 @@ async function workOrderAndInvoiceDetailsUpdate() {
 
 
 
-async function invoicesUpdate() {
+async function invoicesIntegrations() {
     const integrations = await integrationsModel.find({ status: "active" })
     for (let integration of integrations) {
         const configDetails = await configurationModel.find({ integrationId: integration._id })
@@ -518,6 +518,6 @@ async function invoicesUpdate() {
 }
 
 module.exports = {
-    workOrderAndInvoiceDetailsUpdate,
-    invoicesUpdate
+    workOrdersIntegrations,
+    invoicesIntegrations
 }

@@ -9,10 +9,6 @@ const configurationModel = require('../models/configurationModel');
 const cronJobsModel = require('../models/cronJobModel');
 const serviceChannelWorkOrdersModel = require('../models/serviceChannelWorkOrders')
 const customConstants = require('../config/constants.json');
-const { ObjectId } = require('mongodb')
-
-const { workOrderAndInvoiceDetailsUpdate } = require('../cronJobs/cronjobs');
-const { default: mongoose, Schema, Mongoose } = require('mongoose');
 const integrationsModel = require('../models/integrationsModel');
 const asyncWrapper = require('../middleware/asyncWrapper');
 const corrigoProInvoiceModel = require('../models/corrigoProInvoiceModel');
