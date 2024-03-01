@@ -383,14 +383,17 @@ async function invoicesIntegrations() {
                                     catch (err) {
                                         serviceChannelInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                         if (!SC_invoices) {
+                                            console.log('SC_Invoices In If Condition')
                                             serviceChannelInvoices.registrationId = invoice.registrationId
                                             serviceChannelInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
                                             serviceChannelInvoices.status = "error"
                                             serviceChannelInvoices.cronJobId = cronJobsDetails._id
-                                            serviceChannelInvoices.MessageId = invoice.MessageId
+                                            // serviceChannelInvoices.MessageId = invoice.MessageId
+                                            serviceChannelInvoices.MessageId = "invoice exist 1"
                                             await serviceChannelInvoiceModel.create(serviceChannelInvoices)
                                             serviceChannelInvoicesPushCount++
                                         } else {
+                                            console.log('SC_Invoices In else Condition')
                                             let SCInvoice = await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                                 {
                                                     corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
