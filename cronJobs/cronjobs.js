@@ -168,7 +168,7 @@ async function workOrdersIntegrations() {
                                                 console.log('CronId-SC_WO:=', integration._id)
                                             }
                                         } catch (err) {
-                                            const errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data 1"
+                                            const errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                             if (serviceChannelWorksOrders) {
                                                 await serviceChannelWorkOrdersModel.findOneAndUpdate({ WorkOrderId: workData.workOrders.WorkOrderId, registrationId: configData.registrationId }, {
                                                     WorkOrderId: workData.workOrders.WorkOrderId,
@@ -183,7 +183,7 @@ async function workOrdersIntegrations() {
                                                     cronJobId: cronJobId,
                                                     serviceChannelWorkOrderId:workResponse.data.id,
                                                     errorMessage: errorMessage,
-                                                    // status: "error"
+                                                    status: "error"
                                                 });
                                                 cronData.serviceChannel_push_newWorkordersCount++
                                                 console.log('CronId-SC_WO:=', integration._id)
@@ -292,13 +292,13 @@ async function invoicesIntegrations() {
                                         }
                                     }
                                     catch (err) {
-                                        let errorMessage = err.response !== undefined ? err.response.data.Message : "Invalid Data 12 1"
+                                        let errorMessage = err.response !== undefined ? err.response.data.Message : "Invalid Data"
                                         let invoiceDetails = {}
                                         invoiceDetails.registrationId = work.registrationId;
                                         invoiceDetails.corrigoProWorkOrderId = workOrderId
                                         invoiceDetails.errorMessage = errorMessage
                                         invoiceDetails.cronJobId = cronJobsDetails._id;
-                                        // invoiceDetails.status = "error";
+                                        invoiceDetails.status = "error";
                                         await corrigoProInvoiceModel.create(invoiceDetails)
                                         corrigoPullInvoicesCount++
                                     }
@@ -381,19 +381,16 @@ async function invoicesIntegrations() {
                                         }
                                     }
                                     catch (err) {
-                                        serviceChannelInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data 12"
+                                        serviceChannelInvoices.registrationId = invoice.registrationId
+                                        serviceChannelInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
+                                        serviceChannelInvoices.status = "error"
+                                        serviceChannelInvoices.cronJobId = cronJobsDetails._id
+                                        serviceChannelInvoices.MessageId = invoice.MessageId
+                                        serviceChannelInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                         if (!SC_invoices) {
-                                            console.log('SC_Invoices In If Condition')
-                                            serviceChannelInvoices.registrationId = invoice.registrationId
-                                            serviceChannelInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
-                                            // serviceChannelInvoices.status = "error"
-                                            serviceChannelInvoices.cronJobId = cronJobsDetails._id
-                                            serviceChannelInvoices.MessageId = invoice.MessageId
-                                            // serviceChannelInvoices.MessageId = "invoice exist 1"
                                             await serviceChannelInvoiceModel.create(serviceChannelInvoices)
                                             serviceChannelInvoicesPushCount++
                                         } else {
-                                            console.log('SC_Invoices In else Condition')
                                             let SCInvoice = await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                                 {
                                                     corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
@@ -473,10 +470,10 @@ async function invoicesIntegrations() {
                                     catch (err) {
                                         quickBooksInvoices.registrationId = invoice.registrationId
                                         quickBooksInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
-                                        // quickBooksInvoices.status = "error"
+                                        quickBooksInvoices.status = "error"
                                         quickBooksInvoices.cronJobId = cronJobsDetails._id
                                         quickBooksInvoices.MessageId = invoice.MessageId
-                                        quickBooksInvoices.errorMessage = err.response !== undefined ? err.response.data.fault.error[0].message : "Invalid Data 10"
+                                        quickBooksInvoices.errorMessage = err.response !== undefined ? err.response.data.fault.error[0].message : "Invalid Data"
                                         if (!QB_invoices) {
                                             await quickBooksInvoiceModel.create(quickBooksInvoices)
                                             quickBooksInvoicesPushCount++
