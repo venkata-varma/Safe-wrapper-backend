@@ -391,10 +391,9 @@ async function invoicesUpdate() {
                                             await serviceChannelInvoiceModel.create(serviceChannelInvoices)
                                             serviceChannelInvoicesPushCount++
                                         } else {
-                                            await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
+                                            let SCInvoice = await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId },
                                                 {
                                                     corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
-                                                    status:"completed",
                                                     errorMessage: serviceChannelInvoices.errorMessage
                                                 }, { new: true, upsert: true })
                                         }
