@@ -381,13 +381,13 @@ async function invoicesIntegrations() {
                                         }
                                     }
                                     catch (err) {
-                                        serviceChannelInvoices.registrationId = invoice.registrationId
-                                        serviceChannelInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
-                                        serviceChannelInvoices.status = "error"
-                                        serviceChannelInvoices.cronJobId = cronJobsDetails._id
-                                        serviceChannelInvoices.MessageId = invoice.MessageId
                                         serviceChannelInvoices.errorMessage = err.response !== undefined ? err.response.data.ErrorMessage : "Invalid Data"
                                         if (!SC_invoices) {
+                                            serviceChannelInvoices.registrationId = invoice.registrationId
+                                            serviceChannelInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
+                                            serviceChannelInvoices.status = "error"
+                                            serviceChannelInvoices.cronJobId = cronJobsDetails._id
+                                            serviceChannelInvoices.MessageId = invoice.MessageId
                                             await serviceChannelInvoiceModel.create(serviceChannelInvoices)
                                             serviceChannelInvoicesPushCount++
                                         } else {
