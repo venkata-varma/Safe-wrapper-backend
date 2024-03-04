@@ -37,7 +37,7 @@ functions:
     timeout: 899
     events:
       - schedule:
-          rate: rate(1 minute)
+          rate: rate(15 minutes)
 plugins:
   # - serverless-http
   - serverless-offline
