@@ -361,7 +361,7 @@ async function invoicesIntegrations() {
                                         serviceChannelInvoices.corrigoProWorkOrderId = invoice.corrigoProWorkOrderId
                                         serviceChannelInvoices.cronJobId = cronJobsDetails._id
                                         serviceChannelInvoices.MessageId = invoice.MessageId
-                                        serviceChannelInvoices.serviceChannelInvoiceNumber = date
+                                        serviceChannelInvoices.serviceChannelInvoiceNumber = invoiceResponse.data.Id
                                         serviceChannelInvoices.invoiceDetails = invoiceSC
                                         serviceChannelInvoices.errorMessage = null
                                         serviceChannelInvoices.status = "completed"
@@ -373,7 +373,7 @@ async function invoicesIntegrations() {
                                             await serviceChannelInvoiceModel.findOneAndUpdate({ corrigoProWorkOrderId: invoice.corrigoProWorkOrderId, registrationId: invoice.registrationId }, {
                                                 corrigoProWorkOrderId: invoice.corrigoProWorkOrderId,
                                                 MessageId: invoice.MessageId,
-                                                serviceChannelInvoiceNumber: invoiceResponse.data.id,
+                                                serviceChannelInvoiceNumber: invoiceResponse.data.Id,
                                                 invoiceDetails: invoiceSC,
                                                 status: "completed",
                                                 errorMessage: null,
