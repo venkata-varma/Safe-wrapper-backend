@@ -648,7 +648,7 @@ exports.getInvoicesByRegistraionId = asyncWrapper(async (req, res) => {
 exports.getLatestCronJobs = asyncWrapper(async (req, res) => {
     const { registrationId } = req.params
 
-    const latestCronJobs = await cronJobsModel.find({ registrationId }).sort({ _id: -1 }).limit(20);
+    const latestCronJobs = await cronJobsModel.find({ registrationId }).sort({ _id: -1 }).limit(20).lean();
     // const totalCronJobsCount = totalCronJobs.length;
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -663,11 +663,11 @@ exports.getStatastics = asyncWrapper(async (req, res) => {
     const { registrationId } = req.params
     const cronjobDetails = await cronJobsModel.find({ registrationId });
     const cronJobIds = cronjobDetails.map(({ _id }) => _id);
-    const totalCorrigoProWorkOrders = await workOrderModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] });
+    const totalCorrigoProWorkOrders = await workOrderModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
     // console.log('totalCorrigoProWorkOrders:==',totalCorrigoProWorkOrders)
-    const totalServiceChannelWorkOrders = await serviceChannelWorkOrdersModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] });
-    const usersCount = await usersModel.find({ registrationId });
-    const cronjobsCount = await cronJobsModel.find({ registrationId });
+    const totalServiceChannelWorkOrders = await serviceChannelWorkOrdersModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
+    const usersCount = await usersModel.find({ registrationId }).lean();
+    const cronjobsCount = await cronJobsModel.find({ registrationId }).lean();
     const totalIntegrations = await integrationsModel.find({ registrationId }).lean();
     const totalInvoices = await corrigoProInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
     const service_channel_invoices = await serviceChannelInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
@@ -735,20 +735,20 @@ exports.integrations = asyncWrapper(async (req, res) => {
 
 exports.getsingleInegration = asyncWrapper(async (req, res) => {
     const { integrationId } = req.params;
-    const integrationDetails = await integrationsModel.findById(integrationId);
-    const configDetails = await configurationModel.find({ integrationId })
+    const integrationDetails = await integrationsModel.findById(integrationId).lean();
+    const configDetails = await configurationModel.find({ integrationId }).lean();
     
-    const cronjobDetails = await cronJobsModel.find({ integrationId });
+    const cronjobDetails = await cronJobsModel.find({ integrationId }).lean();
     const cronJobIds = cronjobDetails.map(({ _id }) => _id);
     let ServiceProvidersWorkOrders,ServiceProvidersInvoices,serviceProvidersWorkOrderslength,serviceprovidersInvoiceslength
     for (let config of configDetails) {
         if (config.config_integration_type === 'service-channel') {
-            ServiceProvidersWorkOrders = await serviceChannelWorkOrdersModel.find({ "cronJobId": { $in: cronJobIds } });
-            ServiceProvidersInvoices = await serviceChannelInvoiceModel.find({ "cronJobId": { $in: cronJobIds } });
+            ServiceProvidersWorkOrders = await serviceChannelWorkOrdersModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
+            ServiceProvidersInvoices = await serviceChannelInvoiceModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
             serviceProvidersWorkOrderslength = ServiceProvidersWorkOrders.length
         }
         if (config.config_integration_type === 'quick-books') {
-            ServiceProvidersInvoices = await quickBooksInvoiceModel.find({ "cronJobId": { $in: cronJobIds } })
+            ServiceProvidersInvoices = await quickBooksInvoiceModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
         }
     }
     if(ServiceProvidersWorkOrders === undefined ){
@@ -762,9 +762,9 @@ exports.getsingleInegration = asyncWrapper(async (req, res) => {
         serviceprovidersInvoiceslength = ServiceProvidersInvoices.length
     }
 
-    const CPDWorkOrders = await workOrderModel.find({ "cronJobId": { $in: cronJobIds } });
-    const CPDInvoices = await corrigoProInvoiceModel.find({ "cronJobId": { $in: cronJobIds } });
-    const settingsDetails = await settingsModel.find({ integrationId })
+    const CPDWorkOrders = await workOrderModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
+    const CPDInvoices = await corrigoProInvoiceModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
+    const settingsDetails = await settingsModel.find({ integrationId }).lean();
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_INTEGRATIONS,
