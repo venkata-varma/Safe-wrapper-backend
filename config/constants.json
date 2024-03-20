@@ -20,6 +20,7 @@
     "MESSAGE_SETTINGS_DETAILS":"Settings created successfully.",
     "MESSAGE_SETTINGS_DETAILS_UPDATE":"Settings updated successfully.",
     "MESSAGE_INVALID":"Invalid Credentials.",
+    "MESSAGE_INTEGRATION_DETAILS":"Integration details.",
     "MESSAGE_CRON_MANUAL":"We have retrieved the most recent records and continued with the integration process.",
     "MESSAGE_STATASTICS":"All Statastics",
     "MESSAGE_CRON_WORKORDERS":"All cronjob Work orders.",

@@ -889,3 +889,39 @@ exports.editSettingsByIntegrationId = asyncWrapper(async (req, res) => {
     })
 
 });
+
+exports.getindIvidualWorkOrderAndInvoiceDetials = asyncWrapper(async (req, res) => {
+    const registrationId = req.params.registrationId
+    let CPD_TO_SC_WO = []
+    const corrigoProWorkOrders = await workOrderModel.find({registrationId: registrationId}).lean()
+
+    for(let workOrder of corrigoProWorkOrders){
+        const serviceChannelWorkOrders = await serviceChannelWorkOrdersModel.findOne({WorkOrderId:workOrder.workOrders.WorkOrderId}).lean();
+        let SC_workOrders = {...serviceChannelWorkOrders.workOrders}
+        SC_workOrders.serviceChannelWorkOrderId = serviceChannelWorkOrders.serviceChannelWorkOrderId
+        CPD_TO_SC_WO.push({
+            corrigoProWorkOrders:workOrder.workOrders,
+            serviceChannelWorkOrders:SC_workOrders
+        });
+    }
+    let CPD_TO_SC_IN = []
+    let CPD_TO_QB_IN = []
+    const corrigoProInvoices = await corrigoProInvoiceModel.find({registrationId: registrationId}).lean()
+    for(let invoice of corrigoProInvoices){
+        let ServiceChannelInvoices = await serviceChannelInvoiceModel.findOne({corrigoProWorkOrderId:invoice.corrigoProWorkOrderId}).lean();
+        CPD_TO_SC_IN.push({
+            corrigoProInvoices:invoice.invoiceDetails,
+            serviceChannelInvoices:ServiceChannelInvoices.invoiceDetails
+        });
+        let quick_books_invoices = await quickBooksInvoiceModel.findOne({corrigoProWorkOrderId:invoice.corrigoProWorkOrderId}).lean();
+        CPD_TO_QB_IN.push({
+            corrigoProInvoices:invoice.invoiceDetails,
+            quickBooksInvoiceDetails:quick_books_invoices.quickBooksInvoiceDetails
+        })
+    }
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS,
+        data: {CPD_TO_SC_WO, CPD_TO_SC_IN, CPD_TO_QB_IN}
+    })
+});

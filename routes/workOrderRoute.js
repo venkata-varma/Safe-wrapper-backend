@@ -28,6 +28,7 @@ router.get('/get-single-integration/:integrationId',workOrderControllers.getsing
 router.get('/get-latest-workOrders/:integrationId/:registrationId',workOrderControllers.latestWorkOrders);
 router.get('/get-workorders-by-registrationId/:registrationId',workOrderControllers.getAWorkOrdersByRegistrationId);
 router.get('/get-invoices-by-registrationId/:registrationId',workOrderControllers.getInvoicesByRegistraionId)
+router.get('/get-workorders-invoices-details/:registrationId',workOrderControllers.getindIvidualWorkOrderAndInvoiceDetials)
 router.patch('/delete-integration/:integrationId',workOrderControllers.deleteIntegration);
 router.patch('/edit-integration-by-integrationId/:integrationId',workOrderControllers.editIntegration);
 router.patch('/edit-congurations-by-integrationId/:integrationId/:configurationId',workOrderControllers.editConfigurationByIntegrationId);
