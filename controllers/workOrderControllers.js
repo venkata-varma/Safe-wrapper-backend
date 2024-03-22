@@ -14,6 +14,7 @@ const asyncWrapper = require('../middleware/asyncWrapper');
 const corrigoProInvoiceModel = require('../models/corrigoProInvoiceModel');
 const serviceChannelInvoiceModel = require('../models/serviceChannelInvoiceModel');
 const quickBooksInvoiceModel = require('../models/quickBooksInvoiceModel');
+const workOrdersAndInvoicesKeysModel = require('../models/workOrdersAndInvoicesKeysModel');
 
 
 
@@ -930,3 +931,23 @@ exports.getAllCorrigoProAndQuickBooksInvoicesKeys = asyncWrapper(async (req, res
         data: {invoices}
     })
 });
+
+exports.workordersAndInvoicesKeys = asyncWrapper(async(req,res)=>{
+    const {integrationId,type} = req.params
+    const {registrationId,userId,keys,typeOforder} = req.body
+    req.body.integrationId = integrationId
+    req.body.typeOfService = type
+    let savedkeys
+    const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId, $or:[{typeOforder:"invoices"},{typeOforder:"work-orders"}]});
+    if(existingworkOrderskeys){
+        savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate(req.body,{new:true, upsert:true});
+    }
+    else{
+        savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
+    }
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_SAVE_KEYS,
+        data: {savedkeys}
+    })
+})

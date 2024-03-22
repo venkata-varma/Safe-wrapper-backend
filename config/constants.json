@@ -30,7 +30,8 @@
     "MESSAGE_DELETE_INTEGRATION":"Integration deleted successfully.",
     "MESSAGE_UPDATE_INTEGRATION":"Integration details updated successfully.",
     "MESSAGE_WORKORDERS":"All work orders",
-    "MESSAGE_INVOICES":"All invoices"
+    "MESSAGE_INVOICES":"All invoices",
+    "MESSAGE_SAVE_KEYS":"Successfully saved."
 },
 
 "statusCodes": {
