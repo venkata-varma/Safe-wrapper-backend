@@ -891,7 +891,7 @@ exports.editSettingsByIntegrationId = asyncWrapper(async (req, res) => {
 });
 
 exports.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys = asyncWrapper(async (req, res) => {
-    let CPD_TO_SC_WO = [
+    let workOrders = [
         ["WorkOrderId","orderNumber"],
         ["Status","Status"],
         ["Created","ScheduledDate"],
@@ -899,7 +899,7 @@ exports.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys = asyncWrappe
         ["BranchId","StoreId"],
         ["PriorityName","Priority"]
     ]
-    let CPD_TO_SC_IN = [
+    let invoices = [
         ["InvoiceNumber","InvoiceNumber"],
         ["Description","InvoiceText"],
         ["ConcurrencyId","WoIdentifier"],
@@ -909,12 +909,12 @@ exports.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys = asyncWrappe
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS,
-        data: {CPD_TO_SC_WO, CPD_TO_SC_IN}
+        data: {workOrders, invoices}
     })
 });
 
 exports.getAllCorrigoProAndQuickBooksInvoicesKeys = asyncWrapper(async (req, res) => {
-    let CPD_TO_QB_IN = [
+    let invoices = [
         ["InvoiceNumber","Id"],
         ["Description","DetailType"],
         ["ConcurrencyId","DocNumber"],
@@ -927,6 +927,6 @@ exports.getAllCorrigoProAndQuickBooksInvoicesKeys = asyncWrapper(async (req, res
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS,
-        data: {CPD_TO_QB_IN}
+        data: {invoices}
     })
 });
