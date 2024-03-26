@@ -739,17 +739,17 @@ exports.getsingleInegration = asyncWrapper(async (req, res) => {
     const integrationDetails = await integrationsModel.findById(integrationId).lean();
     const configDetails = await configurationModel.find({ integrationId }).lean();
     
-    const cronjobDetails = await cronJobsModel.find({ integrationId }).sort({_id:-1}).limit(20).lean();
+    const cronjobDetails = await cronJobsModel.find({ integrationId }).sort({_id:1}).limit(20).lean();
     const cronJobIds = cronjobDetails.map(({ _id }) => _id);
     let ServiceProvidersWorkOrders,ServiceProvidersInvoices,serviceProvidersWorkOrderslength,serviceprovidersInvoiceslength
     for (let config of configDetails) {
         if (config.config_integration_type === 'service-channel') {
-            ServiceProvidersWorkOrders = await serviceChannelWorkOrdersModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
-            ServiceProvidersInvoices = await serviceChannelInvoiceModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
+            ServiceProvidersWorkOrders = await serviceChannelWorkOrdersModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
+            ServiceProvidersInvoices = await serviceChannelInvoiceModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
             serviceProvidersWorkOrderslength = ServiceProvidersWorkOrders.length
         }
         if (config.config_integration_type === 'quick-books') {
-            ServiceProvidersInvoices = await quickBooksInvoiceModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
+            ServiceProvidersInvoices = await quickBooksInvoiceModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
         }
     }
     if(ServiceProvidersWorkOrders === undefined ){
@@ -763,8 +763,8 @@ exports.getsingleInegration = asyncWrapper(async (req, res) => {
         serviceprovidersInvoiceslength = ServiceProvidersInvoices.length
     }
 
-    const CPDWorkOrders = await workOrderModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
-    const CPDInvoices = await corrigoProInvoiceModel.find({ "cronJobId": { $in: cronJobIds } }).lean();
+    const CPDWorkOrders = await workOrderModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
+    const CPDInvoices = await corrigoProInvoiceModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
     const settingsDetails = await settingsModel.find({ integrationId }).lean();
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
