@@ -892,43 +892,53 @@ exports.editSettingsByIntegrationId = asyncWrapper(async (req, res) => {
 });
 
 exports.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys = asyncWrapper(async (req, res) => {
-    let workOrders = [
-        ["WorkOrderId","orderNumber"],
-        ["Status","Status"],
-        ["Created","ScheduledDate"],
-        ["Category","Category"],
-        ["BranchId","StoreId"],
-        ["PriorityName","Priority"]
-    ]
-    let invoices = [
-        ["InvoiceNumber","InvoiceNumber"],
-        ["Description","InvoiceText"],
-        ["ConcurrencyId","WoIdentifier"],
-        ["TotalAmount","InvoiceTotal"],
-        ["LineItems","InvoiceAmountsDetails"]
-    ]
+    // let workOrders = [
+    //     ["WorkOrderId","orderNumber"],
+    //     ["Status","Status"],
+    //     ["Created","ScheduledDate"],
+    //     ["Category","Category"],
+    //     ["BranchId","StoreId"],
+    //     ["PriorityName","Priority"]
+    // ]
+    // let invoices = [
+    //     ["InvoiceNumber","InvoiceNumber"],
+    //     ["Description","InvoiceText"],
+    //     ["ConcurrencyId","WoIdentifier"],
+    //     ["TotalAmount","InvoiceTotal"],
+    //     ["LineItems","InvoiceAmountsDetails"]
+    // ]
+
+    const {integrationId} = req.params
+
+    const keys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId});
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS,
-        data: {workOrders, invoices}
+        data: keys
     })
 });
 
 exports.getAllCorrigoProAndQuickBooksInvoicesKeys = asyncWrapper(async (req, res) => {
-    let invoices = [
-        ["InvoiceNumber","Id"],
-        ["Description","DetailType"],
-        ["ConcurrencyId","DocNumber"],
-        ["TotalAmount","TotalAmt"],
-        ["LineItems","Line"],
-        ["InvoiceDate","CreateTime"],
-        ["Currency","CurrencyRef"]
-    ]
+    // let invoices = [
+    //     ["InvoiceNumber","Id"],
+    //     ["Description","DetailType"],
+    //     ["ConcurrencyId","DocNumber"],
+    //     ["TotalAmount","TotalAmt"],
+    //     ["LineItems","Line"],
+    //     ["InvoiceDate","CreateTime"],
+    //     ["Currency","CurrencyRef"]
+    // ]
+
+    const {integrationId} = req.params
+
+    const keys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId});
+
     
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS,
-        data: {invoices}
+        data: keys
     })
 });
 
@@ -938,9 +948,10 @@ exports.workordersAndInvoicesKeys = asyncWrapper(async(req,res)=>{
     req.body.integrationId = integrationId
     req.body.typeOfService = type
     let savedkeys
-    const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId, $or:[{typeOforder:"invoices"},{typeOforder:"work-orders"}]});
+    const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId});
+    console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
     if(existingworkOrderskeys){
-        savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate(req.body,{new:true, upsert:true});
+        savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({integrationId:integrationId},req.body,{new:true, upsert:true});
     }
     else{
         savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);

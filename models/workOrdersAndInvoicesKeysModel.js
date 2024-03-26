@@ -17,11 +17,6 @@ const workOrdersAndInvoicesKeysSchema = mongoose.Schema({
         ref:"user",
         default:null
     },
-    typeOforder:{
-        type:String,
-        enum:['work-orders','invoices'],
-        default:""
-    },
     typeOfService:{
         type:String,
         default:null

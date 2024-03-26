@@ -30,8 +30,8 @@ router.get('/get-single-integration/:integrationId',workOrderControllers.getsing
 router.get('/get-latest-workOrders/:integrationId/:registrationId',workOrderControllers.latestWorkOrders);
 router.get('/get-workorders-by-registrationId/:registrationId',workOrderControllers.getAWorkOrdersByRegistrationId);
 router.get('/get-invoices-by-registrationId/:registrationId',workOrderControllers.getInvoicesByRegistraionId)
-router.get('/get-CPD-SC-workorders-invoices-details',workOrderControllers.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys)
-router.get('/get-CPD-QB-invoices-details',workOrderControllers.getAllCorrigoProAndQuickBooksInvoicesKeys)
+router.get('/get-CPD-SC-workorders-invoices-details/:integrationId',workOrderControllers.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys)
+router.get('/get-CPD-QB-invoices-details/:integrationId',workOrderControllers.getAllCorrigoProAndQuickBooksInvoicesKeys)
 
 router.patch('/delete-integration/:integrationId',workOrderControllers.deleteIntegration);
 router.patch('/edit-integration-by-integrationId/:integrationId',workOrderControllers.editIntegration);
