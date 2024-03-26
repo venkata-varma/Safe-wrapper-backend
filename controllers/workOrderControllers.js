@@ -739,7 +739,7 @@ exports.getsingleInegration = asyncWrapper(async (req, res) => {
     const integrationDetails = await integrationsModel.findById(integrationId).lean();
     const configDetails = await configurationModel.find({ integrationId }).lean();
     
-    const cronjobDetails = await cronJobsModel.find({ integrationId }).lean();
+    const cronjobDetails = await cronJobsModel.find({ integrationId }).sort({_id:-1}).limit(20).lean();
     const cronJobIds = cronjobDetails.map(({ _id }) => _id);
     let ServiceProvidersWorkOrders,ServiceProvidersInvoices,serviceProvidersWorkOrderslength,serviceprovidersInvoiceslength
     for (let config of configDetails) {
