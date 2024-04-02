@@ -668,7 +668,7 @@ exports.getStatastics = asyncWrapper(async (req, res) => {
     // console.log('totalCorrigoProWorkOrders:==',totalCorrigoProWorkOrders)
     const totalServiceChannelWorkOrders = await serviceChannelWorkOrdersModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
     const usersCount = await usersModel.find({ registrationId }).lean();
-    const cronjobsCount = await cronJobsModel.find({ registrationId }).lean();
+    // const cronjobsCount = await cronJobsModel.find({ registrationId }).lean();
     const totalIntegrations = await integrationsModel.find({ registrationId }).lean();
     const totalInvoices = await corrigoProInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
     const service_channel_invoices = await serviceChannelInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
@@ -693,7 +693,7 @@ exports.getStatastics = asyncWrapper(async (req, res) => {
                 serviceChannelInvoicesCount: service_channel_invoices.length,
                 quickBooksInvoicesCount: quick_books_invoices.length,
                 usersCount: usersCount.length,
-                cronjobsCount: cronjobsCount.length,
+                cronjobsCount: cronjobDetails.length,
                 totalIntegrationscount: totalIntegrations.length,
                 configurationsCount: configCount.length,
                 integrations
