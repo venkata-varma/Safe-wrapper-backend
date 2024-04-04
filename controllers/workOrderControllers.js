@@ -660,19 +660,63 @@ exports.getLatestCronJobs = asyncWrapper(async (req, res) => {
 
 });
 
+// exports.getStatastics = asyncWrapper(async (req, res) => {
+//     const { registrationId } = req.params
+//     const cronjobDetails = await cronJobsModel.find({ registrationId },{_id:1});
+//     const cronJobIds = cronjobDetails.map(({ _id }) => _id);
+//     const totalCorrigoProWorkOrders = await workOrderModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
+//     // console.log('totalCorrigoProWorkOrders:==',totalCorrigoProWorkOrders)
+//     const totalServiceChannelWorkOrders = await serviceChannelWorkOrdersModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
+//     const usersCount = await usersModel.find({ registrationId }).lean();
+//     // const cronjobsCount = await cronJobsModel.find({ registrationId }).lean();
+//     const totalIntegrations = await integrationsModel.find({ registrationId }).lean();
+//     const totalInvoices = await corrigoProInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
+//     const service_channel_invoices = await serviceChannelInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
+//     const quick_books_invoices = await quickBooksInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
+//     let configCount = []
+//     let integrations = []
+
+//     for (const integration of totalIntegrations) {
+//         const configDetails = await configurationModel.find({ registrationId, integrationId: integration._id }, { config_integration_type: 1, registrationId: 1, status: 1 }).populate('registrationId');
+//         integration.configDetails = configDetails
+//         integrations.push(integration);
+//         configCount.push(...configDetails)
+//     }
+//     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+//         status: customConstants.messages.MESSAGE_SUCCESS,
+//         message: customConstants.messages.MESSAGE_CRON_MANUAL,
+//         data: {
+//             getStatastics: {
+//                 totalCorrigoProWorkOrders: totalCorrigoProWorkOrders.length,
+//                 totalServiceChannelWorkOrders: totalServiceChannelWorkOrders.length,
+//                 corrigoProInvoicesCount: totalInvoices.length,
+//                 serviceChannelInvoicesCount: service_channel_invoices.length,
+//                 quickBooksInvoicesCount: quick_books_invoices.length,
+//                 usersCount: usersCount.length,
+//                 cronjobsCount: cronjobDetails.length,
+//                 totalIntegrationscount: totalIntegrations.length,
+//                 configurationsCount: configCount.length,
+//                 integrations
+
+//             }
+//         }
+//     })
+
+
+// });
+
+
 exports.getStatastics = asyncWrapper(async (req, res) => {
     const { registrationId } = req.params
-    const cronjobDetails = await cronJobsModel.find({ registrationId },{_id:1}).limit(1000);
-    const cronJobIds = cronjobDetails.map(({ _id }) => _id);
-    const totalCorrigoProWorkOrders = await workOrderModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
+    const cronjobDetails = await cronJobsModel.countDocuments({ registrationId });
+    const totalCorrigoProWorkOrders = await workOrderModel.find({ registrationId }).lean();
     // console.log('totalCorrigoProWorkOrders:==',totalCorrigoProWorkOrders)
-    const totalServiceChannelWorkOrders = await serviceChannelWorkOrdersModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
+    const totalServiceChannelWorkOrders = await serviceChannelWorkOrdersModel.find({ registrationId }).lean();
     const usersCount = await usersModel.find({ registrationId }).lean();
-    // const cronjobsCount = await cronJobsModel.find({ registrationId }).lean();
     const totalIntegrations = await integrationsModel.find({ registrationId }).lean();
-    const totalInvoices = await corrigoProInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
-    const service_channel_invoices = await serviceChannelInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
-    const quick_books_invoices = await quickBooksInvoiceModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
+    const totalInvoices = await corrigoProInvoiceModel.find({ registrationId }).lean();
+    const service_channel_invoices = await serviceChannelInvoiceModel.find({ registrationId }).lean();
+    const quick_books_invoices = await quickBooksInvoiceModel.find({ registrationId }).lean();
     let configCount = []
     let integrations = []
 
@@ -693,7 +737,7 @@ exports.getStatastics = asyncWrapper(async (req, res) => {
                 serviceChannelInvoicesCount: service_channel_invoices.length,
                 quickBooksInvoicesCount: quick_books_invoices.length,
                 usersCount: usersCount.length,
-                cronjobsCount: cronjobDetails.length,
+                cronjobsCount: cronjobDetails,
                 totalIntegrationscount: totalIntegrations.length,
                 configurationsCount: configCount.length,
                 integrations
