@@ -662,7 +662,7 @@ exports.getLatestCronJobs = asyncWrapper(async (req, res) => {
 
 exports.getStatastics = asyncWrapper(async (req, res) => {
     const { registrationId } = req.params
-    const cronjobDetails = await cronJobsModel.find({ registrationId },{_id:1});
+    const cronjobDetails = await cronJobsModel.find({ registrationId },{_id:1}).limit(1000);
     const cronJobIds = cronjobDetails.map(({ _id }) => _id);
     const totalCorrigoProWorkOrders = await workOrderModel.find({ $and: [{ registrationId }, { "cronJobId": { $in: cronJobIds } }] }).lean();
     // console.log('totalCorrigoProWorkOrders:==',totalCorrigoProWorkOrders)
