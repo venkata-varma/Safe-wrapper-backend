@@ -24,7 +24,7 @@ router.get('/get-latest-cronjobs/:registrationId',workOrderControllers.getLatest
 router.get('/get-statastics/:registrationId',workOrderControllers.getStatastics);
 router.get('/get-cron-jobs/:registrationId/:cronJobId',workOrderControllers.getCronJobsWorkOrders);
 router.post('/integrations',workOrderControllers.integrations);
-router.post('/workorders-invoices-keys/:registrationId/:type',workOrderControllers.saveHotKeys);
+router.post('/workorders-invoices-keys/:integrationId/:type',workOrderControllers.saveHotKeys);
 
 router.get('/get-single-integration/:integrationId',workOrderControllers.getsingleInegration);
 router.get('/get-latest-workOrders/:integrationId/:registrationId',workOrderControllers.latestWorkOrders);

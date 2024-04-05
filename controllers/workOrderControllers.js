@@ -967,39 +967,59 @@ exports.getWorkOrdersAndInvoicesKeys = asyncWrapper(async (req, res) => {
 });
 
 
-exports.saveHotKeys = asyncWrapper(async (req, res) => {
-    const { registrationId, type } = req.params
-    const { integrationId, userId, keys, typeOforder } = req.body
-    req.body.registrationId = registrationId
+// exports.saveHotKeys = asyncWrapper(async (req, res) => {
+//     const { registrationId, type } = req.params
+//     const { integrationId, userId, keys, typeOforder } = req.body
+//     req.body.registrationId = registrationId
+//     req.body.typeOfService = type
+//     let savedkeys
+//     if (type === 'quickbooks') {
+//         const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({ registrationId: registrationId, typeOfService: "quickbooks" });
+//         // console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
+//         if (existingworkOrderskeys) {
+//             savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({ registrationId: registrationId }, req.body, { new: true, upsert: true });
+//         }
+//         else {
+//             savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
+//         }
+//     }
+//     else if (type === 'servicechannel') {
+//         const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({ registrationId: registrationId, typeOfService: "servicechannel" });
+//         // console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
+//         if (existingworkOrderskeys) {
+//             savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({ registrationId: registrationId }, req.body, { new: true, upsert: true });
+//         }
+//         else {
+//             savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
+//         }
+//     }
+
+//     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+//         status: customConstants.messages.MESSAGE_SUCCESS,
+//         message: customConstants.messages.MESSAGE_SAVE_KEYS,
+//         data: { savedkeys }
+//     })
+// });
+exports.saveHotKeys = asyncWrapper(async(req,res)=>{
+    const {integrationId,type} = req.params
+    const {registrationId,userId,keys,typeOforder} = req.body
+    req.body.integrationId = integrationId
     req.body.typeOfService = type
     let savedkeys
-    if (type === 'quickbooks') {
-        const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({ registrationId: registrationId, typeOfService: "quickbooks" });
-        // console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
-        if (existingworkOrderskeys) {
-            savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({ registrationId: registrationId }, req.body, { new: true, upsert: true });
-        }
-        else {
-            savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
-        }
+    const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId});
+    console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
+    if(existingworkOrderskeys){
+        savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({integrationId:integrationId},req.body,{new:true, upsert:true});
     }
-    else if (type === 'servicechannel') {
-        const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({ registrationId: registrationId, typeOfService: "servicechannel" });
-        // console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
-        if (existingworkOrderskeys) {
-            savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({ registrationId: registrationId }, req.body, { new: true, upsert: true });
-        }
-        else {
-            savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
-        }
+    else{
+        savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
     }
-
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SAVE_KEYS,
-        data: { savedkeys }
+        data: {savedkeys}
     })
-});
+})
 
 exports.getAllHotKeys = asyncWrapper(async (req, res) => {
     let hotKeys = {}
