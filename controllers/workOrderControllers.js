@@ -782,33 +782,33 @@ exports.getsingleInegration = asyncWrapper(async (req, res) => {
     const { integrationId } = req.params;
     const integrationDetails = await integrationsModel.findById(integrationId).lean();
     const configDetails = await configurationModel.find({ integrationId }).lean();
-    
-    const cronjobDetails = await cronJobsModel.find({ integrationId }).sort({_id:1}).limit(20).lean();
+
+    const cronjobDetails = await cronJobsModel.find({ integrationId }).sort({ _id: 1 }).limit(20).lean();
     const cronJobIds = cronjobDetails.map(({ _id }) => _id);
-    let ServiceProvidersWorkOrders,ServiceProvidersInvoices,serviceProvidersWorkOrderslength,serviceprovidersInvoiceslength
+    let ServiceProvidersWorkOrders, ServiceProvidersInvoices, serviceProvidersWorkOrderslength, serviceprovidersInvoiceslength
     for (let config of configDetails) {
         if (config.config_integration_type === 'service-channel') {
-            ServiceProvidersWorkOrders = await serviceChannelWorkOrdersModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
-            ServiceProvidersInvoices = await serviceChannelInvoiceModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
+            ServiceProvidersWorkOrders = await serviceChannelWorkOrdersModel.find({ $or: [{ "cronJobId": { $in: cronJobIds } }, { registrationId: integrationDetails.registrationId }] }).lean();
+            ServiceProvidersInvoices = await serviceChannelInvoiceModel.find({ $or: [{ "cronJobId": { $in: cronJobIds } }, { registrationId: integrationDetails.registrationId }] }).lean();
             serviceProvidersWorkOrderslength = ServiceProvidersWorkOrders.length
         }
         if (config.config_integration_type === 'quick-books') {
-            ServiceProvidersInvoices = await quickBooksInvoiceModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
+            ServiceProvidersInvoices = await quickBooksInvoiceModel.find({ $or: [{ "cronJobId": { $in: cronJobIds } }, { registrationId: integrationDetails.registrationId }] }).lean();
         }
     }
-    if(ServiceProvidersWorkOrders === undefined ){
-    console.log("totalServiceProvidersWorkOrders:==",ServiceProvidersWorkOrders)
-    serviceProvidersWorkOrderslength = 0;
+    if (ServiceProvidersWorkOrders === undefined) {
+        console.log("totalServiceProvidersWorkOrders:==", ServiceProvidersWorkOrders)
+        serviceProvidersWorkOrderslength = 0;
     }
-    if(ServiceProvidersInvoices === undefined){
+    if (ServiceProvidersInvoices === undefined) {
         serviceprovidersInvoiceslength = 0
     }
-    else{
+    else {
         serviceprovidersInvoiceslength = ServiceProvidersInvoices.length
     }
 
-    const CPDWorkOrders = await workOrderModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
-    const CPDInvoices = await corrigoProInvoiceModel.find({$or:[{ "cronJobId": { $in: cronJobIds } },{registrationId:integrationDetails.registrationId}]}).lean();
+    const CPDWorkOrders = await workOrderModel.find({ $or: [{ "cronJobId": { $in: cronJobIds } }, { registrationId: integrationDetails.registrationId }] }).lean();
+    const CPDInvoices = await corrigoProInvoiceModel.find({ $or: [{ "cronJobId": { $in: cronJobIds } }, { registrationId: integrationDetails.registrationId }] }).lean();
     const settingsDetails = await settingsModel.find({ integrationId }).lean();
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
@@ -821,7 +821,7 @@ exports.getsingleInegration = asyncWrapper(async (req, res) => {
             configDetails, cronjobDetails,
             settingsDetails: settingsDetails,
             corrigoWorkOrders: CPDWorkOrders,
-            ServiceProvidersWorkOrders:  ServiceProvidersWorkOrders ,
+            ServiceProvidersWorkOrders: ServiceProvidersWorkOrders,
             corrigoProInvoices: CPDInvoices,
             serviceprovidersInvoices: ServiceProvidersInvoices
         }
@@ -935,7 +935,7 @@ exports.editSettingsByIntegrationId = asyncWrapper(async (req, res) => {
 
 });
 
-exports.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys = asyncWrapper(async (req, res) => {
+exports.getWorkOrdersAndInvoicesKeys = asyncWrapper(async (req, res) => {
     // let workOrders = [
     //     ["WorkOrderId","orderNumber"],
     //     ["Status","Status"],
@@ -952,6 +952,9 @@ exports.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys = asyncWrappe
     //     ["LineItems","InvoiceAmountsDetails"]
     // ]
 
+
+
+
     const {integrationId} = req.params
 
     const keys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId});
@@ -963,46 +966,293 @@ exports.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys = asyncWrappe
     })
 });
 
-exports.getAllCorrigoProAndQuickBooksInvoicesKeys = asyncWrapper(async (req, res) => {
-    // let invoices = [
-    //     ["InvoiceNumber","Id"],
-    //     ["Description","DetailType"],
-    //     ["ConcurrencyId","DocNumber"],
-    //     ["TotalAmount","TotalAmt"],
-    //     ["LineItems","Line"],
-    //     ["InvoiceDate","CreateTime"],
-    //     ["Currency","CurrencyRef"]
-    // ]
 
-    const {integrationId} = req.params
-
-    const keys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId});
-
-    
-    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS,
-        data: keys
-    })
-});
-
-exports.workordersAndInvoicesKeys = asyncWrapper(async(req,res)=>{
-    const {integrationId,type} = req.params
-    const {registrationId,userId,keys,typeOforder} = req.body
-    req.body.integrationId = integrationId
+exports.saveHotKeys = asyncWrapper(async (req, res) => {
+    const { registrationId, type } = req.params
+    const { integrationId, userId, keys, typeOforder } = req.body
+    req.body.registrationId = registrationId
     req.body.typeOfService = type
     let savedkeys
-    const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId});
-    console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
-    if(existingworkOrderskeys){
-        savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({integrationId:integrationId},req.body,{new:true, upsert:true});
+    if (type === 'quickbooks') {
+        const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({ registrationId: registrationId, typeOfService: "quickbooks" });
+        // console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
+        if (existingworkOrderskeys) {
+            savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({ registrationId: registrationId }, req.body, { new: true, upsert: true });
+        }
+        else {
+            savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
+        }
     }
-    else{
-        savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
+    else if (type === 'servicechannel') {
+        const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({ registrationId: registrationId, typeOfService: "servicechannel" });
+        // console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
+        if (existingworkOrderskeys) {
+            savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({ registrationId: registrationId }, req.body, { new: true, upsert: true });
+        }
+        else {
+            savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
+        }
     }
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SAVE_KEYS,
-        data: {savedkeys}
+        data: { savedkeys }
     })
-})
+});
+
+exports.getAllHotKeys = asyncWrapper(async (req, res) => {
+    let hotKeys = {}
+    hotKeys.CPD_workOrders_keys = [
+        'WorkOrderNumber', 'WorkOrderId',
+        'BranchId', 'Type',
+        'WorkType', 'WorkType.Category',
+        'WorkType.Id', 'WorkType.Name',
+        'WorkType.IsVisit', 'Sla',
+        'Sla.DueDate', 'Sla.OnSiteBy',
+        'Sla.AcknowledgeBy', 'Sla.PriorityId',
+        'Sla.PriorityName', 'Sla.IsEmergency',
+        'Status', 'Customer',
+        'Customer.Id', 'Customer.Name',
+        'LastUpdate', 'Created'
+    ];
+    hotKeys.CPD_invoices_keys = [
+        'Status',
+        'TotalAmount',
+        'Nte',
+        'IsPrebilled',
+        'IsValid',
+        'CustomerComment',
+        'Currency',
+        'LastUpdateDate',
+        'SubmissionDeadline',
+        'CheckNumber',
+        'PaymentAmount',
+        'PaymentDate',
+        'HasAttachments',
+        'ConcurrencyId',
+        'TaxIdPrimary',
+        'TaxIdSecondary',
+        'InvoiceNumber',
+        'InvoiceDate',
+        'ServiceDate',
+        'DiscountAmount',
+        'LineItems',
+        'LineItems.Id',
+        'LineItems.Category',
+        'LineItems.PriceListItemId',
+        'LineItems.RequestorServiceId',
+        'LineItems.PriceListItemName',
+        'LineItems.Description',
+        'LineItems.Quantity',
+        'LineItems.Rate',
+        'LineItems.Subtotal',
+        'LineItems.IsRateReadOnly',
+        'LineItems.TaxCode',
+        'registrationId',
+        'registrationId.valueOf',
+        'MessageId',
+        'corrigoProWorkOrderId',
+        'cronJobId',
+        'cronJobId.valueOf',
+        'status'
+    ];
+
+    hotKeys.SC_workOrders_keys = [
+        'id',
+        'ContractInfo',
+        'ContractInfo.StoreId',
+        'ContractInfo.TradeName',
+        'ContractInfo.ProviderId',
+        'Category',
+        'Priority',
+        'Nte',
+        'CallDate',
+        'ScheduledDate',
+        'Description',
+        'Status',
+        'Status.Primary',
+        'Status.Extended'
+    ];
+
+    hotKeys.SC_invoices_keys = [
+        'InvoiceNumber',
+        'WoIdentifier',
+        'InvoiceTax',
+        'InvoiceTotal',
+        'InvoiceText',
+        'InvoiceAmountsDetails',
+        'InvoiceAmountsDetails.LaborAmount',
+        'InvoiceAmountsDetails.MaterialAmount',
+        'InvoiceAmountsDetails.TravelAmount',
+        'InvoiceAmountsDetails.FreightAmount',
+        'InvoiceAmountsDetails.OtherAmount',
+        'InvoiceAmountsDetails.OtherDescription',
+        'InvoiceTaxesDetails',
+        'InvoiceTaxesDetails.LaborTax',
+        'InvoiceTaxesDetails.MaterialTax',
+        'InvoiceTaxesDetails.TravelTax',
+        'InvoiceTaxesDetails.FreightTax',
+        'InvoiceTaxesDetails.OtherTax'
+    ];
+
+    QB_invoices_keys = [
+        'AllowIPNPayment',
+        'AllowOnlinePayment',
+        'AllowOnlineCreditCardPayment',
+        'AllowOnlineACHPayment',
+        'domain',
+        'sparse',
+        'Id',
+        'SyncToken',
+        'MetaData',
+        'MetaData.CreateTime',
+        'MetaData.LastModifiedByRef',
+        'MetaData.LastModifiedByRef.value',
+        'MetaData.LastUpdatedTime',
+        'CustomField',
+        'DocNumber',
+        'TxnDate',
+        'CurrencyRef',
+        'CurrencyRef.value',
+        'CurrencyRef.name',
+        'LinkedTxn',
+        'Line',
+        'Line.Id',
+        'Line.LineNum',
+        'Line.Amount',
+        'Line.DetailType',
+        'Line.SalesItemLineDetail',
+        'Line.SalesItemLineDetail.ItemRef',
+        'Line.SalesItemLineDetail.ItemRef.value',
+        'Line.SalesItemLineDetail.ItemRef.name',
+        'Line.SalesItemLineDetail.ItemAccountRef',
+        'Line.SalesItemLineDetail.ItemAccountRef.value',
+        'Line.SalesItemLineDetail.ItemAccountRef.name',
+        'Line.SalesItemLineDetail.TaxCodeRef',
+        'Line.SalesItemLineDetail.TaxCodeRef.value',
+        'Line.Amount',
+        'Line.DetailType',
+        'Line.SubTotalLineDetail',
+        'TxnTaxDetail',
+        'TxnTaxDetail.TotalTax',
+        'CustomerRef',
+        'CustomerRef.value',
+        'CustomerRef.name',
+        'BillAddr',
+        'BillAddr.Id',
+        'BillAddr.Line1',
+        'BillAddr.City',
+        'BillAddr.CountrySubDivisionCode',
+        'BillAddr.PostalCode',
+        'BillAddr.Lat',
+        'BillAddr.Long',
+        'ShipAddr',
+        'ShipAddr.Id',
+        'ShipAddr.Line1',
+        'ShipAddr.City',
+        'ShipAddr.CountrySubDivisionCode',
+        'ShipAddr.PostalCode',
+        'ShipAddr.Lat',
+        'ShipAddr.Long',
+        'FreeFormAddress',
+        'ShipFromAddr',
+        'ShipFromAddr.Id',
+        'ShipFromAddr.Line1',
+        'ShipFromAddr.Line2',
+        'DueDate',
+        'TotalAmt',
+        'ApplyTaxAfterDiscount',
+        'PrintStatus',
+        'EmailStatus',
+        'Balance'
+    ];
+
+    let hotKeys_default_mappings = {
+        CPD_SC_workOrders: [
+            [
+                "WorkOrderId",
+                "Category"
+            ],
+            [
+                "Status",
+                "Status"
+            ],
+            [
+                "Created",
+                "ScheduledDate"
+            ],
+            [
+                "Category",
+                "Category"
+            ],
+            [
+                "BranchId",
+                "StoreId"
+            ],
+            [
+                "PriorityName",
+                "Priority"
+            ]
+        ],
+        CPD_SC_invoices: [
+            [
+                "InvoiceNumber",
+                "InvoiceNumber"
+            ],
+            [
+                "Description",
+                "InvoiceAmountsDetails"
+            ],
+            [
+                "ConcurrencyId",
+                "WoIdentifier"
+            ],
+            [
+                "TotalAmount",
+                "InvoiceTotal"
+            ],
+            [
+                "LineItems",
+                "InvoiceAmountsDetails"
+            ]
+        ],
+        CPD_QB_invoices: [
+            [
+                "InvoiceNumber",
+                "CreateTime"
+            ],
+            [
+                "Description",
+                "DetailType"
+            ],
+            [
+                "ConcurrencyId",
+                "DocNumber"
+            ],
+            [
+                "TotalAmount",
+                "TotalAmt"
+            ],
+            [
+                "LineItems",
+                "Line"
+            ],
+            [
+                "InvoiceDate",
+                "DocNumber"
+            ],
+            [
+                "Currency",
+                "CurrencyRef"
+            ]
+        ]
+    }
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_INTEGRATION_KEYS,
+        data: { hotKeys, hotKeys_default_mappings }
+    })
+
+});
+

@@ -24,14 +24,16 @@ router.get('/get-latest-cronjobs/:registrationId',workOrderControllers.getLatest
 router.get('/get-statastics/:registrationId',workOrderControllers.getStatastics);
 router.get('/get-cron-jobs/:registrationId/:cronJobId',workOrderControllers.getCronJobsWorkOrders);
 router.post('/integrations',workOrderControllers.integrations);
-router.post('/workorders-invoices-keys/:integrationId/:type',workOrderControllers.workordersAndInvoicesKeys);
+router.post('/workorders-invoices-keys/:registrationId/:type',workOrderControllers.saveHotKeys);
 
 router.get('/get-single-integration/:integrationId',workOrderControllers.getsingleInegration);
 router.get('/get-latest-workOrders/:integrationId/:registrationId',workOrderControllers.latestWorkOrders);
 router.get('/get-workorders-by-registrationId/:registrationId',workOrderControllers.getAWorkOrdersByRegistrationId);
 router.get('/get-invoices-by-registrationId/:registrationId',workOrderControllers.getInvoicesByRegistraionId)
-router.get('/get-CPD-SC-workorders-invoices-details/:integrationId',workOrderControllers.getAllCorrigoProAndServiceChannelWorkOrdersAndInvoicesKeys)
-router.get('/get-CPD-QB-invoices-details/:integrationId',workOrderControllers.getAllCorrigoProAndQuickBooksInvoicesKeys)
+
+router.get('/get-all-hot-workorders-invoices-keys/:integrationId',workOrderControllers.getWorkOrdersAndInvoicesKeys)
+
+router.get('/get-hot-keys',workOrderControllers.getAllHotKeys)
 
 router.patch('/delete-integration/:integrationId',workOrderControllers.deleteIntegration);
 router.patch('/edit-integration-by-integrationId/:integrationId',workOrderControllers.editIntegration);

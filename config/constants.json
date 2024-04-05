@@ -31,6 +31,7 @@
     "MESSAGE_UPDATE_INTEGRATION":"Integration details updated successfully.",
     "MESSAGE_WORKORDERS":"All work orders",
     "MESSAGE_INVOICES":"All invoices",
+    "MESSAGE_INTEGRATION_KEYS":"Integration keys.",
     "MESSAGE_SAVE_KEYS":"Successfully saved."
 },
 
