@@ -1116,7 +1116,7 @@ exports.getAllHotKeys = asyncWrapper(async (req, res) => {
         'InvoiceTaxesDetails.OtherTax'
     ];
 
-    QB_invoices_keys = [
+    hotKeys.QB_invoices_keys = [
         'AllowIPNPayment',
         'AllowOnlinePayment',
         'AllowOnlineCreditCardPayment',
