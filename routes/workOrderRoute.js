@@ -12,7 +12,7 @@ const auth = require('../middleware/authentication');
 router.post('/user-registration',workOrderControllers.validateuserRegistration,workOrderControllers.createUser)
 router.post('/user-login',workOrderControllers.validateuser)
 
-// router.use(auth)
+router.use(auth)
 router.post('/config-settings',workOrderControllers.configSettings)
 router.post('/config-integration',workOrderControllers.configIntegration)
 
