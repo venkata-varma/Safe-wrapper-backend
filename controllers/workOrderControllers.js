@@ -1004,11 +1004,8 @@ exports.saveHotKeys = asyncWrapper(async (req, res) => {
     const { integrationId, type } = req.params
     const { registrationId, userId, keys, typeOforder } = req.body
     let keysObj = {registrationId,userId,typeOfService:type,integrationId,keys}
-    // req.body.integrationId = integrationId
-    // req.body.typeOfService = type
     let savedkeys
-    // const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({ integrationId: integrationId });
-    let CPD_SC_workOrders, CPD_SC_invoices, CPD_QB_invoices
+    
     if (type == 'servicechannel') {
         await workOrdersAndInvoicesKeysModel.findOneAndDelete({integrationId: integrationId})
         savedkeys = await workOrdersAndInvoicesKeysModel.create(keysObj);
