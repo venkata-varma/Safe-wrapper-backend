@@ -1000,24 +1000,35 @@ exports.getWorkOrdersAndInvoicesKeys = asyncWrapper(async (req, res) => {
 //         data: { savedkeys }
 //     })
 // });
-exports.saveHotKeys = asyncWrapper(async(req,res)=>{
-    const {integrationId,type} = req.params
-    const {registrationId,userId,keys,typeOforder} = req.body
-    req.body.integrationId = integrationId
-    req.body.typeOfService = type
+exports.saveHotKeys = asyncWrapper(async (req, res) => {
+    const { integrationId, type } = req.params
+    const { registrationId, userId, keys, typeOforder } = req.body
+    let keysObj = {registrationId,userId,typeOfService:type,integrationId}
+    // req.body.integrationId = integrationId
+    // req.body.typeOfService = type
     let savedkeys
-    const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId});
-    console.log('existingworkOrderskeys:=====',existingworkOrderskeys)
-    if(existingworkOrderskeys){
-        savedkeys = await workOrdersAndInvoicesKeysModel.findOneAndUpdate({integrationId:integrationId},req.body,{new:true, upsert:true});
+    // const existingworkOrderskeys = await workOrdersAndInvoicesKeysModel.findOne({ integrationId: integrationId });
+    let CPD_SC_workOrders, CPD_SC_invoices, CPD_QB_invoices
+    if (type == 'servicechannel') {
+        await workOrdersAndInvoicesKeysModel.findOneAndDelete({integrationId: integrationId})
+        CPD_SC_workOrders = keys.workOrders.length > 0 ? keys.workOrders : []
+        CPD_SC_invoices = keys.invoices.length > 0 ? keys.invoices : []
+        keysObj.keys = {
+            CPD_SC_workOrders : CPD_SC_workOrders,
+            CPD_SC_invoices : CPD_SC_invoices
+        }
+        savedkeys = await workOrdersAndInvoicesKeysModel.create(keysObj);
     }
-    else{
-        savedkeys = await workOrdersAndInvoicesKeysModel.create(req.body);
+    else if (type == 'quickbooks') {
+        await workOrdersAndInvoicesKeysModel.findOneAndDelete({integrationId: integrationId})
+        CPD_QB_invoices = keys.invoices.length > 0 ? keys.invoices : []
+        keysObj.keys = {CPD_QB_invoices:CPD_QB_invoices}
+        savedkeys = await workOrdersAndInvoicesKeysModel.create(keysObj);
     }
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SAVE_KEYS,
-        data: {savedkeys}
+        data: { savedkeys }
     })
 })
 
