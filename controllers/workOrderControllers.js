@@ -1003,7 +1003,7 @@ exports.getWorkOrdersAndInvoicesKeys = asyncWrapper(async (req, res) => {
 exports.saveHotKeys = asyncWrapper(async (req, res) => {
     const { integrationId, type } = req.params
     const { registrationId, userId, keys, typeOforder } = req.body
-    let keysObj = {registrationId,userId,typeOfService:type,integrationId}
+    let keysObj = {registrationId,userId,typeOfService:type,integrationId,keys}
     // req.body.integrationId = integrationId
     // req.body.typeOfService = type
     let savedkeys
@@ -1011,18 +1011,10 @@ exports.saveHotKeys = asyncWrapper(async (req, res) => {
     let CPD_SC_workOrders, CPD_SC_invoices, CPD_QB_invoices
     if (type == 'servicechannel') {
         await workOrdersAndInvoicesKeysModel.findOneAndDelete({integrationId: integrationId})
-        CPD_SC_workOrders = keys.workOrders.length > 0 ? keys.workOrders : []
-        CPD_SC_invoices = keys.invoices.length > 0 ? keys.invoices : []
-        keysObj.keys = {
-            CPD_SC_workOrders : CPD_SC_workOrders,
-            CPD_SC_invoices : CPD_SC_invoices
-        }
         savedkeys = await workOrdersAndInvoicesKeysModel.create(keysObj);
     }
     else if (type == 'quickbooks') {
         await workOrdersAndInvoicesKeysModel.findOneAndDelete({integrationId: integrationId})
-        CPD_QB_invoices = keys.invoices.length > 0 ? keys.invoices : []
-        keysObj.keys = {CPD_QB_invoices:CPD_QB_invoices}
         savedkeys = await workOrdersAndInvoicesKeysModel.create(keysObj);
     }
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
