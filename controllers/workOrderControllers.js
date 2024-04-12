@@ -955,9 +955,9 @@ exports.getWorkOrdersAndInvoicesKeys = asyncWrapper(async (req, res) => {
 
 
 
-    const {integrationId} = req.params
+    const { integrationId } = req.params
 
-    const keys = await workOrdersAndInvoicesKeysModel.findOne({integrationId:integrationId});
+    const keys = await workOrdersAndInvoicesKeysModel.findOne({ integrationId: integrationId });
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
@@ -1003,15 +1003,15 @@ exports.getWorkOrdersAndInvoicesKeys = asyncWrapper(async (req, res) => {
 exports.saveHotKeys = asyncWrapper(async (req, res) => {
     const { integrationId, type } = req.params
     const { registrationId, userId, keys, typeOforder } = req.body
-    let keysObj = {registrationId,userId,typeOfService:type,integrationId,keys}
+    let keysObj = { registrationId, userId, typeOfService: type, integrationId, keys }
     let savedkeys
-    
+
     if (type == 'servicechannel') {
-        await workOrdersAndInvoicesKeysModel.findOneAndDelete({integrationId: integrationId})
+        await workOrdersAndInvoicesKeysModel.findOneAndDelete({ integrationId: integrationId })
         savedkeys = await workOrdersAndInvoicesKeysModel.create(keysObj);
     }
     else if (type == 'quickbooks') {
-        await workOrdersAndInvoicesKeysModel.findOneAndDelete({integrationId: integrationId})
+        await workOrdersAndInvoicesKeysModel.findOneAndDelete({ integrationId: integrationId })
         savedkeys = await workOrdersAndInvoicesKeysModel.create(keysObj);
     }
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -1037,7 +1037,6 @@ exports.getAllHotKeys = asyncWrapper(async (req, res) => {
         'LastUpdate', 'Created'
     ];
     hotKeys.CPD_invoices_keys = [
-        'Status',
         'TotalAmount',
         'Nte',
         'IsPrebilled',
@@ -1069,12 +1068,6 @@ exports.getAllHotKeys = asyncWrapper(async (req, res) => {
         'LineItems.Subtotal',
         'LineItems.IsRateReadOnly',
         'LineItems.TaxCode',
-        'registrationId',
-        'registrationId.valueOf',
-        'MessageId',
-        'corrigoProWorkOrderId',
-        'cronJobId',
-        'cronJobId.valueOf',
         'status'
     ];
 
@@ -1190,83 +1183,98 @@ exports.getAllHotKeys = asyncWrapper(async (req, res) => {
 
     let hotKeys_default_mappings = {
         CPD_SC_workOrders: [
-            [
-                "WorkOrderId",
-                "Category"
-            ],
-            [
-                "Status",
-                "Status"
-            ],
-            [
-                "Created",
-                "ScheduledDate"
-            ],
-            [
-                "Category",
-                "Category"
-            ],
-            [
-                "BranchId",
-                "StoreId"
-            ],
-            [
-                "PriorityName",
-                "Priority"
-            ]
+                ["WorkOrderNumber", "id"],
+                ["WorkOrderId", "ContractInfo"],
+                ["BranchId", "ContractInfo.StoreId"],
+                ["Type", "ContractInfo.TradeName"],
+                ["WorkType", "ContractInfo.ProviderId"],
+                ["WorkType.Category", "Category"],
+                ["WorkType.Id", "Priority"],
+                ["WorkType.Name", "Nte"],
+                ["WorkType.IsVisit", "CallDate"],
+                ["Sla", "ScheduledDate"],
+                ["Sla.DueDate", "Description"],
+                ["Sla.OnSiteBy", "Status"],
+                ["Sla.AcknowledgeBy", "Status.Primary"],
+                ["Sla.PriorityId", "Status.Extended"],
+                ["Sla.PriorityName", "Description"],
+                ["Sla.IsEmergency", "CallDate"],
+                ["Status", "Status"],
+                ["Customer", "id"],
+                ["Customer.Name", "LastUpdate"],
+                ["LastUpdate", "Created"]
         ],
+        
         CPD_SC_invoices: [
-            [
-                "InvoiceNumber",
-                "InvoiceNumber"
-            ],
-            [
-                "Description",
-                "InvoiceAmountsDetails"
-            ],
-            [
-                "ConcurrencyId",
-                "WoIdentifier"
-            ],
-            [
-                "TotalAmount",
-                "InvoiceTotal"
-            ],
-            [
-                "LineItems",
-                "InvoiceAmountsDetails"
-            ]
+            ["InvoiceNumber", "InvoiceNumber"],
+            ["TotalAmount", "WoIdentifier"],
+            ["Nte", "InvoiceTax"],
+            ["IsPrebilled", "InvoiceTotal"],
+            ["IsValid", "InvoiceText"],
+            ["CustomerComment", "InvoiceAmountsDetails"],
+            ["Currency", "InvoiceAmountsDetails.LaborAmount"],
+            ["LastUpdateDate", "InvoiceAmountsDetails.MaterialAmount"],
+            ["SubmissionDeadline", "InvoiceAmountsDetails.TravelAmount"],
+            ["CheckNumber", "InvoiceAmountsDetails.FreightAmount"],
+            ["PaymentAmount", "InvoiceAmountsDetails.OtherAmount"],
+            ["PaymentDate", "InvoiceAmountsDetails.OtherDescription"],
+            ["HasAttachments", "InvoiceTaxesDetails"],
+            ["ConcurrencyId", "InvoiceTaxesDetails.LaborTax"],
+            ["TaxIdPrimary", "InvoiceTaxesDetails.MaterialTax"],
+            ["TaxIdSecondary", "InvoiceTaxesDetails.TravelTax"],
+            ["InvoiceDate", "InvoiceTaxesDetails.OtherTax"],
+            ["status", "InvoiceTaxesDetails.FreightTax"],
+            ["ServiceDate", null],
+            ["DiscountAmount", null],
+            ["LineItems", null],
+            ["LineItems.Id", null],
+            ["LineItems.Category", null],
+            ["LineItems.PriceListItemId", null],
+            ["LineItems.RequestorServiceId", null],
+            ["LineItems.PriceListItemName", null],
+            ["LineItems.Description", null],
+            ["LineItems.Quantity", null],
+            ["LineItems.Rate", null],
+            ["LineItems.Subtotal", null],
+            ["LineItems.IsRateReadOnly", null],
+            ["LineItems.TaxCode", null]
         ],
+        
         CPD_QB_invoices: [
-            [
-                "InvoiceNumber",
-                "CreateTime"
-            ],
-            [
-                "Description",
-                "DetailType"
-            ],
-            [
-                "ConcurrencyId",
-                "DocNumber"
-            ],
-            [
-                "TotalAmount",
-                "TotalAmt"
-            ],
-            [
-                "LineItems",
-                "Line"
-            ],
-            [
-                "InvoiceDate",
-                "DocNumber"
-            ],
-            [
-                "Currency",
-                "CurrencyRef"
-            ]
+            ["InvoiceNumber", "TxnDate"],
+            ["InvoiceDate", "CurrencyRef"],
+            ["Nte", "AllowOnlinePayment"],
+            ["TotalAmount", "AllowIPNPayment"],
+            ["IsPrebilled", "AllowOnlineCreditCardPayment"],
+            ["IsValid", "AllowOnlineACHPayment"],
+            ["CustomerComment", "domain"],
+            ["Currency", "sparse"],
+            ["LastUpdateDate", "Id"],
+            ["SubmissionDeadline", "SyncToken"],
+            ["CheckNumber", "MetaData"],
+            ["PaymentAmount", "MetaData.CreateTime"],
+            ["PaymentDate", "MetaData.LastModifiedByRef"],
+            ["HasAttachments", "MetaData.LastModifiedByRef.value"],
+            ["ConcurrencyId", "MetaData.LastUpdatedTime"],
+            ["TaxIdPrimary", "CustomField"],
+            ["TaxIdSecondary", "DocNumber"],
+            ["ServiceDate", "CurrencyRef.value"],
+            ["DiscountAmount", "CurrencyRef.name"],
+            ["LineItems", "LinkedTxn"],
+            ["LineItems.Id", "Line"],
+            ["LineItems.Category", "Line.Id"],
+            ["LineItems.PriceListItemId", "Line.LineNum"],
+            ["LineItems.RequestorServiceId", "Line.Amount"],
+            ["LineItems.PriceListItemName", "Line.DetailType"],
+            ["LineItems.Description", "Line.SalesItemLineDetail"],
+            ["LineItems.Quantity", "Line.SalesItemLineDetail.ItemRef"],
+            ["LineItems.Rate", "Line.SalesItemLineDetail.ItemRef.value"],
+            ["LineItems.Subtotal", "Line.SalesItemLineDetail.ItemRef.name"],
+            ["LineItems.IsRateReadOnly", "Line.SalesItemLineDetail.ItemAccountRef"],
+            ["LineItems.TaxCode", "Line.SalesItemLineDetail.ItemAccountRef.value"],
+            ["status", "Line.SalesItemLineDetail.ItemAccountRef.name"]
         ]
+        
     }
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
