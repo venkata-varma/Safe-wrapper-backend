@@ -13,7 +13,7 @@ provider:
   stage: dev
   region: us-west-1
   environment:
-    timeout: 899  # must be <= 900
+  timeout: 899  # must be <= 900
   plugins:
     - serverless-esbuild
   tracing:
