@@ -1,32 +1,19 @@
 {
-  "name": "corrigo-poc",
+  "name": "dr_integrations",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "serverless-dotenv-plugin": "^4.0.2",
-    "serverless-offline": "^12.0.4"
-  },
   "dependencies": {
-    "aws-sdk": "^2.1549.0",
-    "axios": "^1.6.7",
-    "body-parser": "^1.20.2",
+    "axios": "^1.6.8",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.1",
-    "express": "^4.18.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "moment": "^2.30.1",
-    "mongodb": "^6.3.0",
-    "mongoose": "^8.1.1",
-    "nodemon": "^3.0.3",
-    "serverless-dotenv-plugin": "^6.0.0",
-    "serverless-http": "^3.2.0"
+    "mongoose": "^8.4.0"
   }
 }
