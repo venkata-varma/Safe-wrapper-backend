@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { access } = require('fs');
-const workOrderControllers = require('../controllers/workOrderControllers');
 const auth = require('../middleware/authentication');
+const workOrderControllers = require('../controllers/workOrdersController');
 
 
 // {
@@ -15,6 +15,8 @@ const auth = require('../middleware/authentication');
 // router.get('/get-latest-workOrders/:integrationId/:registrationId',workOrderControllers.latestWorkOrders);
 // router.get('/get-workorders-by-registrationId/:registrationId',workOrderControllers.getAWorkOrdersByRegistrationId);
 // router.get('/get-all-hot-workorders-invoices-keys/:integrationId',workOrderControllers.getWorkOrdersAndInvoicesKeys)
+
+router.get('/get-corrigo-pro-latest-work-orders/:integrationServiceProviderId',workOrderControllers.get_corrigo_pro_latest_workOrders)
 
 
 module.exports = router;

@@ -23,7 +23,7 @@ exports.validateUserRegistration = asyncWrapper(async (req, res, next) => {
 
 
 exports.createUser = asyncWrapper(async (req, res) => {
-    const { companyName, email, phone, password, status } = req.body
+    const { companyName, email, phone, password, status, createdBy, updatedBy } = req.body
     const userDetails = await usersModel.findOne({ $or: [{ email }, { phone }] })
     console.log(password, "password")
     if (userDetails) {

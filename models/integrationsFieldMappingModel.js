@@ -37,7 +37,7 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
     filedMappingType: {
       type: String,
       enum: ["default", "custom"],
-      default: "active",
+      default: "default",
     },
     mappedKeys: {
       type: mongoose.Schema.Types.Mixed,

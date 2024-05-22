@@ -38,7 +38,7 @@ const usersSchema = new mongoose.Schema({
     },
     role:{
         type:String,
-        enum:['admin','manager', 'support'],
+        enum:['super-admin','admin','manager', 'support'],
         require:[true, 'Role is required.'],
         default:""
     },
@@ -47,24 +47,17 @@ const usersSchema = new mongoose.Schema({
         enum:['active','deleted', 'blocked'],
         default:"active"
     },
-    // createdAt:{
-    //     type:Date,
-    //     dafault:new Date()
-    // },
     createdBy:{
-        type:String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
         require:[true, 'Created by is required.'],
-        default:""
+        default:null
     },
     updatedBy:{
-        type:String,
-        default:""
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        default:null
     },
-    // updatedAt:{
-    //     type:Date,
-    //     // dafault:new Date()
-    //     default:""
-    // },
 },{timestamps:true});
 
 usersSchema.pre('save', function(next) {
