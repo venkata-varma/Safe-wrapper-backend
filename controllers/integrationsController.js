@@ -11,7 +11,7 @@ const integrationsMasterModel = require("../models/integrationsMasterModel");
 
 
 exports.globalConstants = asyncWrapper(async(req,res)=>{
-  hotkeys = [
+  const mappingKeys = [
     {
       serviceProvider:"CPD",
       type:"work-order",
@@ -164,6 +164,13 @@ exports.globalConstants = asyncWrapper(async(req,res)=>{
     ]    
     }
   ]
+  return res
+      .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+      .json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
+        mappingKeys 
+      });
 });
 
 exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
@@ -508,5 +515,11 @@ exports.getDefaultIntegrationMasterFieldMappingKeys = asyncWrapper(async(req,res
   console.log(keyMapping["work-order"]);
   console.log("\nInvoice Mapping:");
   console.log(keyMapping["invoice"]);
-  return res.status(200).json({keyMapping});
+  return res
+      .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+      .json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_FIELD_MAPPING_KEYS,
+        keyMapping 
+      });
 })

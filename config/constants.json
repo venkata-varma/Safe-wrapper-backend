@@ -13,7 +13,6 @@
     "MESSAGE_USER_CREATED":"Registration completed successfully",
     "MESSAGE_USER_EXIST":"User already exist. Please login",
     "MESSAGE_USER_LOGIN":"Login successfully",
-    "MESSAGE_GLOBAL_CONSTANTS":"Global constants",
     "MESSAGE_VERIFIED":"Authentications has been successfully completed.",
 
     "MESSAGE_AUTH_VERIFIED":"Authentication has been successfully completed.",
@@ -26,6 +25,8 @@
     "MESSAGE_INTEGRATION_DETAILS":"Integration details.",
     "MESSAGE_CRON_MANUAL":"We have retrieved the most recent records and continued with the integration process.",
     "MESSAGE_STATASTICS":"All Statastics",
+    "MESSAGE_GLOBAL_CONSTANTS":"Global Constants.",
+    "MESSAGE_FIELD_MAPPING_KEYS":"Default integration field mapping keys.",
     "MESSAGE_CRON_WORKORDERS":"All cronjob Work orders.",
     "MESSAGE_INTEGRATIONS":"Integration created successfully.",
     "MESSAGE_GET_INTEGRATIONS":"Integration details.",
