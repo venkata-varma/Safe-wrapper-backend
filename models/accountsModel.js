@@ -8,12 +8,12 @@ const accountsSchema = new mongoose.Schema({
     },
     accountName:{
         type:String,
-        require:[true, 'Account name is required.'],
+        required:[true, 'Account name is required.'],
         default:""
     },
     companyName:{
         type:String,
-        require:[true, 'Company name is required.'],
+        required:[true, 'Company name is required.'],
         default:""
     },
     logo:{
@@ -22,17 +22,17 @@ const accountsSchema = new mongoose.Schema({
     },
     phone:{
         type:String,
-        require:[true, 'Mobile number is required.'],
+        required:[true, 'Mobile number is required.'],
         default:""
     },
     email:{
         type:String,
-        require:[true, 'Email is required.'],
+        required:[true, 'Email is required.'],
         default:""
     },
     password:{
         type:String,
-        require:[true, 'Password is required.'],
+        required:[true, 'Password is required.'],
         default:""
     },
     address:{
@@ -41,22 +41,22 @@ const accountsSchema = new mongoose.Schema({
     },
     city:{
         type:String,
-        require:[true, 'city is required.'],
+        required:[true, 'city is required.'],
         default:""
     },
     state:{
         type:String,
-        require:[true, 'state is required.'],
+        required:[true, 'state is required.'],
         default:""
     },
     country:{
         type:String,
-        require:[true, 'country is required.'],
+        required:[true, 'country is required.'],
         default:""
     },
     pincode:{
         type:String,
-        require:[true, 'pincode is required.'],
+        required:[true, 'pincode is required.'],
         default:""
     },
     status:{

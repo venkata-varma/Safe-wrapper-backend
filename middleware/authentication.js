@@ -35,6 +35,8 @@ const auth = asyncWrapper(async (req, _res, next) => {
           message: customConstants.messages.MESSAGE_SESSION_EXPIRED,
         });
     } else {
+      req.user=user;
+
       next();
     }
   }

@@ -18,12 +18,12 @@ const integrationsMasterSchema = new mongoose.Schema(
     },
     title: {
       type: String,
-      require: [true, "Title is required."],
-      default: "",
+      required: [true, "Title is required."],
+      default: ""
     },
     description: {
       type: String,
-      require: [true, "Description is required."],
+      required: [true, "Description is required."],
       default: "",
     },
     from: {
@@ -54,7 +54,7 @@ const integrationsMasterSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
-      require: [true, "Created by is required."],
+      required: [true, "Created by is required."],
       default: null,
     },
     updatedBy: {

@@ -5,7 +5,7 @@ const asyncWrapper = require('../middleware/asyncWrapper');
 const customConstants = require('../config/constants.json');
 const { hashPwd } = require('../utils/helpers');
 const usersModel = require('../models/usersModel');
-
+const mongoose=require("mongoose")
 
 
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
@@ -26,7 +26,7 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
 exports.createAccount = asyncWrapper(async (req, res) => {
     const { accountName, companyName, email, phone, password, status } = req.body
     const accountDetails = await accountsModel.findOne({ $or: [{ email }, { phone }] })
-    console.log(req.body)
+   // console.log(req.body)
     if (accountDetails) {
         return res.status(409).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -36,9 +36,13 @@ exports.createAccount = asyncWrapper(async (req, res) => {
     else {  
         req.body.password = hashPwd(password)
         const accountData = await accountsModel.create(req.body)
+        console.log("accountData", accountData)
         // req.body.accountId = accountData._id
         // const accountDetails = await accountsModel.create(req.body)
+        const customId=new mongoose.Types.ObjectId()
         const user = await usersModel.create({
+            _id:customId,
+            createdBy:customId,
             accountId:accountData._id,
             name:accountName,
             password:req.body.password,
@@ -47,11 +51,16 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             email:email,
             role:'super-admin',
         });
-        await usersModel.findByIdAndUpdate(user._id,{createdBy:user._id,updatedBy:user._id},{new:true});
+        console.log("User", user)
+    //    await usersModel.findByIdAndUpdate(user._id,{  $set:{createdBy:user._id,updatedBy:user._id}},{new:true});
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_ACCOUNT_CREATED,
-            // data: accountData
+             data: {
+                customId,
+                accountData,
+                user
+             }
         })
     }
 });
