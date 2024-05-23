@@ -45,7 +45,7 @@ const integrationsMasterSchema = new mongoose.Schema(
     },
     stepCount: {
       type: Number,
-      default: 0,
+      default: 1,
     },
     lastPullDate: {
       type: Date,
