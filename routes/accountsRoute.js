@@ -5,7 +5,7 @@ const auth = require('../middleware/authentication');
 
 
 
-router.post('/account-registration',accountsControllers.validateAccountRegistration, accountsControllers.createAccount)
+router.post('/create-account',accountsControllers.validateAccountRegistration, accountsControllers.createAccount)
 
 
 

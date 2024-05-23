@@ -391,8 +391,9 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
 });
 
 
-exports.getDefaultIntegrationMasterFieldMappingHotKeys = asyncWrapper(async(req,res)=>{
-  const {from,to} = req.params
+exports.getDefaultIntegrationMasterFieldMappingKeys = asyncWrapper(async(req,res)=>{
+  const {integrationMasterId} = req.params;
+  const integrationDetails = await integrationsMasterModel.findById(integrationMasterId)
   const hotkeys = [
     {
       serviceProvider: "CPD",
@@ -497,8 +498,8 @@ exports.getDefaultIntegrationMasterFieldMappingHotKeys = asyncWrapper(async(req,
   }
   
   // Example
-  const fromProvider = from;
-  const toProvider = to;
+  const fromProvider = integrationDetails.from;
+  const toProvider = integrationDetails.to;
 
   // Mapping should be done for toProvider from fromProvider
   const keyMapping = getKeyMapping(toProvider, fromProvider);

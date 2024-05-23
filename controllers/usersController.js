@@ -48,7 +48,7 @@ exports.createUser = asyncWrapper(async (req, res) => {
 
 exports.validateuser = asyncWrapper(async (req, res) => {
   const { phone, password } = req.body;
-  let userDetails = {};
+  let user_details = {};
 
   try {
     // Find user by email or phone
@@ -74,9 +74,9 @@ console.log(!userData, "userData");
       });
     }
 
-    userDetails.userRegestrionDetails = userData;
-    userDetails.user = user.toObject();
-    userDetails.user.companyName = userData.companyName;
+    user_details.accountDetails = userData;
+    user_details.userDetails = user.toObject();
+    user_details.userDetails.companyName = userData.companyName;
 
     console.log(password, user.password , "oooooool");
     
@@ -102,13 +102,13 @@ console.log(comparePasswordResult , "comparePasswordResult");
     req.body.userId = user._id;
 
     const sesssionDetails = await sessionsModel.create(req.body);
-    userDetails.sesssionDetails = sesssionDetails;
+    user_details.sesssionDetails = sesssionDetails;
 
     // Return success response
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_USER_LOGIN,
-      data: userDetails,
+      data: user_details,
     });
   } catch (error) {
     // Handle errors

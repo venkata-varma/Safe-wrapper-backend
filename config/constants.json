@@ -12,7 +12,7 @@
     "MESSAGE_ACCOUNT_LOGIN":"Account verified successfully",
     "MESSAGE_USER_CREATED":"Registration completed successfully",
     "MESSAGE_USER_EXIST":"User already exist. Please login",
-    "MESSAGE_USER_LOGIN":"User verified successfully",
+    "MESSAGE_USER_LOGIN":"Login successfully",
     "MESSAGE_GLOBAL_CONSTANTS":"Global constants",
     "MESSAGE_VERIFIED":"Authentications has been successfully completed.",
 
