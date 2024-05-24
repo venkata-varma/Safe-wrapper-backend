@@ -737,7 +737,7 @@ Returns updated record
 */
 exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
   console.log("req.body.integrationMasterId", req.body.integrationMasterId)
-  const integrationMaster = await integrationsMasterModel.findByIdAndUpdate(req.body.integrationMasterId, { $set: { status: 'deleted' } }, { new: true });
+  const integrationMaster = await integrationsMasterModel.findByIdAndUpdate(req.params.integrationMasterId, { $set: { status: 'deleted' } }, { new: true });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
