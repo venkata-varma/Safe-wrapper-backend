@@ -7,6 +7,7 @@ const asyncWrapper = require("../middleware/asyncWrapper");
 const customConstants = require("../config/constants.json");
 const sessionsModel = require("../models/sessionsModel");
 const integrationsMasterModel = require("../models/integrationsMasterModel");
+const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
 
 
 exports.globalConstants = asyncWrapper(async (req, res) => {
@@ -637,19 +638,23 @@ exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (re
       message: "Respective Integration Service provider details not found.",
     });
   }
-  //save fields
-  integrationServiceProvider.serviceProvider = req.body.serviceProvider;
-  integrationServiceProvider.credentials = req.body.credentials;
-  integrationServiceProvider.updatedBy = req.user.userId;
-  //commit fields
-  await integrationServiceProvider.save();
+  const updatedServicerProvider = await integrationsMasterServiceProvidersModel.findOneAndUpdate({ _id: serviceProviderId }, {
+    $set: {
+      serviceProvider: req.body.serviceProvider,
+      credentials: req.body.credentials,
+      updatedBy: req.user.userId
+    }
+  },
+    { new: true, }
+  )
+
   //Later, Token authentication and status =verified or rejected to be done
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_INTEGRATIONS,
-      data: { integrationServiceProvider }
+      data: { updatedServicerProvider }
     });
 })
 
@@ -722,4 +727,23 @@ exports.editIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       message: customConstants.messages.MESSAGE_INTEGRATIONS,
       data: { updatedIntegrationMasterSettings }
     });
+})
+
+
+/*
+Fucntion to deactivate a specific integration master
+Status is updated to deleted
+Returns updated record
+*/
+exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
+  console.log("req.body.integrationMasterId", req.body.integrationMasterId)
+  const integrationMaster = await integrationsMasterModel.findByIdAndUpdate(req.body.integrationMasterId, { $set: { status: 'deleted' } }, { new: true });
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_INTEGRATIONS,
+      data: { integrationMaster }
+    });
+
 })

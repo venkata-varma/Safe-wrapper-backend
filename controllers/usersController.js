@@ -34,7 +34,7 @@ exports.createUser = asyncWrapper(async (req, res) => {
     }
     else {
         // req.body.userId = userData._id
-        req.body.password = hashPwd(password)
+        req.body.password = await hashPwd(password)
         const userData = await usersModel.create(req.body)
         // const accountDetails = await usersModel.create(req.body)
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
@@ -46,7 +46,7 @@ exports.createUser = asyncWrapper(async (req, res) => {
 });
 
 
-exports.validateuser = asyncWrapper(async (req, res) => {
+exports.loginUser = asyncWrapper(async (req, res) => {
   const { phone, password } = req.body;
   let user_details = {};
 
@@ -81,7 +81,7 @@ console.log(!userData, "userData");
     console.log(password, user.password , "oooooool");
     
     // Compare password
-    const comparePasswordResult = comparePassword(password, user.password);
+    const comparePasswordResult = await comparePassword(password, user.password);
 console.log(comparePasswordResult , "comparePasswordResult");
 
     // If password does not match

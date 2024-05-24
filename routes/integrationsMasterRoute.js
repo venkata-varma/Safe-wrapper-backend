@@ -22,4 +22,5 @@ router.patch('/edit-integrationmaster/:integrationMasterId', integrationsMasterC
 router.patch('/edit-integrationmaster-service-provider/:integrationMasterId', integrationsMasterControllers.editIntegrationMasterServiceProviderCredentials)
 router.patch('/edit-integrationmaster-field-mappings/:integrationMasterId', integrationsMasterControllers.editIntegrationMasterFieldMappings)
 router.patch('/edit-integrationmaster-settings/:integrationMasterId', integrationsMasterControllers.editIntegrationMasterSettings)
+router.patch('/delete-integrationmaster', integrationsMasterControllers.deactivateInteragtionMasterCrons)
 module.exports = router;
