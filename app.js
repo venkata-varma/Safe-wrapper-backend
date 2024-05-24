@@ -19,7 +19,7 @@ mongooseConnect.DbConnect();
 // Routes
 const accountsRoute = require('./routes/accountsRoute');
 const usersRoute = require('./routes/usersRoute');
-const integrationsRoute = require('./routes/integrationsRoute');
+const integrationsRoute = require('./routes/integrationsMasterRoute');
 const workOrderRoute = require('./routes/workOrderRoute')
 
 app.use('/api/accounts', accountsRoute);
