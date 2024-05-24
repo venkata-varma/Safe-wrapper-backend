@@ -258,7 +258,7 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_SERVICE_PROVIDER,
+        message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
         data: { updatedIntegrationsDetails },
       });
   } catch (error) {
@@ -598,7 +598,7 @@ exports.editIntegrationMaster = asyncWrapper(async (req, res) => {
   if (!pastIntegrationDetails) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Integration details not found.",
+      message: customConstants.statusCodes.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
   const updatedIntegrationMaster = await integrationsMasterModel.findByIdAndUpdate(req.params.integrationMasterId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
@@ -606,7 +606,7 @@ exports.editIntegrationMaster = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATION_EDITED,
+      message: customConstants.messages.MESSAGE_INTEGRATION_UPDATED,
       data: { updatedIntegrationMaster },
     });
 })
@@ -627,7 +627,7 @@ exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (re
   if (!pastIntegrationDetails) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Integration details not found.",
+      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
   const { serviceProviderId } = req.body;
@@ -635,7 +635,7 @@ exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (re
   if (!integrationServiceProvider) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Respective Integration Service provider details not found.",
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND,
     });
   }
   const updatedServicerProvider = await integrationsMasterServiceProvidersModel.findOneAndUpdate({ _id: serviceProviderId }, {
@@ -653,7 +653,7 @@ exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (re
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_EDITED,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_UPDATED,
       data: { updatedServicerProvider }
     });
 })
@@ -680,7 +680,7 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   if (!integrationFieldMapping) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Respective Integration field mapping details not found.",
+      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
   //save fields
@@ -690,7 +690,7 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_EDITED,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED,
       data: { updatedFieldMapping }
     });
 })
@@ -716,7 +716,7 @@ exports.editIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   if (!integrationMasterSettings) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Respective Integration master settings details not found.",
+      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
   let updatedIntegrationMasterSettings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
@@ -724,7 +724,7 @@ exports.editIntegrationMasterSettings = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_SETTINGS_EDITED,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_SETTINGS_UPDATED,
       data: { updatedIntegrationMasterSettings }
     });
 })
@@ -742,7 +742,7 @@ exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATION_DEACTIVATED,
+      message: customConstants.messages.MESSAGE_INTEGRATION_DELETED,
       data: { integrationMaster }
     });
 
