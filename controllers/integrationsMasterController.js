@@ -193,7 +193,7 @@ exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATIONS,
+        message: customConstants.messages.MESSAGE_INTEGRATION_CREATED,
         data: { integrationsDetails },
       });
   } catch (error) {
@@ -258,7 +258,7 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATIONS,
+        message: customConstants.messages.MESSAGE_SERVICE_PROVIDER,
         data: { updatedIntegrationsDetails },
       });
   } catch (error) {
@@ -332,7 +332,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATIONS,
+        message: customConstants.messages.MESSAGE_INTEGRATION_FIELDS_MAPPINGS_UPDATED,
         data: { updatedIntegrationsDetails },
       });
   } catch (error) {
@@ -401,7 +401,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATIONS,
+        message: customConstants.messages.MESSAGE_INTEGRATIONS_SETTINGS,
         data: { updatedIntegrationsDetails },
       });
   } catch (error) {
