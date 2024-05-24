@@ -34,7 +34,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         })
     }
     else {  
-        req.body.password = hashPwd(password)
+        req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create(req.body)
         console.log("accountData", accountData)
         // req.body.accountId = accountData._id

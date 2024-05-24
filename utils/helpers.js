@@ -1,14 +1,16 @@
-const crypto = require('crypto')
+const bcrypt=require('bcryptjs');
+async function hashPwd(pwd) {
 
-function hashPwd(pwd) {
-    var hmac = crypto.createHmac('sha256', process.env.WEBSITE_SALT);
-    return hmac.update(pwd).digest('hex');
+    var hmac = await bcrypt.hash(pwd, Number(process.env.WEBSITE_SALT));
+    console.log('hmac', hmac)
+    return hmac;
 };
 
-function comparePassword(password, hashedPassword) {
-    const hashedString = hashPwd(password)
-    console.log(hashedString, hashedPassword ,  hashedString == hashedPassword, "opopop");
-    return hashedString == hashedPassword
+async function comparePassword(password, hashedPassword) {
+    const hashedString =await  bcrypt.compare(password, hashedPassword)
+    console.log("hashed", hashedString)
+    return hashedString;
+    //if(hashedString)
 }
 
 

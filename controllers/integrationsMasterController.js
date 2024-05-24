@@ -7,6 +7,7 @@ const asyncWrapper = require("../middleware/asyncWrapper");
 const customConstants = require("../config/constants.json");
 const sessionsModel = require("../models/sessionsModel");
 const integrationsMasterModel = require("../models/integrationsMasterModel");
+const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
 
 
 exports.globalConstants = asyncWrapper(async (req, res) => {
@@ -192,7 +193,7 @@ exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATIONS,
+        message: customConstants.messages.MESSAGE_INTEGRATION_CREATED,
         data: { integrationsDetails },
       });
   } catch (error) {
@@ -257,7 +258,7 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATIONS,
+        message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
         data: { updatedIntegrationsDetails },
       });
   } catch (error) {
@@ -331,7 +332,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATIONS,
+        message: customConstants.messages.MESSAGE_INTEGRATION_FIELDS_MAPPINGS_UPDATED,
         data: { updatedIntegrationsDetails },
       });
   } catch (error) {
@@ -400,7 +401,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATIONS,
+        message: customConstants.messages.MESSAGE_INTEGRATIONS_SETTINGS,
         data: { updatedIntegrationsDetails },
       });
   } catch (error) {
@@ -597,7 +598,7 @@ exports.editIntegrationMaster = asyncWrapper(async (req, res) => {
   if (!pastIntegrationDetails) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Integration details not found.",
+      message: customConstants.statusCodes.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
   const updatedIntegrationMaster = await integrationsMasterModel.findByIdAndUpdate(req.params.integrationMasterId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
@@ -605,7 +606,7 @@ exports.editIntegrationMaster = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATIONS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_UPDATED,
       data: { updatedIntegrationMaster },
     });
 })
@@ -626,7 +627,7 @@ exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (re
   if (!pastIntegrationDetails) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Integration details not found.",
+      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
   const { serviceProviderId } = req.body;
@@ -634,22 +635,26 @@ exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (re
   if (!integrationServiceProvider) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Respective Integration Service provider details not found.",
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND,
     });
   }
-  //save fields
-  integrationServiceProvider.serviceProvider = req.body.serviceProvider;
-  integrationServiceProvider.credentials = req.body.credentials;
-  integrationServiceProvider.updatedBy = req.user.userId;
-  //commit fields
-  await integrationServiceProvider.save();
+  const updatedServicerProvider = await integrationsMasterServiceProvidersModel.findOneAndUpdate({ _id: serviceProviderId }, {
+    $set: {
+      serviceProvider: req.body.serviceProvider,
+      credentials: req.body.credentials,
+      updatedBy: req.user.userId
+    }
+  },
+    { new: true, }
+  )
+
   //Later, Token authentication and status =verified or rejected to be done
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATIONS,
-      data: { integrationServiceProvider }
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_UPDATED,
+      data: { updatedServicerProvider }
     });
 })
 
@@ -675,7 +680,7 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   if (!integrationFieldMapping) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Respective Integration field mapping details not found.",
+      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
   //save fields
@@ -685,7 +690,7 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATIONS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED,
       data: { updatedFieldMapping }
     });
 })
@@ -711,7 +716,7 @@ exports.editIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   if (!integrationMasterSettings) {
     return res.status(404).json({
       status: customConstants.statusCodes.NOT_FOUND,
-      message: "Respective Integration master settings details not found.",
+      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
   let updatedIntegrationMasterSettings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
@@ -719,7 +724,26 @@ exports.editIntegrationMasterSettings = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATIONS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_SETTINGS_UPDATED,
       data: { updatedIntegrationMasterSettings }
     });
+})
+
+
+/*
+Fucntion to deactivate a specific integration master
+Status is updated to deleted
+Returns updated record
+*/
+exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
+  console.log("req.body.integrationMasterId", req.body.integrationMasterId)
+  const integrationMaster = await integrationsMasterModel.findByIdAndUpdate(req.params.integrationMasterId, { $set: { status: 'deleted' } }, { new: true });
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_DELETED,
+      data: { integrationMaster }
+    });
+
 })
