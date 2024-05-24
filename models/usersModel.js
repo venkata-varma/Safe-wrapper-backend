@@ -18,28 +18,28 @@ const usersSchema = new mongoose.Schema({
     },
     password:{
         type:String,
-        require:[true, 'Password is required.'],
+        required:[true, 'Password is required.'],
         default:""
     },
     companyName:{
         type:String,
-        require:[true, 'Company name is required.'],
+        required:[true, 'Company name is required.'],
         default:""
     },
     phone:{
         type:String,
-        require:[true, 'Mobile number is required.'],
+        required:[true, 'Mobile number is required.'],
         default:""
     },
     email:{
         type:String,
-        require:[true, 'Email is required.'],
+        required:[true, 'Email is required.'],
         default:""
     },
     role:{
         type:String,
         enum:['super-admin','admin','manager', 'support'],
-        require:[true, 'Role is required.'],
+        required:[true, 'Role is required.'],
         default:""
     },
     status:{
@@ -50,7 +50,7 @@ const usersSchema = new mongoose.Schema({
     createdBy:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
-        require:[true, 'Created by is required.'],
+        required:[true, 'Created by is required.'],
         default:null
     },
     updatedBy:{

@@ -8,9 +8,19 @@ const integrationsSettingsSchema = new mongoose.Schema({
     integrationsMasterId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"integrationsMaster",
-        require:[true,"integrationId required"],
+        required:[true,"integrationId required"],
         default:null
     },
+    accountId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "accounts",
+        default: null,
+      },
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        default: null,
+      },
     periodType:{
         type:String,
         enum:["hours","days","weeks","months","years"],
@@ -19,7 +29,18 @@ const integrationsSettingsSchema = new mongoose.Schema({
     periodSettings:{
         type:mongoose.Schema.Types.Mixed,
         default:{}
-    }
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        required: [true, "Created by is required."],
+        default: null,
+      },
+      updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        default: null,
+      },
 },{timestamps:true});
 
 integrationsSettingsSchema.pre('save', function(next) {

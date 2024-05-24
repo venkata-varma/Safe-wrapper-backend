@@ -19,7 +19,7 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
     integrationsMasterId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "integrationsMaster",
-      require: [true, "integrationId required"],
+      required: [true, "integrationId required"],
       default: null,
     },
     from: {
@@ -42,6 +42,17 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
     mappedKeys: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      required: [true, "Created by is required."],
+      default: null,
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      default: null,
     },
   },
   { timestamps: true }

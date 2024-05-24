@@ -39,7 +39,7 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
-      require: [true, "Created by is required."],
+      required: [true, "Created by is required."],
       default: null,
     },
     updatedBy: {
