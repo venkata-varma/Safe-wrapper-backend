@@ -39,7 +39,10 @@
     "MESSAGE_INTEGRATION_KEYS": "Integration keys.",
     "MESSAGE_SAVE_KEYS": "Successfully saved.",
     "MESSAGE_INTEGRATION_EDITED":"Integration master details edited successfully",
-    "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_EDITED":"Integration master service provider edited successfully"
+    "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_EDITED":"Integration master service provider edited successfully",
+    "MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_EDITED":"Integration master field-mappings edited successfully",
+    "MESSAGE_INTEGRATION_SERVICE_SETTINGS_EDITED":"Integration master settings and frequency edited successfully",
+    "MESSAGE_INTEGRATION_DEACTIVATED":"Integration master deactivated successfully"
   },
   "statusCodes": {
     "FORBIDDEN": 403,

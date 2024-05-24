@@ -606,7 +606,7 @@ exports.editIntegrationMaster = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATIONS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_EDITED,
       data: { updatedIntegrationMaster },
     });
 })
@@ -653,7 +653,7 @@ exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (re
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATIONS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_EDITED,
       data: { updatedServicerProvider }
     });
 })
@@ -690,7 +690,7 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATIONS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_EDITED,
       data: { updatedFieldMapping }
     });
 })
@@ -724,7 +724,7 @@ exports.editIntegrationMasterSettings = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATIONS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_SETTINGS_EDITED,
       data: { updatedIntegrationMasterSettings }
     });
 })
@@ -742,7 +742,7 @@ exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATIONS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_DEACTIVATED,
       data: { integrationMaster }
     });
 
