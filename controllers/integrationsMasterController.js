@@ -64,7 +64,7 @@ exports.globalConstants = asyncWrapper(async (req, res) => {
         'LineItems.Subtotal',
         'LineItems.IsRateReadOnly',
         'LineItems.TaxCode',
-        'status'
+        'Status'
       ]
     },
     {
