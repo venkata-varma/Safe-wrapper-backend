@@ -26,5 +26,5 @@ const CPDWorkordersModelSchema = mongoose.Schema(
         }
     }, { timestamps: true });
 
-module.exports = mongoose.model('corrigoproworkorders', CPDWorkordersModelSchema)
+module.exports = mongoose.model('cpdworkorders', CPDWorkordersModelSchema)
 
