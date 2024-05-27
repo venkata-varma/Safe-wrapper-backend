@@ -3,9 +3,7 @@ require('dotenv').config();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongooseConnect = require('./config/dbConnection');
-const {insertFieldMappingMasterManually}=require('./controllers/workOrdersController')
 const app = express();
-insertFieldMappingMasterManually()
 // Middleware
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -21,7 +19,6 @@ const accountsRoute = require('./routes/accountsRoute');
 const usersRoute = require('./routes/usersRoute');
 const integrationsRoute = require('./routes/integrationsMasterRoute');
 const workOrderRoute = require('./routes/workOrderRoute')
-const fieldMappingMasterModel=require('./models/fieldMappingsMasterModel')
 app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/integrations', integrationsRoute);
