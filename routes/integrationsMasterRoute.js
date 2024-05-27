@@ -18,7 +18,6 @@ router.patch('/edit-integrationmaster-settings/:integrationMasterId', integratio
 router.patch('/delete-integrationmaster/:integrationMasterId', integrationsMasterControllers.deactivateInteragtionMasterCrons)
 
 router.get('/get-integrationmaster-details/:integrationMasterId', integrationsMasterControllers.getSingleIntegrationMasterDetails)
-router.get('/get-global-constants',integrationsMasterControllers.globalConstants)
 router.get('/get-default-integrationmaster-field-mapping-keys/:integrationMasterId',integrationsMasterControllers.getDefaultIntegrationMasterFieldMappingKeys)
 
 module.exports = router;

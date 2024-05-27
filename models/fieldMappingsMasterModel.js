@@ -10,6 +10,11 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
         required: [true, "Service provider is required"],
         enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM"],
         default: ""
+    },  
+    serviceMethod:{
+        type:String,
+        enum:["create","update","get","delete"],
+        default:""
     },
     serviceType: {
         type: String,

@@ -4,7 +4,6 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongooseConnect = require('./config/dbConnection');
 const app = express();
-//const {insertGlobalConstants}=require('./controllers/workOrdersController')
 // Middleware
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -30,7 +29,6 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 });
-//insertGlobalConstants()
 
 app.listen(8081, () => {
     console.log("Server is working on port 8081");
