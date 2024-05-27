@@ -3,9 +3,7 @@ require('dotenv').config();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongooseConnect = require('./config/dbConnection');
-
 const app = express();
-
 // Middleware
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -21,11 +19,11 @@ const accountsRoute = require('./routes/accountsRoute');
 const usersRoute = require('./routes/usersRoute');
 const integrationsRoute = require('./routes/integrationsMasterRoute');
 const workOrderRoute = require('./routes/workOrderRoute')
-
 app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/integrations', integrationsRoute);
 app.use('/api/workOrders', workOrderRoute);
+
 
 // Error Handling Middleware (optional)
 app.use((err, req, res, next) => {
