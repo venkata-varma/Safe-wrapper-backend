@@ -7,7 +7,7 @@ const auth = require('../middleware/authentication');
 
 router.post('/create-user',usersControllers.validateUserRegistration, usersControllers.createUser)
 // router.post('/update-user',usersControllers.validateUserRegistration, usersControllers.createUser)
-router.post('/login',usersControllers.loginUser)
+router.post('/login',usersControllers.validateLoginProcess, usersControllers.loginUser)
 
 
 module.exports = router;

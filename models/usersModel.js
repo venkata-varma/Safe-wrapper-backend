@@ -50,7 +50,7 @@ const usersSchema = new mongoose.Schema({
     createdBy:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
-        required:[true, 'Created by is required.'],
+       // required:[true, 'Created by is required.'],    // To be un-commented later when provision for admin to create User is provided from Front-end
         default:null
     },
     updatedBy:{
@@ -60,10 +60,16 @@ const usersSchema = new mongoose.Schema({
     },
 },{timestamps:true});
 
-usersSchema.pre('save', function(next) {
-    this.userId = this._id;
-    next();
-});
+/*
+Below code is commmented because, createdBy which is created automatically below is not being overridden when need to be overriden. So,
+if we just remove remove createdBy from below, there will be contradiction is whole process of creating a user
+*/
+
+// usersSchema.pre('save', function(next) {
+//     this.userId = this._id;
+//     this.createdBy=this._id;   //to be modified later if Admin creats a user
+//     next();
+// });
 
 usersSchema.methods.getJWTToken = function () {
     return jwt.sign({ userId: this._id }, 'secret', {

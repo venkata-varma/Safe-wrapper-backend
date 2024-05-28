@@ -20,30 +20,23 @@ Mandatory-> Title and Description
 Returns newly created IntegrationMaster record 
 */
 exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
-  try {
-    console.log("req", req.user)
-    const integrationsDetails = await integrationsMasterModel.create({
-      ...req.body,
-      createdBy: req.user._id,
-      accountId: req.user.accountId,
-      userId: req.user.userId
+  
+  console.log("req", req.user)
+  const integrationsDetails = await integrationsMasterModel.create({
+    ...req.body,
+    createdBy: req.user._id,
+    accountId: req.user.accountId,
+    userId: req.user.userId
+  });
+
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_CREATED,
+      data: { integrationsDetails },
     });
 
-    return res
-      .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-      .json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATION_CREATED,
-        data: { integrationsDetails },
-      });
-  } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({
-      status: customConstants.statusCodes.INTERNAL_SERVER_ERROR,
-      message: customConstants.messages.MESSAGE_INTERNAL_SERVER_ERROR,
-      error: error.message,
-    });
-  }
 });
 
 
@@ -54,62 +47,54 @@ Returns newly created Service provider record (From , To )
 */
 
 exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (req, res) => {
-  try {
-    const { userId, accountId, serviceProvider, integrationsMasterId } =
-      req.body;
 
-    // Create a new service provider
-    const serviceProviderDetails = await serviceProvidersModel.create({
-      ...req.body,
-      createdBy: req.user._id,
-      userId: req.user._id,
-      accountId: req.user.accountId
-    });
+  const { serviceProvider, integrationsMasterId, credentials } =
+    req.body;
+  
+  // Create a new service provider
+  const serviceProviderDetails = await serviceProvidersModel.create({
+    ...req.body,
+    createdBy: req.user._id,
+    userId: req.user._id,
+    accountId: req.user.accountId
+  });
 
-    // Find the past integration details
-    const pastIntegrationDetails = await integrationsMasterModel.findOne({
-      integrationsMasterId: req.body.integrationsMasterId,
-    });
-    console.log(pastIntegrationDetails, "pastIntegrationDetails");
 
-    // Determine the update fields
-    const updateFields = {
-      stepCount: pastIntegrationDetails.stepCount + 1,
-      updatedBy: req.user._id,
-    };
-    //From , To 's are decided 
-    if (pastIntegrationDetails.stepCount === 1) {
-      updateFields.from = serviceProvider;
-    } else {
-      updateFields.to = serviceProvider;
-    }
+  const pastIntegrationDetails = await integrationsMasterModel.findOne({
+    integrationsMasterId: req.body.integrationsMasterId,
+  });
+  console.log(pastIntegrationDetails, "pastIntegrationDetails");
 
-    // Perform the update
-    const updatedIntegrationsDetails = await integrationsMasterModel.findOneAndUpdate(
-      { integrationsMasterId },
-      {
-        ...req.body,
-        ...updateFields
-      },
-      { new: true } // Options to return the updated document
-    );
 
-    return res
-      .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-      .json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
-        data: { updatedIntegrationsDetails },
-      });
-  } catch (error) {
-    // Handle errors
-    console.error("Error:", error);
-    return res.status(500).json({
-      status: customConstants.statusCodes.INTERNAL_SERVER_ERROR,
-      message: customConstants.messages.MESSAGE_INTERNAL_SERVER_ERROR,
-      error: error.message,
-    });
+  const updateFields = {
+    stepCount: pastIntegrationDetails.stepCount + 1,
+    updatedBy: req.user._id,
+  };
+  //From , To 's are decided ---Don't remove this comment
+  if (pastIntegrationDetails.stepCount === 1) {
+    updateFields.from = serviceProvider;
+  } else {
+    updateFields.to = serviceProvider;
   }
+
+  // Perform the update
+  const updatedIntegrationsDetails = await integrationsMasterModel.findOneAndUpdate(
+    { integrationsMasterId },
+    {
+      ...req.body,
+      ...updateFields
+    },
+    { new: true } // Options to return the updated document
+  );
+
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
+      data: { updatedIntegrationsDetails },
+    });
+
 });
 
 /**
@@ -119,6 +104,7 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
  */
 exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.body;
+  console.log("get_integration_field_mapping_master_default_keys.length :==",integrationsMasterId )
   let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod
 
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId, { from: 1, to: 1 })
@@ -183,58 +169,51 @@ Returns committed Field mappings for either Work order or Invoices
 */
 exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   console.log(req.body, "checkkkk");
-  try {
-    const { integrationsMasterId, userId } = req.body;
-    const pastIntegrationDetails = await integrationsMasterModel.findOne({
-      integrationsMasterId,
-    });
 
-    let updatedIntegrationsDetails;
-    if (!pastIntegrationDetails) {
-      return res.status(404).json({
-        status: customConstants.statusCodes.NOT_FOUND,
-        message: "Integration details not found.",
-      });
-    }
+  const { integrationsMasterId, userId } = req.body;
+  const pastIntegrationDetails = await integrationsMasterModel.findOne({
+    integrationsMasterId,
+  });
 
-    // Create or update the integrationsFieldMapping
-    let integrationsFieldMapping;
-    const existingFieldMapping = await integrationsFieldMappingModel.findOne({
-      integrationsMasterId,
-    });
-
-    if (existingFieldMapping) {
-      integrationsFieldMapping =
-        await integrationsFieldMappingModel.findByIdAndUpdate(
-          integrationsMasterId,
-          { $set: { ...req.body, updatedBy: req.user._id } },
-          { new: true }
-        );
-    } else {
-      integrationsFieldMapping = await integrationsFieldMappingModel.create({
-        ...req.body,
-        createdBy: req.user._id,
-        updatedBy: req.user._id,
-        userId: req.user._id,
-        stepCount: pastIntegrationDetails.stepCount + 1,
-        accountId: req.user.accountId
-      });
-    }
-    return res
-      .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-      .json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATION_FIELDS_MAPPINGS_UPDATED,
-        data: { integrationsFieldMapping },
-      });
-  } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({
-      status: customConstants.statusCodes.INTERNAL_SERVER_ERROR,
-      message: customConstants.messages.MESSAGE_INTERNAL_SERVER_ERROR,
-      error: error.message,
+  let updatedIntegrationsDetails;
+  if (!pastIntegrationDetails) {
+    return res.status(404).json({
+      status: customConstants.statusCodes.NOT_FOUND,
+      message: "Integration details not found.",
     });
   }
+
+  // Create or update the integrationsFieldMapping
+  let integrationsFieldMapping;
+  const existingFieldMapping = await integrationsFieldMappingModel.findOne({
+    integrationsMasterId,
+  });
+
+  if (existingFieldMapping) {
+    integrationsFieldMapping =
+      await integrationsFieldMappingModel.findByIdAndUpdate(
+        integrationsMasterId,
+        { $set: { ...req.body, updatedBy: req.user._id } },
+        { new: true }
+      );
+  } else {
+    integrationsFieldMapping = await integrationsFieldMappingModel.create({
+      ...req.body,
+      createdBy: req.user._id,
+      updatedBy: req.user._id,
+      userId: req.user._id,
+      stepCount: pastIntegrationDetails.stepCount + 1,
+      accountId: req.user.accountId
+    });
+  }
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_FIELDS_MAPPINGS_UPDATED,
+      data: { integrationsFieldMapping },
+    });
+
 });
 
 
@@ -245,65 +224,58 @@ Returns committed cron-job frequency model -Days, Month etc;
 */
 exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   console.log(req.body, "checkkkk");
-  try {
-    const { integrationsMasterId, userId } = req.body;
-    const pastIntegrationDetails = await integrationsMasterModel.findOne({
+
+  const { integrationsMasterId, userId } = req.body;
+  const pastIntegrationDetails = await integrationsMasterModel.findOne({
+    integrationsMasterId,
+  });
+
+  let updatedIntegrationsDetails;
+  if (!pastIntegrationDetails) {
+    return res.status(404).json({
+      status: customConstants.statusCodes.NOT_FOUND,
+      message: "Integration details not found.",
+    });
+  }
+
+  let integrationsSettings;
+  const existingintegrationsSettings =
+    await integrationsSettingsModel.findOne({
       integrationsMasterId,
     });
 
-    let updatedIntegrationsDetails;
-    if (!pastIntegrationDetails) {
-      return res.status(404).json({
-        status: customConstants.statusCodes.NOT_FOUND,
-        message: "Integration details not found.",
-      });
-    }
-
-    let integrationsSettings;
-    const existingintegrationsSettings =
-      await integrationsSettingsModel.findOne({
-        integrationsMasterId,
-      });
-
-    if (existingintegrationsSettings) {
-      integrationsSettings = await integrationsSettingsModel.findOneAndUpdate(
-        { integrationsMasterId },
-        { $set: { ...req.body, updatedBy: req.user._id } },
-        { new: true }
-      );
-    } else {
-      integrationsSettings = await integrationsSettingsModel.create({
-        ...req.body,
-        createdBy: req.user._id,
-        userId: req.user._id,
-        accountId: req.user.accountId
-      });
-      // Perform the update
-      updatedIntegrationsDetails = await integrationsMasterModel.findOneAndUpdate(
-        { integrationsMasterId },
-        {
-          stepCount: pastIntegrationDetails.stepCount + 1,
-          updatedBy: req.user._id,
-        },
-        { new: true } // Options to return the updated document
-      );
-    }
-
-    return res
-      .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-      .json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_INTEGRATIONS_SETTINGS,
-        data: { updatedIntegrationsDetails },
-      });
-  } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({
-      status: customConstants.statusCodes.INTERNAL_SERVER_ERROR,
-      message: customConstants.messages.MESSAGE_INTERNAL_SERVER_ERROR,
-      error: error.message,
+  if (existingintegrationsSettings) {
+    integrationsSettings = await integrationsSettingsModel.findOneAndUpdate(
+      { integrationsMasterId },
+      { $set: { ...req.body, updatedBy: req.user._id } },
+      { new: true }
+    );
+  } else {
+    integrationsSettings = await integrationsSettingsModel.create({
+      ...req.body,
+      createdBy: req.user._id,
+      userId: req.user._id,
+      accountId: req.user.accountId
     });
+    // Perform the update
+    updatedIntegrationsDetails = await integrationsMasterModel.findOneAndUpdate(
+      { integrationsMasterId },
+      {
+        stepCount: pastIntegrationDetails.stepCount + 1,
+        updatedBy: req.user._id,
+      },
+      { new: true } // Options to return the updated document
+    );
   }
+
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_INTEGRATIONS_SETTINGS,
+      data: { updatedIntegrationsDetails },
+    });
+
 });
 
 
@@ -327,7 +299,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
       data: {
         integrationDetails,
         integrationsSettingsDetails: settingsDetails,
-        integrationMasterFieldMappingDetails:integrationMasterFieldMappingDetails
+        integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails
       },
     });
 });
