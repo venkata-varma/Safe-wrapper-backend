@@ -8,6 +8,8 @@ const customConstants = require("../config/constants.json");
 const sessionsModel = require("../models/sessionsModel");
 const integrationsMasterModel = require("../models/integrationsMasterModel");
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
+const fieldMappingsMasterModel = require("../models/fieldMappingsMasterModel");
+const fieldMappingMasterDefaultServicesModel = require("../models/fieldMappingMasterDefaultServicesModel");
 
 
 
@@ -110,6 +112,69 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
   }
 });
 
+/**
+ * Verify whether our database has default keys for field mapping.
+ * If not create a record.
+ * else forward to the next process.
+ */
+exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, next) => {
+  const { integrationsMasterId } = req.body;
+  let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod
+
+  const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId, { from: 1, to: 1 })
+  let get_integration_field_mapping_master_default_keys = await fieldMappingMasterDefaultServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
+  if (get_integration_field_mapping_master_default_keys.length > 0) {
+    next()
+  }
+  else {
+    fromFieldMappingkeysDetails = await fieldMappingsMasterModel.find({ serviceProvider: integrationDetails.from }).lean();
+    toFieldMappingkeysDetails = await fieldMappingsMasterModel.find({ serviceProvider: integrationDetails.to }).lean();
+    let fieldMappingDefaultKeys = []
+    fieldMappingDefaultKeys.push(...fromFieldMappingkeysDetails, ...toFieldMappingkeysDetails)
+    function getKeyMapping(fromProvider, toProvider) {
+      const fromKeys = { "work-order": [] };
+      const toKeys = { "work-order": [] };
+      fieldMappingDefaultKeys.forEach(hotkey => {
+        if (hotkey.serviceProvider === fromProvider) {
+          if (hotkey.serviceType === "work-orders" && hotkey.serviceMethod === "create") {
+            dataPointURL = hotkey.dataPointURL;
+            serviceMethod = hotkey.serviceMethod;
+            fromKeys["work-order"] = hotkey.dataPoints;
+          }
+        } else if (hotkey.serviceProvider === toProvider) {
+          if (hotkey.serviceType === "work-order" && hotkey.serviceMethod === "get") {
+            toKeys["work-order"] = hotkey.dataPoints;
+          }
+        }
+      });
+
+      const workOrderMapping = fromKeys["work-order"].reduce((acc, key, index) => {
+        acc[key] = toKeys["work-order"][index] || null;
+        return acc;
+      }, {});
+      return {
+        work_order: { "work-order": workOrderMapping },
+        dataPointURL: dataPointURL,
+        serviceMethod: serviceMethod
+      }
+    }
+
+    // Mapping should be done for toProvider from fromProvider
+    keyMapping = getKeyMapping(integrationDetails.to, integrationDetails.from);
+
+
+    let data_to_upload_fieldMappingMasterDefaultServicesModel = {
+      from: integrationDetails.from,
+      to: integrationDetails.to,
+      serviceMethod: keyMapping.serviceMethod,
+      dataPointURL: `${keyMapping.dataPointURL}`,
+      dataPoints: keyMapping.work_order
+    }
+    await fieldMappingMasterDefaultServicesModel.create(data_to_upload_fieldMappingMasterDefaultServicesModel);
+    next()
+  }
+});
+
 
 /*
 Function to create third step of initiating new integration process
@@ -137,11 +202,11 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
     const existingFieldMapping = await integrationsFieldMappingModel.findOne({
       integrationsMasterId,
     });
-
+    
     if (existingFieldMapping) {
       integrationsFieldMapping =
-        await integrationsFieldMappingModel.findOneAndUpdate(
-          { integrationsMasterId },
+        await integrationsFieldMappingModel.findByIdAndUpdate(
+          integrationsMasterId,
           { $set: { ...req.body, updatedBy: req.user._id } },
           { new: true }
         );
@@ -149,29 +214,18 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
       integrationsFieldMapping = await integrationsFieldMappingModel.create({
         ...req.body,
         createdBy: req.user._id,
+        updatedBy: req.user._id,
         userId: req.user._id,
+        stepCount: pastIntegrationDetails.stepCount + 1,
         accountId: req.user.accountId
       });
-      // Perform the update
-      updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
-        integrationsMasterId,
-        {
-          $set: {
-            stepCount: pastIntegrationDetails.stepCount + 1,
-            updatedBy: req.user._id,
-          }
-
-        },
-        { new: true } // Options to return the updated document
-      );
     }
-
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_INTEGRATION_FIELDS_MAPPINGS_UPDATED,
-        data: { updatedIntegrationsDetails },
+        data: { integrationsFieldMapping },
       });
   } catch (error) {
     console.error("Error:", error);

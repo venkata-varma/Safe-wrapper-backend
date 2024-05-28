@@ -14,7 +14,8 @@ const fieldMappingMasterDefaultServices = new mongoose.Schema({
     },
     serviceMethod:{
         type:String,
-        enum:["create","update","get","delete"]
+        enum:["create","update","get","delete"],
+        default: ""
     },
     dataPointURL: {
         type: String,
