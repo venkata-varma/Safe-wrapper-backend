@@ -202,7 +202,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
     const existingFieldMapping = await integrationsFieldMappingModel.findOne({
       integrationsMasterId,
     });
-    
+
     if (existingFieldMapping) {
       integrationsFieldMapping =
         await integrationsFieldMappingModel.findByIdAndUpdate(
@@ -317,27 +317,17 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
 
   console.log(integrationMasterId, "integrationMasterId");
 
-  const settingsDetails = await integrationsSettingsModel
-    .findOne({ integrationsMasterId: integrationMasterId })
-    .lean();
+  const settingsDetails = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationMasterId }).lean();
+  const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationMasterId }).lean();
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GET_INTEGRATIONS,
       data: {
-        // totalCorrigoProWorkOrders: CPDWorkOrders.length, totalServiceProvidersWorkOrders: serviceProvidersWorkOrderslength,
-        // totalCorrigoProInvoices: CPDInvoices.length, totalServiceProvidersInvoices: serviceprovidersInvoiceslength,
-        // totalQuickBooksInvoices: QBInvoices.length,
-        // cronjobsCount: cronjobDetails.length,
         integrationDetails,
-        // configDetails,
-        // cronjobDetails,
         integrationsSettingsDetails: settingsDetails,
-        // corrigoWorkOrders: CPDWorkOrders,
-        // ServiceProvidersWorkOrders: ServiceProvidersWorkOrders,
-        // corrigoProInvoices: CPDInvoices,
-        // serviceprovidersInvoices: ServiceProvidersInvoices
+        integrationMasterFieldMappingDetails:integrationMasterFieldMappingDetails
       },
     });
 });
