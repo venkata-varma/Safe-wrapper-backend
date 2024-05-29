@@ -122,7 +122,7 @@ exports.loginUser = asyncWrapper(async (req, res) => {
   const { phone, password } = req.body;
   let user_details = {};
   // Find user by email or phone
-  const user = await usersModel.findOne({ phone }, { _id: 0, password: 0, userId: 0 });
+  const user = await usersModel.findOne({ phone }, { _id: 0, password: 0});
   const respectiveAccount = await accountsModel.findOne({ _id: user.accountId },{password: 0});
   const userData = await usersModel.findOne({ phone });
 

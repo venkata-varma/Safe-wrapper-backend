@@ -25,6 +25,7 @@ exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
   const integrationsDetails = await integrationsMasterModel.create({
     ...req.body,
     createdBy: req.user._id,
+    updatedBy:req.user._id,
     accountId: req.user.accountId,
     userId: req.user.userId
   });
@@ -39,6 +40,25 @@ exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
 
 });
 
+
+/**
+ * Validate integration master exist
+*/
+
+exports.validateintegrationsMasterExist = asyncWrapper(async(req,res,next)=>{
+  const { integrationsMasterId } = req.body;
+  console.log('integrationMasterId:===',integrationsMasterId)
+  const integrationMasterDetails = await integrationsMasterModel.findById(integrationsMasterId)
+  if(!integrationMasterDetails){
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
+    });
+  }
+  else{
+    next()
+  }
+});
 
 /*
 Function to create second step of a initiating new integration process
@@ -78,8 +98,8 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
   }
 
   // Perform the update
-  const updatedIntegrationsDetails = await integrationsMasterModel.findOneAndUpdate(
-    { integrationsMasterId },
+  const updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
+    integrationsMasterId,
     {
       ...req.body,
       ...updateFields
@@ -277,6 +297,26 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
     });
 
 });
+
+
+/**
+ * Validate integration master exist.
+ * validate integration master status. 
+*/
+
+exports.validateintegrationsMaster = asyncWrapper(async(req,res,next)=>{
+  const { integrationMasterId } = req.params;
+  const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
+  if(!integrationMasterDetails || integrationMasterDetails.status === 'deleted'){
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
+    });
+  }
+  else{
+    next()
+  }
+})
 
 
 /*
