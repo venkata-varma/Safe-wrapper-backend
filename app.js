@@ -4,7 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongooseConnect = require('./config/dbConnection');
 const app = express();
-const {insertGlobalConstants}=require('./controllers/workOrdersController')
+// const {insertGlobalConstants}=require('./controllers/workOrdersController')
 // Middleware
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
