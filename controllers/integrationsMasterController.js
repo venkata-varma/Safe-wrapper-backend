@@ -123,14 +123,21 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
  * else forward to the next process.
  */
 exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, next) => {
-  const { integrationsMasterId } = req.body;
+  const { integrationsMasterId } = req.params;
   console.log("get_integration_field_mapping_master_default_keys.length :==",integrationsMasterId )
-  let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod
+  let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod,updateDataPointURL,updateServiceMethod
 
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId, { from: 1, to: 1 })
   let get_integration_field_mapping_master_default_keys = await fieldMappingMasterDefaultServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (get_integration_field_mapping_master_default_keys.length > 0) {
-    next()
+   
+    return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
+      data: { ...get_integration_field_mapping_master_default_keys },
+    });
   }
   else {
     fromFieldMappingkeysDetails = await fieldMappingsMasterModel.find({ serviceProvider: integrationDetails.from }).lean();
@@ -138,46 +145,93 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
     let fieldMappingDefaultKeys = []
     fieldMappingDefaultKeys.push(...fromFieldMappingkeysDetails, ...toFieldMappingkeysDetails)
     function getKeyMapping(fromProvider, toProvider) {
-      const fromKeys = { "work-order": [] };
-      const toKeys = { "work-order": [] };
+      const fromKeys_create = { "create-work-order-keys": [] };
+      const toKeys_create = { "create-work-order-keys": [] };
+      const fromKeys_update = { "update-work-order-keys": [] };
+      const toKeys_update = { "update-work-order-keys": [] };
       fieldMappingDefaultKeys.forEach(hotkey => {
         if (hotkey.serviceProvider === fromProvider) {
           if (hotkey.serviceType === "work-orders" && hotkey.serviceMethod === "create") {
             dataPointURL = hotkey.dataPointURL;
             serviceMethod = hotkey.serviceMethod;
-            fromKeys["work-order"] = hotkey.dataPoints;
+            fromKeys_create["create-work-order-keys"] = hotkey.dataPoints;
           }
         } else if (hotkey.serviceProvider === toProvider) {
           if (hotkey.serviceType === "work-order" && hotkey.serviceMethod === "get") {
-            toKeys["work-order"] = hotkey.dataPoints;
+            toKeys_create["create-work-order-keys"] = hotkey.dataPoints;
           }
         }
       });
 
-      const workOrderMapping = fromKeys["work-order"].reduce((acc, key, index) => {
-        acc[key] = toKeys["work-order"][index] || null;
+      fieldMappingDefaultKeys.forEach(hotkey => {
+          if (hotkey.serviceProvider === fromProvider) {
+            if (hotkey.serviceType === "work-orders" && hotkey.serviceMethod === "update") {
+              updateDataPointURL = hotkey.dataPointURL;
+              updateServiceMethod = hotkey.serviceMethod;
+              fromKeys_update["update-work-order-keys"] = hotkey.dataPoints;
+            }
+          } else if (hotkey.serviceProvider === toProvider) {
+            if (hotkey.serviceType === "work-order" && hotkey.serviceMethod === "get") {
+              toKeys_update["update-work-order-keys"] = hotkey.dataPoints;
+            }
+          }
+      });
+
+      const workOrderMapping = fromKeys_create["create-work-order-keys"].reduce((acc, key, index) => {
+        acc[key] = toKeys_create["create-work-order-keys"][index] || null;
+        return acc;
+      }, {});
+      const updateWorkOrderMapping = fromKeys_update["update-work-order-keys"].reduce((acc, key, index) => {
+        acc[key] = toKeys_update["update-work-order-keys"][index] || null;
         return acc;
       }, {});
       return {
-        work_order: { "work-order": workOrderMapping },
+        work_order: workOrderMapping ,
         dataPointURL: dataPointURL,
-        serviceMethod: serviceMethod
+        serviceMethod: serviceMethod,
+
+        update_work_order_keys : updateWorkOrderMapping ,
+        updateDataPointURL: dataPointURL,
+        updateServiceMethod: serviceMethod
       }
     }
 
     // Mapping should be done for toProvider from fromProvider
     keyMapping = getKeyMapping(integrationDetails.to, integrationDetails.from);
 
-
-    let data_to_upload_fieldMappingMasterDefaultServicesModel = {
+    // create work order keys to updaload fieldMappingMasterDefaultServicesModel.
+    let create_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel = {
       from: integrationDetails.from,
       to: integrationDetails.to,
       serviceMethod: keyMapping.serviceMethod,
       dataPointURL: `${keyMapping.dataPointURL}`,
       dataPoints: keyMapping.work_order
     }
-    await fieldMappingMasterDefaultServicesModel.create(data_to_upload_fieldMappingMasterDefaultServicesModel);
-    next()
+    let create_work_order_field_mapping_keys = await fieldMappingMasterDefaultServicesModel.create(create_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
+
+    // Update work order keys to updaload fieldMappingMasterDefaultServicesModel.
+    let update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel = {
+      from: integrationDetails.from,
+      to: integrationDetails.to,
+      serviceMethod: keyMapping.updateServiceMethod,
+      dataPointURL: `${keyMapping.updateDataPointURL}`,
+      dataPoints: keyMapping.update_work_order_keys
+    }
+    let update_work_order_field_mapping_keys = await fieldMappingMasterDefaultServicesModel.create(update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
+   
+// Prepare the response data in the desired format
+let responseData = {
+  0: { ...create_work_order_field_mapping_keys._doc },
+  1: { ...update_work_order_field_mapping_keys._doc }
+};
+
+return res
+  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+  .json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
+    data: responseData
+  });
   }
 });
 
@@ -196,12 +250,6 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
   });
 
   let updatedIntegrationsDetails;
-  if (!pastIntegrationDetails) {
-    return res.status(404).json({
-      status: customConstants.statusCodes.NOT_FOUND,
-      message: "Integration details not found.",
-    });
-  }
 
   // Create or update the integrationsFieldMapping
   let integrationsFieldMapping;
@@ -210,28 +258,37 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
   });
 
   if (existingFieldMapping) {
-    integrationsFieldMapping =
-      await integrationsFieldMappingModel.findByIdAndUpdate(
-        integrationsMasterId,
-        { $set: { ...req.body, updatedBy: req.user._id } },
-        { new: true }
-      );
+    integrationsFieldMapping = 
+        await integrationsFieldMappingModel.findOneAndUpdate(
+          {integrationsMasterId},
+          { $set: { ...req.body, updatedBy: req.user._id } },
+          { new: true }
+        );
+    updatedIntegrationsDetails = await integrationsMasterModel.findById(integrationsMasterId)
   } else {
     integrationsFieldMapping = await integrationsFieldMappingModel.create({
       ...req.body,
       createdBy: req.user._id,
       updatedBy: req.user._id,
       userId: req.user._id,
-      stepCount: pastIntegrationDetails.stepCount + 1,
       accountId: req.user.accountId
     });
+    updatedIntegrationsDetails = await integrationsMasterModel.findByIdUpdate(
+      integrationsMasterId,
+      {
+        stepCount: pastIntegrationDetails.stepCount + 1,
+        updatedBy: req.user._id,
+      },
+      { new: true } // Options to return the updated document
+    );
   }
+  
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_INTEGRATION_FIELDS_MAPPINGS_UPDATED,
-      data: { integrationsFieldMapping },
+      data: { updatedIntegrationsDetails },
     });
 
 });
@@ -251,13 +308,6 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   });
 
   let updatedIntegrationsDetails;
-  if (!pastIntegrationDetails) {
-    return res.status(404).json({
-      status: customConstants.statusCodes.NOT_FOUND,
-      message: "Integration details not found.",
-    });
-  }
-
   let integrationsSettings;
   const existingintegrationsSettings =
     await integrationsSettingsModel.findOne({
@@ -270,6 +320,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       { $set: { ...req.body, updatedBy: req.user._id } },
       { new: true }
     );
+    updatedIntegrationsDetails = await integrationsMasterModel.findById(integrationsMasterId)
   } else {
     integrationsSettings = await integrationsSettingsModel.create({
       ...req.body,
@@ -278,8 +329,8 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       accountId: req.user.accountId
     });
     // Perform the update
-    updatedIntegrationsDetails = await integrationsMasterModel.findOneAndUpdate(
-      { integrationsMasterId },
+    updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
+      integrationsMasterId,
       {
         stepCount: pastIntegrationDetails.stepCount + 1,
         updatedBy: req.user._id,
