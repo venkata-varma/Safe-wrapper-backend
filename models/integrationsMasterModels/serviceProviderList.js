@@ -6,13 +6,14 @@ const serviceProviderListSchema = new mongoose.Schema({
     },
     logo: {
         type: String,
-         required:[true, 'Logo is mandatory'],
-         default:""
+        default:"",
+        // required:[true, 'Logo is mandatory'],
+         
     },
     markedLogo: {
         type: String,
-        required:[true, 'Logo is mandatory'],
-        default:""
+        default:"",
+      //  required:[true, 'Logo is mandatory'],
     },
 
     serviceProviders: {
