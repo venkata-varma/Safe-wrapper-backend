@@ -1,5 +1,5 @@
 const asyncWrapper = require("../middleware/asyncWrapper");
-const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
+const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterModels/integrationsMasterServiceProvidersModel");
 let mongoose = require('mongoose')
 
 

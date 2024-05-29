@@ -1,11 +1,11 @@
 // const axios = require('axios');
-const usersModel = require('../models/usersModel');
+const usersModel = require('../models/usersModels/usersModel');
 const authentication = require('../utils/authentication');
 const asyncWrapper = require('../middleware/asyncWrapper');
 const customConstants = require('../config/constants.json');
-const sessionsModel = require('../models/sessionsModel');
+const sessionsModel = require('../models/sessionModels/sessionsModel');
 const { hashPwd, comparePassword } = require('../utils/helpers');
-const accountsModel = require('../models/accountsModel');
+const accountsModel = require('../models/accountsModels/accountsModel');
 const mongoose = require('mongoose')
 
 /*

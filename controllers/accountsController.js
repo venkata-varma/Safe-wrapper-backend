@@ -1,10 +1,10 @@
 // const axios = require('axios');
-const accountsModel = require('../models/accountsModel');
+const accountsModel = require('../models/accountsModels/accountsModel');
 const authentication = require('../utils/authentication');
 const asyncWrapper = require('../middleware/asyncWrapper');
 const customConstants = require('../config/constants.json');
 const { hashPwd } = require('../utils/helpers');
-const usersModel = require('../models/usersModel');
+const usersModel = require('../models/usersModels/usersModel');
 const mongoose = require("mongoose")
 
 

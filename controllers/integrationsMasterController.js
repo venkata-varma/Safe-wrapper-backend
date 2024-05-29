@@ -1,15 +1,15 @@
 // const axios = require('axios');
-const serviceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
-const integrationsFieldMappingModel = require("../models/integrationsFieldMappingModel");
-const integrationsSettingsModel = require("../models/integrationsSettingsModel");
+const serviceProvidersModel = require("../models/integrationsMasterModels/integrationsMasterServiceProvidersModel");
+const integrationsFieldMappingModel = require("../models/integrationsMasterModels/integrationsFieldMappingModel");
+const integrationsSettingsModel = require("../models/integrationsMasterModels/integrationsSettingsModel");
 const authentication = require("../utils/authentication");
 const asyncWrapper = require("../middleware/asyncWrapper");
 const customConstants = require("../config/constants.json");
-const sessionsModel = require("../models/sessionsModel");
-const integrationsMasterModel = require("../models/integrationsMasterModel");
-const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
-const fieldMappingsMasterModel = require("../models/fieldMappingsMasterModel");
-const fieldMappingMasterDefaultServicesModel = require("../models/fieldMappingMasterDefaultServicesModel");
+const sessionsModel = require("../models/sessionModels/sessionsModel");
+const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
+const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterModels/integrationsMasterServiceProvidersModel");
+const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fieldMappingsMasterModel");
+const fieldMappingMasterDefaultServicesModel = require("../models/integrationsMasterModels/fieldMappingMasterDefaultServicesModel");
 
 
 
@@ -305,8 +305,8 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
 */
 
 exports.validateintegrationsMaster = asyncWrapper(async(req,res,next)=>{
-  const { integrationMasterId } = req.params;
-  const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
+  const { integrationsMasterId } = req.params;
+  const integrationMasterDetails = await integrationsMasterModel.findById(integrationsMasterId)
   if(!integrationMasterDetails || integrationMasterDetails.status === 'deleted'){
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
@@ -324,13 +324,13 @@ Function to return datails of a specific Integration master table record by "Par
 
 */
 exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
-  const { integrationMasterId } = req.params;
-  const integrationDetails = await integrationsMasterModel.findById(integrationMasterId).lean();
+  const { integrationsMasterId } = req.params;
+  const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId).lean();
 
-  console.log(integrationMasterId, "integrationMasterId");
+  console.log(integrationsMasterId, "integrationsMasterId");
 
-  const settingsDetails = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationMasterId }).lean();
-  const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationMasterId }).lean();
+  const settingsDetails = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationsMasterId }).lean();
+  const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId }).lean();
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -350,18 +350,9 @@ Oppurtunity to edit Title, description etc;
 Returns Updated record with new values 
 */
 exports.editIntegrationMaster = asyncWrapper(async (req, res) => {
-
-  // Find the past integration details
-  const pastIntegrationDetails = await integrationsMasterModel.findOne({
-    integrationsMasterId: req.params.integrationMasterId
-  });
-  if (!pastIntegrationDetails) {
-    return res.status(404).json({
-      status: customConstants.statusCodes.NOT_FOUND,
-      message: customConstants.statusCodes.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
-    });
-  }
-  const updatedIntegrationMaster = await integrationsMasterModel.findByIdAndUpdate(req.params.integrationMasterId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
+  const {integrationsMasterId} = req.params
+  const updatedIntegrationMaster = await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
+  console.log('updatedIntegrationMaster:==',integrationsMasterId)
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -380,21 +371,12 @@ Returns Updated record with new values
 */
 exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (req, res) => {
   console.log("Bot oworking")
-
-  const pastIntegrationDetails = await integrationsMasterModel.findOne({
-    integrationsMasterId: req.params.integrationMasterId,
-  });
-  if (!pastIntegrationDetails) {
-    return res.status(404).json({
-      status: customConstants.statusCodes.NOT_FOUND,
-      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
-    });
-  }
+  const {integrationsMasterId} = req.params
   const { serviceProviderId } = req.body;
   const integrationServiceProvider = await serviceProvidersModel.findOne({ _id: serviceProviderId });
   if (!integrationServiceProvider) {
-    return res.status(404).json({
-      status: customConstants.statusCodes.NOT_FOUND,
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_NO_CONTENT).json({
+      status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND,
     });
   }
@@ -427,20 +409,12 @@ Returns Updated record with new values
 */
 exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
 
-  const pastIntegrationDetails = await integrationsMasterModel.findById(req.params.integrationMasterId)
-
-  if (!pastIntegrationDetails) {
-    return res.status(404).json({
-      status: customConstants.statusCodes.NOT_FOUND,
-      message: "Integration details not found.",
-    });
-  }
   const { fieldMappingId } = req.body;
   const integrationFieldMapping = await integrationsFieldMappingModel.findById(fieldMappingId);
   if (!integrationFieldMapping) {
-    return res.status(404).json({
-      status: customConstants.statusCodes.NOT_FOUND,
-      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_NO_CONTENT).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND,
     });
   }
   //save fields
@@ -464,19 +438,12 @@ Returns Updated record with new values
 */
 exports.editIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   //const { intergationMasterId } = req.params;
-  const pastIntegrationDetails = await integrationsMasterModel.findById(req.params.integrationMasterId)
-  if (!pastIntegrationDetails) {
-    return res.status(404).json({
-      status: customConstants.statusCodes.NOT_FOUND,
-      message: "Integration details not found.",
-    });
-  }
   const { integrationSettingsId } = req.body;
   const integrationMasterSettings = await integrationsSettingsModel.findById(integrationSettingsId);
   if (!integrationMasterSettings) {
-    return res.status(404).json({
-      status: customConstants.statusCodes.NOT_FOUND,
-      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_NO_CONTENT).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND,
     });
   }
   let updatedIntegrationMasterSettings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
@@ -496,14 +463,14 @@ Status is updated to deleted
 Returns updated record
 */
 exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
-  console.log("req.body.integrationMasterId", req.body.integrationMasterId)
-  const integrationMaster = await integrationsMasterModel.findByIdAndUpdate(req.params.integrationMasterId, { $set: { status: 'deleted' } }, { new: true });
+  console.log("req.body.integrationsMasterId", req.body.integrationsMasterId)
+  const integrationsMasterDetails = await integrationsMasterModel.findByIdAndUpdate(req.params.integrationsMasterId, { $set: { status: 'deleted' } }, { new: true });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_INTEGRATION_DELETED,
-      data: { integrationMaster }
+      data: { integrationsMasterDetails }
     });
 
 })
