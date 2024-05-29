@@ -18,17 +18,16 @@ mongooseConnect.DbConnect();
 const accountsRoute = require('./routes/accountsRoute');
 const usersRoute = require('./routes/usersRoute');
 const integrationsRoute = require('./routes/integrationsMasterRoute');
-const workOrderRoute = require('./routes/workOrderRoute')
+const workOrderRoute = require('./routes/workOrderRoute');
+const errorcontroller = require('./controllers/errorcontroller');
+
 app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/integrations', integrationsRoute);
 app.use('/api/workOrders', workOrderRoute);
 
 // Error Handling Middleware (optional)
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
+app.use(errorcontroller);
 
 app.listen(8081, () => {
     console.log("Server is working on port 8081");

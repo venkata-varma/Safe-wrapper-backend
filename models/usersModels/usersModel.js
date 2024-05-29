@@ -60,17 +60,6 @@ const usersSchema = new mongoose.Schema({
     },
 },{timestamps:true});
 
-/*
-Below code is commmented because, createdBy which is created automatically below is not being overridden when need to be overriden. So,
-if we just remove remove createdBy from below, there will be contradiction is whole process of creating a user
-*/
-
-// usersSchema.pre('save', function(next) {
-//     this.userId = this._id;
-//     this.createdBy=this._id;   //to be modified later if Admin creats a user
-//     next();
-// });
-
 usersSchema.methods.getJWTToken = function () {
     return jwt.sign({ userId: this._id }, 'secret', {
         expiresIn: process.env.JWT_EXPIRES_IN,
