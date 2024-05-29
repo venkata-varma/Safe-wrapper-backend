@@ -10,7 +10,7 @@ const integrationsMasterModel = require("../models/integrationsMasterModels/inte
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterModels/integrationsMasterServiceProvidersModel");
 const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fieldMappingsMasterModel");
 const fieldMappingMasterDefaultServicesModel = require("../models/integrationsMasterModels/fieldMappingMasterDefaultServicesModel");
-
+const {encryptData,decryptData}=require('../utils/encryptionAlgorithms')
 
 
 
@@ -71,9 +71,14 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
   const { serviceProvider, integrationsMasterId, credentials } =
     req.body;
   
+    const encryptedObjectJson=JSON.stringify(req.body.credentials);
+    const key = Buffer.from(process.env.CRYPTO_KEY, 'hex');
+    let iv = Buffer.from(process.env.CRYPTO_IV, 'hex')
+    
   // Create a new service provider
   const serviceProviderDetails = await serviceProvidersModel.create({
     ...req.body,
+    credentials:encryptData(encryptedObjectJson, key, iv) ,
     createdBy: req.user._id,
     userId: req.user._id,
     accountId: req.user.accountId
