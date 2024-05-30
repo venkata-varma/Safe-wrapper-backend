@@ -18,6 +18,7 @@ router.patch('/edit-integrationmaster-field-mappings/:integrationsMasterId',inte
 router.patch('/edit-integrationmaster-settings/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.editIntegrationMasterSettings)
 router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.deactivateInteragtionMasterCrons)
 
+router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
 router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.getSingleIntegrationMasterDetails)
 module.exports = router;

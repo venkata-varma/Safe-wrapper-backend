@@ -39,7 +39,7 @@ exports.createUser = asyncWrapper(async (req, res) => {
   const userDetails = await usersModel.findOne({ $or: [{ email }, { phone }] })
   console.log(password, "password")
   if (userDetails) {
-    return res.status(409).json({
+    return res.status(customConstants.statusCodes.DATA_CONFLICAT).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_ACCOUNT_EXIST
     })
@@ -69,15 +69,15 @@ exports.createUser = asyncWrapper(async (req, res) => {
 Miidleware function to controller, "loginUser"
 Mandatory fields -> Phone and Password
 Funtion to check 
-1.Existence of mandatory fields, 
-2.Mandatorys status of Account, 
-3.Validation of credentials, password
+  1.Existence of mandatory fields, 
+  2.Mandatorys status of Account, 
+  3.Validation of credentials, password
 If returns True, moves to "next" function , "loginUser"
 */
 exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
   const { phone, password } = req.body;
   if (!phone || !password) {
-    return res.status(401).json({
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_FIELDS_MANDATORY,
     });
@@ -86,13 +86,13 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
   
   // If user not found
   if (!user) {
-    return res.status(401).json({
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
     });
   }
   if (user.accountId.status === 'deleted') {
-    return res.status(401).json({
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED,
     });
@@ -104,7 +104,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
 
   // If password does not match
   if (!comparePasswordResult) {
-    return res.status(401).json({
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_WRONG_PASSWORD,
     });

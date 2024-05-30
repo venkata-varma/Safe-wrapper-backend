@@ -10,8 +10,40 @@ const integrationsMasterModel = require("../models/integrationsMasterModels/inte
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterModels/integrationsMasterServiceProvidersModel");
 const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fieldMappingsMasterModel");
 const fieldMappingMasterDefaultServicesModel = require("../models/integrationsMasterModels/fieldMappingMasterDefaultServicesModel");
+const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
 const {encryptData,decryptData}=require('../utils/encryptionAlgorithms')
 
+
+
+/**
+ * Get global constants.
+ * Get default field mapping keys of serivce providers.
+ * Get field mapping keys of each service provider.
+ * Get service provider list includes logo, service provider type etc.,
+ */
+
+exports.getGlobalConstants = asyncWrapper(async(req,res)=>{
+  const fieldMappingMasterDefaultServices =  await fieldMappingMasterDefaultServicesModel.find({});
+  const fieldMappingsMasters = await fieldMappingsMasterModel.find({});
+  const serviceproviderlists = await serviceProviderListModel.find({});
+
+  const cronSchedulePicker = {
+    eachSecond : 'each second',
+    eachMinute : 'each minute',
+    eachHour   : 'each hour',
+    eachDay    : 'each day',
+    eachMonth  : 'each month',
+    custom     : "custom"
+  }
+  return res
+  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+  .json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
+    data: { fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker},
+  });
+
+});
 
 
 /*
@@ -123,9 +155,8 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
 });
 
 /**
- * Verify whether our database has default keys for field mapping.
+ * Verify whether the database has default keys for field mapping.
  * If not create a record.
- * else forward to the next process.
  */
 exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.params;
