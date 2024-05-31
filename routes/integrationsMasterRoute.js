@@ -21,4 +21,5 @@ router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMaste
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
 router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.getSingleIntegrationMasterDetails)
+router.get('/get-service-provider-lists-details', integrationsMasterControllers.getServiceProviderListsDetails);
 module.exports = router;

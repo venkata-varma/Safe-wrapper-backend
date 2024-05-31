@@ -11,7 +11,7 @@ const integrationsMasterServiceProvidersModel = require("../models/integrationsM
 const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fieldMappingsMasterModel");
 const fieldMappingMasterDefaultServicesModel = require("../models/integrationsMasterModels/fieldMappingMasterDefaultServicesModel");
 const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
-const {encryptData,decryptData}=require('../utils/encryptionAlgorithms')
+const { encryptData, decryptData } = require('../utils/encryptionAlgorithms')
 
 
 
@@ -22,29 +22,53 @@ const {encryptData,decryptData}=require('../utils/encryptionAlgorithms')
  * Get service provider list includes logo, service provider type etc.,
  */
 
-exports.getGlobalConstants = asyncWrapper(async(req,res)=>{
-  const fieldMappingMasterDefaultServices =  await fieldMappingMasterDefaultServicesModel.find({});
+exports.getGlobalConstants = asyncWrapper(async (req, res) => {
+  const fieldMappingMasterDefaultServices = await fieldMappingMasterDefaultServicesModel.find({});
   const fieldMappingsMasters = await fieldMappingsMasterModel.find({});
   const serviceproviderlists = await serviceProviderListModel.find({});
 
   const cronSchedulePicker = {
-    eachSecond : 'each second',
-    eachMinute : 'each minute',
-    eachHour   : 'each hour',
-    eachDay    : 'each day',
-    eachMonth  : 'each month',
-    custom     : "custom"
+    eachSecond: 'each second',
+    eachMinute: 'each minute',
+    eachHour: 'each hour',
+    eachDay: 'each day',
+    eachMonth: 'each month',
+    custom: "custom"
   }
   return res
-  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-  .json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
-    data: { fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker},
-  });
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
+      data: { fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker },
+    });
 
 });
 
+/*
+Function to provide details of service provider lists with their test credentials decrypted  
+Returns details of service providers with decrypted objects
+*/
+
+exports.getServiceProviderListsDetails = asyncWrapper(async (req, res) => {
+  const serviceProviderListRecords = await serviceProviderListModel.find({});
+
+
+  for (let credential of serviceProviderListRecords) {
+    let encryptedObject = {
+      iv: process.env.CRYPTO_IV,
+      encryptedData: credential.testCredentials
+    }
+    credential.testCredentials = JSON.parse(decryptData(encryptedObject, process.env.CRYPTO_KEY));
+    console.log("credential.testCredentials", credential.testCredentials)
+  }
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND, // to be changed now
+    serviceProviderListRecords
+  });
+
+})
 
 /*
 Function to create first step of initiating new integration process
@@ -52,12 +76,12 @@ Mandatory-> Title and Description
 Returns newly created IntegrationMaster record 
 */
 exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
-  
+
   console.log("req", req.user)
   const integrationsDetails = await integrationsMasterModel.create({
     ...req.body,
     createdBy: req.user._id,
-    updatedBy:req.user._id,
+    updatedBy: req.user._id,
     accountId: req.user.accountId,
     userId: req.user.userId
   });
@@ -77,17 +101,17 @@ exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
  * Validate integration master exist
 */
 
-exports.validateintegrationsMasterExist = asyncWrapper(async(req,res,next)=>{
+exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.body;
-  console.log('integrationMasterId:===',integrationsMasterId)
+  console.log('integrationMasterId:===', integrationsMasterId)
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationsMasterId)
-  if(!integrationMasterDetails){
+  if (!integrationMasterDetails) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
-  else{
+  else {
     next()
   }
 });
@@ -102,15 +126,15 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
 
   const { serviceProvider, integrationsMasterId, credentials } =
     req.body;
-  
-    const encryptedObjectJson=JSON.stringify(req.body.credentials);
-    const key = Buffer.from(process.env.CRYPTO_KEY, 'hex');
-    let iv = Buffer.from(process.env.CRYPTO_IV, 'hex')
-    
+
+  const encryptedObjectJson = JSON.stringify(req.body.credentials);
+  const key = Buffer.from(process.env.CRYPTO_KEY, 'hex');
+  let iv = Buffer.from(process.env.CRYPTO_IV, 'hex')
+
   // Create a new service provider
   const serviceProviderDetails = await serviceProvidersModel.create({
     ...req.body,
-    credentials:encryptData(encryptedObjectJson, key, iv) ,
+    credentials: encryptData(encryptedObjectJson, key, iv),
     createdBy: req.user._id,
     userId: req.user._id,
     accountId: req.user.accountId
@@ -160,20 +184,20 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
  */
 exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.params;
-  console.log("get_integration_field_mapping_master_default_keys.length :==",integrationsMasterId )
-  let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod,updateDataPointURL,updateServiceMethod
+  console.log("get_integration_field_mapping_master_default_keys.length :==", integrationsMasterId)
+  let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod, updateDataPointURL, updateServiceMethod
 
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId, { from: 1, to: 1 })
   let get_integration_field_mapping_master_default_keys = await fieldMappingMasterDefaultServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (get_integration_field_mapping_master_default_keys.length > 0) {
-   
+
     return res
-    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-    .json({
-      status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
-      data: { ...get_integration_field_mapping_master_default_keys },
-    });
+      .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+      .json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
+        data: { ...get_integration_field_mapping_master_default_keys },
+      });
   }
   else {
     fromFieldMappingkeysDetails = await fieldMappingsMasterModel.find({ serviceProvider: integrationDetails.from }).lean();
@@ -200,17 +224,17 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       });
 
       fieldMappingDefaultKeys.forEach(hotkey => {
-          if (hotkey.serviceProvider === fromProvider) {
-            if (hotkey.serviceType === "work-orders" && hotkey.serviceMethod === "update") {
-              updateDataPointURL = hotkey.dataPointURL;
-              updateServiceMethod = hotkey.serviceMethod;
-              fromKeys_update["update-work-order-keys"] = hotkey.dataPoints;
-            }
-          } else if (hotkey.serviceProvider === toProvider) {
-            if (hotkey.serviceType === "work-order" && hotkey.serviceMethod === "get") {
-              toKeys_update["update-work-order-keys"] = hotkey.dataPoints;
-            }
+        if (hotkey.serviceProvider === fromProvider) {
+          if (hotkey.serviceType === "work-orders" && hotkey.serviceMethod === "update") {
+            updateDataPointURL = hotkey.dataPointURL;
+            updateServiceMethod = hotkey.serviceMethod;
+            fromKeys_update["update-work-order-keys"] = hotkey.dataPoints;
           }
+        } else if (hotkey.serviceProvider === toProvider) {
+          if (hotkey.serviceType === "work-order" && hotkey.serviceMethod === "get") {
+            toKeys_update["update-work-order-keys"] = hotkey.dataPoints;
+          }
+        }
       });
 
       const workOrderMapping = fromKeys_create["create-work-order-keys"].reduce((acc, key, index) => {
@@ -222,11 +246,11 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
         return acc;
       }, {});
       return {
-        work_order: workOrderMapping ,
+        work_order: workOrderMapping,
         dataPointURL: dataPointURL,
         serviceMethod: serviceMethod,
 
-        update_work_order_keys : updateWorkOrderMapping ,
+        update_work_order_keys: updateWorkOrderMapping,
         updateDataPointURL: dataPointURL,
         updateServiceMethod: serviceMethod
       }
@@ -254,20 +278,20 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       dataPoints: keyMapping.update_work_order_keys
     }
     let update_work_order_field_mapping_keys = await fieldMappingMasterDefaultServicesModel.create(update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
-   
-// Prepare the response data in the desired format
-let responseData = {
-  0: { ...create_work_order_field_mapping_keys._doc },
-  1: { ...update_work_order_field_mapping_keys._doc }
-};
 
-return res
-  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-  .json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
-    data: responseData
-  });
+    // Prepare the response data in the desired format
+    let responseData = {
+      0: { ...create_work_order_field_mapping_keys._doc },
+      1: { ...update_work_order_field_mapping_keys._doc }
+    };
+
+    return res
+      .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+      .json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
+        data: responseData
+      });
   }
 });
 
@@ -294,12 +318,12 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
   });
 
   if (existingFieldMapping) {
-    integrationsFieldMapping = 
-        await integrationsFieldMappingModel.findOneAndUpdate(
-          {integrationsMasterId},
-          { $set: { ...req.body, updatedBy: req.user._id } },
-          { new: true }
-        );
+    integrationsFieldMapping =
+      await integrationsFieldMappingModel.findOneAndUpdate(
+        { integrationsMasterId },
+        { $set: { ...req.body, updatedBy: req.user._id } },
+        { new: true }
+      );
     updatedIntegrationsDetails = await integrationsMasterModel.findById(integrationsMasterId)
   } else {
     integrationsFieldMapping = await integrationsFieldMappingModel.create({
@@ -318,7 +342,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
       { new: true } // Options to return the updated document
     );
   }
-  
+
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -391,16 +415,16 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
  * validate integration master status. 
 */
 
-exports.validateintegrationsMaster = asyncWrapper(async(req,res,next)=>{
+exports.validateintegrationsMaster = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.params;
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationsMasterId)
-  if(!integrationMasterDetails || integrationMasterDetails.status === 'deleted'){
+  if (!integrationMasterDetails || integrationMasterDetails.status === 'deleted') {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
-  else{
+  else {
     next()
   }
 })
@@ -437,9 +461,9 @@ Oppurtunity to edit Title, description etc;
 Returns Updated record with new values 
 */
 exports.editIntegrationMaster = asyncWrapper(async (req, res) => {
-  const {integrationsMasterId} = req.params
+  const { integrationsMasterId } = req.params
   const updatedIntegrationMaster = await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
-  console.log('updatedIntegrationMaster:==',integrationsMasterId)
+  console.log('updatedIntegrationMaster:==', integrationsMasterId)
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -458,7 +482,7 @@ Returns Updated record with new values
 */
 exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (req, res) => {
   console.log("Bot oworking")
-  const {integrationsMasterId} = req.params
+  const { integrationsMasterId } = req.params
   const { serviceProviderId } = req.body;
   const integrationServiceProvider = await serviceProvidersModel.findOne({ _id: serviceProviderId });
   if (!integrationServiceProvider) {
