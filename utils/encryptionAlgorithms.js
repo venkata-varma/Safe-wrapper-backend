@@ -30,12 +30,14 @@ Retuns original value
 */
 function decryptData(encrypted,key) {
     const ivBuffer = Buffer.from(encrypted.iv, 'hex');
-    const decipher = crypto.createDecipheriv(process.env.CRYPTO_ALGORITHM, key, ivBuffer);
+   const keyBuffer=Buffer.from(key, 'hex');
+    const decipher = crypto.createDecipheriv(process.env.CRYPTO_ALGORITHM, keyBuffer, ivBuffer);
     let decrypted = decipher.update(encrypted.encryptedData, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     
     return decrypted;
 }
+
 module.exports={
     encryptData,
     decryptData
