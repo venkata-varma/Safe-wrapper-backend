@@ -184,7 +184,6 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
  */
 exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.params;
-  console.log("get_integration_field_mapping_master_default_keys.length :==", integrationsMasterId)
   let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod, updateDataPointURL, updateServiceMethod
 
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId, { from: 1, to: 1 })
@@ -196,13 +195,14 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
-        data: { ...get_integration_field_mapping_master_default_keys },
+        data: { get_integration_field_mapping_master_default_keys },
       });
   }
   else {
     fromFieldMappingkeysDetails = await fieldMappingsMasterModel.find({ serviceProvider: integrationDetails.from }).lean();
     toFieldMappingkeysDetails = await fieldMappingsMasterModel.find({ serviceProvider: integrationDetails.to }).lean();
     let fieldMappingDefaultKeys = []
+    let get_integration_field_mapping_master_default_keys = [];
     fieldMappingDefaultKeys.push(...fromFieldMappingkeysDetails, ...toFieldMappingkeysDetails)
     function getKeyMapping(fromProvider, toProvider) {
       const fromKeys_create = { "create-work-order-keys": [] };
@@ -279,18 +279,14 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
     }
     let update_work_order_field_mapping_keys = await fieldMappingMasterDefaultServicesModel.create(update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
 
-    // Prepare the response data in the desired format
-    let responseData = {
-      0: { ...create_work_order_field_mapping_keys._doc },
-      1: { ...update_work_order_field_mapping_keys._doc }
-    };
-
+    get_integration_field_mapping_master_default_keys.push({ ...create_work_order_field_mapping_keys._doc },{ ...update_work_order_field_mapping_keys._doc })
+    
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
-        data: responseData
+        data: {get_integration_field_mapping_master_default_keys}
       });
   }
 });
