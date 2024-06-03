@@ -26,6 +26,9 @@ app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/integrations', integrationsRoute);
 app.use('/api/workOrders', workOrderRoute);
+const integrationsSchedules = require('./controllers/schedulerController');
+
+integrationsSchedules.integrationsScheduleCronJobsForEachMinute()
 
 // Error Handling Middleware (optional)
 app.use(errorcontroller);
