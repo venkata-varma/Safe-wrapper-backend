@@ -19,7 +19,7 @@ async function comparePassword(password, hashedPassword) {
 }
 
 /*
-Function that returns array that states last twelve weeks
+Function returns the last twelve weeks of times.
 */
 // Function to format date as local ISO string without converting to UTC
 function toLocalISOString(date) {
