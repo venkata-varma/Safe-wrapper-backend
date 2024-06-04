@@ -4,9 +4,15 @@ const authentication = require('../utils/authentication');
 const asyncWrapper = require('../middleware/asyncWrapper');
 const customConstants = require('../config/constants.json');
 const sessionsModel = require('../models/sessionModels/sessionsModel');
-const { hashPwd, comparePassword } = require('../utils/helpers');
+const { hashPwd, comparePassword, twelveWeeksSales } = require('../utils/helpers');
 const accountsModel = require('../models/accountsModels/accountsModel');
 const mongoose = require('mongoose')
+const cpdWorkOrdersModel = require('../models/workOrdersModels/CPDWorkordersModel')
+const integrationMasterModel = require('../models/integrationsMasterModels/integrationsMasterModel')
+const integrationMasterServiceProviderModel = require('../models/integrationsMasterModels/integrationsMasterServiceProvidersModel')
+const integrationFieldMappingModel = require('../models/integrationsMasterModels/integrationsFieldMappingModel');
+const integrationSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel')
+const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
 
 /*
 Miidleware function to controller, "createUser"
@@ -152,3 +158,133 @@ exports.loginUser = asyncWrapper(async (req, res) => {
 
 });
 
+
+/*
+  Function to scan and provide all possible data and statistics of respective- logged in Account
+  Retunrs data of a account- 
+    1. Number of Integrations
+    2. Integration details 
+    3. Latest Cron-logs with their respective dumped and pulled records
+    4. Sales report of last 12 weeks 
+    5. High-priority work-orders
+    6. List of users associated with the account
+    7. Account details
+*/
+exports.getAccountStatistics = asyncWrapper(async (req, res) => {
+  const { accountId } = req.body;
+  const accountDetails = await accountsModel.findById(accountId);
+
+  const users = await usersModel.find({ accountId }, { password: 0 });
+ 
+  // const integrationsOfAccount = await integrationMasterModel.find({ accountId, status: 'active' });
+  
+  const integrationsOfAccount = await integrationMasterModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+        status: 'active'
+      }
+    },
+    {
+      $lookup: {
+        "from": "integrationsmasterserviceproviders",
+        "localField": "_id",
+        "foreignField": "integrationsMasterId",
+        "as": "integrationsmasterserviceproviders"
+      }
+    },
+    {
+      $lookup: {
+        "from": "integrationsfieldmappings",
+        "localField": "_id",
+        "foreignField": "integrationsMasterId",
+        "as": "integrationsfieldmappings"
+      }
+    },
+    {
+      $lookup: {
+        "from": "integrationssettings",
+        "localField": "_id",
+        "foreignField": "integrationsMasterId",
+        "as": "integrationssettings"
+      }
+    }
+  ]);
+
+  // for (let integrationMaster of integrationsOfAccount) {
+  //   let integrationServiceProvidersOfRespectiveIntegration = await integrationMasterServiceProviderModel.find({ integrationsMasterId: integrationMaster._id })
+  //   let integraionFieldMappingOfRespectiveIntegration = await integrationFieldMappingModel.find({ integrationsMasterId: integrationMaster._id });
+  //   let integrationSettingsOfRespectiveIntegration = await integrationSettingsModel.find({ integrationsMasterId: integrationMaster._id });
+  //   integrationDetails = {
+  //     integrationMaster,
+  //     integraionFieldMappingOfRespectiveIntegration,
+  //     integrationServiceProvidersOfRespectiveIntegration,
+  //     integrationSettingsOfRespectiveIntegration
+  //   }
+  //   integrationsDetails.push(integrationDetails)
+  // }
+
+  const activityLog = await integrationCronsModel.aggregate([
+    {
+      $match: { accountId: new mongoose.Types.ObjectId(accountId) }
+    },
+    {
+      $sort: { createdAt: -1 }
+    },
+    {
+      $lookup: {
+        "from": "cpdworkorders",
+        "localField": "_id",
+        "foreignField": "integrationsCronId",
+        "as": "cronInfo"
+      }
+    },
+    { $unwind: "$cronInfo" },
+    {
+      $sort: { "cronInfo.createdAt": -1 }
+    }
+  ]);
+
+  // const activityLog = await cpdWorkOrdersModel.find({ accountId }).sort({ createdAt: -1 })
+
+  const highPrioritycpdWorkOrders = await cpdWorkOrdersModel.find({ accountId, priority:'high' }).sort({ createdAt: -1 })
+  const workOrderStates = await cpdWorkOrdersModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId)
+      }
+    },
+    {
+      $group: {
+        _id: "$CPDWorkOrders.Status",
+        count: { $sum: 1 }  // Count the number of documents in each group
+      }
+    }
+  ])
+  const twelveWeekSales = twelveWeeksSales;
+
+
+  for (let week of twelveWeekSales) {
+
+    let weekWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate } })
+
+    week.workOrderCount = weekWorkOrders.length;
+  }
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_USER_LOGIN,
+    data: {
+       
+      users,
+      workOrderStates,
+      highPrioritycpdWorkOrders,
+      activityLog,
+      twelveWeekSales,
+      integrationsOfAccount
+
+    },
+
+
+  });
+
+})

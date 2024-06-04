@@ -157,7 +157,7 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
   } else {
     updateFields.to = serviceProvider;
   }
-
+delete req.body.status;
   // Perform the update
   const updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
     integrationsMasterId,
@@ -329,7 +329,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
       userId: req.user._id,
       accountId: req.user.accountId
     });
-    updatedIntegrationsDetails = await integrationsMasterModel.findByIdUpdate(
+    updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
       integrationsMasterId,
       {
         stepCount: pastIntegrationDetails.stepCount + 1,

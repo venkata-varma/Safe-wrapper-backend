@@ -18,19 +18,46 @@ async function comparePassword(password, hashedPassword) {
     //if(hashedString)
 }
 
+/*
+Function that returns array that states last twelve weeks
+*/
+// Function to format date as local ISO string without converting to UTC
+function toLocalISOString(date) {
+    const tzOffset = date.getTimezoneOffset() * 60000; // Timezone offset in milliseconds
+    const localTime = new Date(date - tzOffset);
+    return localTime.toISOString().slice(0, -1); // Remove 'Z' at the end
+}
 
-module.exports = {
-    hashPwd, 
-    comparePassword,
+// Function to get the start and end date of a week, formatted as local ISO string
+function getWeekRange(toDate) {
+    const endDate = new Date(toDate);
+    const startDate = new Date(endDate);
+    startDate.setDate(endDate.getDate() - 7);
+    startDate.setMilliseconds(startDate.getMilliseconds() + 1); // Ensure non-overlapping by adding 1 millisecond
+    return {
+        fromDate: toLocalISOString(startDate),
+        toDate: toLocalISOString(endDate)
+    };
+}
+
+// Array to store the week ranges
+const twelveWeeksSales = [];
+
+// Start with the current date and time as the end of the last week
+let currentEndDate = new Date();
+
+// Populate the array with data representing the last twelve weeks
+for (let i = 0; i < 12; i++) {
+    const weekRange = getWeekRange(currentEndDate);
+    twelveWeeksSales.unshift(weekRange); // Insert at the beginning of the array
+    currentEndDate = new Date(weekRange.fromDate);
+    currentEndDate.setMilliseconds(currentEndDate.getMilliseconds() - 1); // Set up for the next week's end date
 }
 
 
 
-// let returnsEncryptedData= encryptData('b7efe625111a8610143a770f52767120',key, iv)
-// console.log('returnsEncryptedData', returnsEncryptedData)    a Object 
-//  let dataToBeDecrypted={
-//   iv: '31ac58118bcdc9ed57f96323579ffd3e',
-//   encryptedData: 'de1c371c5c33940b62f5ccb307358df4755aaae74cad2ca2772f477cb6babd598f90c9b2e7cb811e0b6d9d056f658921'
-// }
-//  let decryptedData=decryptData(dataToBeDecrypted, key)
-//  console.log('decryptedData', decryptedData)
+module.exports = {
+    hashPwd, 
+    comparePassword,
+    twelveWeeksSales
+}
