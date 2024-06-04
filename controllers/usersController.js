@@ -272,7 +272,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   }
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_USER_LOGIN,
+    message: customConstants.messages.MESSAGE_DASHBOARD_STATISTICS_RECEIVED,
     data: {
        
       users,
