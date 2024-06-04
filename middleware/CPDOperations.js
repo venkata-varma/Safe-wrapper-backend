@@ -66,10 +66,9 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
         workDetails.accountId = accountId;
         workDetails.integrationsCronJobId = cronJobDetails._id
         const CPD_work_details = await CPDWorkordersModel.findOne({ CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId : integrationsMasterId })
-        console.log('step 4')
+        // console.log('step 4')
         if (CPD_work_details) {
-            console.log('step 5')
-            //, CPDWorkOrderStatus : {$ne : work.Status} 
+            // console.log('step 5')
             await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId : integrationsMasterId }, {
                 CPDWorkOrders: workDetails.CPDWorkOrders,
                 MessageId: workDetails.MessageId,
@@ -117,13 +116,13 @@ exports.getCPDWorkOrders = async (integrationObject) => {
     });
 
     encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials};
-    console.log("Step-1 called");
+    // console.log("Step-1 called");
 
     decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
-    console.log("Step-2 called");
+    // console.log("Step-2 called");
 
     const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl);
-    console.log("Step-3 called");
+    // console.log("Step-3 called");
 
     const CPDWorkOrderResponse = await axios.post(CPDConfigurations.CPD.workOrderSearch.URL,
         CPDConfigurations.CPD.workOrderSearch.body,
