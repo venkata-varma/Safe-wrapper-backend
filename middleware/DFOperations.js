@@ -1,12 +1,113 @@
 
+const DFConfigurations = require('../config/integrationsConfiguration')
+const axios = require('axios');
+const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
+const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
 
+/**
+ * 
+ * @param {*} integrationObject getting the field mapping record object from the scheduler controller.
+ * Find the Work order from the CPDWorkOrderModel using integraton id and account id.
+ * Then map the fieldmapping keys which are matched with the CPD Work orders.
+ * Post the work order to the dataforma.
+ * Get the work order details using the id from the post request.
+ * Save the record which work order pushed to the dataforma.
+ * Then update the status of CPD work order as completed once successfully pushed the code to dataforma. 
+ */
 
+exports.DFCreateWorkorders = async (integrationObject) => {
 
+    if (integrationObject !== undefined) {
+        let fieldmappingkeys = {}
+        fieldmappingkeys = integrationObject.mappedKeys;
 
+        const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).limit(1).lean();
+        for (const property in fieldmappingkeys) {
 
+            if (property === "numberAlt")
+                fieldmappingkeys.numberAlt = CPDWorkOrderDetails[0].CPDWorkOrders.WorkOrderNumber;
 
+            else if (property === "budgetedProposedStatus")
+                fieldmappingkeys.budgetedProposedStatus = "NONE";
 
-exports.postDFWorkOrders = async(integrationObject)=>{
-    // console.log('integrationObject:==',integrationObject)
+            else if (property === "buildingId")
+                fieldmappingkeys.buildingId = 1715;
 
+            else if (property === "divisionId")
+                fieldmappingkeys.divisionId = 1;
+
+            else if (property === "invoiceToCustomerId")
+                fieldmappingkeys.invoiceToCustomerId = 2238;
+
+            else if (property === "invoiceType")
+                fieldmappingkeys.invoiceType = 'EXTERNAL_CHARGE';
+
+            else if (property === "reportedById")
+                fieldmappingkeys.reportedById = 5515;
+
+            else if (property === "status")
+                fieldmappingkeys.status = 'IN_PROGRESS';
+            else if (property === "typeListId")
+                fieldmappingkeys.typeListId = 687;
+
+            else if (property === "workDescription")
+                fieldmappingkeys.workDescription = "DevRabbit Testing WorkOrders (Ignore).";
+            else
+                fieldmappingkeys[property] = "";
+
+        }
+        let DFWorkOrderId = 0, DFWorkorderList = {}
+        let createWorkOrderConfig = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: DFConfigurations.DF.createWorkOrder.URL,
+            headers: DFConfigurations.DF.createWorkOrder.headers,
+            data: JSON.stringify(fieldmappingkeys)
+        };
+        // axios.request(createWorkOrderConfig)
+        //     .then((response) => {
+        //         DFWorkOrderId = response.data.id
+        //         console.log("response:===",JSON.stringify(response.data));
+        //     })
+        //     .catch((error) => {
+        //         console.log("ERROR:==",error.response.data);
+        //     });
+
+        let getWorkOrderConfig = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: `${DFConfigurations.DF.getWorkOrderById.URL}${31371}`,
+            headers: DFConfigurations.DF.getWorkOrderById.headers,
+        };
+        const getDFWorkOrderList = await axios.request(getWorkOrderConfig)
+            .then((response) => {
+                DFWorkorderList = JSON.stringify(response.data)
+                // console.log("response:===",JSON.stringify(response.data));
+            })
+            .catch((error) => {
+                console.log("ERROR:==", error.response.data);
+            });
+        DFWorkOrderId = JSON.parse(DFWorkorderList).id
+        const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: 31371, }).lean();
+        console.log('listOfDFWorkorderDetails:===', listOfDFWorkorderDetails)
+        if (listOfDFWorkorderDetails) {
+            DFWorkOrdersModel.findOneAndUpdate({
+                DFWorkOrderId: DFWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
+                accountId: integrationObject.accountId
+            }, { status: "completed" }, { new: true }).lean()
+        }
+        else {
+            const DFWorkOrderDetails = await DFWorkOrdersModel.create({
+                integrationsMasterId: integrationObject.integrationsMasterId,
+                accountId: integrationObject.accountId,
+                integrationsCronId: CPDWorkOrderDetails[0].integrationsCronId,
+                DFWorkOrderId: DFWorkOrderId,
+                DFWorkOrders: DFWorkorderList,
+                DFWorkOrderStatus: JSON.parse(DFWorkorderList).status,
+                status: "completed",
+            })
+            await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: CPDWorkOrderDetails[0].CPDWorkOrderId }, { status: "completed" }, { new: true })
+        }
+
+    }
 }

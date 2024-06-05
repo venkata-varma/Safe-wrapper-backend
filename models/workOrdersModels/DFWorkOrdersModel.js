@@ -16,13 +16,17 @@ const DFWorkordersModelSchema = mongoose.Schema(
             type : mongoose.Schema.Types.ObjectId,
             default : null
         },
-        DFWorkOrderStatus:{
-            type : String,
-            default : null
+        DFWorkOrderId:{
+            type:Number,
+            default:0
         },
         DFWorkOrders: {
             type: mongoose.Schema.Types.Mixed,
             default: null
+        },
+        DFWorkOrderStatus:{
+            type : String,
+            default : ""
         },
         status: {
             type : String,

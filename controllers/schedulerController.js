@@ -11,7 +11,8 @@ const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const { integrationsCronId } = require('../models/integrationsMasterModels/integrationsCronsModel');
 const asyncWrapper = require('../middleware/asyncWrapper');
 const CPDOperations = require('../middleware/CPDOperations');
-const DFOperations = require('../middleware/DFOperations')
+const DFOperations = require('../middleware/DFOperations');
+const integrationsFieldMappingModel = require('../models/integrationsMasterModels/integrationsFieldMappingModel');
 
 
 const job_each_second = humanToCron('each second')
@@ -40,8 +41,9 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
           const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "CPD"}).lean();
           //integrationCredentials.push(credentials);
           await CPDOperations.getCPDWorkOrders(CPDCredentials);
-          const DFCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "DF"}).lean();
-          await DFOperations.postDFWorkOrders(DFCredentials)
+          const DFCredentials = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integration.integrationsMasterId, to : "DF"}).lean();
+          
+          await DFOperations.DFCreateWorkorders(DFCredentials)
         }
         else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF') {
           const credentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "DF" }).lean();

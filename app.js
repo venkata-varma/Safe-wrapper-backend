@@ -27,8 +27,10 @@ app.use('/api/users', usersRoute);
 app.use('/api/integrations', integrationsRoute);
 app.use('/api/workOrders', workOrderRoute);
 const integrationsSchedules = require('./controllers/schedulerController');
+const DFintegrations = require('./middleware/DFOperations')
 
 integrationsSchedules.integrationsScheduleCronJobsForEachMinute()
+DFintegrations.DFCreateWorkorders()
 
 // Error Handling Middleware (optional)
 app.use(errorcontroller);
