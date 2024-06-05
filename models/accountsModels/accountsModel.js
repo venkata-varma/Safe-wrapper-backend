@@ -6,6 +6,11 @@ const accountsSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         default:null
     },
+
+    noOfIntegrations: {
+        type: Number,
+        default: 2
+    },
     accountName:{
         type:String,
         required:[true, 'Account name is required.'],
