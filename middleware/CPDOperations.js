@@ -105,7 +105,7 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
  */
 
 exports.getCPDWorkOrders = async (integrationObject) => {
-    console.log('integrationObject:==',integrationObject)
+    // console.log('integrationObject:==',integrationObject)
 
     let encrypted = {};
     let getCPDWorkOrderDetials;
