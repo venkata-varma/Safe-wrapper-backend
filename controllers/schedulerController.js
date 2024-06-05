@@ -32,7 +32,7 @@ const job_each_minute = humanToCron('once each minute')
 
 exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
   let integrationCredentials = []
-  let job_each_minute_cronJob = schedule.scheduleJob("*/3 * * * * *", async () => {
+  let job_each_minute_cronJob = schedule.scheduleJob(job_each_minute, async () => {
     const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'each minute' }).populate('integrationsMasterId').lean();
 
     if (integrationsMasterSettingsDetails.length > 0) {

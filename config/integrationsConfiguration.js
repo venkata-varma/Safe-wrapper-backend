@@ -65,6 +65,15 @@ const configurations = {
             "typeListId": 687,
             "workDescription": "DevRabbit Testing WorkOrders (Ignore)."          
           },
+      },
+      getWorkOrderById : {
+        URL : 'https://api.dataforma.com/dflowslope-api/workorders/',
+        headers: { 
+          'df-auth': 'ad7412b5-1928-49b9-a237-aa43d764bec4', 
+          'df-servicecode': 'mds552', 
+          'Content-Type': 'application/json', 
+          'Cookie': 'AWSALB=DGf1rqUADBR0x43HDX6TmdYgk92IjmyK3W1bQeNnFzbO0+GDi1NUNmB0zQlOVOjt+BNKwErFLx2+ecCKc0uB0ZWQDjvtV1aSUXdWvBvtwM4k1AthfVVWJryDJ2GP; AWSALBAPP-0=_remove_; AWSALBAPP-1=_remove_; AWSALBAPP-2=_remove_; AWSALBAPP-3=_remove_; AWSALBCORS=DGf1rqUADBR0x43HDX6TmdYgk92IjmyK3W1bQeNnFzbO0+GDi1NUNmB0zQlOVOjt+BNKwErFLx2+ecCKc0uB0ZWQDjvtV1aSUXdWvBvtwM4k1AthfVVWJryDJ2GP'
+        },
       }
     } 
 }
