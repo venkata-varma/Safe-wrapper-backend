@@ -12,8 +12,7 @@ const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fie
 const fieldMappingMasterDefaultServicesModel = require("../models/integrationsMasterModels/fieldMappingMasterDefaultServicesModel");
 const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
 const { encryptData, decryptData } = require('../utils/encryptionAlgorithms')
-
-
+const accountsModel=require('../models/accountsModels/accountsModel')
 
 /**
  * Get global constants.
@@ -29,10 +28,10 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
 
   const cronSchedulePicker = {
     eachSecond: 'each second',
-    eachMinute: 'each minute',
-    eachHour: 'each hour',
-    eachDay: 'each day',
-    eachMonth: 'each month',
+    eachMinute: 'once each minute',
+    eachHour: 'once each hour',
+    eachDay: 'once each day',
+    eachMonth: 'once each month',
     custom: "custom"
   }
   return res
@@ -67,6 +66,28 @@ exports.getServiceProviderListsDetails = asyncWrapper(async (req, res) => {
     message: customConstants.messages.MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND, // to be changed now
     serviceProviderListRecords
   });
+
+})
+
+/**
+  *Middleware function to check count of active integrations of respective account
+  *If count is already 2 ,and Any user visits to add one more, 
+     Returns Warning message with exisiting count
+
+*/
+exports.validateCreateIntegrationsCount=asyncWrapper(async(req,res,next)=>{
+  const integrationsCount=await integrationsMasterModel.find({accountId:req.user.accountId, status:'active'});
+
+const respectiveAccount=await accountsModel.findById(req.user.accountId);
+  if(integrationsCount.length>=respectiveAccount.noOfIntegrations){
+    return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+      status: customConstants.messages.MESSAGE_WARNING,
+      message: customConstants.messages.MESSAGE_INTEGRATION_COUNT_REACHED
+    });
+  }
+  else{
+    next()
+  }
 
 })
 
@@ -436,8 +457,9 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
 
   console.log(integrationsMasterId, "integrationsMasterId");
 
-  const settingsDetails = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationsMasterId }).lean();
-  const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId }).lean();
+  const settingsDetails = await integrationsSettingsModel.find({ integrationsMasterId: integrationsMasterId }).lean();
+  const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId }).lean();
+  const integrationMasterServiceProviders=await integrationsMasterServiceProvidersModel.find({integrationsMasterId});
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -446,11 +468,11 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
       data: {
         integrationDetails,
         integrationsSettingsDetails: settingsDetails,
-        integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails
+        integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
+        integrationMasterServiceProviders
       },
     });
 });
-
 /*
 Function to Edit a specific initiated Integration master record
 Oppurtunity to edit Title, description etc;

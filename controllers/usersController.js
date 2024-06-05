@@ -128,11 +128,10 @@ exports.loginUser = asyncWrapper(async (req, res) => {
   const { phone, password } = req.body;
   let user_details = {};
   // Find user by email or phone
-  const user = await usersModel.findOne({ phone }, { _id: 0, password: 0});
-  const respectiveAccount = await accountsModel.findOne({ _id: user.accountId },{password: 0});
+  const user = await usersModel.findOne({ phone }, { _id: 0, password: 0 });
+  // const respectiveAccount = await accountsModel.findOne({ _id: user.accountId }, { password: 0 });
   const userData = await usersModel.findOne({ phone });
 
-  user_details.accountDetails = respectiveAccount;
   user_details.userDetails = user.toObject();
 
   // Generate JWT token
@@ -148,6 +147,12 @@ exports.loginUser = asyncWrapper(async (req, res) => {
   const sesssionDetails = await sessionsModel.create(req.body);
   user_details.sesssionDetails = sesssionDetails;
 
+  //Count number of integrations for respective account
+  const integrationsCount = await integrationMasterModel.find({ accountId: user.accountId, status: 'active' });
+  //const accountUpdateIntegrationsCount = await accountsModel.findByIdAndUpdate(user.accountId, { $set: { noOfIntegrations: integrationsCount.length } }, { new: true })
+  user_details.accountDetails = await accountsModel.findById(user.accountId, {password:0})
+  console.log('--------------------->', user_details)
+  
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -171,7 +176,7 @@ exports.loginUser = asyncWrapper(async (req, res) => {
     7. Account details
 */
 exports.getAccountStatistics = asyncWrapper(async (req, res) => {
-  const { accountId } = req.body;
+  const  accountId  = req.params.accountId;
   const accountDetails = await accountsModel.findById(accountId);
 
   const users = await usersModel.find({ accountId }, { password: 0 });

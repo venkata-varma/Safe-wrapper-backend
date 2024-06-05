@@ -66,10 +66,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_ACCOUNT_CREATED,
-            data: {
-                accountData,
-                user
-            }
+            
         })
     }
 });

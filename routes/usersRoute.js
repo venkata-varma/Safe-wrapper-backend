@@ -9,5 +9,5 @@ router.post('/create-user',usersControllers.validateUserRegistration, usersContr
 // router.post('/update-user',usersControllers.validateUserRegistration, usersControllers.createUser)
 router.post('/login',usersControllers.validateLoginProcess, usersControllers.loginUser)
 
-router.get('/get-account-statistics', usersControllers.getAccountStatistics)
+router.get('/get-account-statistics/:accountId', usersControllers.getAccountStatistics)
 module.exports = router;
