@@ -28,7 +28,7 @@ Function to Decrypt to original value
 Takes an object with two key-value pairs => iv,Encrypted string  and required key
 Retuns original value 
 */
-function decryptData(encrypted,key) {
+async function decryptData(encrypted,key) {
     const ivBuffer = Buffer.from(encrypted.iv, 'hex');
    const keyBuffer=Buffer.from(key, 'hex');
     const decipher = crypto.createDecipheriv(process.env.CRYPTO_ALGORITHM, keyBuffer, ivBuffer);

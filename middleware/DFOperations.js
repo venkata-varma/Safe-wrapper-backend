@@ -5,6 +5,7 @@ const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
 const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationsCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
+const asyncWrapper = require('./asyncWrapper');
 
 /**
  * 
@@ -18,7 +19,7 @@ const integrationsCronsModel = require('../models/integrationsMasterModels/integ
  * If we encountered any error while post or get the work order to the dataforma. We have integrations exceptions log which stores the error log for specific work order.
  */
 
-exports.DFCreateWorkorders = async (integrationObject) => {
+exports.DFCreateWorkorders = asyncWrapper(async (integrationObject) => {
 
     if (integrationObject !== undefined) {
         let fieldmappingkeys = {}
@@ -109,7 +110,7 @@ exports.DFCreateWorkorders = async (integrationObject) => {
             });
         DFWorkOrderId = JSON.parse(DFWorkorderList).id
         const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: 31371, }).lean();
-        console.log('listOfDFWorkorderDetails:===', listOfDFWorkorderDetails)
+        // console.log('listOfDFWorkorderDetails:===', listOfDFWorkorderDetails)
         if (listOfDFWorkorderDetails) {
             DFWorkOrdersModel.findOneAndUpdate({
                 DFWorkOrderId: DFWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
@@ -128,8 +129,8 @@ exports.DFCreateWorkorders = async (integrationObject) => {
             });
             workOrderPushedCount++
             await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: CPDWorkOrderDetails[0].CPDWorkOrderId }, { status: "completed" }, { new: true })
+            await integrationsCronsModel.findByIdAndUpdate(CPDWorkOrderDetails[0].integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
         }
-        await integrationsCronsModel.findByIdAndUpdate(CPDWorkOrderDetails[0].integrationsCronId, {pushedCount : workOrderPushedCount});
 
     }
-}
+});
