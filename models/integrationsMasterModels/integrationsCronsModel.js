@@ -8,11 +8,13 @@ const integrationsCronsSchema = mongoose.Schema({
     accountId:{
         type : mongoose.Schema.Types.ObjectId,
         ref : "accounts",
+        index : true,
         default : null,
     },
     integrationsMasterId : {
         type : mongoose.Schema.Types.ObjectId,
         ref : 'integrationsmasters',
+        index : true,
         deafult : null
     },
     serviceProvider : {

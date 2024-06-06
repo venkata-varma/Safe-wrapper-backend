@@ -5,15 +5,18 @@ const CPDWorkordersModelSchema = mongoose.Schema(
         accountId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "accounts",
+            index:true,
             default: null,
         },
         integrationsCronId :{
             type : mongoose.Schema.Types.ObjectId,
             ref : 'integrationscrons',
+            index:true,
             deafult : null
         },
         integrationsMasterId : {
             type : mongoose.Schema.Types.ObjectId,
+            index:true,
             default : null
         },
         CPDWorkOrderId:{

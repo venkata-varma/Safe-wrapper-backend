@@ -13,6 +13,7 @@ const integrationMasterServiceProviderModel = require('../models/integrationsMas
 const integrationFieldMappingModel = require('../models/integrationsMasterModels/integrationsFieldMappingModel');
 const integrationSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel')
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
+const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
 
 /*
 Miidleware function to controller, "createUser"
@@ -229,7 +230,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   //   integrationsDetails.push(integrationDetails)
   // }
 
-  const activityLog = await integrationCronsModel.aggregate([
+  const activityLog = await CPDWorkordersModel.aggregate([
     {
       $match: { accountId: new mongoose.Types.ObjectId(accountId) }
     },
@@ -238,9 +239,9 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
     },
     {
       $lookup: {
-        "from": "cpdworkorders",
-        "localField": "_id",
-        "foreignField": "integrationsCronId",
+        "from": "integrationscrons",
+        "localField": "integrationsCronId",
+        "foreignField": "_id",
         "as": "cronInfo"
       }
     },
