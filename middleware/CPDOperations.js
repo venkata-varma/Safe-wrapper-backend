@@ -65,9 +65,17 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
         workDetails.MessageId = CPDWorkOrderResponse.MessageId;
         workDetails.accountId = accountId;
         workDetails.integrationsCronJobId = cronJobDetails._id
-        const CPD_work_details = await CPDWorkordersModel.findOne({ CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId : integrationsMasterId })
-        // console.log('step 4')
+        // const CPD_work_details = await CPDWorkordersModel.findOne({ $and :[{CPDWorkOrderId: work.WorkOrderId}, {accountId: accountId}, {integrationsMasterId : integrationsMasterId},{CPDWorkOrderStatus : {$ne : work.Status}}] })
+        const CPD_work_details = await CPDWorkordersModel.findOne({
+            $and: [
+              { CPDWorkOrderId: work.WorkOrderId },
+              { accountId: accountId },
+              { integrationsMasterId: integrationsMasterId },
+            ]
+          });
+        // console.log('step 4:===')
         if (CPD_work_details) {
+            if(CPD_work_details.CPDWorkOrderStatus !== work.Status){
             // console.log('step 5')
             await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId : integrationsMasterId }, {
                 CPDWorkOrders: workDetails.CPDWorkOrders,
@@ -75,8 +83,12 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
                 CPDWorkOrderStatus :work.Status,
                 status:'initiated',
             }, { new: true, upsert: true });
+        }
+        else{
+            //nothing
+        }
         } else {
-            console.log('step 6')
+            // console.log('step 6')
 
             await CPDWorkordersModel.create({
                 CPDWorkOrderId: work.WorkOrderId,
