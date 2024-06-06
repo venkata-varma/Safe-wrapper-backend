@@ -3,6 +3,7 @@ const DFConfigurations = require('../config/integrationsConfiguration')
 const axios = require('axios');
 const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
 const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
+const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel')
 
 /**
  * 
@@ -13,6 +14,7 @@ const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel'
  * Get the work order details using the id from the post request.
  * Save the record which work order pushed to the dataforma.
  * Then update the status of CPD work order as completed once successfully pushed the code to dataforma. 
+ * If we encountered any error while post or get the work order to the dataforma. We have integrations exceptions log which stores the error log for specific work order.
  */
 
 exports.DFCreateWorkorders = async (integrationObject) => {
@@ -71,6 +73,14 @@ exports.DFCreateWorkorders = async (integrationObject) => {
         //     })
         //     .catch((error) => {
         //         console.log("ERROR:==",error.response.data);
+        //         await integrationsExceptionsModel.create({
+        //         integrationsMasterId: integrationObject.integrationsMasterId,
+        //         accountId: integrationObject.accountId,
+        //         CPDWorkOrderId : CPDWorkOrderDetails[0].CPDWorkOrderId,
+        //         networkCode : error.response.status,
+        //         exceptionMessage : error.message,
+        //         exceptionTitle : error.response.data.messages[0]
+        //         })
         //     });
 
         let getWorkOrderConfig = {
@@ -82,10 +92,18 @@ exports.DFCreateWorkorders = async (integrationObject) => {
         const getDFWorkOrderList = await axios.request(getWorkOrderConfig)
             .then((response) => {
                 DFWorkorderList = JSON.stringify(response.data)
-                // console.log("response:===",JSON.stringify(response.data));
+                // console.log("response:===", JSON.stringify(response.data));
             })
-            .catch((error) => {
+            .catch(async (error) => {
                 console.log("ERROR:==", error.response.data);
+                await integrationsExceptionsModel.create({
+                    integrationsMasterId: integrationObject.integrationsMasterId,
+                    accountId: integrationObject.accountId,
+                    CPDWorkOrderId: CPDWorkOrderDetails[0].CPDWorkOrderId,
+                    networkCode: error.response.status,
+                    exceptionMessage: error.message,
+                    exceptionTitle: error.response.data.messages[0]
+                })
             });
         DFWorkOrderId = JSON.parse(DFWorkorderList).id
         const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: 31371, }).lean();

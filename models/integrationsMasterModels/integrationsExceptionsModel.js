@@ -5,7 +5,7 @@ const integrationsExceptionsSchema = mongoose.Schema({
         type : mongoose.Schema.Types.ObjectId,
         default : null
     },
-    accounId : {
+    accountId : {
         type : mongoose.Schema.Types.ObjectId,
         ref : 'accounts',
         default : null
@@ -14,6 +14,10 @@ const integrationsExceptionsSchema = mongoose.Schema({
         type : mongoose.Schema.Types.ObjectId,
         ref : 'integrationsmastes',
         default : null
+    },
+    CPDWorkOrderId : {
+        type : Number,
+        deafult : 0
     },
     networkCode : {
         type : Number,
@@ -33,7 +37,7 @@ const integrationsExceptionsSchema = mongoose.Schema({
     }
 },{timestamps:true});
 
-integrationsExceptionsSchema.pre('save', (next)=>{
+integrationsExceptionsSchema.pre('save', function(next){
     this.integrationsExceptionId = this._id;
     next();
 });

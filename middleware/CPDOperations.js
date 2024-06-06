@@ -116,7 +116,7 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
  * Update the cronJob details.
  */
 
-exports.getCPDWorkOrders = async (integrationObject) => {
+exports.getCPDWorkOrders = asyncWrapper(async (integrationObject) => {
     // console.log('integrationObject:==',integrationObject)
 
     let encrypted = {};
@@ -154,7 +154,7 @@ exports.getCPDWorkOrders = async (integrationObject) => {
         pushedCount: getCPDWorkOrderDetials.pushNewWorkordersCount,
         status: "completed"
     }, { new: true, upsert: true });
-};
+});
 
 
 // module.exports = getCPDWorkOrders

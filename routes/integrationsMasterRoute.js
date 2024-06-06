@@ -21,5 +21,5 @@ router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMaste
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
 router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.getSingleIntegrationMasterDetails)
-router.post('/get-integration-decrypt-result',integrationsMasterControllers.getIntegrationCryptoService, integrationsMasterControllers.getIntegrationCryptoService);
+router.post('/get-integration-decrypt-result',integrationsMasterControllers.validationForDecrypt, integrationsMasterControllers.getIntegrationCryptoService);
 module.exports = router;

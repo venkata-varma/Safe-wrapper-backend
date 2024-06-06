@@ -49,7 +49,7 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
  *If passed, it proceeds to decrypt provided encrypted credential
 */
 
-exports.validationForDecrypt = asyncWrapper(async (req, res) => {
+exports.validationForDecrypt = asyncWrapper(async (req, res, next) => {
   const { accountId, integrationMasterId, encryptedString } = req.body
   const integrationMasterDetails = await integrationsMasterModel.findOne({ _id: integrationMasterId, accountId }).lean();
   if (integrationMasterDetails.status !== 'active') {
@@ -59,8 +59,9 @@ exports.validationForDecrypt = asyncWrapper(async (req, res) => {
     });
 
   }
-
-
+  else{
+    next()
+  }
 })
 
 /**
