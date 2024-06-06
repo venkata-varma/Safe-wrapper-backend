@@ -7,7 +7,7 @@ const auth = require('../middleware/authentication');
 
 router.use(auth)
 
-router.post('/create-integrationmaster',integrationsMasterControllers.validateCreateIntegrationsCount, integrationsMasterControllers.createIntegrationMaster)
+router.post('/create-integrationmaster',integrationsMasterControllers.validationForDecrypt, integrationsMasterControllers.createIntegrationMaster)
 router.post('/create-integrationmaster-service-provider', integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.createIntegrationMasterServiceProviderCredentials)
 
 router.patch('/update-integrationmaster-field-mapping',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterFieldMappings)
@@ -21,5 +21,5 @@ router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMaste
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
 router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.getSingleIntegrationMasterDetails)
-router.get('/get-service-provider-lists-details', integrationsMasterControllers.getServiceProviderListsDetails);
+router.post('/get-integration-decrypt-result',integrationsMasterControllers.getIntegrationCryptoService, integrationsMasterControllers.getIntegrationCryptoService);
 module.exports = router;

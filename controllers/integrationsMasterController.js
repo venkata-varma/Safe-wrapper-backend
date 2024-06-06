@@ -12,7 +12,7 @@ const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fie
 const fieldMappingMasterDefaultServicesModel = require("../models/integrationsMasterModels/fieldMappingMasterDefaultServicesModel");
 const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
 const { encryptData, decryptData } = require('../utils/encryptionAlgorithms')
-const accountsModel=require('../models/accountsModels/accountsModel')
+const accountsModel = require('../models/accountsModels/accountsModel')
 
 /**
  * Get global constants.
@@ -44,27 +44,47 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
 
 });
 
-/*
-Function to provide details of service provider lists with their test credentials decrypted  
-Returns details of service providers with decrypted objects
+/** 
+ *Middleware to check for Active status for provided Integration Master
+ *If passed, it proceeds to decrypt provided encrypted credential
 */
 
-exports.getServiceProviderListsDetails = asyncWrapper(async (req, res) => {
-  const serviceProviderListRecords = await serviceProviderListModel.find({});
+exports.validationForDecrypt = asyncWrapper(async (req, res) => {
+  const { accountId, integrationMasterId, encryptedString } = req.body
+  const integrationMasterDetails = await integrationsMasterModel.findOne({ _id: integrationMasterId, accountId }).lean();
+  if (integrationMasterDetails.status !== 'active') {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_ID_NOT_ACTIVE, // to be changed now
+    });
 
-
-  for (let credential of serviceProviderListRecords) {
-    let encryptedObject = {
-      iv: process.env.CRYPTO_IV,
-      encryptedData: credential.testCredentials
-    }
-    credential.testCredentials = JSON.parse(decryptData(encryptedObject, process.env.CRYPTO_KEY));
-    console.log("credential.testCredentials", credential.testCredentials)
   }
+
+
+})
+
+/**
+ *Function to provide decrypted result when a encrypted credential is provided
+ *Inputs :
+    1. Account Id 
+    2. Integration Id 
+    3. Encrypted string (credential of service provider)
+ *Returns JSON-parsed decrypted result 
+*/
+
+exports.getIntegrationCryptoService = asyncWrapper(async (req, res) => {
+  const { accountId, integrationId, encryptedString } = req.body
+  const encrypted = {
+    iv: process.env.CRYPTO_IV,
+    encryptedData: encryptedString
+  };
+const decryptedResult=JSON.parse(decryptData(encrypted,process.env.CRYPTO_KEY));
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND, // to be changed now
-    serviceProviderListRecords
+    message: customConstants.messages.MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND, 
+    data:{
+      decryptedResult
+    }
   });
 
 })
@@ -75,17 +95,17 @@ exports.getServiceProviderListsDetails = asyncWrapper(async (req, res) => {
      Returns Warning message with exisiting count
 
 */
-exports.validateCreateIntegrationsCount=asyncWrapper(async(req,res,next)=>{
-  const integrationsCount=await integrationsMasterModel.find({accountId:req.user.accountId, status:'active'});
+exports.validateCreateIntegrationsCount = asyncWrapper(async (req, res, next) => {
+  const integrationsCount = await integrationsMasterModel.find({ accountId: req.user.accountId, status: 'active' });
 
-const respectiveAccount=await accountsModel.findById(req.user.accountId);
-  if(integrationsCount.length>=respectiveAccount.noOfIntegrations){
+  const respectiveAccount = await accountsModel.findById(req.user.accountId);
+  if (integrationsCount.length >= respectiveAccount.noOfIntegrations) {
     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
       status: customConstants.messages.MESSAGE_WARNING,
       message: customConstants.messages.MESSAGE_INTEGRATION_COUNT_REACHED
     });
   }
-  else{
+  else {
     next()
   }
 
@@ -178,7 +198,7 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
   } else {
     updateFields.to = serviceProvider;
   }
-delete req.body.status;
+  delete req.body.status;
   // Perform the update
   const updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
     integrationsMasterId,
@@ -300,14 +320,14 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
     }
     let update_work_order_field_mapping_keys = await fieldMappingMasterDefaultServicesModel.create(update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
 
-    get_integration_field_mapping_master_default_keys.push({ ...create_work_order_field_mapping_keys._doc },{ ...update_work_order_field_mapping_keys._doc })
-    
+    get_integration_field_mapping_master_default_keys.push({ ...create_work_order_field_mapping_keys._doc }, { ...update_work_order_field_mapping_keys._doc })
+
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
-        data: {get_integration_field_mapping_master_default_keys}
+        data: { get_integration_field_mapping_master_default_keys }
       });
   }
 });
@@ -459,7 +479,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
 
   const settingsDetails = await integrationsSettingsModel.find({ integrationsMasterId: integrationsMasterId }).lean();
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId }).lean();
-  const integrationMasterServiceProviders=await integrationsMasterServiceProvidersModel.find({integrationsMasterId});
+  const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
