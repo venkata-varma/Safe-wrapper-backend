@@ -3,7 +3,8 @@ const DFConfigurations = require('../config/integrationsConfiguration')
 const axios = require('axios');
 const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
 const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
-const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel')
+const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
+const integrationsCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
 
 /**
  * 
@@ -21,6 +22,7 @@ exports.DFCreateWorkorders = async (integrationObject) => {
 
     if (integrationObject !== undefined) {
         let fieldmappingkeys = {}
+        let workOrderPushedCount = 0
         fieldmappingkeys = integrationObject.mappedKeys;
 
         const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).limit(1).lean();
@@ -123,9 +125,11 @@ exports.DFCreateWorkorders = async (integrationObject) => {
                 DFWorkOrders: DFWorkorderList,
                 DFWorkOrderStatus: JSON.parse(DFWorkorderList).status,
                 status: "completed",
-            })
+            });
+            workOrderPushedCount++
             await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: CPDWorkOrderDetails[0].CPDWorkOrderId }, { status: "completed" }, { new: true })
         }
+        await integrationsCronsModel.findByIdAndUpdate(CPDWorkOrderDetails[0].integrationsCronId, {pushedCount : workOrderPushedCount});
 
     }
 }
