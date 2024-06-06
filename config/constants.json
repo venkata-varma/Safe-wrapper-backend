@@ -51,7 +51,8 @@
     "MESSAGE_INTEGRATION_DELETED": "Integration master deleted successfully.",
     "MESSAGE_INTEGRATION_DETAILS_NOT_FOUND": "Respective Integration details not found.",
     "MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND":"Details of Service providers found", 
-    "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND": "Respective Integration service provider details not found."
+    "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND": "Respective Integration service provider details not found.",
+    "MESSAGE_INTEGRATION_ID_NOT_ACTIVE":"Respective integration is not in active state. Please contact admin"
   },
   "statusCodes": {
     "FORBIDDEN": 403,
