@@ -13,7 +13,12 @@ const fieldMappingMasterDefaultServicesModel = require("../models/integrationsMa
 const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
 const { encryptData, decryptData } = require('../utils/encryptionAlgorithms')
 const accountsModel = require('../models/accountsModels/accountsModel')
-
+const integrationsExceptionModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
+const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel");
+const integrationsCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel')
+const mongoose = require('mongoose')
+const cpdWorkOrdersModel = require('../models/workOrdersModels/CPDWorkordersModel')
+const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel')
 /**
  * Get global constants.
  * Get default field mapping keys of serivce providers.
@@ -52,6 +57,7 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
 exports.validationForDecrypt = asyncWrapper(async (req, res, next) => {
   const { accountId, integrationMasterId, encryptedString } = req.body
   const integrationMasterDetails = await integrationsMasterModel.findOne({ _id: integrationMasterId, accountId }).lean();
+  console.log('integrationMasterDetails',integrationMasterDetails)
   if (integrationMasterDetails.status !== 'active') {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
@@ -59,7 +65,7 @@ exports.validationForDecrypt = asyncWrapper(async (req, res, next) => {
     });
 
   }
-  else{
+  else {
     next()
   }
 })
@@ -79,11 +85,11 @@ exports.getIntegrationCryptoService = asyncWrapper(async (req, res) => {
     iv: process.env.CRYPTO_IV,
     encryptedData: encryptedString
   };
-const decryptedResult=JSON.parse(decryptData(encrypted,process.env.CRYPTO_KEY));
+  const decryptedResult = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND, 
-    data:{
+    message: customConstants.messages.MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND,
+    data: {
       decryptedResult
     }
   });
@@ -473,7 +479,7 @@ Function to return datails of a specific Integration master table record by "Par
 
 */
 exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
-  const { integrationsMasterId } = req.params;
+  const integrationsMasterId = req.params.integrationsMasterId;
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId).lean();
 
   console.log(integrationsMasterId, "integrationsMasterId");
@@ -481,6 +487,12 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   const settingsDetails = await integrationsSettingsModel.find({ integrationsMasterId: integrationsMasterId }).lean();
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId }).lean();
   const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId });
+  const integrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId }).lean();
+  const cpdWorkOrders = await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+  const dfWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+  for (let jsonParse of dfWorkOrders) {
+    jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
+  }
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -490,7 +502,10 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         integrationDetails,
         integrationsSettingsDetails: settingsDetails,
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
-        integrationMasterServiceProviders
+        integrationMasterServiceProviders,
+        integrationExceptions,
+        cpdWorkOrders,
+        dfWorkOrders
       },
     });
 });
