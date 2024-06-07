@@ -541,9 +541,47 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId }).lean();
   const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId });
   const integrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId }).lean();
+  let serviceProviders=["cpd", "snow", "df", "sc", "tt", "qb", "mgp", "si", "am"];
+  let serviceProvidersModelLists=['cpdWorkOrdersModel','dfWorkOrdersModel','snowWorkOrdersModel', 'qbWorkOrdersModel'];// To be added more
+var sourceWorkOrders=[];
+var destinationWorkOrders=[];
+  for(let sp of serviceProviders){
+  if((integrationDetails.from).toLowerCase()===sp){
+    console.log('sp',sp)
+    if('cpdWorkOrdersModel'.includes(sp)){
+      sourceWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+    }
+    if('dfWorkOrdersModel'.includes(sp)){
+      sourceWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+    }
+    
+  }
+  if((integrationDetails.to).toLowerCase()===sp){
+    console.log('sp',sp)
+    if('cpdWorkOrdersModel'.includes(sp)){
+      destinationWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+    }
+    if('dfWorkOrdersModel'.includes(sp)){
+      destinationWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+    }
+    
+  }
+}
+// for(let sp of serviceProviders){
+//   if((integrationDetails.to).toLowerCase()===sp){
+//     console.log('sp',sp)
+//     if('cpdWorkOrdersModel'.includes(sp)){
+//       destinationWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+//     }
+//     if('dfWorkOrdersModel'.includes(sp)){
+//       destinationWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+//     }
+    
+//   }
+// }
   const cpdWorkOrders = await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
   const dfWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
-  for (let jsonParse of dfWorkOrders) {
+  for (let jsonParse of destinationWorkOrders) {
     jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
   }
   return res
@@ -557,8 +595,11 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
         integrationMasterServiceProviders,
         integrationExceptions,
-        cpdWorkOrders,
-        dfWorkOrders
+        // cpdWorkOrders,
+        // dfWorkOrders
+        sourceWorkOrders,
+        destinationWorkOrders
+
       },
     });
 });
