@@ -4,11 +4,13 @@ const { access } = require('fs');
 const integrationsMasterControllers = require('../controllers/integrationsMasterController');
 const auth = require('../middleware/authentication');
 
+router.get('/get-images', integrationsMasterControllers.getImages)
 
 router.use(auth)
 
 router.post('/create-integrationmaster', integrationsMasterControllers.createIntegrationMaster)
 router.post('/create-integrationmaster-service-provider', integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.createIntegrationMasterServiceProviderCredentials)
+router.post('/get-integration-decrypt-result',integrationsMasterControllers.validationForDecrypt, integrationsMasterControllers.getIntegrationCryptoService);
 
 router.patch('/update-integrationmaster-field-mapping',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterFieldMappings)
 router.patch('/update-integrationmaster-settings',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterSettings)
@@ -21,5 +23,5 @@ router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMaste
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
 router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.getSingleIntegrationMasterDetails)
-router.post('/get-integration-decrypt-result',integrationsMasterControllers.validationForDecrypt, integrationsMasterControllers.getIntegrationCryptoService);
+
 module.exports = router;

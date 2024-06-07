@@ -19,6 +19,57 @@ const integrationsCronsModel = require('../models/integrationsMasterModels/integ
 const mongoose = require('mongoose')
 const cpdWorkOrdersModel = require('../models/workOrdersModels/CPDWorkordersModel')
 const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel')
+
+
+/**
+ * Get the static images.
+ */
+
+exports.getImages = asyncWrapper(async(req,res)=> {
+   // Constructing the URL based on the request object
+   const baseUrl = req.protocol + '://' + req.get('host');
+   const imageUrls = [
+    {
+      name : "TT",
+      url : baseUrl + '/static/TurboTax_logo.png'
+    },
+    {
+      name : "AM",
+      url : baseUrl + '/static/Acumatica_logo.png'
+    },
+    {
+      name : "CPD",
+      url : baseUrl + '/static/CorrigoPro_logo.png'
+    },
+    {
+      name : "DF",
+      url : baseUrl + '/static/Dataforma_logo.png'
+    },
+    {
+      name : "QB",
+      url : baseUrl + '/static/Quickbooks_logo.png'
+    },
+    {
+      name : "SC",
+      url : baseUrl + '/static/ServiceChannel_logo.png'
+    }
+   ]
+
+   if (!baseUrl || !imageUrls) {
+       return res.status(500).json({ error: "Unable to construct image URL" });
+   }
+
+   return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_GLOBAL_IMAGES,
+      imageUrls,
+    });
+});
+
+
+
 /**
  * Get global constants.
  * Get default field mapping keys of serivce providers.

@@ -32,6 +32,7 @@
     "MESSAGE_CRON_MANUAL": "We have retrieved the most recent records and continued with the integration process.",
     "MESSAGE_STATASTICS": "All Statastics",
     "MESSAGE_GLOBAL_CONSTANTS": "Global Constants.",
+    "MESSAGE_GLOBAL_IMAGES" : "Global Images",
     "MESSAGE_FIELD_MAPPING_KEYS": "Default integration field mapping keys.",
     "MESSAGE_CRON_WORKORDERS": "All cronjob Work orders.",
     "MESSAGE_INTEGRATION_CREATED": "Integration created successfully.",
