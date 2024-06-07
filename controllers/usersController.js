@@ -14,6 +14,9 @@ const integrationFieldMappingModel = require('../models/integrationsMasterModels
 const integrationSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel')
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
 const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
+const integrationsExceptionModel=require('../models/integrationsMasterModels/integrationsExceptionsModel')
+const dfWorkOrdersModel=require('../models/workOrdersModels/DFWorkOrdersModel')
+
 
 /*
 Miidleware function to controller, "createUser"
@@ -272,9 +275,12 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
 
   for (let week of twelveWeekSales) {
 
-    let weekWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate } })
-
-    week.workOrderCount = weekWorkOrders.length;
+    let weekCPDkWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate } })
+let weekDFWorkOrders=await dfWorkOrdersModel.find({accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate}})
+let integrationsExceptions=await integrationsExceptionModel.find({accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate}})
+    week.CPDWorkOrderCount = weekCPDkWorkOrders.length;
+    week.dfWorkOrderCount=weekDFWorkOrders.length;
+    week.integrationsExceptions=integrationsExceptions.length;
   }
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
