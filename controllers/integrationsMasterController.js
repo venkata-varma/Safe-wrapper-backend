@@ -548,20 +548,20 @@ var destinationWorkOrders=[];
   for(let sp of serviceProviders){
   if((integrationDetails.from)===sp){
     console.log('sp',sp)
-    if('cpdWorkOrdersModel'.includes(sp)){
+    if('cpdWorkOrdersModel'.includes(sp.toLowerCase())){
       sourceWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
     }
-    if('dfWorkOrdersModel'.includes(sp)){
+    if('dfWorkOrdersModel'.includes(sp.toLowerCase())){
       sourceWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
     }
     
   }
   if((integrationDetails.to)===sp){
     console.log('sp',sp)
-    if('cpdWorkOrdersModel'.includes(sp)){
+    if('cpdWorkOrdersModel'.includes(sp.toLowerCase())){
       destinationWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
     }
-    if('dfWorkOrdersModel'.includes(sp)){
+    if('dfWorkOrdersModel'.includes(sp.toLowerCase())){
       destinationWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
     }
     
