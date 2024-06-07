@@ -541,28 +541,28 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId }).lean();
   const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId });
   const integrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId }).lean();
-  let serviceProviders=["cpd", "snow", "df", "sc", "tt", "qb", "mgp", "si", "am"];
+  let serviceProviders=["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM"];
   let serviceProvidersModelLists=['cpdWorkOrdersModel','dfWorkOrdersModel','snowWorkOrdersModel', 'qbWorkOrdersModel'];// To be added more
 var sourceWorkOrders=[];
 var destinationWorkOrders=[];
   for(let sp of serviceProviders){
-  if((integrationDetails.from).toLowerCase()===sp){
+  if((integrationDetails.from)===sp){
     console.log('sp',sp)
     if('cpdWorkOrdersModel'.includes(sp)){
-      sourceWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+      sourceWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
     }
     if('dfWorkOrdersModel'.includes(sp)){
-      sourceWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+      sourceWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
     }
     
   }
-  if((integrationDetails.to).toLowerCase()===sp){
+  if((integrationDetails.to)===sp){
     console.log('sp',sp)
     if('cpdWorkOrdersModel'.includes(sp)){
-      destinationWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+      destinationWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
     }
     if('dfWorkOrdersModel'.includes(sp)){
-      destinationWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+      destinationWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
     }
     
   }
@@ -579,8 +579,7 @@ var destinationWorkOrders=[];
     
 //   }
 // }
-  const cpdWorkOrders = await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
-  const dfWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+
   for (let jsonParse of destinationWorkOrders) {
     jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
   }
