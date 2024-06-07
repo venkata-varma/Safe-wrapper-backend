@@ -7,7 +7,7 @@ const auth = require('../middleware/authentication');
 
 router.use(auth)
 
-router.post('/create-integrationmaster',integrationsMasterControllers.validationForDecrypt, integrationsMasterControllers.createIntegrationMaster)
+router.post('/create-integrationmaster', integrationsMasterControllers.createIntegrationMaster)
 router.post('/create-integrationmaster-service-provider', integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.createIntegrationMasterServiceProviderCredentials)
 
 router.patch('/update-integrationmaster-field-mapping',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterFieldMappings)
