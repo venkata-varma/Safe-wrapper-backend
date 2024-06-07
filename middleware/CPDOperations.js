@@ -31,10 +31,10 @@ const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl) 
  * For every cron job starts, we insert record into table. 
  * @returns 
  */
-const initiateCronJobs = async (cronIntegrationDetails) => {
+const initiateCronJobs = async (cronIntegrationDetails,typeOfCron) => {
     const cronDetails = await integrationsCronJobsModel.create(
         {
-            cronJobType: "automated",
+            cronJobType: typeOfCron,
             accountId: cronIntegrationDetails.accountId,
             serviceProvider: cronIntegrationDetails.serviceProvider,
             integrationsMasterId: cronIntegrationDetails.integrationsMasterId
@@ -116,7 +116,7 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
  * Update the cronJob details.
  */
 
-exports.getCPDWorkOrders = asyncWrapper(async (integrationObject) => {
+exports.getCPDWorkOrders = asyncWrapper(async (integrationObject,typeOfCron) => {
     // console.log('integrationObject:==',integrationObject)
 
     let encrypted = {};
@@ -125,7 +125,7 @@ exports.getCPDWorkOrders = asyncWrapper(async (integrationObject) => {
         accountId: integrationObject.accountId,
         serviceProvider: integrationObject.serviceProvider,
         integrationsMasterId: integrationObject.integrationsMasterId
-    });
+    },typeOfCron);
 
     encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials};
     // console.log("Step-1 called");

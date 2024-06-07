@@ -19,6 +19,8 @@ const integrationsCronsModel = require('../models/integrationsMasterModels/integ
 const mongoose = require('mongoose')
 const cpdWorkOrdersModel = require('../models/workOrdersModels/CPDWorkordersModel')
 const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel')
+const CPDOperations = require('../middleware/CPDOperations');
+const DFOperations = require('../middleware/DFOperations');
 
 
 /**
@@ -689,4 +691,43 @@ exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
       data: { integrationsMasterDetails }
     });
 
-})
+});
+
+/**
+ * Pull latest work orders.
+ * Find all integrations by accountId.
+ * Then validate that integration is in active or deleted and validate the source and destination of work order.
+ * Then find the service provider credentials using integrationId.
+ * Then Pass the Credentials and type of cron job to the CPDOperations and DFOperations middleware.
+ * CPDOperations and DFOperations will makes the pull and push the work orders.
+*/
+
+exports.pullLatestWorkOrders = asyncWrapper(async(req,res)=>{
+    const {accountId} = req.params;
+    const integrationsMasterDetails = await integrationsMasterModel.find({accountId : accountId});
+    
+    if (integrationsMasterDetails.length > 0) {
+      for (const integration of integrationsMasterDetails) {
+        if (integration.status === 'active' && integration.from === 'CPD' && integration.to === 'DF') {
+          const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "CPD"}).lean();
+          //integrationCredentials.push(credentials);
+          await CPDOperations.getCPDWorkOrders(CPDCredentials,typeOfCron = "manual");
+          const DFCredentials = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integration.integrationsMasterId, to : "DF"}).lean();
+          
+          await DFOperations.DFCreateWorkorders(DFCredentials,typeOfCron = "manual");
+
+          return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_CRON_MANUAL
+        });
+        }
+        else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF') {
+          const credentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "DF" }).lean();
+          // integrationCredentials.push(credentials)
+        }
+        else {
+          // nothing
+        }
+      }
+    }
+});

@@ -19,7 +19,7 @@ const asyncWrapper = require('./asyncWrapper');
  * If we encountered any error while post or get the work order to the dataforma. We have integrations exceptions log which stores the error log for specific work order.
  */
 
-exports.DFCreateWorkorders = asyncWrapper(async (integrationObject) => {
+exports.DFCreateWorkorders = asyncWrapper(async (integrationObject,typeOfCron) => {
 
     if (integrationObject !== undefined) {
         let fieldmappingkeys = {}
