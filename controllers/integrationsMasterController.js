@@ -775,6 +775,13 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   }
 });
 
+/**
+ * Fetch Account details using accountId.
+ * Fetch all users belongs to the account.
+ * Fetch all integrations details (integrationsmasters, integrationsmasterserviceproviders, integrationsfieldmappings, integrationssettings, integrationsexceptions)
+ * Fetch all source and destination work orders belongs to account.
+ * Count total pulled, pushed and new work orders.
+ */
 
 exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) => {
   const { accountId } = req.params;
