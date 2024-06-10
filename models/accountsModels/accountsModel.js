@@ -28,12 +28,14 @@ const accountsSchema = new mongoose.Schema({
     phone:{
         type:String,
         required:[true, 'Mobile number is required.'],
-        default:""
+        default:"",
+        unique:[true, 'Phone must be unique']
     },
     email:{
         type:String,
         required:[true, 'Email is required.'],
-        default:""
+        default:"",
+        unique:[true, 'Email must be unique']
     },
     password:{
         type:String,
