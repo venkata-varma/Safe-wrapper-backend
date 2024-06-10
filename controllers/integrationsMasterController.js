@@ -569,9 +569,6 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
    */
   for (let sp of serviceProviders) {
     if ((integrationDetails.from) === sp) {
-
-
-
       console.log('sp', sp)
       if ('cpdWorkOrdersModel'.includes(sp.toLowerCase())) {
         sourceWorkOrders = await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
@@ -579,19 +576,14 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
           presentWeekSourceData = await cpdWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.sourceWorkOrdersCount = presentWeekSourceData.length;
         }
-
-
       }
       if ('dfWorkOrdersModel'.includes(sp.toLowerCase())) {
-        sourceWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
-
-    
+        sourceWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");    
         for (let week of presentWeekData) {
           presentWeekSourceData = await dfWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.sourceWorkOrdersCount = presentWeekSourceData.length;
         }
         }
-
     }
     if ((integrationDetails.to) === sp) {
       console.log('sp', sp)
@@ -611,7 +603,6 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
           week.destinationWorkOrdersCount = presentWeekDestinationData.length;
         }
       }
-
     }
   }
 
@@ -625,8 +616,6 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
     delete week.toDate;
     
   }
-  
-  
 
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
