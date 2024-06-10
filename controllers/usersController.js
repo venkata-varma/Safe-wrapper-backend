@@ -393,12 +393,12 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_DASHBOARD_STATISTICS_RECEIVED,
     data: {
-      // accountDetails,
-      // users,
-      // workOrderStates,
-      // highPrioritycpdWorkOrders,
-      // activityLog,
-      // twelveWeekSales,
+      accountDetails,
+      users,
+      workOrderStates,
+      highPrioritycpdWorkOrders,
+      activityLog,
+      twelveWeekSales,
       integrationsOfAccount
 
     },
