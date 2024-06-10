@@ -800,7 +800,7 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
         "from": "integrationsmasterserviceproviders",
         "localField": "_id",
         "foreignField": "integrationsMasterId",
-        "as": "integrationsmasterserviceproviders"
+        "as": "integrationsMasterServiceProviders"
       }
     },
     {
@@ -808,7 +808,7 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
         "from": "integrationsfieldmappings",
         "localField": "_id",
         "foreignField": "integrationsMasterId",
-        "as": "integrationsfieldmappings"
+        "as": "integrationsFieldMappings"
       }
     },
     {
@@ -816,7 +816,7 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
         "from": "integrationssettings",
         "localField": "_id",
         "foreignField": "integrationsMasterId",
-        "as": "integrationssettings"
+        "as": "integrationsSettings"
       }
     },
     {
@@ -824,7 +824,7 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
         "from": "integrationsexceptions",
         "localField": "_id",
         "foreignField": "integrationsMasterId",
-        "as": "integrationsexceptions"
+        "as": "integrationsExceptions"
       }
     }
   ]);
@@ -887,11 +887,16 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
 
   ]);
 
-  return res.json({
-    accountDetails,
-    userDetails: accountUsersDetails,
-    integrationsOfAccount,
-    workOrdersDetails,
-    latestWorkOrdersCount
-  })
+ 
+  return res
+  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+  .json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_ACCOUNT_REPORTS,
+    data: { accountDetails,
+      userDetails: accountUsersDetails,
+      integrationsOfAccount,
+      workOrdersDetails,
+      latestWorkOrdersCount }
+  });
 });
