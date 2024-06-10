@@ -57,7 +57,8 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
     const workDetails = {}
     const latestWorkOrderCount = {
         pullNewWorkOrdersCount: 0,
-        pushNewWorkordersCount: 0
+        pushNewWorkordersCount: 0,
+        CPDNewWorkOrdersPulledCount : 0
     }
     for (const work of CPDWorkOrderResponse.WorkOrders) {
 
@@ -65,18 +66,16 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
         workDetails.MessageId = CPDWorkOrderResponse.MessageId;
         workDetails.accountId = accountId;
         workDetails.integrationsCronJobId = cronJobDetails._id
+        
         // const CPD_work_details = await CPDWorkordersModel.findOne({ $and :[{CPDWorkOrderId: work.WorkOrderId}, {accountId: accountId}, {integrationsMasterId : integrationsMasterId},{CPDWorkOrderStatus : {$ne : work.Status}}] })
-        const CPD_work_details = await CPDWorkordersModel.findOne({
-            $and: [
-              { CPDWorkOrderId: work.WorkOrderId },
-              { accountId: accountId },
-              { integrationsMasterId: integrationsMasterId },
-            ]
-          });
+        const CPD_work_details = await CPDWorkordersModel.findOne(
+              { CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId: integrationsMasterId });
         // console.log('step 4:===')
         if (CPD_work_details) {
+
             if(CPD_work_details.CPDWorkOrderStatus !== work.Status){
             // console.log('step 5')
+
             await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId : integrationsMasterId }, {
                 CPDWorkOrders: workDetails.CPDWorkOrders,
                 MessageId: workDetails.MessageId,
@@ -85,11 +84,14 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
             }, { new: true, upsert: true });
         }
         else{
+            // console.log('step 5A')
             //nothing
         }
         } else {
             // console.log('step 6')
-
+            if(work.Status === "New"){
+                latestWorkOrderCount.CPDNewWorkOrdersPulledCount++
+            }
             await CPDWorkordersModel.create({
                 CPDWorkOrderId: work.WorkOrderId,
                 accountId: workDetails.accountId,
@@ -152,6 +154,7 @@ exports.getCPDWorkOrders = asyncWrapper(async (integrationObject,typeOfCron) => 
     const cronJob_Details = await integrationsCronJobsModel.findByIdAndUpdate(cronJobDetails._id, {
         pulledCount: getCPDWorkOrderDetials.pullNewWorkOrdersCount,
         pushedCount: getCPDWorkOrderDetials.pushNewWorkordersCount,
+        CPDNewWorkOrdersPulledCount : getCPDWorkOrderDetials.CPDNewWorkOrdersPulledCount,
         status: "completed"
     }, { new: true, upsert: true });
 });

@@ -24,5 +24,6 @@ router.get('/get-global-constants', integrationsMasterControllers.getGlobalConst
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
 router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.getSingleIntegrationMasterDetails)
 router.get('/pull-latest-workorders-by-accountId/:accountId',integrationsMasterControllers.pullLatestWorkOrders);
+router.get('/get-individual-account-reports/:accountId',integrationsMasterControllers.getIndividualAccountReportsByAccountId);
 
 module.exports = router;

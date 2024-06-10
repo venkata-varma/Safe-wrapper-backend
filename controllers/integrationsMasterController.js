@@ -21,47 +21,50 @@ const cpdWorkOrdersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel')
 const CPDOperations = require('../middleware/CPDOperations');
 const DFOperations = require('../middleware/DFOperations');
+const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
+const usersModel = require("../models/usersModels/usersModel");
+const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
 
 
 /**
  * Get the static images.
  */
 
-exports.getImages = asyncWrapper(async(req,res)=> {
-   // Constructing the URL based on the request object
-   const baseUrl = req.protocol + '://' + req.get('host');
-   const imageUrls = [
+exports.getImages = asyncWrapper(async (req, res) => {
+  // Constructing the URL based on the request object
+  const baseUrl = req.protocol + '://' + req.get('host');
+  const imageUrls = [
     {
-      name : "TT",
-      url : baseUrl + '/static/TurboTax_logo.png'
+      name: "TT",
+      url: baseUrl + '/static/TurboTax_logo.png'
     },
     {
-      name : "AM",
-      url : baseUrl + '/static/Acumatica_logo.png'
+      name: "AM",
+      url: baseUrl + '/static/Acumatica_logo.png'
     },
     {
-      name : "CPD",
-      url : baseUrl + '/static/CorrigoPro_logo.png'
+      name: "CPD",
+      url: baseUrl + '/static/CorrigoPro_logo.png'
     },
     {
-      name : "DF",
-      url : baseUrl + '/static/Dataforma_logo.png'
+      name: "DF",
+      url: baseUrl + '/static/Dataforma_logo.png'
     },
     {
-      name : "QB",
-      url : baseUrl + '/static/Quickbooks_logo.png'
+      name: "QB",
+      url: baseUrl + '/static/Quickbooks_logo.png'
     },
     {
-      name : "SC",
-      url : baseUrl + '/static/ServiceChannel_logo.png'
+      name: "SC",
+      url: baseUrl + '/static/ServiceChannel_logo.png'
     }
-   ]
+  ]
 
-   if (!baseUrl || !imageUrls) {
-       return res.status(500).json({ error: "Unable to construct image URL" });
-   }
+  if (!baseUrl || !imageUrls) {
+    return res.status(500).json({ error: "Unable to construct image URL" });
+  }
 
-   return res
+  return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
@@ -110,7 +113,7 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
 exports.validationForDecrypt = asyncWrapper(async (req, res, next) => {
   const { accountId, integrationMasterId, encryptedString } = req.body
   const integrationMasterDetails = await integrationsMasterModel.findOne({ _id: integrationMasterId, accountId }).lean();
-  console.log('integrationMasterDetails',integrationMasterDetails)
+  console.log('integrationMasterDetails', integrationMasterDetails)
   if (integrationMasterDetails.status !== 'active') {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
@@ -541,44 +544,44 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId }).lean();
   const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId });
   const integrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId }).lean();
-  let serviceProviders=["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM"];
-  let serviceProvidersModelLists=['cpdWorkOrdersModel','dfWorkOrdersModel','snowWorkOrdersModel', 'qbWorkOrdersModel'];// To be added more
-var sourceWorkOrders=[];
-var destinationWorkOrders=[];
-  for(let sp of serviceProviders){
-  if((integrationDetails.from)===sp){
-    console.log('sp',sp)
-    if('cpdWorkOrdersModel'.includes(sp.toLowerCase())){
-      sourceWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+  let serviceProviders = ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM"];
+  let serviceProvidersModelLists = ['cpdWorkOrdersModel', 'dfWorkOrdersModel', 'snowWorkOrdersModel', 'qbWorkOrdersModel'];// To be added more
+  var sourceWorkOrders = [];
+  var destinationWorkOrders = [];
+  for (let sp of serviceProviders) {
+    if ((integrationDetails.from) === sp) {
+      console.log('sp', sp)
+      if ('cpdWorkOrdersModel'.includes(sp.toLowerCase())) {
+        sourceWorkOrders = await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+      }
+      if ('dfWorkOrdersModel'.includes(sp.toLowerCase())) {
+        sourceWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+      }
+
     }
-    if('dfWorkOrdersModel'.includes(sp.toLowerCase())){
-      sourceWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+    if ((integrationDetails.to) === sp) {
+      console.log('sp', sp)
+      if ('cpdWorkOrdersModel'.includes(sp.toLowerCase())) {
+        destinationWorkOrders = await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+      }
+      if ('dfWorkOrdersModel'.includes(sp.toLowerCase())) {
+        destinationWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+      }
+
     }
-    
   }
-  if((integrationDetails.to)===sp){
-    console.log('sp',sp)
-    if('cpdWorkOrdersModel'.includes(sp.toLowerCase())){
-      destinationWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
-    }
-    if('dfWorkOrdersModel'.includes(sp.toLowerCase())){
-      destinationWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
-    }
-    
-  }
-}
-// for(let sp of serviceProviders){
-//   if((integrationDetails.to).toLowerCase()===sp){
-//     console.log('sp',sp)
-//     if('cpdWorkOrdersModel'.includes(sp)){
-//       destinationWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
-//     }
-//     if('dfWorkOrdersModel'.includes(sp)){
-//       destinationWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
-//     }
-    
-//   }
-// }
+  // for(let sp of serviceProviders){
+  //   if((integrationDetails.to).toLowerCase()===sp){
+  //     console.log('sp',sp)
+  //     if('cpdWorkOrdersModel'.includes(sp)){
+  //       destinationWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+  //     }
+  //     if('dfWorkOrdersModel'.includes(sp)){
+  //       destinationWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
+  //     }
+
+  //   }
+  // }
 
   for (let jsonParse of destinationWorkOrders) {
     jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
@@ -742,32 +745,146 @@ exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
  * CPDOperations and DFOperations will makes the pull and push the work orders.
 */
 
-exports.pullLatestWorkOrders = asyncWrapper(async(req,res)=>{
-    const {accountId} = req.params;
-    const integrationsMasterDetails = await integrationsMasterModel.find({accountId : accountId});
-    
-    if (integrationsMasterDetails.length > 0) {
-      for (const integration of integrationsMasterDetails) {
-        if (integration.status === 'active' && integration.from === 'CPD' && integration.to === 'DF') {
-          const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "CPD"}).lean();
-          //integrationCredentials.push(credentials);
-          await CPDOperations.getCPDWorkOrders(CPDCredentials,typeOfCron = "manual");
-          const DFCredentials = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integration.integrationsMasterId, to : "DF"}).lean();
-          
-          await DFOperations.DFCreateWorkorders(DFCredentials,typeOfCron = "manual");
+exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
+  const { accountId } = req.params;
+  const integrationsMasterDetails = await integrationsMasterModel.find({ accountId: accountId });
 
-          return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_CRON_MANUAL
+  if (integrationsMasterDetails.length > 0) {
+    for (const integration of integrationsMasterDetails) {
+      if (integration.status === 'active' && integration.from === 'CPD' && integration.to === 'DF') {
+        const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "CPD" }).lean();
+        //integrationCredentials.push(credentials);
+        await CPDOperations.getCPDWorkOrders(CPDCredentials, typeOfCron = "manual");
+        const DFCredentials = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integration.integrationsMasterId, to: "DF" }).lean();
+
+        await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "manual");
+
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+          status: customConstants.messages.MESSAGE_SUCCESS,
+          message: customConstants.messages.MESSAGE_CRON_MANUAL
         });
-        }
-        else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF') {
-          const credentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "DF" }).lean();
-          // integrationCredentials.push(credentials)
-        }
-        else {
-          // nothing
-        }
+      }
+      else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF') {
+        const credentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "DF" }).lean();
+        // integrationCredentials.push(credentials)
+      }
+      else {
+        // nothing
       }
     }
+  }
+});
+
+
+exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) => {
+  const { accountId } = req.params;
+  const accountDetails = await accountsModel.findById(accountId, { password: 0 }).lean();
+  const accountUsersDetails = await usersModel.find({ accountId }, { password: 0 }).lean();
+  const integrationsMasterDetails = await integrationsMasterModel.find({ accountId }).lean();
+  const integrationsOfAccount = await integrationsMasterModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+        status: 'active'
+      }
+    },
+    {
+      $lookup: {
+        "from": "integrationsmasterserviceproviders",
+        "localField": "_id",
+        "foreignField": "integrationsMasterId",
+        "as": "integrationsmasterserviceproviders"
+      }
+    },
+    {
+      $lookup: {
+        "from": "integrationsfieldmappings",
+        "localField": "_id",
+        "foreignField": "integrationsMasterId",
+        "as": "integrationsfieldmappings"
+      }
+    },
+    {
+      $lookup: {
+        "from": "integrationssettings",
+        "localField": "_id",
+        "foreignField": "integrationsMasterId",
+        "as": "integrationssettings"
+      }
+    },
+    {
+      $lookup: {
+        "from": "integrationsexceptions",
+        "localField": "_id",
+        "foreignField": "integrationsMasterId",
+        "as": "integrationsexceptions"
+      }
+    }
+  ]);
+  let serviceProviders = ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM"];
+  let serviceProvidersModelLists = ['cpdWorkOrdersModel', 'dfWorkOrdersModel', 'snowWorkOrdersModel', 'qbWorkOrdersModel'];// To be added more
+
+  let workOrdersDetails = {
+    sourceWorkOrders: [],
+    destinationWorkOrders: []
+  }
+
+  async function getintegrationsWorkOrders(integrationsMasterDetails) {
+    for (let sp of serviceProviders) {
+      if ((integrationsMasterDetails.from) === sp) {
+        console.log('sp', sp)
+        if ('cpdWorkOrdersModel'.includes(sp.toLowerCase())) {
+          workOrdersDetails.sourceWorkOrders = await CPDWorkordersModel.find({ accountId: accountId }).populate("integrationsCronId");
+        }
+        if ('dfWorkOrdersModel'.includes(sp.toLowerCase())) {
+          workOrdersDetails.sourceWorkOrders = await DFWorkOrdersModel.find({ accountId: accountId }).populate("integrationsCronId");
+        }
+
+      }
+      if ((integrationsMasterDetails.to) === sp) {
+        console.log('sp', sp)
+        if ('cpdWorkOrdersModel'.includes(sp.toLowerCase())) {
+          workOrdersDetails.destinationWorkOrders = await cpdWorkOrdersModel.find({ accountId: accountId }).populate("integrationsCronId");
+        }
+        if ('dfWorkOrdersModel'.includes(sp.toLowerCase())) {
+          workOrdersDetails.destinationWorkOrders = await dfWorkOrdersModel.find({ accountId: accountId }).populate("integrationsCronId");
+        }
+
+      }
+    }
+    return workOrdersDetails
+  }
+  for (let integration of integrationsMasterDetails) {
+    await getintegrationsWorkOrders(integration)
+  }
+
+
+  for (let jsonParse of workOrdersDetails.destinationWorkOrders) {
+    jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
+  }
+
+  const latestWorkOrdersCount = await integrationsCronsModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+      }
+    },
+    {
+      $group: {
+        _id: "totalWorkOrdersCount",
+        totalPulledCount: { $sum: "$pulledCount" },
+        totalPushedCount: { $sum: "$pushedCount" },
+        totalCPDNewWorkOrdersPulledCount: { $sum: "$CPDNewWorkOrdersPulledCount" }
+      }
+    }
+
+  ]);
+
+  return res.json({
+    accountDetails,
+    userDetails: accountUsersDetails,
+    integrationsOfAccount,
+    workOrdersDetails,
+    latestWorkOrdersCount
+  })
 });
