@@ -70,3 +70,25 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         })
     }
 });
+
+
+/**
+  *Function to delete account -Actually to Deactivate account by Admin
+*/
+exports.deleteAccount=asyncWrapper(async(req,res)=>{
+const accountDetails=await accountsModel.findById(req.params.accountId).lean();
+if(accountDetails.status==='deleted'){
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+        status: customConstants.messages.MESSAGE_FAIL,
+        message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+      });
+}
+ const updatedAccount= await accountsModel.findByIdAndUpdate(req.params.accountId,{$set:{status:'deleted'}}, {new:true})
+
+  // Return success response
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_ACCOUNT_DELETED,
+    data: updatedAccount,
+  });
+})

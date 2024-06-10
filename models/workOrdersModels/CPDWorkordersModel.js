@@ -42,8 +42,8 @@ const CPDWorkordersModelSchema = mongoose.Schema(
         },
         priority:{
             type : String,
-            enum : ['low','meduim','high'],
-            default:"meduim"
+            enum : ['low','medium','high'],
+            default:"medium"
         },
         MessageId: {
             type: String,

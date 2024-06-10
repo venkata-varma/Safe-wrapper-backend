@@ -14,9 +14,9 @@ const integrationFieldMappingModel = require('../models/integrationsMasterModels
 const integrationSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel')
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
 const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
-const integrationsExceptionModel=require('../models/integrationsMasterModels/integrationsExceptionsModel')
-const dfWorkOrdersModel=require('../models/workOrdersModels/DFWorkOrdersModel')
-
+const integrationsExceptionModel = require('../models/integrationsMasterModels/integrationsExceptionsModel')
+const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel')
+const { validateUserMobileEmailData } = require('../utils/userLoginValidation')
 
 /*
 Miidleware function to controller, "createUser"
@@ -60,7 +60,8 @@ exports.createUser = asyncWrapper(async (req, res) => {
     const userData = await usersModel.create({
       ...req.body,
       _id: customId,
-      userId: customId
+      userId: customId,
+      createdBy: req.body.createdBy //Super-admin user among set 0f 4 -5 users
       //accountId:req.user.accountId
 
     })
@@ -75,6 +76,99 @@ exports.createUser = asyncWrapper(async (req, res) => {
 });
 
 
+/**
+  *Middleware function to check whether account and user are active before proceeding to delete
+  *If middleware is passed, Function call is passed to update status of user to "Deleted".
+  *If successful, returns updated record.
+*/
+exports.middlewareToDeleteUser = asyncWrapper(async (req, res, next) => {
+  const checkAccount = await accountsModel.findOne({ _id: req.user.accountId }).lean();
+  if (checkAccount.status === 'deleted') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+    });
+  }
+  if (req.user.status === 'deleted') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_USER_ALREADY_DELETED,
+    });
+  }
+  next()
+}
+
+)
+
+
+/** 
+  *Function to delete user 
+  *PATCH route to update the status of user to "deleted"
+  *Route to be provided only to Admin; Not accessible by user by self.
+   *If successful, returns updated record.
+
+*/
+exports.deleteUser = asyncWrapper(async (req, res) => {
+  const deactivateUser = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'deleted', updatedBy:req.user_id } }, { new: true });
+  delete deactivateUser.password;
+  // Return success response
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_USER_DELETED,
+    data: deactivateUser,
+  });
+})
+
+/**
+ * Function to get the details of the spectific user
+ * Input -> @params User Id 
+ 
+ */
+exports.getUserDetails = asyncWrapper(async (req, res) => {
+  const user = await usersModel.findById(req.params.userId, { password: 0 }).lean()
+  // Return success response
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_USER_DETAILS,
+    data: user,
+  });
+
+})
+
+
+/**
+ * Middleware function to check status of user before updating details
+ * If passed , Funnction call will be passed to next actual function to save the updates.
+ */
+exports.middlewareUpdateUserDetails = asyncWrapper(async (req, res, next) => {
+  const userStatusCheck = await usersModel.findById(req.params.userId);
+  console.log('userStatusCheck', userStatusCheck)
+  if (userStatusCheck.status === 'deleted') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_USER_STATUS_IS_DELETED,
+    });
+  }
+  next()
+})
+
+/**
+ * Function to update details of user
+ * @params User Id
+ */
+exports.updateUserDetails = asyncWrapper(async (req, res) => {
+  const updateUser = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { ...req.body, updatedBy: req.user._id } }, { new: true });
+
+  // Return success response
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_USER_DETAILS_UPDATED,
+    data: updateUser,
+  });
+
+})
+
+
 /*
 Miidleware function to controller, "loginUser"
 Mandatory fields -> Phone and Password
@@ -85,15 +179,25 @@ Funtion to check
 If returns True, moves to "next" function , "loginUser"
 */
 exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
-  const { phone, password } = req.body;
-  if (!phone || !password) {
+  console.log("Rweq", req.body)
+  const { mobileEmail, password } = req.body;
+
+  if (!mobileEmail || !password) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_FIELDS_MANDATORY,
     });
   }
-  const user = await usersModel.findOne({ phone }).populate('accountId');
-  
+  let validatedUserMobileAndEmailData = validateUserMobileEmailData(req.body);
+  if (validatedUserMobileAndEmailData.error) {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      message: customConstants.messages.MESSAGE_REQUEST_BODY_ERROR,
+      status: customConstants.messages.MESSAGE_FAIL,
+      error: validatedUserMobileAndEmailData.error.details
+    });
+  }
+  const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }).populate('accountId');
+
   // If user not found
   if (!user) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
@@ -101,7 +205,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
     });
   }
-  if (user.accountId.status === 'deleted') {
+  if (user.accountId.status === 'deleted' || user.status === 'deleted') {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED,
@@ -129,12 +233,12 @@ If middleware returns True, this function create session with valid JWT token
 Mandatory fields -> Phone and Password 
 */
 exports.loginUser = asyncWrapper(async (req, res) => {
-  const { phone, password } = req.body;
+  const { mobileEmail, password } = req.body;
   let user_details = {};
   // Find user by email or phone
-  const user = await usersModel.findOne({ phone }, { _id: 0, password: 0 });
+  const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }, { _id: 0, password: 0 });
   // const respectiveAccount = await accountsModel.findOne({ _id: user.accountId }, { password: 0 });
-  const userData = await usersModel.findOne({ phone });
+  const userData = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] });
 
   user_details.userDetails = user.toObject();
 
@@ -154,9 +258,9 @@ exports.loginUser = asyncWrapper(async (req, res) => {
   //Count number of integrations for respective account
   const integrationsCount = await integrationMasterModel.find({ accountId: user.accountId, status: 'active' });
   //const accountUpdateIntegrationsCount = await accountsModel.findByIdAndUpdate(user.accountId, { $set: { noOfIntegrations: integrationsCount.length } }, { new: true })
-  user_details.accountDetails = await accountsModel.findById(user.accountId, {password:0})
-  console.log('--------------------->', user_details)
-  
+  user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
+
+
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -180,13 +284,13 @@ exports.loginUser = asyncWrapper(async (req, res) => {
     7. Account details
 */
 exports.getAccountStatistics = asyncWrapper(async (req, res) => {
-  const  accountId  = req.params.accountId;
-  const accountDetails = await accountsModel.findById(accountId);
+  const accountId = req.params.accountId;
+  const accountDetails = await accountsModel.findById(accountId, { password: 0 });
 
   const users = await usersModel.find({ accountId }, { password: 0 });
- 
+
   // const integrationsOfAccount = await integrationMasterModel.find({ accountId, status: 'active' });
-  
+
   const integrationsOfAccount = await integrationMasterModel.aggregate([
     {
       $match: {
@@ -199,7 +303,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
         "from": "integrationsmasterserviceproviders",
         "localField": "_id",
         "foreignField": "integrationsMasterId",
-        "as": "integrationsmasterserviceproviders"
+        "as": "integrationsMasterServiceProviders"
       }
     },
     {
@@ -207,7 +311,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
         "from": "integrationsfieldmappings",
         "localField": "_id",
         "foreignField": "integrationsMasterId",
-        "as": "integrationsfieldmappings"
+        "as": "integrationsFieldMappings"
       }
     },
     {
@@ -215,22 +319,25 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
         "from": "integrationssettings",
         "localField": "_id",
         "foreignField": "integrationsMasterId",
-        "as": "integrationssettings"
+        "as": "integrationsSettings"
+      }
+    }, {
+      $lookup: {
+        "from": "integrationsexceptions",
+        "localField": "_id",
+        "foreignField": "integrationsMasterId",
+        "as": "integrationsExceptions"
+      }
+    },
+    {
+      $addFields: {
+        integrationsExceptionsCount: { $size: "$integrationsExceptions" }
       }
     }
   ]);
 
-  // for (let integrationMaster of integrationsOfAccount) {
-  //   let integrationServiceProvidersOfRespectiveIntegration = await integrationMasterServiceProviderModel.find({ integrationsMasterId: integrationMaster._id })
-  //   let integraionFieldMappingOfRespectiveIntegration = await integrationFieldMappingModel.find({ integrationsMasterId: integrationMaster._id });
-  //   let integrationSettingsOfRespectiveIntegration = await integrationSettingsModel.find({ integrationsMasterId: integrationMaster._id });
-  //   integrationDetails = {
-  //     integrationMaster,
-  //     integraionFieldMappingOfRespectiveIntegration,
-  //     integrationServiceProvidersOfRespectiveIntegration,
-  //     integrationSettingsOfRespectiveIntegration
-  //   }
-  //   integrationsDetails.push(integrationDetails)
+  // for (let exceptionsCount of integrationsOfAccount) {
+  //   exceptionsCount.integrationsExceptionsCount = exceptionsCount.integrationsExceptions.length;
   // }
 
   const activityLog = await CPDWorkordersModel.aggregate([
@@ -256,7 +363,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
 
   // const activityLog = await cpdWorkOrdersModel.find({ accountId }).sort({ createdAt: -1 })
 
-  const highPrioritycpdWorkOrders = await cpdWorkOrdersModel.find({ accountId, priority:'high' }).sort({ createdAt: -1 })
+  const highPrioritycpdWorkOrders = await cpdWorkOrdersModel.find({ accountId, $or: [{ priority: 'high' }, { priority: 'medium' }] }).sort({ createdAt: -1 })
   const workOrderStates = await cpdWorkOrdersModel.aggregate([
     {
       $match: {
@@ -276,17 +383,17 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   for (let week of twelveWeekSales) {
 
     let weekCPDkWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate } })
-let weekDFWorkOrders=await dfWorkOrdersModel.find({accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate}})
-let integrationsExceptions=await integrationsExceptionModel.find({accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate}})
+    let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate } })
+    let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate } })
     week.CPDWorkOrderCount = weekCPDkWorkOrders.length;
-    week.dfWorkOrderCount=weekDFWorkOrders.length;
-    week.integrationsExceptions=integrationsExceptions.length;
+    week.dfWorkOrderCount = weekDFWorkOrders.length;
+    week.integrationsExceptions = integrationsExceptions.length;
   }
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_DASHBOARD_STATISTICS_RECEIVED,
     data: {
-       
+      accountDetails,
       users,
       workOrderStates,
       highPrioritycpdWorkOrders,
