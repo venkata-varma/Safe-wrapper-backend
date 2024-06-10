@@ -24,6 +24,7 @@ const DFOperations = require('../middleware/DFOperations');
 const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
 const usersModel = require("../models/usersModels/usersModel");
 const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
+const serviceProvidersMappingAndServicesModel = require("../models/integrationsMasterModels/serviceProvidersMappingAndServicesModel");
 
 
 /**
@@ -86,6 +87,7 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
   const fieldMappingMasterDefaultServices = await fieldMappingMasterDefaultServicesModel.find({});
   const fieldMappingsMasters = await fieldMappingsMasterModel.find({});
   const serviceproviderlists = await serviceProviderListModel.find({});
+  const serviceProvidersMappingAndServices = await serviceProvidersMappingAndServicesModel.find({});
 
   const cronSchedulePicker = {
     eachSecond: 'each second',
@@ -100,7 +102,9 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
-      data: { fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker },
+      data: { fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker,
+        serviceProvidersMappingAndServices
+       },
     });
 
 });
