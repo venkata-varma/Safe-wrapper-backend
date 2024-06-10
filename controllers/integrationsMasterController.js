@@ -25,6 +25,7 @@ const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersMode
 const usersModel = require("../models/usersModels/usersModel");
 const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
 const serviceProvidersMappingAndServicesModel = require("../models/integrationsMasterModels/serviceProvidersMappingAndServicesModel");
+const { dateAsset } = require('../utils/utilsFunctions')
 
 
 /**
@@ -552,59 +553,87 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   let serviceProvidersModelLists = ['cpdWorkOrdersModel', 'dfWorkOrdersModel', 'snowWorkOrdersModel', 'qbWorkOrdersModel'];// To be added more
   var sourceWorkOrders = [];
   var destinationWorkOrders = [];
+  let presentWeekData = dateAsset;
+  var presentWeekSourceData = [];
+  var presentWeekDestinationData = [];
+  //Integration exception count for last 7 days 
+  for (let week of presentWeekData) {
+    presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
+    week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length;
+  }
+
+
+  /**
+   * For last 7 days, Gives Source work -order count (Need to optimize it in function instead of repetetion code (loops))
+   * Source and destination work orders -Later invoices 
+   */
   for (let sp of serviceProviders) {
     if ((integrationDetails.from) === sp) {
       console.log('sp', sp)
       if ('cpdWorkOrdersModel'.includes(sp.toLowerCase())) {
         sourceWorkOrders = await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+        for (let week of presentWeekData) {
+          presentWeekSourceData = await cpdWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
+          week.sourceWorkOrdersCount = presentWeekSourceData.length;
+        }
       }
       if ('dfWorkOrdersModel'.includes(sp.toLowerCase())) {
-        sourceWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
-      }
-
+        sourceWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");    
+        for (let week of presentWeekData) {
+          presentWeekSourceData = await dfWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
+          week.sourceWorkOrdersCount = presentWeekSourceData.length;
+        }
+        }
     }
     if ((integrationDetails.to) === sp) {
       console.log('sp', sp)
       if ('cpdWorkOrdersModel'.includes(sp.toLowerCase())) {
         destinationWorkOrders = await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+
+        for (let week of presentWeekData) {
+          presentWeekDestinationData = await cpdWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
+          week.destinationWorkOrdersCount = presentWeekDestinationData.length;
+        }
       }
       if ('dfWorkOrdersModel'.includes(sp.toLowerCase())) {
         destinationWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
-      }
 
+        for (let week of presentWeekData) {
+          presentWeekDestinationData = await dfWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
+          week.destinationWorkOrdersCount = presentWeekDestinationData.length;
+        }
+      }
     }
   }
-  // for(let sp of serviceProviders){
-  //   if((integrationDetails.to).toLowerCase()===sp){
-  //     console.log('sp',sp)
-  //     if('cpdWorkOrdersModel'.includes(sp)){
-  //       destinationWorkOrders=await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
-  //     }
-  //     if('dfWorkOrdersModel'.includes(sp)){
-  //       destinationWorkOrders=await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").limit(15);
-  //     }
 
-  //   }
-  // }
-
+//Properly parses the above resulted data
   for (let jsonParse of destinationWorkOrders) {
     jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
+  
   }
+  for(let week of presentWeekData){
+    delete week.fromDate;
+    delete week.toDate;
+    
+  }
+
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GET_INTEGRATIONS,
       data: {
+
         integrationDetails,
         integrationsSettingsDetails: settingsDetails,
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
         integrationMasterServiceProviders,
         integrationExceptions,
-        // cpdWorkOrders,
-        // dfWorkOrders
-        sourceWorkOrders,
-        destinationWorkOrders
+
+         sourceWorkOrders,
+         destinationWorkOrders,
+         oneWeekCountStatistics: presentWeekData,
+
 
       },
     });
