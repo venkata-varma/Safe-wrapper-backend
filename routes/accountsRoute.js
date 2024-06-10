@@ -6,7 +6,7 @@ const auth = require('../middleware/authentication');
 
 
 router.post('/create-account',accountsControllers.validateAccountRegistration, accountsControllers.createAccount)
-
-
+router.use(auth)
+router.patch('/delete-account/:accountId', accountsControllers.deleteAccount)
 
 module.exports = router;
