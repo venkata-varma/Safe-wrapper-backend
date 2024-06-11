@@ -27,6 +27,7 @@ const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel"
 const serviceProvidersMappingAndServicesModel = require("../models/integrationsMasterModels/serviceProvidersMappingAndServicesModel");
 const { dateAsset } = require('../utils/utilsFunctions');
 const { getServiceWorkOrdersAndStatus } = require("../utils/general");
+const { CPDAuthentication, DFAuthentication } = require('../utils/serviceProvidersAuthentication')
 
 
 /**
@@ -209,7 +210,9 @@ exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
 
 
 /**
+ * Middleware function to Create Integration 
  * Validate integration master exist
+ * If passed , middleware passes function call to "Create Integration"
 */
 
 exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) => {
@@ -226,6 +229,40 @@ exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) =>
     next()
   }
 });
+
+
+/**
+ * Middleware function to "Create Integration service providers".
+ * Function to check whether entered credentials are valid or not.
+ * If invalid, throws the required error. 
+ * If passed, middleware passes function call to next function that stores credentials in database
+ */
+
+exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
+  if (req.body.serviceProvider === 'CPD') {
+    const checkCPDCredentials = await CPDAuthentication(req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type, req.body.credentials.baseUrl)
+
+    if (checkCPDCredentials === 'error') {
+
+      return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+        status: customConstants.messages.MESSAGE_FAIL,
+        message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+      });
+    }
+  }
+  if (req.body.serviceProvider === 'DF') {
+    const checkDFCredentials = await DFAuthentication(req.body.credentials.df_auth, req.body.credentials.df_servicecode, req.body.credentials.baseUrl)
+   
+    if (checkDFCredentials !== 200) {
+      return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+        status: customConstants.messages.MESSAGE_FAIL,
+        message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+      });
+    }
+  }
+  next()
+})
+
 
 /*
 Function to create second step of a initiating new integration process

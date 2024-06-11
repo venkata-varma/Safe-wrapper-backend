@@ -15,7 +15,7 @@
     "MESSAGE_USER_CREATED": "Registration completed successfully",
     "MESSAGE_USER_EXIST": "User already exist. Please login",
     "MESSAGE_USER_LOGIN": "Login successfully",
-    "MESSAGE_USER_DETAILS_UPDATED":"User details updated successfully.",
+    "MESSAGE_USER_DETAILS_UPDATED": "User details updated successfully.",
     "MESSAGE_USER_DETAILS": "User details found successfully",
     "MESSAGE_USER_DELETED": "User deleted successfully",
     "MESSAGE_ACCOUNT_DELETED": "Account deleted successfully",
@@ -34,12 +34,12 @@
     "MESSAGE_INTEGRATION_COUNT_REACHED": "This account already has two Active-Integrations. Thank you!",
     "MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED": "Account is deleted. Please contact admin department.Thank you.",
     "MESSAGE_INVALID": "Invalid Credentials.",
-    "MESSAGE_ACCOUNT_REPORTS":"Reports on a single account.",
+    "MESSAGE_ACCOUNT_REPORTS": "Reports on a single account.",
     "MESSAGE_PHONE_NOT_EXISTS": "The account does not exist. Please check your credentials and try again.",
     "MESSAGE_INTEGRATION_DETAILS": "Integration details.",
     "MESSAGE_CRON_MANUAL": "We have retrieved the most recent records and continued with the integration process.",
     "MESSAGE_STATASTICS": "All Statastics",
-    "MESSAGE_USER_STATUS_IS_DELETED":"Update the status of user before to update the details",
+    "MESSAGE_USER_STATUS_IS_DELETED": "Update the status of user before to update the details",
     "MESSAGE_GLOBAL_CONSTANTS": "Global Constants.",
     "MESSAGE_GLOBAL_IMAGES": "Global Images",
     "MESSAGE_FIELD_MAPPING_KEYS": "Default integration field mapping keys.",
@@ -62,7 +62,8 @@
     "MESSAGE_INTEGRATION_DETAILS_NOT_FOUND": "Respective Integration details not found.",
     "MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND": "Details of Service providers found",
     "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND": "Respective Integration service provider details not found.",
-    "MESSAGE_INTEGRATION_ID_NOT_ACTIVE": "Respective integration is not in active state. Please contact admin"
+    "MESSAGE_INTEGRATION_ID_NOT_ACTIVE": "Respective integration is not in active state. Please contact admin",
+    "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials."
   },
   "statusCodes": {
     "FORBIDDEN": 403,
