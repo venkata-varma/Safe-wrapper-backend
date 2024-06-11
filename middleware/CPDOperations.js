@@ -95,12 +95,14 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
             if(work.Status === "New"){
                 latestWorkOrderCount.CPDNewWorkOrdersPulledCount++
             }
+            let workOrderStatus = work.WorkOrderNumber.includes('TMC') ? "high" : "initiated"
             await CPDWorkordersModel.create({
                 CPDWorkOrderId: work.WorkOrderId,
                 accountId: workDetails.accountId,
                 CPDBranchId : work.BranchId,
                 CPDWorkOrders: workDetails.CPDWorkOrders,
                 CPDWorkOrderStatus :work.Status,
+                status:workOrderStatus,
                 MessageId: workDetails.MessageId,
                 integrationsCronId: workDetails.integrationsCronJobId,
                 integrationsMasterId : integrationsMasterId

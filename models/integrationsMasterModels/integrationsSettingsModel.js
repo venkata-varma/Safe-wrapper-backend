@@ -23,8 +23,13 @@ const integrationsSettingsSchema = new mongoose.Schema({
       },
     periodType:{
         type:String,
-        enum:["hours","days","weeks","months","years"],
+        enum:["each-second","once-each-minute","once-each-hour","once-each-day","once-each-month"],
         default:""
+    },
+    currentStatus : {
+      type : String,
+      enum : ['start','stop'],
+      deafult : "start"
     },
     periodSettings:{
         type:mongoose.Schema.Types.Mixed,
