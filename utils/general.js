@@ -22,10 +22,14 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
     let serviceWorkOrdersAndStatus = {presentWeekData : dateAsset}
     if(serviceProvider === "CPD"){
         serviceWorkOrdersAndStatus.sourceWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId");
-        for (let week of presentWeekData) {
-          presentWeekSourceData = await CPDWorkordersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
-          week.sourceWorkOrdersCount = presentWeekSourceData.length;
+        // console.log('serviceWorkOrdersAndStatus.sourceWorkOrders:===',serviceWorkOrdersAndStatus.sourceWorkOrders)
+        if(serviceWorkOrdersAndStatus.sourceWorkOrders.length > 0){
+            for (let week of presentWeekData) {
+                presentWeekSourceData = await CPDWorkordersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
+                week.sourceWorkOrdersCount = presentWeekSourceData.length;
+              }
         }
+        
         const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
         let sourceStatus = await CPDWorkordersModel.aggregate([
           {
@@ -53,11 +57,13 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
     }
     else if(serviceProvider === "DF"){
         serviceWorkOrdersAndStatus.destinationWorkOrders = await DFWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
-
-        for (let week of presentWeekData) {
-          presentWeekDestinationData = await DFWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
-          week.destinationWorkOrdersCount = presentWeekDestinationData.length;
+        if(serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0){
+            for (let week of presentWeekData) {
+                presentWeekDestinationData = await DFWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
+                week.destinationWorkOrdersCount = presentWeekDestinationData.length;
+              }
         }
+       
         const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
         let destinationStatus = await DFWorkOrdersModel.aggregate([
           {
