@@ -33,8 +33,8 @@ const job_each_minute = humanToCron('once each minute')
 exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
   let integrationCredentials = []
   
-  let job_each_minute_cronJob = schedule.scheduleJob(job_each_minute, async () => {
-    const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once-each-minute' }).populate('integrationsMasterId').lean();
+  let job_each_minute_cronJob = schedule.scheduleJob(job_each_second, async () => {
+    const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each minute', currentStatus : "start" }).populate('integrationsMasterId').lean();
 
     if (integrationsMasterSettingsDetails.length > 0) {
       for (const integration of integrationsMasterSettingsDetails) {
@@ -54,6 +54,9 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
           // nothing
         }
       }
+    }
+    else {
+      console.log('No active settings with currentStatus: "start" found.');
     }
   })
 });

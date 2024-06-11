@@ -23,7 +23,7 @@ const integrationsSettingsSchema = new mongoose.Schema({
       },
     periodType:{
         type:String,
-        enum:["each-second","once-each-minute","once-each-hour","once-each-day","once-each-month"],
+        enum:["each second","once each minute","once each hour","once each day","once each month"],
         default:""
     },
     currentStatus : {
