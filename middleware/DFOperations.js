@@ -110,12 +110,11 @@ exports.DFCreateWorkorders = asyncWrapper(async (integrationObject,typeOfCron) =
             });
         DFWorkOrderId = JSON.parse(DFWorkorderList).id
         const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: 31371, }).lean();
-        // console.log('listOfDFWorkorderDetails:===', listOfDFWorkorderDetails)
         if (listOfDFWorkorderDetails) {
-            DFWorkOrdersModel.findOneAndUpdate({
-                DFWorkOrderId: DFWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
-                accountId: integrationObject.accountId
-            }, { status: "completed" }, { new: true }).lean()
+            await DFWorkOrdersModel.findOneAndUpdate({
+                DFWorkOrderId: 31371, integrationsMasterId: integrationObject.integrationsMasterId,
+                accountId: integrationObject.accountId,
+            }, {DFWorkOrderStatus: JSON.parse(DFWorkorderList).status, status: "completed" }, { new: true }).lean()
         }
         else {
             const DFWorkOrderDetails = await DFWorkOrdersModel.create({
