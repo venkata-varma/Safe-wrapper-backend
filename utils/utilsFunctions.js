@@ -22,7 +22,7 @@ function formatDate(date, isEndOfDay = false) {
       toDate: formatDate(toDate, true),
       day: formatDate(fromDate).split('T')[0]
     };
-  }).reverse();
+  });
   
 
   

@@ -103,9 +103,10 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
-      data: { fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker,
+      data: {
+        fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker,
         serviceProvidersMappingAndServices
-       },
+      },
     });
 
 });
@@ -557,8 +558,8 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   var presentWeekSourceData = [];
   var presentWeekDestinationData = [];
 
-const activityLogOfIndividualIntegration=await integrationsCronsModel.find({integrationsMasterId}).lean();
-  
+  const activityLogOfIndividualIntegration = await integrationsCronsModel.find({ integrationsMasterId }).lean();
+
   let source, destination;
   //Integration exception count for last 7 days 
   for (let week of presentWeekData) {
@@ -580,27 +581,43 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
           presentWeekSourceData = await cpdWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.sourceWorkOrdersCount = presentWeekSourceData.length;
         }
-        source = await cpdWorkOrdersModel.aggregate([
+        const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: integrationDetails.from })
+        let sourceStatus = await cpdWorkOrdersModel.aggregate([
           {
             $match: {
-              integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId)
+              integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
             }
           },
           {
             $group: {
-              _id: "$CPDWorkOrders.Status",
+              _id: '$CPDWorkOrders.Status',
               count: { $sum: 1 }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              status: '$_id',
+              count: 1
             }
           }
         ]);
+        const statuses = getDefaultStatus.workOrderStatus;
+        source = statuses.map(status => {
+          const match = sourceStatus.find(item => item.status === status);
+          return {
+            status,
+            count: match ? match.count : 0
+          };
+        });
       }
       if ('dfWorkOrdersModel'.includes(sp.toLowerCase())) {
-        sourceWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");    
+        sourceWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
         for (let week of presentWeekData) {
           presentWeekSourceData = await dfWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.sourceWorkOrdersCount = presentWeekSourceData.length;
         }
-        }
+      }
     }
     if ((integrationDetails.to) === sp) {
       console.log('sp', sp)
@@ -619,32 +636,48 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
           presentWeekDestinationData = await dfWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.destinationWorkOrdersCount = presentWeekDestinationData.length;
         }
-        destination = await dfWorkOrdersModel.aggregate([
+        const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: integrationDetails.to })
+        let destinationStatus = await dfWorkOrdersModel.aggregate([
           {
             $match: {
-              integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId)
+              integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
             }
           },
           {
             $group: {
-              _id: "$DFWorkOrderStatus",
-              count: { $sum: 1 }  // Count the number of documents in each group
+              _id: '$DFWorkOrderStatus',
+              count: { $sum: 1 }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              status: '$_id',
+              count: 1
             }
           }
         ]);
+        const statuses = getDefaultStatus.workOrderStatus;
+        destination = statuses.map(status => {
+          const match = destinationStatus.find(item => item.status === status);
+          return {
+            status,
+            count: match ? match.count : 0
+          };
+        });
       }
     }
   }
 
-//Properly parses the above resulted data
+  //Properly parses the above resulted data
   for (let jsonParse of destinationWorkOrders) {
     jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
-  
+
   }
-  for(let week of presentWeekData){
+  for (let week of presentWeekData) {
     delete week.fromDate;
     delete week.toDate;
-    
+
   }
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -657,14 +690,14 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
         integrationMasterServiceProviders,
         integrationExceptions,
-         sourceWorkOrders,
-         destinationWorkOrders,
-         oneWeekCountStatistics: presentWeekData,
+        sourceWorkOrders,
+        destinationWorkOrders,
+        oneWeekCountStatistics: presentWeekData,
         activityLogOfIndividualIntegration: activityLogOfIndividualIntegration,
         sourceWorkOrders,
         destinationWorkOrders,
         oneWeekCountStatistics: presentWeekData,
-        statusMapping : {source, destination}
+        statusMapping: { source, destination }
       },
     });
 });
@@ -950,16 +983,18 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
 
   ]);
 
- 
+
   return res
-  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-  .json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_ACCOUNT_REPORTS,
-    data: { accountDetails,
-      userDetails: accountUsersDetails,
-      integrationsOfAccount,
-      workOrdersDetails,
-      latestWorkOrdersCount }
-  });
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_ACCOUNT_REPORTS,
+      data: {
+        accountDetails,
+        userDetails: accountUsersDetails,
+        integrationsOfAccount,
+        workOrdersDetails,
+        latestWorkOrdersCount
+      }
+    });
 });

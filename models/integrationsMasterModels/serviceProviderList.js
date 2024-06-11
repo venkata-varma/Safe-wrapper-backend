@@ -31,6 +31,10 @@ const serviceProviderListSchema = new mongoose.Schema({
         enum: ['hourly', 'daily', 'weekly', 'monthly'],
         default: ""
     },
+    workOrderStatus:{
+        type : Array,
+        default : []
+    },
     status: {
         type: String,
         enum: ['active', 'deleted'],
