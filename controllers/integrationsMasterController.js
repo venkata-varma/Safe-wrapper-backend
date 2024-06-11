@@ -559,7 +559,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
 
 const activityLogOfIndividualIntegration=await integrationsCronsModel.find({integrationsMasterId}).lean();
   
-  let sourceWorkOrdersStatus, destinationWorkOrdersStatus;
+  let source, destination;
   //Integration exception count for last 7 days 
   for (let week of presentWeekData) {
     presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
@@ -580,7 +580,7 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
           presentWeekSourceData = await cpdWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.sourceWorkOrdersCount = presentWeekSourceData.length;
         }
-        sourceWorkOrdersStatus = await cpdWorkOrdersModel.aggregate([
+        source = await cpdWorkOrdersModel.aggregate([
           {
             $match: {
               integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId)
@@ -619,7 +619,7 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
           presentWeekDestinationData = await dfWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.destinationWorkOrdersCount = presentWeekDestinationData.length;
         }
-        destinationWorkOrdersStatus = await dfWorkOrdersModel.aggregate([
+        destination = await dfWorkOrdersModel.aggregate([
           {
             $match: {
               integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId)
@@ -664,7 +664,7 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
         sourceWorkOrders,
         destinationWorkOrders,
         oneWeekCountStatistics: presentWeekData,
-        workOrdersStatusCount : {sourceWorkOrdersStatus, destinationWorkOrdersStatus}
+        statusMapping : {source, destination}
       },
     });
 });
