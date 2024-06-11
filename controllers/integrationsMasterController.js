@@ -523,7 +523,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
 exports.validateintegrationsMaster = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.params;
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationsMasterId)
-  if (!integrationMasterDetails || integrationMasterDetails.status === 'deleted') {
+  if (!integrationMasterDetails ) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
@@ -556,6 +556,9 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   let presentWeekData = dateAsset;
   var presentWeekSourceData = [];
   var presentWeekDestinationData = [];
+
+const activityLogOfIndividualIntegration=await integrationsCronsModel.find({integrationsMasterId}).lean();
+  
   //Integration exception count for last 7 days 
   for (let week of presentWeekData) {
     presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
@@ -629,11 +632,10 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
         integrationMasterServiceProviders,
         integrationExceptions,
-
          sourceWorkOrders,
          destinationWorkOrders,
          oneWeekCountStatistics: presentWeekData,
-
+        activityLogOfIndividualIntegration: activityLogOfIndividualIntegration,
 
       },
     });
