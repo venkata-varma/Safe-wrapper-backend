@@ -558,7 +558,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   var presentWeekSourceData = [];
   var presentWeekDestinationData = [];
 
-  const activityLogOfIndividualIntegration = await integrationsCronsModel.find({ integrationsMasterId }).lean();
+  const activityLogOfIndividualIntegration = await integrationsCronsModel.find({ integrationsMasterId }).sort({_id:-1}).limit(20).lean();
 
   let source, destination;
   //Integration exception count for last 7 days 
@@ -696,7 +696,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         sourceWorkOrders,
         destinationWorkOrders,
         oneWeekCountStatistics: presentWeekData,
-        activityLogOfIndividualIntegration: activityLogOfIndividualIntegration,
+        activityLog: activityLogOfIndividualIntegration,
         sourceWorkOrders,
         destinationWorkOrders,
         oneWeekCountStatistics: presentWeekData,
