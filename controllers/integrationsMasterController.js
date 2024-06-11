@@ -523,7 +523,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
 exports.validateintegrationsMaster = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.params;
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationsMasterId)
-  if (!integrationMasterDetails ) {
+  if (!integrationMasterDetails) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
@@ -559,6 +559,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
 
 const activityLogOfIndividualIntegration=await integrationsCronsModel.find({integrationsMasterId}).lean();
   
+  let sourceWorkOrdersStatus, destinationWorkOrdersStatus;
   //Integration exception count for last 7 days 
   for (let week of presentWeekData) {
     presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
@@ -579,6 +580,19 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
           presentWeekSourceData = await cpdWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.sourceWorkOrdersCount = presentWeekSourceData.length;
         }
+        sourceWorkOrdersStatus = await cpdWorkOrdersModel.aggregate([
+          {
+            $match: {
+              integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId)
+            }
+          },
+          {
+            $group: {
+              _id: "$CPDWorkOrders.Status",
+              count: { $sum: 1 }
+            }
+          }
+        ]);
       }
       if ('dfWorkOrdersModel'.includes(sp.toLowerCase())) {
         sourceWorkOrders = await dfWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");    
@@ -605,6 +619,19 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
           presentWeekDestinationData = await dfWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.destinationWorkOrdersCount = presentWeekDestinationData.length;
         }
+        destinationWorkOrdersStatus = await dfWorkOrdersModel.aggregate([
+          {
+            $match: {
+              integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId)
+            }
+          },
+          {
+            $group: {
+              _id: "$DFWorkOrderStatus",
+              count: { $sum: 1 }  // Count the number of documents in each group
+            }
+          }
+        ]);
       }
     }
   }
@@ -619,14 +646,12 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
     delete week.toDate;
     
   }
-
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GET_INTEGRATIONS,
       data: {
-
         integrationDetails,
         integrationsSettingsDetails: settingsDetails,
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
@@ -636,7 +661,10 @@ const activityLogOfIndividualIntegration=await integrationsCronsModel.find({inte
          destinationWorkOrders,
          oneWeekCountStatistics: presentWeekData,
         activityLogOfIndividualIntegration: activityLogOfIndividualIntegration,
-
+        sourceWorkOrders,
+        destinationWorkOrders,
+        oneWeekCountStatistics: presentWeekData,
+        workOrdersStatusCount : {sourceWorkOrdersStatus, destinationWorkOrdersStatus}
       },
     });
 });

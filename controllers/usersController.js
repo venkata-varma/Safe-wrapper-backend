@@ -376,7 +376,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
         count: { $sum: 1 }  // Count the number of documents in each group
       }
     }
-  ])
+  ]);
   const twelveWeekSales = twelveWeeksSales;
 
 
