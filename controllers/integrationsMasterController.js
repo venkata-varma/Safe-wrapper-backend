@@ -578,6 +578,9 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
       if ('cpdWorkOrdersModel'.includes(sp.toLowerCase())) {
         sourceWorkOrders = await cpdWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
         for (let week of presentWeekData) {
+          console.log('week.fromDate:==',week.fromDate)
+          console.log('week.toDate:==',week.toDate)
+
           presentWeekSourceData = await cpdWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
           week.sourceWorkOrdersCount = presentWeekSourceData.length;
         }
