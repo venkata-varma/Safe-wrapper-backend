@@ -6,6 +6,7 @@ const { decryptData } = require("../utils/encryptionAlgorithms");
 const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
 const CPDConfigurations = require('../config/integrationsConfiguration')
 const asyncWrapper = require("./asyncWrapper");
+const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
 
 /**
  * 
@@ -72,9 +73,10 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
               { CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId: integrationsMasterId });
         // console.log('step 4:===')
         if (CPD_work_details) {
+            // console.log('step 5')
 
             if(CPD_work_details.CPDWorkOrderStatus !== work.Status){
-            // console.log('step 5')
+                // console.log('step 5A')
 
             await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId : integrationsMasterId }, {
                 CPDWorkOrders: workDetails.CPDWorkOrders,
@@ -82,9 +84,10 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
                 CPDWorkOrderStatus :work.Status,
                 status:'initiated',
             }, { new: true, upsert: true });
+            await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, {lastPullDate:new Date()},{new : true})
         }
         else{
-            // console.log('step 5A')
+            // console.log('step 5B')
             //nothing
         }
         } else {
@@ -102,6 +105,7 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
                 integrationsCronId: workDetails.integrationsCronJobId,
                 integrationsMasterId : integrationsMasterId
             })
+            await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, {lastPullDate:new Date()},{new : true})
             latestWorkOrderCount.pullNewWorkOrdersCount++
         }
     }
