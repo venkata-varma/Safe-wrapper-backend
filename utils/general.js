@@ -25,6 +25,7 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
         // console.log('serviceWorkOrdersAndStatus.sourceWorkOrders:===',serviceWorkOrdersAndStatus.sourceWorkOrders)
         if(serviceWorkOrdersAndStatus.sourceWorkOrders.length > 0){
             for (let week of presentWeekData) {
+              console.log("FromDate:==",new Date(week.fromDate))
                 presentWeekSourceData = await CPDWorkordersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
                 week.sourceWorkOrdersCount = presentWeekSourceData.length;
               }

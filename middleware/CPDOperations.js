@@ -7,6 +7,7 @@ const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersMode
 const CPDConfigurations = require('../config/integrationsConfiguration')
 const asyncWrapper = require("./asyncWrapper");
 const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
+const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
 
 /**
  * 
@@ -165,6 +166,8 @@ exports.getCPDWorkOrders = asyncWrapper(async (integrationObject,typeOfCron) => 
     }, { new: true, upsert: true });
 });
 
-
-// module.exports = getCPDWorkOrders
+exports.updateCPDWorkOrders = asyncWrapper(async(integrationObject, typeOfCron, fieldmappingkeys)=>{
+    const DFWorkorderDetails = await DFWorkOrdersModel.find({accountId: accountId, integrationsMasterId : integrationObject.integrationsMasterId});
+    console.log('DFWorkorderDetails:==',DFWorkorderDetails)
+});
 

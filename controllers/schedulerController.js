@@ -44,7 +44,8 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
           await CPDOperations.getCPDWorkOrders(CPDCredentials,typeOfCron = "automated");
           const DFCredentials = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integration.integrationsMasterId, to : "DF"}).lean();
           
-          await DFOperations.DFCreateWorkorders(DFCredentials,typeOfCron = "automated")
+          await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "automated")
+          // await CPDOperations.updateCPDWorkOrders(CPDCredentials, typeOfCron = "automated", DFCredentials)
         }
         else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF') {
           const credentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "DF" }).lean();
