@@ -85,22 +85,22 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                 },
                 data: JSON.stringify(fieldmappingkeys)
             };
-            // DFWorkOrderId = await axios.request(createWorkOrderConfig)
-            //     .then((response) => {
-            //         console.log("response:===", response.data.id);
-            //         return response.data.id
-            //     })
-            //     .catch(async (error) => {
-            //         console.log("ERRORSS:==", error.response.data);
-            //         await integrationsExceptionsModel.create({
-            //             integrationsMasterId: integrationObject.integrationsMasterId,
-            //             accountId: integrationObject.accountId,
-            //             CPDWorkOrderId: workOrder.CPDWorkOrderId,
-            //             networkCode: error.response.status,
-            //             exceptionMessage: error.message,
-            //             exceptionTitle: error.response.data.messages
-            //         })
-            //     });
+            DFWorkOrderId = await axios.request(createWorkOrderConfig)
+                .then((response) => {
+                    console.log("response:===", response.data.id);
+                    return response.data.id
+                })
+                .catch(async (error) => {
+                    console.log("ERRORSS:==", error.response.data);
+                    await integrationsExceptionsModel.create({
+                        integrationsMasterId: integrationObject.integrationsMasterId,
+                        accountId: integrationObject.accountId,
+                        CPDWorkOrderId: workOrder.CPDWorkOrderId,
+                        networkCode: error.response.status,
+                        exceptionMessage: error.message,
+                        exceptionTitle: error.response.data.messages
+                    })
+                });
             console.log("DFWorkOrderId:===", DFWorkOrderId);
 
             let getWorkOrderConfig = {
@@ -109,22 +109,22 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                 url: `${DFConfigurations.DF.getWorkOrderById.URL}${DFWorkOrderId}`,
                 headers: DFConfigurations.DF.getWorkOrderById.headers,
             };
-            // const getDFWorkOrderList = await axios.request(getWorkOrderConfig)
-            //     .then((response) => {
-            //         DFWorkorderList = JSON.stringify(response.data)
-            //         console.log("DFWorkorderListresponse:===", JSON.stringify(response.data));
-            //     })
-            //     .catch(async (error) => {
-            //         console.log("ERROR:==", error.response.data);
-            //         await integrationsExceptionsModel.create({
-            //             integrationsMasterId: integrationObject.integrationsMasterId,
-            //             accountId: integrationObject.accountId,
-            //             CPDWorkOrderId: workOrder.CPDWorkOrderId,
-            //             networkCode: error.response.status,
-            //             exceptionMessage: error.message,
-            //             exceptionTitle: error.response.data.messages
-            //         })
-            //     });
+            const getDFWorkOrderList = await axios.request(getWorkOrderConfig)
+                .then((response) => {
+                    DFWorkorderList = JSON.stringify(response.data)
+                    console.log("DFWorkorderListresponse:===", JSON.stringify(response.data));
+                })
+                .catch(async (error) => {
+                    console.log("ERROR:==", error.response.data);
+                    await integrationsExceptionsModel.create({
+                        integrationsMasterId: integrationObject.integrationsMasterId,
+                        accountId: integrationObject.accountId,
+                        CPDWorkOrderId: workOrder.CPDWorkOrderId,
+                        networkCode: error.response.status,
+                        exceptionMessage: error.message,
+                        exceptionTitle: error.response.data.messages
+                    })
+                });
             if (DFWorkorderList) {
                 DFWorkOrderId = JSON.parse(DFWorkorderList).id
                 const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: DFWorkOrderId, }).lean();
