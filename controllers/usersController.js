@@ -393,9 +393,9 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
 
   for (let week of twelveWeekSales) {
 
-    let weekCPDkWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate } })
-    let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate } })
-    let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: week.fromDate, $lte: week.toDate } })
+    let weekCPDkWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } })
+    let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } })
+    let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } })
     week.CPDWorkOrderCount = weekCPDkWorkOrders.length;
     week.dfWorkOrderCount = weekDFWorkOrders.length;
     week.integrationsExceptions = integrationsExceptions.length;
