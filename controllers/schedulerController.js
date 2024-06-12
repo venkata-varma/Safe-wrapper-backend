@@ -35,7 +35,6 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
   
   let job_each_minute_cronJob = schedule.scheduleJob(job_each_minute, async () => {
     const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each minute', currentStatus : "start" }).populate('integrationsMasterId').lean();
-
     if (integrationsMasterSettingsDetails.length > 0) {
       for (const integration of integrationsMasterSettingsDetails) {
         if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'CPD' && integration.integrationsMasterId.to === 'DF') {

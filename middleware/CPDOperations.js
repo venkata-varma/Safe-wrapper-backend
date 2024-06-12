@@ -17,7 +17,8 @@ const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel"
 const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl) => {
     try {
         const tokenResponse = await axios.post(
-            'https://oauth-pro-v2.corrigo.com/OAuth/Token',
+            // 'https://oauth-pro-v2.corrigo.com/OAuth/Token',
+            `${baseUrl}`,
             `client_id=${client_id}&client_secret=${client_secret}&grant_type=${grant_type}`
         );
         return tokenResponse.data;
@@ -96,14 +97,14 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
             if (work.Status === "New") {
                 latestWorkOrderCount.CPDNewWorkOrdersPulledCount++
             }
-            let workOrderStatus = work.WorkOrderNumber.includes('TMC') ? "high" : "initiated"
+            let priority = work.WorkOrderNumber.includes('TMC') ? "high" : "medium"
             await CPDWorkordersModel.create({
                 CPDWorkOrderId: work.WorkOrderId,
                 accountId: workDetails.accountId,
                 CPDBranchId: work.BranchId,
                 CPDWorkOrders: workDetails.CPDWorkOrders,
                 CPDWorkOrderStatus: work.Status,
-                status: workOrderStatus,
+                priority: priority,
                 MessageId: workDetails.MessageId,
                 integrationsCronId: workDetails.integrationsCronJobId,
                 integrationsMasterId: integrationsMasterId
@@ -140,7 +141,7 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     // console.log("Step-1 called");
 
     decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
-    // console.log("Step-2 called");
+    console.log("Step-2 called:==",decryptConfigCredentials);
 
     const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl);
     // console.log("Step-3 called");
@@ -151,10 +152,10 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
             headers: {
                 Authorization: `bearer ${corrigoToken.access_token}`
             }
-        });
-
-    // console.log('CPDWorkOrderResponse:===',CPDWorkOrderResponse)
-
+        })
+        // .then(res=>{console.log('response:==',res)})
+        // .catch(err=>{console.log("ERROR:==",err)});
+        // console.log("CPDWorkOrderResponse:==",CPDWorkOrderResponse.data)
     if (CPDWorkOrderResponse.data.WorkOrders.length > 0) {
         getCPDWorkOrderDetials = await CPDWorkOrdersDetails(CPDWorkOrderResponse.data, cronJobDetails, integrationObject.accountId, integrationObject.integrationsMasterId)
     }
