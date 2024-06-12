@@ -61,6 +61,10 @@ exports.getImages = asyncWrapper(async (req, res) => {
     {
       name: "SC",
       url: baseUrl + '/static/ServiceChannel_logo.png'
+    },
+    {
+      name: "SNOW",
+      url: baseUrl + '/static/servicenow_logo.png'
     }
   ]
 
