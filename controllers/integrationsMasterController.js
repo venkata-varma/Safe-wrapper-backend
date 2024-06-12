@@ -611,6 +611,29 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   let sourceWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.from, presentWeekData)
   let destinationWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.to, presentWeekData)
   
+  let autoDataSync = await integrationsCronsModel.aggregate([
+    {
+      $match: {
+        integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        pulledCount: { $sum: "$pulledCount" },
+        pushedCount: { $sum: "$pushedCount" },
+        CPDNewWorkOrdersPulledCount: { $sum: "$CPDNewWorkOrdersPulledCount" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        pulledCount: 1,
+        pushedCount: 1,
+        CPDNewWorkOrdersPulledCount: 1
+      }
+    }
+  ]);
 
   //Properly parses the above resulted data
   // for (let jsonParse of destinationWorkOrdersAndStatus.destinationWorkOrders) {
@@ -637,7 +660,8 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         activityLog: activityLogOfIndividualIntegration,
         sourceWorkOrders : sourceWorkOrdersAndStatus.sourceWorkOrders,
         destinationWorkOrders : destinationWorkOrdersAndStatus.destinationWorkOrders,
-        statusMapping: { source : sourceWorkOrdersAndStatus.statuses, destination : destinationWorkOrdersAndStatus.statuses }
+        statusMapping: { source : sourceWorkOrdersAndStatus.statuses, destination : destinationWorkOrdersAndStatus.statuses },
+        autoDataSync
       },
     });
 });
