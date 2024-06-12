@@ -168,8 +168,8 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     }
 };
 
-exports.updateCPDWorkOrders = asyncWrapper(async (integrationObject, typeOfCron, fieldmappingkeys) => {
+exports.updateCPDWorkOrders = async (integrationObject, typeOfCron, fieldmappingkeys) => {
     const DFWorkorderDetails = await DFWorkOrdersModel.find({ accountId: accountId, integrationsMasterId: integrationObject.integrationsMasterId });
     console.log('DFWorkorderDetails:==', DFWorkorderDetails)
-});
+};
 
