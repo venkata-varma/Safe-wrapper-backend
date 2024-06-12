@@ -29,7 +29,7 @@ const integrationsSettingsSchema = new mongoose.Schema({
     currentStatus : {
       type : String,
       enum : ['start','stop'],
-      deafult : "start"
+      default : "start"
     },
     periodSettings:{
         type:mongoose.Schema.Types.Mixed,
