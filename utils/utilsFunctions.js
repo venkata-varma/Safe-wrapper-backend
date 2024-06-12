@@ -18,8 +18,8 @@ function formatDate(date, isEndOfDay = false) {
     const toDate = new Date(currentDate);
     toDate.setHours(23, 59, 59, 999);
     return {
-      fromDate: formatDate(fromDate),
-      toDate: formatDate(toDate, true),
+      fromDate: (fromDate),
+      toDate: (toDate),
       day: formatDate(fromDate).split('T')[0]
     };
   });

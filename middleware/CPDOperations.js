@@ -33,7 +33,7 @@ const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl) 
  * For every cron job starts, we insert record into table. 
  * @returns 
  */
-const initiateCronJobs = async (cronIntegrationDetails,typeOfCron) => {
+const initiateCronJobs = async (cronIntegrationDetails, typeOfCron) => {
     const cronDetails = await integrationsCronJobsModel.create(
         {
             cronJobType: typeOfCron,
@@ -60,7 +60,7 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
     const latestWorkOrderCount = {
         pullNewWorkOrdersCount: 0,
         pushNewWorkordersCount: 0,
-        CPDNewWorkOrdersPulledCount : 0
+        CPDNewWorkOrdersPulledCount: 0
     }
     for (const work of CPDWorkOrderResponse.WorkOrders) {
 
@@ -68,47 +68,47 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
         workDetails.MessageId = CPDWorkOrderResponse.MessageId;
         workDetails.accountId = accountId;
         workDetails.integrationsCronJobId = cronJobDetails._id
-        
+
         // const CPD_work_details = await CPDWorkordersModel.findOne({ $and :[{CPDWorkOrderId: work.WorkOrderId}, {accountId: accountId}, {integrationsMasterId : integrationsMasterId},{CPDWorkOrderStatus : {$ne : work.Status}}] })
         const CPD_work_details = await CPDWorkordersModel.findOne(
-              { CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId: integrationsMasterId });
+            { CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId: integrationsMasterId });
         // console.log('step 4:===')
         if (CPD_work_details) {
             // console.log('step 5')
 
-            if(CPD_work_details.CPDWorkOrderStatus !== work.Status){
+            if (CPD_work_details.CPDWorkOrderStatus !== work.Status) {
                 // console.log('step 5A')
 
-            await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId : integrationsMasterId }, {
-                CPDWorkOrders: workDetails.CPDWorkOrders,
-                MessageId: workDetails.MessageId,
-                CPDWorkOrderStatus :work.Status,
-                status:'initiated',
-            }, { new: true, upsert: true });
-            await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, {lastPullDate:new Date()},{new : true})
-        }
-        else{
-            // console.log('step 5B')
-            //nothing
-        }
+                await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId: integrationsMasterId }, {
+                    CPDWorkOrders: workDetails.CPDWorkOrders,
+                    MessageId: workDetails.MessageId,
+                    CPDWorkOrderStatus: work.Status,
+                    status: 'initiated',
+                }, { new: true, upsert: true });
+                await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, { lastPullDate: new Date() }, { new: true })
+            }
+            else {
+                // console.log('step 5B')
+                //nothing
+            }
         } else {
             // console.log('step 6')
-            if(work.Status === "New"){
+            if (work.Status === "New") {
                 latestWorkOrderCount.CPDNewWorkOrdersPulledCount++
             }
             let workOrderStatus = work.WorkOrderNumber.includes('TMC') ? "high" : "initiated"
             await CPDWorkordersModel.create({
                 CPDWorkOrderId: work.WorkOrderId,
                 accountId: workDetails.accountId,
-                CPDBranchId : work.BranchId,
+                CPDBranchId: work.BranchId,
                 CPDWorkOrders: workDetails.CPDWorkOrders,
-                CPDWorkOrderStatus :work.Status,
-                status:workOrderStatus,
+                CPDWorkOrderStatus: work.Status,
+                status: workOrderStatus,
                 MessageId: workDetails.MessageId,
                 integrationsCronId: workDetails.integrationsCronJobId,
-                integrationsMasterId : integrationsMasterId
+                integrationsMasterId: integrationsMasterId
             })
-            await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, {lastPullDate:new Date()},{new : true})
+            await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, { lastPullDate: new Date() }, { new: true })
             latestWorkOrderCount.pullNewWorkOrdersCount++
         }
     }
@@ -125,7 +125,7 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
  * Update the cronJob details.
  */
 
-exports.getCPDWorkOrders = asyncWrapper(async (integrationObject,typeOfCron) => {
+exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     // console.log('integrationObject:==',integrationObject)
 
     let encrypted = {};
@@ -134,9 +134,9 @@ exports.getCPDWorkOrders = asyncWrapper(async (integrationObject,typeOfCron) => 
         accountId: integrationObject.accountId,
         serviceProvider: integrationObject.serviceProvider,
         integrationsMasterId: integrationObject.integrationsMasterId
-    },typeOfCron);
+    }, typeOfCron);
 
-    encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials};
+    encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials };
     // console.log("Step-1 called");
 
     decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
@@ -152,22 +152,24 @@ exports.getCPDWorkOrders = asyncWrapper(async (integrationObject,typeOfCron) => 
                 Authorization: `bearer ${corrigoToken.access_token}`
             }
         });
-        
+
     // console.log('CPDWorkOrderResponse:===',CPDWorkOrderResponse)
-    
+
     if (CPDWorkOrderResponse.data.WorkOrders.length > 0) {
         getCPDWorkOrderDetials = await CPDWorkOrdersDetails(CPDWorkOrderResponse.data, cronJobDetails, integrationObject.accountId, integrationObject.integrationsMasterId)
-    }  
-    const cronJob_Details = await integrationsCronJobsModel.findByIdAndUpdate(cronJobDetails._id, {
-        pulledCount: getCPDWorkOrderDetials.pullNewWorkOrdersCount,
-        pushedCount: getCPDWorkOrderDetials.pushNewWorkordersCount,
-        CPDNewWorkOrdersPulledCount : getCPDWorkOrderDetials.CPDNewWorkOrdersPulledCount,
-        status: "completed"
-    }, { new: true, upsert: true });
-});
+    }
+    if (getCPDWorkOrderDetials !== undefined) {
+        const cronJob_Details = await integrationsCronJobsModel.findByIdAndUpdate(cronJobDetails._id, {
+            pulledCount: getCPDWorkOrderDetials.pullNewWorkOrdersCount || 0,
+            pushedCount: getCPDWorkOrderDetials.pushNewWorkordersCount,
+            CPDNewWorkOrdersPulledCount: getCPDWorkOrderDetials.CPDNewWorkOrdersPulledCount,
+            status: "completed"
+        }, { new: true, upsert: true });
+    }
+};
 
-exports.updateCPDWorkOrders = asyncWrapper(async(integrationObject, typeOfCron, fieldmappingkeys)=>{
-    const DFWorkorderDetails = await DFWorkOrdersModel.find({accountId: accountId, integrationsMasterId : integrationObject.integrationsMasterId});
-    console.log('DFWorkorderDetails:==',DFWorkorderDetails)
+exports.updateCPDWorkOrders = asyncWrapper(async (integrationObject, typeOfCron, fieldmappingkeys) => {
+    const DFWorkorderDetails = await DFWorkOrdersModel.find({ accountId: accountId, integrationsMasterId: integrationObject.integrationsMasterId });
+    console.log('DFWorkorderDetails:==', DFWorkorderDetails)
 });
 
