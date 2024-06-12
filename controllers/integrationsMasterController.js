@@ -613,10 +613,10 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   
 
   //Properly parses the above resulted data
-  for (let jsonParse of destinationWorkOrdersAndStatus.destinationWorkOrders) {
-    jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
+  // for (let jsonParse of destinationWorkOrdersAndStatus.destinationWorkOrders) {
+  //   jsonParse.DFWorkOrders = jsonParse.DFWorkOrders
 
-  }
+  // }
   for (let week of presentWeekData) {
     delete week.fromDate;
     delete week.toDate;
