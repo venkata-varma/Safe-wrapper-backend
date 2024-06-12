@@ -16,7 +16,9 @@ const integrationCronsModel = require('../models/integrationsMasterModels/integr
 const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
 const integrationsExceptionModel = require('../models/integrationsMasterModels/integrationsExceptionsModel')
 const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel')
-const { validateUserMobileEmailData } = require('../utils/userLoginValidation')
+const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
+const { validateUserMobileEmailData } = require('../utils/userLoginValidation');
+const { getStatusOfWorkOrders } = require('../utils/general');
 
 /*
 Miidleware function to controller, "createUser"
@@ -362,21 +364,30 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   ]);
 
   // const activityLog = await cpdWorkOrdersModel.find({ accountId }).sort({ createdAt: -1 })
-
+  const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: "CPD" })
   const highPrioritycpdWorkOrders = await cpdWorkOrdersModel.find({ accountId, $or: [{ priority: 'high' }, { priority: 'medium' }] }).sort({ createdAt: -1 })
-  const workOrderStates = await cpdWorkOrdersModel.aggregate([
+  let sourceStatus = await CPDWorkordersModel.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId)
+        accountId: new mongoose.Types.ObjectId(accountId),
       }
     },
     {
       $group: {
-        _id: "$CPDWorkOrders.Status",
-        count: { $sum: 1 }  // Count the number of documents in each group
+        _id: '$CPDWorkOrders.Status',
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        status: '$_id',
+        count: 1
       }
     }
   ]);
+  let workOrderStates = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,sourceStatus);
+
   const twelveWeekSales = twelveWeeksSales;
 
 

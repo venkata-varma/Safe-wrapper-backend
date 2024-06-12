@@ -789,7 +789,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
     for (const integration of integrationsMasterDetails) {
       if (integration.status === 'active' && integration.from === 'CPD' && integration.to === 'DF') {
         const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "CPD" }).lean();
-        //integrationCredentials.push(credentials);
+        
         await CPDOperations.getCPDWorkOrders(CPDCredentials, typeOfCron = "manual");
         const DFCredentials = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integration.integrationsMasterId, to: "DF" }).lean();
 

@@ -6,6 +6,8 @@ const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel'
 const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationsCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
 const asyncWrapper = require('./asyncWrapper');
+const integrationsMasterServiceProvidersModel = require('../models/integrationsMasterModels/integrationsMasterServiceProvidersModel');
+const { decryptData } = require('../utils/encryptionAlgorithms');
 
 /**
  * 
@@ -19,18 +21,18 @@ const asyncWrapper = require('./asyncWrapper');
  * If we encountered any error while post or get the work order to the dataforma. We have integrations exceptions log which stores the error log for specific work order.
  */
 
-exports.DFCreateWorkorders = asyncWrapper(async (integrationObject,typeOfCron) => {
+exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
 
     if (integrationObject !== undefined) {
         let fieldmappingkeys = {}
         let workOrderPushedCount = 0
-        fieldmappingkeys = integrationObject.mappedKeys;
+        fieldmappingkeys = integrationObject.mappedKeys.get_integration_field_mapping_master_default_keys[0].dataPoints;
 
-        const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).limit(1).lean();
+        const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
+
         for (const property in fieldmappingkeys) {
-
             if (property === "numberAlt")
-                fieldmappingkeys.numberAlt = CPDWorkOrderDetails[0].CPDWorkOrders.WorkOrderNumber;
+                fieldmappingkeys.numberAlt = '';
 
             else if (property === "budgetedProposedStatus")
                 fieldmappingkeys.budgetedProposedStatus = "NONE";
@@ -61,75 +63,93 @@ exports.DFCreateWorkorders = asyncWrapper(async (integrationObject,typeOfCron) =
                 fieldmappingkeys[property] = "";
 
         }
-        let DFWorkOrderId = 0, DFWorkorderList = {}
-        let createWorkOrderConfig = {
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: DFConfigurations.DF.createWorkOrder.URL,
-            headers: DFConfigurations.DF.createWorkOrder.headers,
-            data: JSON.stringify(fieldmappingkeys)
-        };
-        // axios.request(createWorkOrderConfig)
-        //     .then((response) => {
-        //         DFWorkOrderId = response.data.id
-        //         console.log("response:===",JSON.stringify(response.data));
-        //     })
-        //     .catch((error) => {
-        //         console.log("ERROR:==",error.response.data);
-        //         await integrationsExceptionsModel.create({
-        //         integrationsMasterId: integrationObject.integrationsMasterId,
-        //         accountId: integrationObject.accountId,
-        //         CPDWorkOrderId : CPDWorkOrderDetails[0].CPDWorkOrderId,
-        //         networkCode : error.response.status,
-        //         exceptionMessage : error.message,
-        //         exceptionTitle : error.response.data.messages[0]
-        //         })
-        //     });
 
-        let getWorkOrderConfig = {
-            method: 'get',
-            maxBodyLength: Infinity,
-            url: `${DFConfigurations.DF.getWorkOrderById.URL}${31371}`,
-            headers: DFConfigurations.DF.getWorkOrderById.headers,
-        };
-        const getDFWorkOrderList = await axios.request(getWorkOrderConfig)
-            .then((response) => {
-                DFWorkorderList = JSON.stringify(response.data)
-                // console.log("response:===", JSON.stringify(response.data));
-            })
-            .catch(async (error) => {
-                console.log("ERROR:==", error.response.data);
-                await integrationsExceptionsModel.create({
-                    integrationsMasterId: integrationObject.integrationsMasterId,
-                    accountId: integrationObject.accountId,
-                    CPDWorkOrderId: CPDWorkOrderDetails[0].CPDWorkOrderId,
-                    networkCode: error.response.status,
-                    exceptionMessage: error.message,
-                    exceptionTitle: error.response.data.messages[0]
-                })
-            });
-        DFWorkOrderId = JSON.parse(DFWorkorderList).id
-        const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: 31371, }).lean();
-        if (listOfDFWorkorderDetails) {
-            await DFWorkOrdersModel.findOneAndUpdate({
-                DFWorkOrderId: 31371, integrationsMasterId: integrationObject.integrationsMasterId,
-                accountId: integrationObject.accountId,
-            }, {DFWorkOrderStatus: JSON.parse(DFWorkorderList).status, status: "completed" }, { new: true }).lean()
-        }
-        else {
-            const DFWorkOrderDetails = await DFWorkOrdersModel.create({
-                integrationsMasterId: integrationObject.integrationsMasterId,
-                accountId: integrationObject.accountId,
-                integrationsCronId: CPDWorkOrderDetails[0].integrationsCronId,
-                DFWorkOrderId: DFWorkOrderId,
-                DFWorkOrders: DFWorkorderList,
-                DFWorkOrderStatus: JSON.parse(DFWorkorderList).status,
-                status: "completed",
-            });
-            workOrderPushedCount++
-            await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: CPDWorkOrderDetails[0].CPDWorkOrderId }, { status: "completed" }, { new: true })
-            await integrationsCronsModel.findByIdAndUpdate(CPDWorkOrderDetails[0].integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
-        }
+        for (let workOrder of CPDWorkOrderDetails) {
+            fieldmappingkeys.numberAlt = workOrder.CPDWorkOrders.WorkOrderNumber;
+            let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "DF" });
+            let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
+            // console.log("Step-1 called");
 
+            let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
+
+            let DFWorkOrderId;
+            let DFWorkorderList = {}
+            let createWorkOrderConfig = {
+                method: 'post',
+                maxBodyLength: Infinity,
+                url: `${decryptConfigCredentials.baseUrl}/workorders`,
+                headers: {
+                    'df-auth': decryptConfigCredentials.df_auth,
+                    'df-servicecode': decryptConfigCredentials.df_servicecode,
+                    'Content-Type': 'application/json',
+                },
+                data: JSON.stringify(fieldmappingkeys)
+            };
+            // DFWorkOrderId = await axios.request(createWorkOrderConfig)
+            //     .then((response) => {
+            //         console.log("response:===", response.data.id);
+            //         return response.data.id
+            //     })
+            //     .catch(async (error) => {
+            //         console.log("ERRORSS:==", error.response.data);
+            //         await integrationsExceptionsModel.create({
+            //             integrationsMasterId: integrationObject.integrationsMasterId,
+            //             accountId: integrationObject.accountId,
+            //             CPDWorkOrderId: workOrder.CPDWorkOrderId,
+            //             networkCode: error.response.status,
+            //             exceptionMessage: error.message,
+            //             exceptionTitle: error.response.data.messages
+            //         })
+            //     });
+            console.log("DFWorkOrderId:===", DFWorkOrderId);
+
+            let getWorkOrderConfig = {
+                method: 'get',
+                maxBodyLength: Infinity,
+                url: `${DFConfigurations.DF.getWorkOrderById.URL}${DFWorkOrderId}`,
+                headers: DFConfigurations.DF.getWorkOrderById.headers,
+            };
+            // const getDFWorkOrderList = await axios.request(getWorkOrderConfig)
+            //     .then((response) => {
+            //         DFWorkorderList = JSON.stringify(response.data)
+            //         console.log("DFWorkorderListresponse:===", JSON.stringify(response.data));
+            //     })
+            //     .catch(async (error) => {
+            //         console.log("ERROR:==", error.response.data);
+            //         await integrationsExceptionsModel.create({
+            //             integrationsMasterId: integrationObject.integrationsMasterId,
+            //             accountId: integrationObject.accountId,
+            //             CPDWorkOrderId: workOrder.CPDWorkOrderId,
+            //             networkCode: error.response.status,
+            //             exceptionMessage: error.message,
+            //             exceptionTitle: error.response.data.messages
+            //         })
+            //     });
+            if (DFWorkorderList) {
+                DFWorkOrderId = JSON.parse(DFWorkorderList).id
+                const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: DFWorkOrderId, }).lean();
+                if (listOfDFWorkorderDetails) {
+                    await DFWorkOrdersModel.findOneAndUpdate({
+                        DFWorkOrderId: DFWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
+                        accountId: integrationObject.accountId,
+                    }, { DFWorkOrderStatus: JSON.parse(DFWorkorderList).status, status: "completed" }, { new: true }).lean()
+                }
+                else {
+                    const DFWorkOrderDetails = await DFWorkOrdersModel.create({
+                        integrationsMasterId: integrationObject.integrationsMasterId,
+                        accountId: integrationObject.accountId,
+                        integrationsCronId: workOrder.integrationsCronId,
+                        DFWorkOrderId: DFWorkOrderId,
+                        DFWorkOrders: JSON.parse(DFWorkorderList),
+                        DFWorkOrderStatus: JSON.parse(DFWorkorderList).status,
+                        status: "completed",
+                    });
+                    workOrderPushedCount++
+                    await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId }, { status: "completed" }, { new: true })
+                    await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
+                }
+            }
+
+        }
     }
-});
+};

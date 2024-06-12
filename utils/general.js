@@ -16,7 +16,7 @@ const getStatusOfWorkOrders = async (workOrderStatus,getStatus) =>{
         };
       });
       return allStatuses
-}
+} 
 
 const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvider, presentWeekData) => {
     let serviceWorkOrdersAndStatus = {presentWeekData : dateAsset}
@@ -104,5 +104,6 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
 
 
 module.exports = {
-    getServiceWorkOrdersAndStatus
+    getServiceWorkOrdersAndStatus,
+    getStatusOfWorkOrders
 }
