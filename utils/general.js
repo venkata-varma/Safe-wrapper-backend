@@ -21,7 +21,7 @@ const getStatusOfWorkOrders = async (workOrderStatus,getStatus) =>{
 const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvider, presentWeekData) => {
     let serviceWorkOrdersAndStatus = {presentWeekData : dateAsset}
     if(serviceProvider === "CPD"){
-        serviceWorkOrdersAndStatus.sourceWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+        serviceWorkOrdersAndStatus.sourceWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({_id:-1}).limit(15);
         // console.log('serviceWorkOrdersAndStatus.sourceWorkOrders:===',serviceWorkOrdersAndStatus.sourceWorkOrders)
         if(serviceWorkOrdersAndStatus.sourceWorkOrders.length > 0){
             for (let week of presentWeekData) {
@@ -59,7 +59,7 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
         return serviceWorkOrdersAndStatus;
     }
     else if(serviceProvider === "DF"){
-        serviceWorkOrdersAndStatus.destinationWorkOrders = await DFWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId");
+        serviceWorkOrdersAndStatus.destinationWorkOrders = await DFWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({_id:-1}).limit(15);
         if(serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0){
             for (let week of presentWeekData) {
                 presentWeekDestinationData = await DFWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: week.fromDate, $lte: week.toDate } });
