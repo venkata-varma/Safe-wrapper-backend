@@ -935,9 +935,9 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
   }
 
 
-  for (let jsonParse of workOrdersDetails.destinationWorkOrders) {
-    jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
-  }
+  // for (let jsonParse of workOrdersDetails.destinationWorkOrders) {
+  //   jsonParse.DFWorkOrders = JSON.parse(jsonParse.DFWorkOrders)
+  // }
 
   const latestWorkOrdersCount = await integrationsCronsModel.aggregate([
     {
