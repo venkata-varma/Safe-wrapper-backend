@@ -18,5 +18,5 @@ router.patch('/delete-user/:userId',usersControllers.middlewareToDeleteUser, use
 router.patch('/update-user-details/:userId', usersControllers.middlewareUpdateUserDetails, usersControllers.updateUserDetails);
 
 router.get('/get-user-details/:userId', usersControllers.getUserDetails);
-
+router.get('/get-all-users/:accountId',usersControllers.getAllUsers )
 module.exports = router;

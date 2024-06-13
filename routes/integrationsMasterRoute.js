@@ -25,5 +25,6 @@ router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterI
 router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.getSingleIntegrationMasterDetails)
 router.get('/pull-latest-workorders-by-accountId/:accountId',integrationsMasterControllers.pullLatestWorkOrders);
 router.get('/get-individual-account-reports/:accountId',integrationsMasterControllers.getIndividualAccountReportsByAccountId);
+router.get('/get-all-integration-exceptions/:accountId', integrationsMasterControllers.getAllIntegrationExceptions);
 
 module.exports = router;

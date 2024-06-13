@@ -106,7 +106,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
     const integrationsOfAccount = await integrationsMasterModel.find({ accountId: req.params.accountId });
     const CPDWorkOrdersCount = await CPDWorkordersModel.find({ accountId: req.params.accountId });
     const DFWorkOrdersCount = await DFWorkOrdersModel.find({ accountId: req.params.accountId });
-    const integrationExceptionsCount = await integtationExceptionsModel.find({ accountId: req.params.accountId });
+    const integrationExceptions = await integtationExceptionsModel.find({ accountId: req.params.accountId });
     const integrationCronsCount = await integrationCronsModel.find({ accountId: req.params.accountId });
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
@@ -116,7 +116,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
             integrationsOfAccount,
             CPDWorkOrdersCount: CPDWorkOrdersCount.length,
             DFWorkOrdersCount: DFWorkOrdersCount.length,
-            integrationExceptionsCount: integrationExceptionsCount.length,
+            integrationExceptionsCount: integrationExceptions.length,
             dataSyncCount: integrationCronsCount.length
         },
     })
