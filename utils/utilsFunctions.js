@@ -18,12 +18,10 @@ function formatDate(date, isEndOfDay = false) {
     const toDate = new Date(currentDate);
     toDate.setHours(23, 59, 59, 999);
     return {
-      fromDate: (fromDate),
-      toDate: (toDate),
+      fromDate: formatDate(fromDate),
+      toDate: formatDate(toDate,true),
       day: formatDate(fromDate).split('T')[0]
     };
   });
-  
 
-  
   module.exports={dateAsset}
