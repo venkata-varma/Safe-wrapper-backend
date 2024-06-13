@@ -151,5 +151,62 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
             }
 
         }
+
+        // Data forma work orders update.
+        const updateRequestDFWorkorders = await DFWorkOrdersModel.find({integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "update-request"})
+
+        for(let DFWorkOrder of updateRequestDFWorkorders){
+            const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, "CPDWorkOrders.WorkOrderNumber":DFWorkOrder.DFWorkOrders.numberAlt})
+            fieldmappingkeys.numberAlt = getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber;
+            if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "New"){
+                fieldmappingkeys.status = 'IN_PROGRESS';
+            }
+            else if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "Accepted"){
+                fieldmappingkeys.status = 'ESTIMATE_REQUESTED';
+            }
+            else if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "CheckedIn"){
+                fieldmappingkeys.status = 'SCHEDULED';
+            }
+            else if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "CheckedOut"){
+                fieldmappingkeys.status = 'COMPLETED';
+            }
+            else if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "OnHold"){
+                fieldmappingkeys.status = 'ON_HOLD';
+            }
+            else if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "Rejected"){
+                fieldmappingkeys.status = 'CANCELED';
+            }
+            fieldmappingkeys.statusDate = new Date().toTimeString()
+        console.log('fieldmappingkeys:===',fieldmappingkeys)
+
+        // let updateWorkOrderConfig = {
+        //     method: 'put',
+        //     maxBodyLength: Infinity,
+        //     url: `${DFConfigurations.DF.updateWorkOrder.URL}${DFWorkOrderId}`,
+        //     headers: {
+        //         'df-auth': decryptConfigCredentials.df_auth,
+        //         'df-servicecode': decryptConfigCredentials.df_servicecode,
+        //         'Content-Type': 'application/json',
+        //     },
+        //     data: JSON.stringify(fieldmappingkeys)
+        // }
+        // await axios.request(updateWorkOrderConfig)
+        //     .then((response) => {
+        //         // DFWorkorderList = JSON.stringify(response.data)
+        //         console.log("DFWorkorderListresponse:===", JSON.stringify(response.data));
+        //     })
+        //     .catch(async (error) => {
+        //         console.log("ERROR:==", error.response.data);
+        //         await integrationsExceptionsModel.create({
+        //             integrationsMasterId: integrationObject.integrationsMasterId,
+        //             accountId: integrationObject.accountId,
+        //             CPDWorkOrderId: workOrder.CPDWorkOrderId,
+        //             networkCode: error.response.status,
+        //             exceptionMessage: error.message,
+        //             exceptionTitle: error.response.data.messages
+        //         })
+        //     });
+        
+        }
     }
 };
