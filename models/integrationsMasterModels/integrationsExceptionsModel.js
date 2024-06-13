@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const integrationsExceptionsSchema = mongoose.Schema({
+const integrationsExceptionsSchema = new mongoose.Schema({
     integrationsExceptionId:{
         type : mongoose.Schema.Types.ObjectId,
         default : null

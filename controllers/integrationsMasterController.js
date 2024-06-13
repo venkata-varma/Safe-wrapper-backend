@@ -65,6 +65,10 @@ exports.getImages = asyncWrapper(async (req, res) => {
     {
       name: "SNOW",
       url: baseUrl + '/static/servicenow_logo.png'
+    },
+    {
+      name: "MDS",
+      url: baseUrl + '/static/MDS_logo.png'
     }
   ]
 
@@ -595,11 +599,16 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   let presentWeekData = dateAsset;
 
   const activityLogOfIndividualIntegration = await integrationsCronsModel.find({ integrationsMasterId }).sort({_id:-1}).limit(20).lean();
-
+  
   //Integration exception count for last 7 days 
+  const integrationsExceptionsDetails = await integrationsExceptionsModel.find({integrationsMasterId: integrationsMasterId})
+  console.log('presentWeekData:==',presentWeekData)
   for (let week of presentWeekData) {
-    presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, dateCreated: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
-    week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length;
+    console.log("FromDate:==", new Date(week.fromDate))
+    console.log("toDate:==",new Date(week.toDate))
+
+      presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, dateCreated: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
+      week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length;
   }
 
 
@@ -656,7 +665,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
         integrationMasterServiceProviders,
         integrationExceptions,
-        oneWeekCountStatistics: sourceWorkOrdersAndStatus.presentWeekData || [],
+        oneWeekCountStatistics: sourceWorkOrdersAndStatus.presentWeekData,
         activityLog: activityLogOfIndividualIntegration,
         sourceWorkOrders : sourceWorkOrdersAndStatus.sourceWorkOrders,
         destinationWorkOrders : destinationWorkOrdersAndStatus.destinationWorkOrders,
