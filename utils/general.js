@@ -19,20 +19,22 @@ const getStatusOfWorkOrders = async (workOrderStatus,getStatus) =>{
 } 
 
 const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvider, presentWeekData) => {
-    let serviceWorkOrdersAndStatus = {presentWeekData : dateAsset}
+    let serviceWorkOrdersAndStatus = {presentWeekData : dateAsset()};
+    let tempResultArray = new Array;
+
     if(serviceProvider === "CPD"){
         serviceWorkOrdersAndStatus.sourceWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({_id:-1}).limit(15);
         // console.log('serviceWorkOrdersAndStatus.sourceWorkOrders:===',serviceWorkOrdersAndStatus.sourceWorkOrders)
-        // console.log('presentWeekData:===',presentWeekData)
         if(serviceWorkOrdersAndStatus.sourceWorkOrders.length > 0){
-
-            for (let week of presentWeekData) {
-              
+          let i=0;
+            for (let week of presentWeekData) {  
                 presentWeekSourceData = await CPDWorkordersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
-                week.sourceWorkOrdersCount = presentWeekSourceData.length;
-              }
+                week.sourceWorkOrdersCount = presentWeekSourceData.length > 0 ? presentWeekSourceData.length : 0;
+                serviceWorkOrdersAndStatus.presentWeekData[i] = week;
+                i++;
+            }
         }
-        
+
         const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
         let sourceStatus = await CPDWorkordersModel.aggregate([
           {
@@ -63,7 +65,8 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
         if(serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0){
             for (let week of presentWeekData) {
                 presentWeekDestinationData = await DFWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
-                week.destinationWorkOrdersCount = presentWeekDestinationData.length;
+                week.destinationWorkOrdersCount = presentWeekDestinationData.length >= 0 ? presentWeekDestinationData.length : 0;
+
               }
         }
        
@@ -97,8 +100,7 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
         //   };
         // });
         serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,destinationStatus);
-       
-        return serviceWorkOrdersAndStatus;
+       return serviceWorkOrdersAndStatus;
     }
 }
 

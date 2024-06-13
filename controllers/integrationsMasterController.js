@@ -596,21 +596,21 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId }).lean();
   const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId });
   const integrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId }).lean();
-  let presentWeekData = dateAsset;
+  let presentWeekData = dateAsset();
 
   const activityLogOfIndividualIntegration = await integrationsCronsModel.find({ integrationsMasterId }).sort({_id:-1}).limit(20).lean();
   
   //Integration exception count for last 7 days 
   const integrationsExceptionsDetails = await integrationsExceptionsModel.find({integrationsMasterId: integrationsMasterId})
-  console.log('presentWeekData:==',presentWeekData)
   for (let week of presentWeekData) {
     console.log("FromDate:==", new Date(week.fromDate))
     console.log("toDate:==",new Date(week.toDate))
-
-      presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, dateCreated: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
-      week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length;
+        let fromDate = new Date(week.fromDate);
+      let toDate = new Date(week.toDate);
+    
+      let  presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } });
+      week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length > 0 ? presentWeekIntegrationExceptions.length : 0;
   }
-
 
   /**
    * sourceWorkOrdersAndStatus used to get the source work orders, status mapping keys of work orders.
