@@ -137,6 +137,24 @@ exports.getUserDetails = asyncWrapper(async (req, res) => {
 
 })
 
+/**
+ * Function to get all users of account
+ *@params "accountId" 
+ * 
+ */
+exports.getAllUsers=asyncWrapper(async(req,res)=>{
+  const users=await usersModel.find({accountId:req.params.accountId}) ;
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_ALL_USERS_DETAILS,
+    data: {
+      users
+    },
+  });
+  
+})
+
+
 
 /**
  * Middleware function to check status of user before updating details
