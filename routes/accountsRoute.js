@@ -9,4 +9,8 @@ router.post('/create-account',accountsControllers.validateAccountRegistration, a
 router.use(auth)
 router.patch('/delete-account/:accountId', accountsControllers.deleteAccount)
 
+
+router.get('/get-account-integrations-information/:accountId', accountsControllers.getAccountIntegrationsInformation);
+router.get('/get-account-integrations-reports/:accountId',accountsControllers.getAccountIntegrationsReports )
+
 module.exports = router;
