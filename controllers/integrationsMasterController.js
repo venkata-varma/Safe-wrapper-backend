@@ -598,7 +598,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
 
   //Integration exception count for last 7 days 
   for (let week of presentWeekData) {
-    presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
+    presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, dateCreated: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
     week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length;
   }
 
