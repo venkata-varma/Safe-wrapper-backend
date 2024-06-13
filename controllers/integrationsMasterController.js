@@ -665,7 +665,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
         integrationMasterServiceProviders,
         integrationExceptions,
-        oneWeekCountStatistics: sourceWorkOrdersAndStatus.presentWeekData,
+        oneWeekCountStatistics: sourceWorkOrdersAndStatus.presentWeekData.reverse(),
         activityLog: activityLogOfIndividualIntegration,
         sourceWorkOrders : sourceWorkOrdersAndStatus.sourceWorkOrders,
         destinationWorkOrders : destinationWorkOrdersAndStatus.destinationWorkOrders,
