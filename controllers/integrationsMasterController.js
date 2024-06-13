@@ -67,7 +67,7 @@ exports.getImages = asyncWrapper(async (req, res) => {
     },
     {
       name: "MDS",
-      url: baseUrl + '/static/MDS_logoo.png'
+      url: baseUrl + '/static/MDS_logo2.png'
     }
   ]
 

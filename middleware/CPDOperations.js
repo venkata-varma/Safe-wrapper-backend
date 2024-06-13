@@ -84,8 +84,13 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
                     CPDWorkOrders: workDetails.CPDWorkOrders,
                     MessageId: workDetails.MessageId,
                     CPDWorkOrderStatus: work.Status,
-                    status: 'initiated',
                 }, { new: true, upsert: true });
+
+                // Update DF.status with mapping of CPD status.
+                await DFWorkOrdersModel.findOneAndUpdate({"DFWorkOrders.numberAlt":work.WorkOrderNumber, accountId: accountId, integrationsMasterId: integrationsMasterId},{
+                    status : "update-request"
+                },{new : true})
+
                 await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, { lastPullDate: new Date() }, { new: true })
             }
             else {

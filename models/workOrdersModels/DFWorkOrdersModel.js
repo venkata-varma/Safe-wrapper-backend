@@ -30,7 +30,7 @@ const DFWorkordersModelSchema = mongoose.Schema(
         },
         status: {
             type : String,
-            enum : ['initiated', 'pending', 'completed', 'error', 'failed'],
+            enum : ['initiated', 'update-request', 'pending', 'completed', 'error', 'failed'],
             default : "initiated"
         },
         priority:{
