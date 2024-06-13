@@ -37,6 +37,7 @@
     "MESSAGE_INTEGRATION_COUNT_REACHED": "This account already has two Active-Integrations. Thank you!.",
     "MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED": "Account is deleted. Please contact admin department.Thank you.",
     "MESSAGE_INVALID": "Invalid Credentials.",
+    "MESSAGE_INTEGRATION_EXCEPTIONS_PROVIDED": "All Integration Exceptions provided successfully",
     "MESSAGE_ACCOUNT_REPORTS": "Reports on a single account.",
     "MESSAGE_PHONE_NOT_EXISTS": "The account does not exist. Please check your credentials and try again.",
     "MESSAGE_INTEGRATION_DETAILS": "Integration details.",

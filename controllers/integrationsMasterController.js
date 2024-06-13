@@ -13,7 +13,6 @@ const fieldMappingMasterDefaultServicesModel = require("../models/integrationsMa
 const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
 const { encryptData, decryptData } = require('../utils/encryptionAlgorithms')
 const accountsModel = require('../models/accountsModels/accountsModel')
-const integrationsExceptionModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel");
 const integrationsCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel')
 const mongoose = require('mongoose')
@@ -971,3 +970,25 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
       }
     });
 });
+
+
+/**
+ * Function to provide Integration exceptions of respective account with populated Integration master record
+ * @params "accountId"
+ * 
+ */
+exports.getAllIntegrationExceptions=asyncWrapper(async(req,res)=>{
+  const integrationExceptions=await integrationsExceptionsModel.find({accountId:req.params.accountId})
+  //.populate('integrationsMasterId');
+  
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_EXCEPTIONS_PROVIDED,
+      data: {
+        integrationExceptions
+      }
+    });
+})
+

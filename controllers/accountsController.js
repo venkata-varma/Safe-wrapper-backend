@@ -114,7 +114,6 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         data: {
             accountInformation,
             integrationsOfAccount,
-            integrationExceptionsOfAccount:integrationExceptions,
             CPDWorkOrdersCount: CPDWorkOrdersCount.length,
             DFWorkOrdersCount: DFWorkOrdersCount.length,
             integrationExceptionsCount: integrationExceptions.length,
