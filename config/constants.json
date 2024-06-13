@@ -19,6 +19,8 @@
     "MESSAGE_USER_DETAILS": "User details found successfully",
     "MESSAGE_USER_DELETED": "User deleted successfully",
     "MESSAGE_ACCOUNT_DELETED": "Account deleted successfully",
+    "MESSAGE_ACCOUNT_INTEGRATION_INFORMATION":"Account-Integrations information provided successfully",
+    "MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED":"Account-Integrations reports by filters provided successfully",
     "MESSAGE_DASHBOARD_STATISTICS_RECEIVED": "Received Account's dashbaord statistics successfully",
     "MESSAGE_VERIFIED": "Authentications has been successfully completed.",
     "MESSAGE_AUTH_VERIFIED": "Authentication has been successfully completed.",
