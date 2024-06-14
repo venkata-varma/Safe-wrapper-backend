@@ -88,7 +88,7 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
             else if(workOrder.CPDWorkOrderStatus === "Rejected"){
                 fieldmappingkeys.status = 'CANCELED';
             }
-            if(workOrder.WorkType.Name === "Preventative Maintenance"){
+            else if(workOrder.WorkType.Name === "Preventative Maintenance"){
                 fieldmappingkeys.typeListId = 1237;
             }
             else if(workOrder.CPDWorkOrders === "Reactive Maintenance"){
@@ -209,7 +209,7 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
             else if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "Rejected"){
                 fieldmappingkeys.status = 'CANCELED';
             }
-            if(getCPDWorkOrderStatus.CPDWorkOrders.WorkType.Name === "Preventative Maintenance"){
+            else if(getCPDWorkOrderStatus.CPDWorkOrders.WorkType.Name === "Preventative Maintenance"){
                 fieldmappingkeys.typeListId = 1237;
             }
             else if(getCPDWorkOrderStatus.CPDWorkOrders.WorkType.Name === "Reactive Maintenance"){
