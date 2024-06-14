@@ -971,6 +971,24 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
     });
 });
 
+/*
+* Verify the status of account.
+* If status is active pass the middleware.
+*/
+exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
+  const {accountId} = req.params
+  const verifyAccountStatus = await accountsModel.findById(accountId)
+  console.log('verifyAccountStatus')
+  if (verifyAccountStatus.status === 'deleted') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+    });
+  }
+  else {
+      next()
+  }
+})
 
 /**
  * Function to provide Integration exceptions of respective account with populated Integration master record
@@ -978,8 +996,8 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
  * 
  */
 exports.getAllIntegrationExceptions=asyncWrapper(async(req,res)=>{
-  const integrationExceptions=await integrationsExceptionsModel.find({accountId:req.params.accountId})
-  //.populate('integrationsMasterId');
+  const integrationExceptions=await integrationsExceptionsModel.find({accountId:req.params.accountId}).populate('integrationsMasterId')
+ 
   
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)

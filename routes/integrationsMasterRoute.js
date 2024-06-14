@@ -23,8 +23,8 @@ router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMaste
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
 router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.getSingleIntegrationMasterDetails)
-router.get('/pull-latest-workorders-by-accountId/:accountId',integrationsMasterControllers.pullLatestWorkOrders);
+router.get('/pull-latest-workorders-by-accountId/:accountId',integrationsMasterControllers.validateAccountStatus, integrationsMasterControllers.pullLatestWorkOrders);
 router.get('/get-individual-account-reports/:accountId',integrationsMasterControllers.getIndividualAccountReportsByAccountId);
-router.get('/get-all-integration-exceptions/:accountId', integrationsMasterControllers.getAllIntegrationExceptions);
+router.get('/get-all-integration-exceptions/:accountId', integrationsMasterControllers.validateAccountStatus, integrationsMasterControllers.getAllIntegrationExceptions);
 
 module.exports = router;

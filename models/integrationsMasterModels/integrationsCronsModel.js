@@ -13,7 +13,7 @@ const integrationsCronsSchema = mongoose.Schema({
     },
     integrationsMasterId : {
         type : mongoose.Schema.Types.ObjectId,
-        ref : 'integrationsmasters',
+        ref : 'integrationsMaster',
         index : true,
         deafult : null
     },

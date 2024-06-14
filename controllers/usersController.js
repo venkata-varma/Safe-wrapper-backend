@@ -143,7 +143,7 @@ exports.getUserDetails = asyncWrapper(async (req, res) => {
  * 
  */
 exports.getAllUsers=asyncWrapper(async(req,res)=>{
-  const users=await usersModel.find({accountId:req.params.accountId}) ;
+  const users=await usersModel.find({accountId:req.params.accountId},{password : 0}) ;
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_ALL_USERS_DETAILS,
