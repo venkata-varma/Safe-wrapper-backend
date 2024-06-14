@@ -630,7 +630,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         _id: null,
         pulledCount: { $sum: "$pulledCount" },
         pushedCount: { $sum: "$pushedCount" },
-        CPDNewWorkOrdersPulledCount: { $sum: "$CPDNewWorkOrdersPulledCount" }
+        newWOCount: { $sum: "$newWOCount" }
       }
     },
     {
@@ -638,7 +638,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         _id: 0,
         pulledCount: 1,
         pushedCount: 1,
-        CPDNewWorkOrdersPulledCount: 1
+        newWOCount: 1
       }
     }
   ]);

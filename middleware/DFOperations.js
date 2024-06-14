@@ -70,6 +70,30 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
         // Now loop the CPDWO and then push to DF by API.
         for (let workOrder of CPDWorkOrderDetails) {
             fieldmappingkeys.numberAlt = workOrder.CPDWorkOrders.WorkOrderNumber;
+            if(workOrder.CPDWorkOrderStatus === "New"){
+                fieldmappingkeys.status = 'REPORTED';
+            }
+            else if(workOrder.CPDWorkOrderStatus === "Accepted"){
+                fieldmappingkeys.status = 'ESTIMATE_REQUESTED';
+            }
+            else if(workOrder.CPDWorkOrderStatus === "CheckedIn"){
+                fieldmappingkeys.status = 'SCHEDULED';
+            }
+            else if(workOrder.CPDWorkOrderStatus === "CheckedOut"){
+                fieldmappingkeys.status = 'COMPLETED';
+            }
+            else if(workOrder.CPDWorkOrderStatus === "OnHold"){
+                fieldmappingkeys.status = 'ON_HOLD';
+            }
+            else if(workOrder.CPDWorkOrderStatus === "Rejected"){
+                fieldmappingkeys.status = 'CANCELED';
+            }
+            if(workOrder.WorkType.Name === "Preventative Maintenance"){
+                fieldmappingkeys.typeListId = 1237;
+            }
+            else if(workOrder.CPDWorkOrders === "Reactive Maintenance"){
+                fieldmappingkeys.typeListId = 687;
+            }
 
             // Find list of DF credentails (encrypted) & then decrypt. 
             let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "DF" });
@@ -168,7 +192,7 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
             const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, "CPDWorkOrders.WorkOrderNumber":DFWorkOrder.DFWorkOrders.numberAlt})
             fieldmappingkeys.numberAlt = getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber;
             if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "New"){
-                fieldmappingkeys.status = 'IN_PROGRESS';
+                fieldmappingkeys.status = 'REPORTED';
             }
             else if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "Accepted"){
                 fieldmappingkeys.status = 'ESTIMATE_REQUESTED';
@@ -184,6 +208,12 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
             }
             else if(getCPDWorkOrderStatus.CPDWorkOrderStatus === "Rejected"){
                 fieldmappingkeys.status = 'CANCELED';
+            }
+            if(getCPDWorkOrderStatus.CPDWorkOrders.WorkType.Name === "Preventative Maintenance"){
+                fieldmappingkeys.typeListId = 1237;
+            }
+            else if(getCPDWorkOrderStatus.CPDWorkOrders.WorkType.Name === "Reactive Maintenance"){
+                fieldmappingkeys.typeListId = 687;
             }
             fieldmappingkeys.statusDate = new Date().toJSON()
         // console.log('fieldmappingkeys:===',fieldmappingkeys)
