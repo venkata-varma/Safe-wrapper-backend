@@ -30,7 +30,7 @@ const integrationsCronsSchema = mongoose.Schema({
         type : Number,
         dafault : 0
     },
-    CPDNewWorkOrdersPulledCount : {
+    newWOCount : {
         type : Number,
         default : 0
     },

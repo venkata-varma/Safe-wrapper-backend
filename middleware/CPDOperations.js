@@ -56,13 +56,14 @@ const initiateCronJobs = async (cronIntegrationDetails, typeOfCron) => {
  * If a record aready exist in DB. It will update the details using WorkOrderId, accountId, integrationMasterId, status of WorkOrder which is not equal to the previous.
  * @returns number of workOrders pulled from the corrigo-pro.
  */
-const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accountId, integrationsMasterId) => {
+const validateNewAndUpdatedWO = async (CPDWorkOrderResponse, cronJobDetails, accountId, integrationsMasterId) => {
     const workDetails = {}
     const latestWorkOrderCount = {
         pullNewWorkOrdersCount: 0,
         pushNewWorkordersCount: 0,
         CPDNewWorkOrdersPulledCount: 0
     }
+
     for (const work of CPDWorkOrderResponse.WorkOrders) {
 
         workDetails.CPDWorkOrders = work;
@@ -70,39 +71,28 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
         workDetails.accountId = accountId;
         workDetails.integrationsCronJobId = cronJobDetails._id
 
-        // const CPD_work_details = await CPDWorkordersModel.findOne({ $and :[{CPDWorkOrderId: work.WorkOrderId}, {accountId: accountId}, {integrationsMasterId : integrationsMasterId},{CPDWorkOrderStatus : {$ne : work.Status}}] })
         const CPD_work_details = await CPDWorkordersModel.findOne(
             { CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId: integrationsMasterId });
-        // console.log('step 4:===')
+
         if (CPD_work_details) {
-            // console.log('step 5')
-
+            // Find exactly status mismatched for existed #WO
             if (CPD_work_details.CPDWorkOrderStatus !== work.Status) {
-                // console.log('step 5A')
-
                 await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: work.WorkOrderId, accountId: accountId, integrationsMasterId: integrationsMasterId }, {
                     CPDWorkOrders: workDetails.CPDWorkOrders,
                     MessageId: workDetails.MessageId,
                     CPDWorkOrderStatus: work.Status,
                 }, { new: true, upsert: true });
 
-                // Update DF.status with mapping of CPD status.
+                // Update respective CPD #WO to Dataforma with status update and then process. 
                 await DFWorkOrdersModel.findOneAndUpdate({"DFWorkOrders.numberAlt":work.WorkOrderNumber, accountId: accountId, integrationsMasterId: integrationsMasterId},{
                     status : "update-request"
                 },{new : true})
-
-                await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, { lastPullDate: new Date() }, { new: true })
-            }
-            else {
-                // console.log('step 5B')
-                //nothing
             }
         } else {
-            // console.log('step 6')
             if (work.Status === "New") {
                 latestWorkOrderCount.CPDNewWorkOrdersPulledCount++
             }
-            let priority = work.WorkOrderNumber.includes('TMC') ? "high" : "medium"
+            let priority = work.WorkOrderNumber.includes('TMC') ? "high" : "medium";
             await CPDWorkordersModel.create({
                 CPDWorkOrderId: work.WorkOrderId,
                 accountId: workDetails.accountId,
@@ -114,10 +104,12 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
                 integrationsCronId: workDetails.integrationsCronJobId,
                 integrationsMasterId: integrationsMasterId
             })
-            await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, { lastPullDate: new Date() }, { new: true })
             latestWorkOrderCount.pullNewWorkOrdersCount++
         }
     }
+
+    // Final respective updates to dependency tables. say {integrationMasterUpdate}
+    await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, { lastPullDate: new Date() }, { new: true });
     return latestWorkOrderCount;
 };
 
@@ -132,43 +124,42 @@ const CPDWorkOrdersDetails = async (CPDWorkOrderResponse, cronJobDetails, accoun
  */
 
 exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
-    // console.log('integrationObject:==',integrationObject)
 
     let encrypted = {};
-    let getCPDWorkOrderDetials;
+    let getCPDWorkOrderdetails;
+
+    // Insert into cron-job
     const cronJobDetails = await initiateCronJobs({
         accountId: integrationObject.accountId,
         serviceProvider: integrationObject.serviceProvider,
         integrationsMasterId: integrationObject.integrationsMasterId
     }, typeOfCron);
 
+    // Find integration credentails and then decrypt and pull CPD calls.
     encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials };
-    // console.log("Step-1 called");
-
-    decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
-    // console.log("Step-2 called:==",decryptConfigCredentials);
-
-    const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl);
-    // console.log("Step-3 called");
+    decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
+    const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl);    
     
+    // Get work orders from the CPD - API calls.
     const CPDWorkOrderResponse = await axios.post(CPDConfigurations.CPD.workOrderSearch.URL,
         CPDConfigurations.CPD.workOrderSearch.body,
         {
-            headers: {
-                Authorization: `bearer ${corrigoToken.access_token}`
-            }
+            headers: { Authorization: `bearer ${corrigoToken.access_token}`}
         })
         // .then(res=>{console.log('response:==')})
         // .catch(err=>{console.log("ERROR:==",err)});
         console.log("CPDWorkOrderResponse:==",CPDWorkOrderResponse.data)
+
+    // If you have atlease one work workorder from CPD then process. 
     if (CPDWorkOrderResponse.data.WorkOrders.length > 0) {
-        getCPDWorkOrderDetials = await CPDWorkOrdersDetails(CPDWorkOrderResponse.data, cronJobDetails, integrationObject.accountId, integrationObject.integrationsMasterId)
+        getCPDWorkOrderdetails = await validateNewAndUpdatedWO(CPDWorkOrderResponse.data, cronJobDetails, integrationObject.accountId, integrationObject.integrationsMasterId)
     }
-    if (getCPDWorkOrderDetials !== undefined) {
+
+    if (getCPDWorkOrderdetails !== undefined) {
         const cronJob_Details = await integrationsCronJobsModel.findByIdAndUpdate(cronJobDetails._id, {
-            pulledCount: getCPDWorkOrderDetials.pullNewWorkOrdersCount || 0,
-            pushedCount: getCPDWorkOrderDetials.pushNewWorkordersCount,
-            CPDNewWorkOrdersPulledCount: getCPDWorkOrderDetials.CPDNewWorkOrdersPulledCount,
+            pulledCount: getCPDWorkOrderdetails.pullNewWorkOrdersCount || 0,
+            pushedCount: getCPDWorkOrderdetails.pushNewWorkordersCount,
+            newWOCount: getCPDWorkOrderdetails.CPDNewWorkOrdersPulledCount,
             status: "completed"
         }, { new: true, upsert: true });
     }

@@ -29,8 +29,10 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
         let workOrderPushedCount = 0
         fieldmappingkeys = integrationObject.mappedKeys.get_integration_field_mapping_master_default_keys[0].dataPoints;
 
+        // find initiated count of WO to push to DF. 
         const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
 
+        // Customize field mapping keys of DF - create API request. 
         for (const property in fieldmappingkeys) {
             if (property === "numberAlt")
                 fieldmappingkeys.numberAlt = '';
@@ -65,16 +67,16 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
 
         }
 
+        // Now loop the CPDWO and then push to DF by API.
         for (let workOrder of CPDWorkOrderDetails) {
             fieldmappingkeys.numberAlt = workOrder.CPDWorkOrders.WorkOrderNumber;
+
+            // Find list of DF credentails (encrypted) & then decrypt. 
             let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "DF" });
-            let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
-            // console.log("Step-1 called");
+            let credentailsObj = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
+            let decryptConfigCredentials = JSON.parse(await decryptData(credentailsObj, process.env.CRYPTO_KEY))
 
-            let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
-
-            let DFWorkOrderId;
-            let DFWorkorderList = {}
+            let DFWorkOrderId; let DFWorkorderList = {};
             let createWorkOrderConfig = {
                 method: 'post',
                 maxBodyLength: Infinity,
@@ -86,9 +88,10 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                 },
                 data: JSON.stringify(fieldmappingkeys)
             };
+
             DFWorkOrderId = await axios.request(createWorkOrderConfig)
                 .then((response) => {
-                    console.log("response:===", response.data.id);
+                    console.log("created DFWO ID:===", response.data.id);
                     return response.data.id
                 })
                 .catch(async (error) => {
@@ -130,6 +133,7 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                         exceptionTitle: error.response.data.messages
                     })
                 });
+                
             if (DFWorkorderList) {
                 DFWorkOrderId = JSON.parse(DFWorkorderList).id
                 const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: DFWorkOrderId, }).lean();

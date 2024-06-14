@@ -15,7 +15,6 @@ const DFOperations = require('../middleware/DFOperations');
 const integrationsFieldMappingModel = require('../models/integrationsMasterModels/integrationsFieldMappingModel');
 
 
-const job_each_second = humanToCron('each second')
 const job_each_minute = humanToCron('once each minute')
 
 /**
@@ -31,24 +30,21 @@ const job_each_minute = humanToCron('once each minute')
  */
 
 exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
-  let integrationCredentials = []
   
-  let job_each_minute_cronJob = schedule.scheduleJob(job_each_minute, async () => {
+  schedule.scheduleJob(job_each_minute, async () => {
     const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each minute', currentStatus : "start" }).populate('integrationsMasterId').lean();
+    
     if (integrationsMasterSettingsDetails.length > 0) {
       for (const integration of integrationsMasterSettingsDetails) {
         if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'CPD' && integration.integrationsMasterId.to === 'DF') {
           const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "CPD"}).lean();
-          //integrationCredentials.push(credentials);
           await CPDOperations.getCPDWorkOrders(CPDCredentials,typeOfCron = "automated");
+
           const DFCredentials = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integration.integrationsMasterId, to : "DF"}).lean();
-          
           await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "automated")
-          // await CPDOperations.updateCPDWorkOrders(CPDCredentials, typeOfCron = "automated", DFCredentials)
         }
-        else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF') {
-          const credentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "DF" }).lean();
-          // integrationCredentials.push(credentials)
+        else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF' && integration.integrationsMasterId.to === 'CPD') {
+          await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "DF" }).lean();
         }
         else {
           // nothing
