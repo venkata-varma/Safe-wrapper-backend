@@ -19,6 +19,7 @@ router.patch('/edit-integrationmaster-service-provider/:integrationsMasterId',in
 router.patch('/edit-integrationmaster-field-mappings/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.editIntegrationMasterFieldMappings)
 router.patch('/edit-integrationmaster-settings/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.editIntegrationMasterSettings)
 router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.deactivateInteragtionMasterCrons)
+router.patch('/update-field-mappings-by-service',integrationsMasterControllers.middlewareForIntegrationExist, integrationsMasterControllers.updateIntegrationFieldMappingsByServiceType)
 
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMaster, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
@@ -26,5 +27,7 @@ router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsM
 router.get('/pull-latest-workorders-by-accountId/:accountId',integrationsMasterControllers.validateAccountStatus, integrationsMasterControllers.pullLatestWorkOrders);
 router.get('/get-individual-account-reports/:accountId',integrationsMasterControllers.getIndividualAccountReportsByAccountId);
 router.get('/get-all-integration-exceptions/:accountId', integrationsMasterControllers.validateAccountStatus, integrationsMasterControllers.getAllIntegrationExceptions);
+router.get('/get-field-mappings-by-service/:accountId',integrationsMasterControllers.middlewareForAccountIntegrationExist, integrationsMasterControllers.getFieldMappingsByServiceType)
+
 
 module.exports = router;
