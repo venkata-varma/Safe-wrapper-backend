@@ -12,7 +12,7 @@ const integrationsExceptionsSchema = new mongoose.Schema({
     },
     integrationsMasterId :{
         type : mongoose.Schema.Types.ObjectId,
-        ref : 'integrationsmasters',
+        ref : 'integrationsMaster',
         default : null
     },
     CPDWorkOrderId : {

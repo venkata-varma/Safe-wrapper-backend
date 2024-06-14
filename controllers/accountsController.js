@@ -97,8 +97,31 @@ exports.deleteAccount = asyncWrapper(async (req, res) => {
         message: customConstants.messages.MESSAGE_ACCOUNT_DELETED,
         data: updatedAccount,
     });
-})
+});
 
+/*
+* Verify the status of account.
+* If status is active pass the middleware.
+*/
+exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
+    const {accountId} = req.params
+    const verifyAccountStatus = await accountsModel.findById(accountId)
+    console.log('verifyAccountStatus')
+    if (verifyAccountStatus.status === 'deleted') {
+      return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+        status: customConstants.messages.MESSAGE_FAIL,
+        message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+      });
+    }
+    else {
+        next()
+    }
+  });
+
+/**
+ * Get account information by accountId.
+ * Get all work orders count (CPD, DF), integrationsExceptions and integrationsCount.
+ */
 
 
 exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
