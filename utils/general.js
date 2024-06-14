@@ -44,7 +44,7 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
           },
           {
             $group: {
-              _id: '$CPDWorkOrders.Status',
+              _id: '$CPDWorkOrderStatus',
               count: { $sum: 1 }
             }
           },

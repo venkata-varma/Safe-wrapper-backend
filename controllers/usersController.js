@@ -392,7 +392,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
     },
     {
       $group: {
-        _id: '$CPDWorkOrders.Status',
+        _id: '$CPDWorkOrderStatus',
         count: { $sum: 1 }
       }
     },
