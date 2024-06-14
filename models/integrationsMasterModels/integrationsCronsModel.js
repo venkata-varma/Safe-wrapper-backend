@@ -47,7 +47,7 @@ const integrationsCronsSchema = mongoose.Schema({
 
 integrationsCronsSchema.pre("save", function (next) {
     this.integrationsCronId = this._id;
-    next();
+    next(); 
 });
 
 module.exports = mongoose.model('integrationscrons',integrationsCronsSchema)

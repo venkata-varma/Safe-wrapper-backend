@@ -949,7 +949,7 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
         _id: "totalWorkOrdersCount",
         totalPulledCount: { $sum: "$pulledCount" },
         totalPushedCount: { $sum: "$pushedCount" },
-        totalCPDNewWorkOrdersPulledCount: { $sum: "$CPDNewWorkOrdersPulledCount" }
+        totalnewWOCount: { $sum: "$newWOCount" }
       }
     }
 
