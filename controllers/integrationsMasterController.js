@@ -259,7 +259,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   }
   if (req.body.serviceProvider === 'DF') {
     const checkDFCredentials = await DFAuthentication(req.body.credentials.df_auth, req.body.credentials.df_servicecode, req.body.credentials.baseUrl)
-   
+
     if (checkDFCredentials !== 200) {
       return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
         status: customConstants.messages.MESSAGE_FAIL,
@@ -597,18 +597,18 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   const integrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId }).lean();
   let presentWeekData = dateAsset();
 
-  const activityLogOfIndividualIntegration = await integrationsCronsModel.find({ integrationsMasterId }).sort({_id:-1}).limit(20).lean();
-  
+  const activityLogOfIndividualIntegration = await integrationsCronsModel.find({ integrationsMasterId }).sort({ _id: -1 }).limit(20).lean();
+
   //Integration exception count for last 7 days 
-  const integrationsExceptionsDetails = await integrationsExceptionsModel.find({integrationsMasterId: integrationsMasterId})
+  const integrationsExceptionsDetails = await integrationsExceptionsModel.find({ integrationsMasterId: integrationsMasterId })
   for (let week of presentWeekData) {
     console.log("FromDate:==", new Date(week.fromDate))
-    console.log("toDate:==",new Date(week.toDate))
-        let fromDate = new Date(week.fromDate);
-      let toDate = new Date(week.toDate);
-    
-      let  presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } });
-      week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length > 0 ? presentWeekIntegrationExceptions.length : 0;
+    console.log("toDate:==", new Date(week.toDate))
+    let fromDate = new Date(week.fromDate);
+    let toDate = new Date(week.toDate);
+
+    let presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } });
+    week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length > 0 ? presentWeekIntegrationExceptions.length : 0;
   }
 
   /**
@@ -618,7 +618,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
 
   let sourceWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.from, presentWeekData)
   let destinationWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.to, presentWeekData)
-  
+
   let autoDataSync = await integrationsCronsModel.aggregate([
     {
       $match: {
@@ -666,9 +666,9 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         integrationExceptions,
         oneWeekCountStatistics: sourceWorkOrdersAndStatus.presentWeekData.reverse(),
         activityLog: activityLogOfIndividualIntegration,
-        sourceWorkOrders : sourceWorkOrdersAndStatus.sourceWorkOrders,
-        destinationWorkOrders : destinationWorkOrdersAndStatus.destinationWorkOrders,
-        statusMapping: { source : sourceWorkOrdersAndStatus.statuses, destination : destinationWorkOrdersAndStatus.statuses },
+        sourceWorkOrders: sourceWorkOrdersAndStatus.sourceWorkOrders,
+        destinationWorkOrders: destinationWorkOrdersAndStatus.destinationWorkOrders,
+        statusMapping: { source: sourceWorkOrdersAndStatus.statuses, destination: destinationWorkOrdersAndStatus.statuses },
         autoDataSync
       },
     });
@@ -821,7 +821,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
     for (const integration of integrationsMasterDetails) {
       if (integration.status === 'active' && integration.from === 'CPD' && integration.to === 'DF') {
         const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "CPD" }).lean();
-        
+
         await CPDOperations.getCPDWorkOrders(CPDCredentials, typeOfCron = "manual");
         const DFCredentials = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integration.integrationsMasterId, to: "DF" }).lean();
 
@@ -976,7 +976,7 @@ exports.getIndividualAccountReportsByAccountId = asyncWrapper(async (req, res) =
 * If status is active pass the middleware.
 */
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
-  const {accountId} = req.params
+  const { accountId } = req.params
   const verifyAccountStatus = await accountsModel.findById(accountId)
   console.log('verifyAccountStatus')
   if (verifyAccountStatus.status === 'deleted') {
@@ -986,7 +986,7 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     });
   }
   else {
-      next()
+    next()
   }
 })
 
@@ -995,10 +995,10 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
  * @params "accountId"
  * 
  */
-exports.getAllIntegrationExceptions=asyncWrapper(async(req,res)=>{
-  const integrationExceptions=await integrationsExceptionsModel.find({accountId:req.params.accountId}).populate('integrationsMasterId')
- 
-  
+exports.getAllIntegrationExceptions = asyncWrapper(async (req, res) => {
+  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId }).populate('integrationsMasterId')
+
+
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -1010,3 +1010,148 @@ exports.getAllIntegrationExceptions=asyncWrapper(async(req,res)=>{
     });
 })
 
+
+
+
+/**
+ * Middleware function to GET Field mappings by service type. 
+ * @params "accountId" 
+ * If passed , middleware passes function call to "getFieldMappingsByServiceType"
+*/
+
+exports.middlewareForAccountIntegrationExist = asyncWrapper(async (req, res, next) => {
+  
+const account=await accountsModel.findOne({_id:req.params.accountId});
+  const integrationMasterDetails = await integrationsMasterModel.findById(req.query.integration)
+
+  if(account.status!=='active'||!account){
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_ACCOUNT_MIDDLEWARE,
+    });
+  }
+  if (!integrationMasterDetails||integrationMasterDetails.status!=='active') {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
+    });
+  }
+  else {
+    next()
+  }
+});
+
+
+/**
+ * Function to provide Integration specific field-mapping key-values based on service type
+ * @params   "accountId"
+ */
+
+exports.getFieldMappingsByServiceType = asyncWrapper(async (req, res) => {
+  const integerationMaster = req.query.integration;
+  const service = req.query.service;
+  const integrationFieldMappingsService = await integrationsFieldMappingModel.aggregate([
+    {
+      $match: {
+        integrationsMasterId: new mongoose.Types.ObjectId(integerationMaster),
+        accountId: new mongoose.Types.ObjectId(req.params.accountId),
+
+      }
+    },
+    {
+      $addFields: {
+        fieldMappinsByService: {
+          $filter: {
+            input: "$mappedKeys.get_integration_field_mapping_master_default_keys",
+            as: "key",
+            cond: { $eq: ["$$key.serviceMethod", service] }
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        mappedKeys: 0
+      }
+    }
+  ])
+  const fieldMappingDefaultServicesFilter = await fieldMappingMasterDefaultServicesModel.aggregate([
+    {
+      $match: {
+        from: integrationFieldMappingsService[0].from,
+        to: integrationFieldMappingsService[0].to,
+        serviceMethod: service
+      }
+    }
+  ])
+
+
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
+    json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_FIELD_MAPPINGS_BY_SERVICE,
+      data: {
+        integrationFieldMappingsService,
+        fieldMappingDefaultServicesFilter
+      }
+    })
+})
+
+/**
+ * Middlweare function to check for existence & status of account and integraiton 
+ * If passed, function call is passed to "updateIntegrationFieldMappingsByServiceType"
+ */
+
+exports.middlewareForIntegrationExist = asyncWrapper(async (req, res, next) => {
+  
+
+    const integrationFieldDetails = await integrationsFieldMappingModel.findById(req.body.integrationFieldMappingId);
+    const integrationMaster=await integrationsMasterModel.findOne({_id:integrationFieldDetails.integrationsMasterId});
+    const account=await accountsModel.findOne({_id:integrationFieldDetails.accountId});
+    if(account.status!=='active'||!account){
+      return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+        status: customConstants.messages.MESSAGE_FAIL,
+        message: customConstants.messages.MESSAGE_ACCOUNT_MIDDLEWARE,
+      });
+    }
+    if (!integrationMaster||integrationMaster.status!=='active') {
+      return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+        status: customConstants.messages.MESSAGE_FAIL,
+        message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
+      });
+    }
+    else {
+      next()
+    }
+  });
+  
+  
+
+
+/**
+ * Function to Find  Integration field mapping record of respective integration 
+    and update Field mapping record based on "Service method"
+ * 
+ */
+exports.updateIntegrationFieldMappingsByServiceType = asyncWrapper(async (req, res) => {
+  const updateFieldMapping = await integrationsFieldMappingModel.findOne({ _id: req.body.integrationFieldMappingId });
+  console.log('UpdateField', updateFieldMapping)
+ 
+  for (let mapping of updateFieldMapping.mappedKeys.get_integration_field_mapping_master_default_keys) {
+    if (mapping.fieldMappingMasterDefaultServicesId.toString() === req.body.fieldMappingMasterDefaultServicesId) {
+      mapping.dataPoints = req.body.integrationFieldMappings
+   
+    }
+  }
+  await updateFieldMapping.save()
+
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
+    json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_UPDATE_FIELD_MAPPINGS_BY_SERVICE,
+      data: {
+
+        updateFieldMapping
+      }
+    })
+})
