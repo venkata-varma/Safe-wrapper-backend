@@ -11,6 +11,8 @@ const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
 const integtationExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
+const {sixWeekSales, convertStrToDate}=require('../utils/sixWeekSalesFunction')
+
 
 
 
@@ -316,11 +318,129 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             }
         },
     ]);
+
+
+    const sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
+        {
+            $match: {
+                accountId: new mongoose.Types.ObjectId(req.params.accountId),
+                ...(integrationsQuery !== 'all-integrations' && {
+                    _id: new mongoose.Types.ObjectId(integrationsQuery)
+                })
+            }
+        },
+        {
+            $lookup: {
+                from: "cpdworkorders",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "CPDWorkOrders"
+            }
+        },
+        {
+            $lookup: {
+                from: "dfworkorders",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "DFWorkOrders"
+            }
+        },
+        {
+            $lookup: {
+                from: "integrationsexceptions",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "integrationExceptions"
+            }
+        },
+        {
+            $addFields: {
+                sourceWorkOrders: {
+                    $cond: {
+                        if: { $eq: ["$from", "CPD"] },
+                        then: "$CPDWorkOrders",
+                        else: "$DFWorkOrders"
+                    }
+                },
+                destinationWorkOrders: {
+                    $cond: {
+                        if: { $eq: ["$to", "CPD"] },
+                        then: "$CPDWorkOrders",
+                        else: "$DFWorkOrders"
+                    }
+                }
+            }
+        },
+        
+        {
+            $project: {
+                CPDWorkOrders: 0,
+                DFWorkOrders: 0
+            }
+        },
+        {
+            $addFields: {
+                sixWeekSales: sixWeekSales.map(week => ({
+                    fromDate: week.fromDate,
+                    toDate: week.toDate,
+                    sourceWorkOrdersCount: {
+                        $size: {
+                            $filter: {
+                                input: "$sourceWorkOrders",
+                                as: "order",
+                                cond: {
+                                    $and: [
+                                        { $gte: ["$$order.createdAt", convertStrToDate(week.fromDate)] },
+                                        { $lte: ["$$order.createdAt", convertStrToDate(week.toDate)] }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    destinationWorkOrdersCount: {
+                        $size: {
+                            $filter: {
+                                input: "$destinationWorkOrders",
+                                as: "order",
+                                cond: {
+                                    $and: [
+                                        { $gte: ["$$order.createdAt", convertStrToDate(week.fromDate)] },
+                                        { $lte: ["$$order.createdAt", convertStrToDate(week.toDate)] }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    integrationExceptionCount: {
+                        $size: {
+                            $filter: {
+                                input: "$integrationExceptions",
+                                as: "exception",
+                                cond: {
+                                    $and: [
+                                        { $gte: ["$$exception.createdAt", convertStrToDate(week.fromDate)] },
+                                        { $lte: ["$$exception.createdAt", convertStrToDate(week.toDate)] }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }))
+            }
+        }, 
+        {
+            $project:{
+                sixWeekSales:1
+            }
+        }
+    ]);
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED,
         data: {
-            accountReports
+             accountReports,
+            sixWeeksSalesGraph
         },
     })
 })
