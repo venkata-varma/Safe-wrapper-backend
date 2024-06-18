@@ -468,6 +468,20 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
     integrationsMasterId,
   });
 
+  let CPDtoDFIntegrationExist = await integrationsMasterModel.findOne({integrationsMasterId:integrationsMasterId,from:"CPD",to:"DF"}).lean()
+  let requiredKeys = {}
+  if(CPDtoDFIntegrationExist){
+    requiredKeys = {
+      numberAlt : "WorkOrderNumber",
+      budgetedProposedStatus : "NONE",
+      buildingId : 1715,
+      invoiceToCustomerId : 2238,
+      invoiceType : "EXTERNAL_CHARGE",
+      reportedById : 5515,
+      workDescription : "DevRabbit Testing WorkOrders (Ignore)."
+    }
+  }
+
   if (existingFieldMapping) {
     integrationsFieldMapping =
       await integrationsFieldMappingModel.findOneAndUpdate(
@@ -479,6 +493,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
   } else {
     integrationsFieldMapping = await integrationsFieldMappingModel.create({
       ...req.body,
+      requiredKeys : requiredKeys,
       createdBy: req.user._id,
       updatedBy: req.user._id,
       userId: req.user._id,
@@ -737,26 +752,44 @@ Returns Updated record with new values
 
 */
 exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
-
-  const { fieldMappingId } = req.body;
+  const { fieldMappingId, dataPoints, serviceMethod } = req.body;
   const integrationFieldMapping = await integrationsFieldMappingModel.findById(fieldMappingId);
+
   if (!integrationFieldMapping) {
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_NO_CONTENT).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND,
     });
   }
-  //save fields
-  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
-  //Later, Token authentication and status =verified or rejected to be done
-  return res
-    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-    .json({
-      status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED,
-      data: { updatedFieldMapping }
-    });
-})
+
+  const integrationsFieldMappingDetails = await integrationsFieldMappingModel.findById(fieldMappingId);
+  let updatedFieldMapping;
+
+  for (let fieldMapping of integrationsFieldMappingDetails.mappedKeys.get_integration_field_mapping_master_default_keys) {
+    if (fieldMapping.serviceMethod === serviceMethod) {
+      updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(
+        fieldMappingId, 
+        { 
+          $set: { 
+            [`mappedKeys.get_integration_field_mapping_master_default_keys.$[elem].dataPoints`]: dataPoints, 
+            updatedBy: req.user.userId 
+          } 
+        }, 
+        { 
+          new: true,
+          arrayFilters: [{ "elem._id": fieldMapping._id }]
+        }
+      );
+      break;
+    }
+  }
+
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED,
+    data: { updatedFieldMapping }
+  });
+});
 
 
 /*
@@ -948,15 +981,15 @@ exports.getFieldMappingsByServiceType = asyncWrapper(async (req, res) => {
       }
     }
   ])
-  const fieldMappingDefaultServicesFilter = await fieldMappingMasterDefaultServicesModel.aggregate([
-    {
-      $match: {
-        from: integrationFieldMappingsService[0].from,
-        to: integrationFieldMappingsService[0].to,
-        serviceMethod: service
-      }
-    }
-  ])
+  // const fieldMappingDefaultServicesFilter = await fieldMappingMasterDefaultServicesModel.aggregate([
+  //   {
+  //     $match: {
+  //       from: integrationFieldMappingsService[0].from,
+  //       to: integrationFieldMappingsService[0].to,
+  //       serviceMethod: service
+  //     }
+  //   }
+  // ])
 
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
@@ -965,7 +998,7 @@ exports.getFieldMappingsByServiceType = asyncWrapper(async (req, res) => {
       message: customConstants.messages.MESSAGE_FIELD_MAPPINGS_BY_SERVICE,
       data: {
         integrationFieldMappingsService,
-        fieldMappingDefaultServicesFilter
+        // fieldMappingDefaultServicesFilter
       }
     })
 })

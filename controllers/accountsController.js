@@ -196,14 +196,23 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
  * @params "accountId"
  */
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
-    const integrationsQuery = req.query.integration ? req.query.integration : "all-integrations";
+    const integrationsQuery = req.query.integration;
 
     //const integrationsQuery = req.query.integration;
     const priorityQuery = req.query.priority;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
     const toDateQuery = req.query.toDate ? new Date(req.query.toDate) : (fromDateQuery ? new Date() : null);
     const searchQuery = req.query.search ? new RegExp(`${req.query.search}`, 'i') : null;
-    const accountReports = await integrationsMasterModel.aggregate([
+    var accountReports=[];
+    var sixWeeksSalesGraph=[];
+    if(integrationsQuery==='null' ||!integrationsQuery){
+        console.log('wtf 1')
+        accountReports=[]
+        sixWeeksSalesGraph=[];
+    }else if(integrationsQuery){
+
+        console.log('wtf 2')
+    accountReports = await integrationsMasterModel.aggregate([
         {
             $match: {
                 accountId: new mongoose.Types.ObjectId(req.params.accountId),
@@ -363,7 +372,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     ]);
 
 
-    const sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
+    sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
         {
             $match: {
                 accountId: new mongoose.Types.ObjectId(req.params.accountId),
@@ -477,7 +486,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             }
         }
     ]);
-
+    }
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED,

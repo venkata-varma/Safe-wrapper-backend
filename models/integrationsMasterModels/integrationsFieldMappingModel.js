@@ -43,6 +43,10 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    requiredKeys : {
+      type : Object,
+      default : {}
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
