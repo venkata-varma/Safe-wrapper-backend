@@ -127,22 +127,65 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
 
 
 exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
-    const accountInformation = await accountsModel.findById(req.params.accountId);
-    const integrationsOfAccount = await integrationsMasterModel.find({ accountId: req.params.accountId });
-    const CPDWorkOrdersCount = await CPDWorkordersModel.find({ accountId: req.params.accountId });
-    const DFWorkOrdersCount = await DFWorkOrdersModel.find({ accountId: req.params.accountId });
-    const integrationExceptions = await integtationExceptionsModel.find({ accountId: req.params.accountId });
-    const integrationCronsCount = await integrationCronsModel.find({ accountId: req.params.accountId });
+    const {accountId} = req.params
+    const accountInformation = await accountsModel.findById(accountId);
+    const integrationsOfAccount = await integrationsMasterModel.find({ accountId: accountId });
+    const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId });
+    const integrationCronsCount = await integrationCronsModel.find({ accountId: accountId });
+
+    const integrationsServiceProvidersWorkOrdersCount = await integrationsMasterModel.aggregate([
+        {
+            $match: {
+                accountId: new mongoose.Types.ObjectId(accountId)
+            }
+        },
+        {
+            $lookup: {
+                from: 'cpdworkorders',
+                localField: 'accountId',
+                foreignField: 'accountId',
+                as: 'CPDWorkOrderDetails'
+            }
+        },
+        {
+            $lookup: {
+                from: 'dfworkorders',
+                localField: 'accountId',
+                foreignField: 'accountId',
+                as: 'DFWorkOrderDetails'
+            }
+        },
+        {
+            $project: {
+                CPDWorkOrderCount: { $size: '$CPDWorkOrderDetails' },
+                DFWorkOrderCount: { $size: '$DFWorkOrderDetails' }
+            }
+        },
+        {
+            $project: {
+                workOrders: [
+                    { serviceprovider: 'CPD', workOrders: '$CPDWorkOrderCount' },
+                    { serviceprovider: 'DF', workOrders: '$DFWorkOrderCount' }
+                ]
+            }
+        },
+        {
+            $unwind: '$workOrders'
+        },
+        {
+            $replaceRoot: { newRoot: '$workOrders' }
+        }
+    ]);
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_INFORMATION,
         data: {
             accountInformation,
             integrationsOfAccount,
-            CPDWorkOrdersCount: CPDWorkOrdersCount.length,
-            DFWorkOrdersCount: DFWorkOrdersCount.length,
             integrationExceptionsCount: integrationExceptions.length,
-            dataSyncCount: integrationCronsCount.length
+            dataSyncCount: integrationCronsCount.length,
+            integrationsServiceProvidersWorkOrdersCount
         },
     })
 })
