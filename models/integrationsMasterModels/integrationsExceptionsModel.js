@@ -27,6 +27,10 @@ const integrationsExceptionsSchema = new mongoose.Schema({
         type : String,
         default : ""
     },
+    integrationsApiServices : {
+        type : String,
+        default : ""
+    },
     exceptionMessage : {
         type : String,
         default : ""

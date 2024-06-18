@@ -126,7 +126,8 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                         CPDWorkOrderId: workOrder.CPDWorkOrderId,
                         networkCode: error.response.status,
                         exceptionMessage: error.message,
-                        exceptionTitle: error.response.data.messages
+                        exceptionTitle: error.response.data.messages,
+                        integrationsApiServices : 'create-workorder'
                     })
                 });
             console.log("DFWorkOrderId:===", DFWorkOrderId);
@@ -154,7 +155,8 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                         CPDWorkOrderId: workOrder.CPDWorkOrderId,
                         networkCode: error.response.status,
                         exceptionMessage: error.message,
-                        exceptionTitle: error.response.data.messages
+                        exceptionTitle: error.response.data.messages,
+                        integrationsApiServices : 'get-workorder'
                     })
                 });
                 
@@ -249,7 +251,8 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                     CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
                     networkCode: error.response.status,
                     exceptionMessage: error.message,
-                    exceptionTitle: error.response.data.messages
+                    exceptionTitle: error.response.data.messages,
+                    integrationsApiServices : 'update-workorder'
                 })
             });
             let getWorkOrderConfig = {
@@ -275,7 +278,8 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                         CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
                         networkCode: error.response.status,
                         exceptionMessage: error.message,
-                        exceptionTitle: error.response.data.messages
+                        exceptionTitle: error.response.data.messages,
+                        integrationsApiServices : 'get-workorder'
                     })
                 });
             if (DFWorkorderList) {

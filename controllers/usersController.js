@@ -19,6 +19,7 @@ const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel'
 const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
 const { validateUserMobileEmailData } = require('../utils/userLoginValidation');
 const { getStatusOfWorkOrders } = require('../utils/general');
+const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 
 /*
 Miidleware function to controller, "createUser"
@@ -406,6 +407,17 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   ]);
   let workOrderStates = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,sourceStatus);
 
+  const integrationsExceptionsApiservices = await integrationsExceptionsModel.aggregate([
+    { $match: { accountId: new mongoose.Types.ObjectId(accountId)
+        }
+    },
+    { $group:
+      { _id: '$integrationsApiServices', 
+        count: { $sum: 1 }
+      }
+    }
+]);
+
   const twelveWeekSales = twelveWeeksSales;
 
 
@@ -428,7 +440,8 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
       highPrioritycpdWorkOrders,
       activityLog,
       twelveWeekSales,
-      integrationsOfAccount
+      integrationsOfAccount,
+      integrationsExceptionsApiservices
 
     },
 
