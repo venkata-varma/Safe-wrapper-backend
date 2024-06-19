@@ -20,6 +20,7 @@ const serviceProviderListModel = require('../models/integrationsMasterModels/ser
 const { validateUserMobileEmailData } = require('../utils/userLoginValidation');
 const { getStatusOfWorkOrders } = require('../utils/general');
 const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
+const integrationsMasterModel = require('../models/integrationsMasterModels/integrationsMasterModel');
 
 /*
 Miidleware function to controller, "createUser"
@@ -306,7 +307,7 @@ exports.loginUser = asyncWrapper(async (req, res) => {
 */
 exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   const accountId = req.params.accountId;
-  const accountDetails = await accountsModel.findById(accountId, { password: 0 });
+  const accountDetails = await accountsModel.findById(accountId, { password: 0 }).lean();
 
   const users = await usersModel.find({ accountId }, { password: 0 });
 
@@ -417,6 +418,15 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
       }
     }
 ]);
+
+  const CPDWorkOrdersCount = await cpdWorkOrdersModel.find({accountId:accountId}).countDocuments()
+  const DFWorkOrdersCount = await dfWorkOrdersModel.find({accountId:accountId}).countDocuments()
+  const exceptionsCount = await integrationsExceptionModel.find({accountId:accountId}).countDocuments()
+  accountDetails.statistics = {
+    CPDWorkOrdersCount : CPDWorkOrdersCount,
+    DFWorkOrdersCount : DFWorkOrdersCount,
+    exceptionsCount : exceptionsCount
+  }
 
   const twelveWeekSales = twelveWeeksSales;
 
