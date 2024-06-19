@@ -423,8 +423,8 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   const DFWorkOrdersCount = await dfWorkOrdersModel.find({accountId:accountId}).countDocuments()
   const exceptionsCount = await integrationsExceptionModel.find({accountId:accountId}).countDocuments()
   accountDetails.insightsWorkOrdersCount = {
-    CPDWorkOrdersCount : CPDWorkOrdersCount,
-    DFWorkOrdersCount : DFWorkOrdersCount,
+    sourceWorkOrdersCount : CPDWorkOrdersCount,
+    destinationWorkOrdersCount : DFWorkOrdersCount,
     exceptionsCount : exceptionsCount
   }
 
