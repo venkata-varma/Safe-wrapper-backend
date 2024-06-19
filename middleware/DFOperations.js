@@ -126,7 +126,7 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                         CPDWorkOrderId: workOrder.CPDWorkOrderId,
                         networkCode: error.response.status,
                         exceptionMessage: error.message,
-                        exceptionTitle: error.response.data.messages,
+                        exceptionTitle: error.response.data.error || error.response.data.messages,
                         integrationsApiServices : 'create-workorder'
                     })
                 });
@@ -155,7 +155,7 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                         CPDWorkOrderId: workOrder.CPDWorkOrderId,
                         networkCode: error.response.status,
                         exceptionMessage: error.message,
-                        exceptionTitle: error.response.data.messages,
+                        exceptionTitle: error.response.data.messages || error.response.data.error,
                         integrationsApiServices : 'get-workorder'
                     })
                 });
@@ -251,7 +251,7 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                     CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
                     networkCode: error.response.status,
                     exceptionMessage: error.message,
-                    exceptionTitle: error.response.data.messages,
+                    exceptionTitle: error.response.data.messages || error.response.data.error,
                     integrationsApiServices : 'update-workorder'
                 })
             });
@@ -278,7 +278,7 @@ exports.DFCreateWorkorders = async (integrationObject, typeOfCron) => {
                         CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
                         networkCode: error.response.status,
                         exceptionMessage: error.message,
-                        exceptionTitle: error.response.data.messages,
+                        exceptionTitle: error.response.data.messages || error.response.data.error,
                         integrationsApiServices : 'get-workorder'
                     })
                 });

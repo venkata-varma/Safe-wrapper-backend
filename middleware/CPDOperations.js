@@ -8,13 +8,14 @@ const CPDConfigurations = require('../config/integrationsConfiguration')
 const asyncWrapper = require("./asyncWrapper");
 const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
 const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
+const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel");
 
 /**
  * 
  * client_id, client_secret, grant_type, baseUrl required to generate the access token.
  * @returns access token
  */
-const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl) => {
+const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl,integrationObject) => {
     try {
         const tokenResponse = await axios.post(
             // 'https://oauth-pro-v2.corrigo.com/OAuth/Token',
@@ -23,7 +24,15 @@ const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl) 
         );
         return tokenResponse.data;
     } catch (error) {
-        console.log("CPD Auth Error=", error);
+        console.log("Error message=", error);
+        await integrationsExceptionsModel.create({
+            integrationsMasterId: integrationObject.integrationsMasterId,
+            accountId: integrationObject.accountId,
+            networkCode: error.response.status,
+            exceptionMessage: "Authorization has been denied for this request.",
+            exceptionTitle: error.name,
+            integrationsApiServices : 'auth-failed'
+        })
         return 'error';
     }
 };
@@ -138,7 +147,7 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     // Find integration credentails and then decrypt and pull CPD calls.
     encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials };
     decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-    const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl);    
+    const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl,integrationObject);    
     
     // Get work orders from the CPD - API calls.
     const CPDWorkOrderResponse = await axios.post(CPDConfigurations.CPD.workOrderSearch.URL,
@@ -146,9 +155,20 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
         {
             headers: { Authorization: `bearer ${corrigoToken.access_token}`}
         })
-        // .then(res=>{console.log('response:==')})
-        // .catch(err=>{console.log("ERROR:==",err)});
-        console.log("CPDWorkOrderResponse:==",CPDWorkOrderResponse.data)
+        .then(res=>{console.log('response:==',)
+            return res
+        })
+        .catch(async (error)=>{console.log("ERROR:==",error)
+            await integrationsExceptionsModel.create({
+                integrationsMasterId: integrationObject.integrationsMasterId,
+                accountId: integrationObject.accountId,
+                networkCode: error.response.status,
+                exceptionMessage: error.response.data.Message,
+                exceptionTitle: error.name,
+                integrationsApiServices : 'search-workorder'
+            })
+        });
+        // console.log("CPDWorkOrderResponse:==",CPDWorkOrderResponse)
 
     // If you have atlease one work workorder from CPD then process. 
     if (CPDWorkOrderResponse.data.WorkOrders.length > 0) {
