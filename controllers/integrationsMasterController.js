@@ -902,7 +902,7 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
  * 
  */
 exports.getAllIntegrationExceptions = asyncWrapper(async (req, res) => {
-  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId }).populate('integrationsMasterId')
+  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId }).populate('integrationsMasterId').sort({_id:-1})
 
 
   return res
