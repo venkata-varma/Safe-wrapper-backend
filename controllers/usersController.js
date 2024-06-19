@@ -361,7 +361,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   // for (let exceptionsCount of integrationsOfAccount) {
   //   exceptionsCount.integrationsExceptionsCount = exceptionsCount.integrationsExceptions.length;
   // }
-
+/*
   const activityLog = await CPDWorkordersModel.aggregate([
     {
       $match: { accountId: new mongoose.Types.ObjectId(accountId) }
@@ -382,8 +382,10 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
       $sort: { "cronInfo.createdAt": -1 }
     }
   ]);
-
-  // const activityLog = await cpdWorkOrdersModel.find({ accountId }).sort({ createdAt: -1 })
+  console.log('activityLog:==',activityLog)
+  */
+  const activityLog = await integrationCronsModel.find({ accountId }).sort({ createdAt: -1 }).limit(10)
+  
   const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: "CPD" })
   const highPrioritycpdWorkOrders = await cpdWorkOrdersModel.find({ accountId, $or: [{ priority: 'high' }, { priority: 'medium' }] }).sort({ createdAt: -1 })
   let sourceStatus = await CPDWorkordersModel.aggregate([
