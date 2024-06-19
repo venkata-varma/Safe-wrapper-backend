@@ -419,12 +419,33 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
     }
 ]);
 
-  const CPDWorkOrdersCount = await cpdWorkOrdersModel.find({accountId:accountId}).countDocuments()
-  const DFWorkOrdersCount = await dfWorkOrdersModel.find({accountId:accountId}).countDocuments()
+// Get all source and destination work orders
+  const getAllWorkOrdersCount = async (accountId, serviceprovider) => {
+    let workOrdersCount = 0
+        if (serviceprovider === "CPD") {
+          workOrdersCount += await cpdWorkOrdersModel.find({ accountId: accountId }).countDocuments();
+        } else if (serviceprovider === "DF") {
+          workOrdersCount += await dfWorkOrdersModel.find({ accountId: accountId }).countDocuments();
+        }
+    return workOrdersCount
+  }
+
+  const getIntegrationsOfAccount = await integrationsMasterModel.find({ accountId: accountId });
+  let totalSourceWorkOrdersCount = 0, totalDestinationWorkOrdersCount = 0;
+
+  // Loop each integration to get all work orders related to account
+  for (let integration of getIntegrationsOfAccount) {
+    let sourceCounts = await getAllWorkOrdersCount(accountId, integration.from);
+    let destinationCounts = await getAllWorkOrdersCount(accountId, integration.to);
+
+    totalSourceWorkOrdersCount += sourceCounts;
+    totalDestinationWorkOrdersCount += destinationCounts;
+  }
+  
   const exceptionsCount = await integrationsExceptionModel.find({accountId:accountId}).countDocuments()
   accountDetails.insightsWorkOrdersCount = {
-    sourceWorkOrdersCount : CPDWorkOrdersCount,
-    destinationWorkOrdersCount : DFWorkOrdersCount,
+    sourceWorkOrdersCount : totalSourceWorkOrdersCount,
+    destinationWorkOrdersCount : totalDestinationWorkOrdersCount,
     exceptionsCount : exceptionsCount
   }
 
