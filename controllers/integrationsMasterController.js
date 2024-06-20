@@ -455,7 +455,7 @@ Returns committed Field mappings for either Work order or Invoices
 exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   console.log(req.body, "checkkkk");
 
-  const { integrationsMasterId, userId } = req.body;
+  const { integrationsMasterId, userId, serviceMethod, serviceName, dataPoints, } = req.body;
   const pastIntegrationDetails = await integrationsMasterModel.findOne({
     integrationsMasterId,
   });
@@ -465,7 +465,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
   // Create or update the integrationsFieldMapping
   let integrationsFieldMapping;
   const existingFieldMapping = await integrationsFieldMappingModel.findOne({
-    integrationsMasterId,
+    integrationsMasterId,serviceMethod,serviceName
   });
 
   let CPDtoDFIntegrationExist = await integrationsMasterModel.findOne({integrationsMasterId:integrationsMasterId,from:"CPD",to:"DF"}).lean()
@@ -485,12 +485,24 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
   if (existingFieldMapping) {
     integrationsFieldMapping =
       await integrationsFieldMappingModel.findOneAndUpdate(
-        { integrationsMasterId },
+        { integrationsMasterId,serviceMethod,serviceName },
         { $set: { ...req.body, updatedBy: req.user._id } },
         { new: true }
       );
     updatedIntegrationsDetails = await integrationsMasterModel.findById(integrationsMasterId)
   } else {
+    const verifyFieldmappingHasOneRecord = await integrationsFieldMappingModel.findOne({integrationsMasterId:integrationsMasterId})
+    
+    if(!verifyFieldmappingHasOneRecord){
+      updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
+        integrationsMasterId,
+        {
+          stepCount: pastIntegrationDetails.stepCount + 1,
+          updatedBy: req.user._id,
+        },
+        { new: true }
+      );
+    }
     integrationsFieldMapping = await integrationsFieldMappingModel.create({
       ...req.body,
       requiredKeys : requiredKeys,
@@ -498,15 +510,8 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
       updatedBy: req.user._id,
       userId: req.user._id,
       accountId: req.user.accountId
-    });
-    updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
-      integrationsMasterId,
-      {
-        stepCount: pastIntegrationDetails.stepCount + 1,
-        updatedBy: req.user._id,
-      },
-      { new: true } // Options to return the updated document
-    );
+    });    
+    updatedIntegrationsDetails = await integrationsMasterModel.findById(integrationsMasterId)
   }
 
   return res
@@ -856,7 +861,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
         const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "CPD" }).lean();
 
         await CPDOperations.getCPDWorkOrders(CPDCredentials, typeOfCron = "manual");
-        const DFCredentials = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integration.integrationsMasterId, to: "DF" }).lean();
+        const DFCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "DF" }).lean();
 
         await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "manual");
 
@@ -928,7 +933,7 @@ exports.getAllIntegrationExceptions = asyncWrapper(async (req, res) => {
 exports.middlewareForAccountIntegrationExist = asyncWrapper(async (req, res, next) => {
   
 const account=await accountsModel.findOne({_id:req.params.accountId});
-  const integrationMasterDetails = await integrationsMasterModel.findById(req.query.integration)
+  const integrationMasterDetails = await integrationsMasterModel.findById(req.query.integrationsMasterId)
 
   if(account.status!=='active'||!account){
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
@@ -954,43 +959,9 @@ const account=await accountsModel.findOne({_id:req.params.accountId});
  */
 
 exports.getFieldMappingsByServiceType = asyncWrapper(async (req, res) => {
-  const integerationMaster = req.query.integration;
-  const service = req.query.service;
-  const integrationFieldMappingsService = await integrationsFieldMappingModel.aggregate([
-    {
-      $match: {
-        integrationsMasterId: new mongoose.Types.ObjectId(integerationMaster),
-        accountId: new mongoose.Types.ObjectId(req.params.accountId),
-
-      }
-    },
-    {
-      $addFields: {
-        fieldMappinsByService: {
-          $filter: {
-            input: "$mappedKeys.get_integration_field_mapping_master_default_keys",
-            as: "key",
-            cond: { $eq: ["$$key.serviceMethod", service] }
-          }
-        }
-      }
-    },
-    {
-      $project: {
-        mappedKeys: 0
-      }
-    }
-  ])
-  // const fieldMappingDefaultServicesFilter = await fieldMappingMasterDefaultServicesModel.aggregate([
-  //   {
-  //     $match: {
-  //       from: integrationFieldMappingsService[0].from,
-  //       to: integrationFieldMappingsService[0].to,
-  //       serviceMethod: service
-  //     }
-  //   }
-  // ])
-
+  const integrationsMasterId = req.query.integrationsMasterId;
+  const {serviceMethod, serviceName} = req.query;
+  const integrationFieldMappingsService = await integrationsFieldMappingModel.findOne({integrationsMasterId : integrationsMasterId, serviceMethod:serviceMethod, serviceName:serviceName})
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({

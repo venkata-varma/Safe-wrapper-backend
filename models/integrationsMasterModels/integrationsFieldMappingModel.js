@@ -34,13 +34,21 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
       //   require: [true, "Role is required."],
       default: "",
     },
+    serviceMethod:{
+      type : String,
+      default : ""
+    },
+    serviceName:{
+      type : String,
+      default : ""
+    },
     filedMappingType: {
       type: String,
       enum: ["default", "custom"],
       default: "default",
     },
-    mappedKeys: {
-      type: mongoose.Schema.Types.Mixed,
+    dataPoints: {
+      type: Object,
       default: {},
     },
     requiredKeys : {
