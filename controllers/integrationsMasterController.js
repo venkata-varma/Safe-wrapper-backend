@@ -766,29 +766,9 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
       message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND,
     });
   }
-
-  const integrationsFieldMappingDetails = await integrationsFieldMappingModel.findById(fieldMappingId);
-  let updatedFieldMapping;
-
-  for (let fieldMapping of integrationsFieldMappingDetails.mappedKeys.get_integration_field_mapping_master_default_keys) {
-    if (fieldMapping.serviceMethod === serviceMethod) {
-      updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(
-        fieldMappingId, 
-        { 
-          $set: { 
-            [`mappedKeys.get_integration_field_mapping_master_default_keys.$[elem].dataPoints`]: dataPoints, 
-            updatedBy: req.user.userId 
-          } 
-        }, 
-        { 
-          new: true,
-          arrayFilters: [{ "elem._id": fieldMapping._id }]
-        }
-      );
-      break;
-    }
-  }
-
+  
+  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId,{$set:{dataPoints:dataPoints}},{new:true});
+ 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED,
