@@ -1017,9 +1017,11 @@ exports.updateIntegrationFieldMappingsByServiceType = asyncWrapper(async (req, r
 
 
 /**
- * 
- * 
- */
+ *  * After passing middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update status for Auto-data sync of Integration
+ * Function to update status in respective Integration-Settings record which represents status for Auto-data sync
+ * @params "integrationSettingsId"
+ * On Success, returns updated record
+ */ 
 
 exports.updateAutoDataSync = asyncWrapper(async (req, res) => {
   const integrationSettingsId = req.params.integrationSettingsId;
@@ -1037,8 +1039,10 @@ exports.updateAutoDataSync = asyncWrapper(async (req, res) => {
 })
 
 /**
- * 
- * 
+ * After passing middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update Frequency of Integration
+ * Function to update respective Integration settings record's field named : "periodSettings" , which represents Frequency
+ * @params "integrationSettingsId"
+ * On Success, returns updated record
  */
 exports.updateIntegrationSettingsFrequency=asyncWrapper(async(req,res)=>{
   const integrationSettingsId = req.params.integrationSettingsId;
@@ -1056,9 +1060,10 @@ exports.updateIntegrationSettingsFrequency=asyncWrapper(async(req,res)=>{
 })
 
 /**
- * 
- * 
- * 
+ * After passing middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update status field mapping keys of Integration
+ * Function to update respective Integration settings record's field named : "statusFieldMappingKeys"
+ * @params "integrationSettingsId"
+ * On Success, returns updated record
  */
 exports.updateStatusFieldMappings=asyncWrapper(async(req,res)=>{
   const integrationSettingsId = req.params.integrationSettingsId;
