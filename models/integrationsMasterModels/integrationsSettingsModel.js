@@ -46,6 +46,10 @@ const integrationsSettingsSchema = new mongoose.Schema({
         ref: "users",
         default: null,
       },
+      statusFieldMappingKeys:{
+        type:Object,
+        default:{}
+      }
 },{timestamps:true});
 
 integrationsSettingsSchema.pre('save', function(next) {
