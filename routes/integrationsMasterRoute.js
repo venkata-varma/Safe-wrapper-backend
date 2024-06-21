@@ -22,8 +22,8 @@ router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMaste
 router.patch('/update-field-mappings-by-service',integrationsMasterControllers.middlewareForIntegrationExist, integrationsMasterControllers.updateIntegrationFieldMappingsByServiceType)
 router.patch('/update-integration-settings-data-sync/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateAutoDataSync);
 router.patch('/update-integration-settings-frequency/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateIntegrationSettingsFrequency)
-router.patch('/update-integration-settings-status-field-mappings/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateStatusFieldMappings)
-router.patch('/update-integration-master-status/:integrationMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.updateIntegrationMasterStatus);
+router.patch('/update-integration-workorder-status-field-mappings/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateStatusFieldMappings)
+router.patch('/update-integration-master-status/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.updateIntegrationMasterStatus);
 
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)

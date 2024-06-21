@@ -587,11 +587,11 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
 */
 
 exports.validateIntegrationsMaster = asyncWrapper(async (req, res, next) => {
-  
-  const integrationMasterId=req.params.integrationsMasterId||req.params.integrationMasterId;
+
+  const integrationMasterId = req.params.integrationsMasterId;
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
-  
-  if (!integrationMasterDetails||integrationMasterDetails.status==='deleted'||integrationMasterDetails.status==='blocked' ) {
+
+  if (!integrationMasterDetails || integrationMasterDetails.status === 'deleted' || integrationMasterDetails.status === 'blocked') {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
@@ -1008,10 +1008,7 @@ exports.updateIntegrationFieldMappingsByServiceType = asyncWrapper(async (req, r
     json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_UPDATE_FIELD_MAPPINGS_BY_SERVICE,
-      data: {
-
-        updateFieldMapping
-      }
+      data: { updateFieldMapping }
     })
 })
 
@@ -1021,20 +1018,17 @@ exports.updateIntegrationFieldMappingsByServiceType = asyncWrapper(async (req, r
  * Function to update status in respective Integration-Settings record which represents status for Auto-data sync
  * @params "integrationSettingsId"
  * On Success, returns updated record
- */ 
+ */
 
 exports.updateAutoDataSync = asyncWrapper(async (req, res) => {
   const integrationSettingsId = req.params.integrationSettingsId;
-  const updateSync = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { currentStatus: req.body.currentStatus, updatedBy:req.user._id } }, { new: true });
+  const updateSync = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { currentStatus: req.body.currentStatus, updatedBy: req.user._id } }, { new: true });
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message:req.body.currentStatus==='start'?  customConstants.messages.MESSAGE_SETTINGS_AUTO_DATA_SYNC_STARTED:req.body.currentStatus==='stop'?customConstants.messages.MESSAGE_SETTINGS_AUTO_DATA_SYNC_STOPPED:"",
-      data: {
-
-        updateSync
-      }
+      message: req.body.currentStatus === 'start' ? customConstants.messages.MESSAGE_SETTINGS_AUTO_DATA_SYNC_STARTED : req.body.currentStatus === 'stop' ? customConstants.messages.MESSAGE_SETTINGS_AUTO_DATA_SYNC_STOPPED : "",
+      data: { updateSync }
     })
 })
 
@@ -1044,18 +1038,15 @@ exports.updateAutoDataSync = asyncWrapper(async (req, res) => {
  * @params "integrationSettingsId"
  * On Success, returns updated record
  */
-exports.updateIntegrationSettingsFrequency=asyncWrapper(async(req,res)=>{
+exports.updateIntegrationSettingsFrequency = asyncWrapper(async (req, res) => {
   const integrationSettingsId = req.params.integrationSettingsId;
-  const updatePeriodSetings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { periodSettings: req.body.periodSettings, updatedBy:req.user._id } }, { new: true });
+  const updatePeriodSetings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { periodSettings: req.body.periodSettings, updatedBy: req.user._id } }, { new: true });
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message:customConstants.messages.MESSAGE_SETTINGS_FREQUENCY_UPDATED,
-      data: {
-
-        updatePeriodSetings
-      }
+      message: customConstants.messages.MESSAGE_SETTINGS_FREQUENCY_UPDATED,
+      data: { updatePeriodSetings }
     })
 })
 
@@ -1065,18 +1056,15 @@ exports.updateIntegrationSettingsFrequency=asyncWrapper(async(req,res)=>{
  * @params "integrationSettingsId"
  * On Success, returns updated record
  */
-exports.updateStatusFieldMappings=asyncWrapper(async(req,res)=>{
+exports.updateStatusFieldMappings = asyncWrapper(async (req, res) => {
   const integrationSettingsId = req.params.integrationSettingsId;
-  const updateStatusFieldMappings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { statusFieldMappingKeys: req.body.statusFieldMappingKeys, updatedBy:req.user._id } }, { new: true });
+  const updateStatusFieldMappings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { statusFieldMappingKeys: req.body.statusFieldMappingKeys, updatedBy: req.user._id } }, { new: true });
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message:customConstants.messages.MESSAGE_SETTINGS_STATUS_FIELD_MAPPINGS_UPDATED,
-      data: {
-
-        updateStatusFieldMappings
-      }
+      message: customConstants.messages.MESSAGE_SETTINGS_STATUS_FIELD_MAPPINGS_UPDATED,
+      data: { updateStatusFieldMappings }
     })
 })
 
@@ -1085,20 +1073,14 @@ exports.updateStatusFieldMappings=asyncWrapper(async(req,res)=>{
  * @params "integrationMasterId" 
  * On success, returns the updated record 
  */
-exports.updateIntegrationMasterStatus=asyncWrapper(async(req,res)=>{
-  const integrationMasterId=req.params.integrationMasterId;
-  
-  const updateStatus=await integrationsMasterModel.findByIdAndUpdate(integrationMasterId, {$set:{status:req.body.status, updatedBy:req.user._id}}, {new:true});
-
-
+exports.updateIntegrationMasterStatus = asyncWrapper(async (req, res) => {
+  const integrationMasterId = req.params.integrationsMasterId;
+  const updateStatus = await integrationsMasterModel.findByIdAndUpdate(integrationMasterId, { $set: { status: req.body.status, updatedBy: req.user._id } }, { new: true });
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message:customConstants.messages.MESSAGE_INTEGRATION_MASTER_STATUS_UPDATED,
-      data: {
-
-        updateStatus
-      }
+      message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_STATUS_UPDATED,
+      data: { updateStatus }
     })
 })
 
@@ -1106,22 +1088,21 @@ exports.updateIntegrationMasterStatus=asyncWrapper(async(req,res)=>{
  * Middleware function to check the status of Integration master and Account record of respective "Integration Settings" record 
  * @params "integrationSettingsId"
  */
-exports.validateIntegrationSettingsDetails=asyncWrapper(async(req,res, next)=>{
-  const integrationSettingsDetails=await integrationsSettingsModel.findOne({_id:req.params.integrationSettingsId}).populate('accountId integrationsMasterId');
+exports.validateIntegrationSettingsDetails = asyncWrapper(async (req, res, next) => {
+  const integrationSettingsDetails = await integrationsSettingsModel.findOne({ _id: req.params.integrationSettingsId }).populate('accountId integrationsMasterId');
 
-  if(!integrationSettingsDetails|| integrationSettingsDetails.integrationsMasterId.status==='deleted' ||integrationSettingsDetails.integrationsMasterId.status==='blocked'){
-  return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-    status: customConstants.messages.MESSAGE_FAIL,
-    message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
-  });
-}
+  if (!integrationSettingsDetails || integrationSettingsDetails.integrationsMasterId.status === 'deleted' || integrationSettingsDetails.integrationsMasterId.status === 'blocked') {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
+    });
+  }
 
-if(!integrationSettingsDetails|| integrationSettingsDetails.accountId.status!=='active'){
-  return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-    status: customConstants.messages.MESSAGE_FAIL,
-    message: customConstants.messages.MESSAGE_ACCOUNT_MIDDLEWARE,
-  });
-}
-
+  if (!integrationSettingsDetails || integrationSettingsDetails.accountId.status !== 'active') {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_ACCOUNT_MIDDLEWARE,
+    });
+  }
   next()
 })
