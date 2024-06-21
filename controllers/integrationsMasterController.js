@@ -1017,7 +1017,7 @@ exports.updateIntegrationFieldMappingsByServiceType = asyncWrapper(async (req, r
 
 
 /**
- *  * After passing middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update status for Auto-data sync of Integration
+ *  * After passing through middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update status for Auto-data sync of Integration
  * Function to update status in respective Integration-Settings record which represents status for Auto-data sync
  * @params "integrationSettingsId"
  * On Success, returns updated record
@@ -1039,7 +1039,7 @@ exports.updateAutoDataSync = asyncWrapper(async (req, res) => {
 })
 
 /**
- * After passing middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update Frequency of Integration
+ * After passing through middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update Frequency of Integration
  * Function to update respective Integration settings record's field named : "periodSettings" , which represents Frequency
  * @params "integrationSettingsId"
  * On Success, returns updated record
@@ -1060,7 +1060,7 @@ exports.updateIntegrationSettingsFrequency=asyncWrapper(async(req,res)=>{
 })
 
 /**
- * After passing middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update status field mapping keys of Integration
+ * After passing through middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update status field mapping keys of Integration
  * Function to update respective Integration settings record's field named : "statusFieldMappingKeys"
  * @params "integrationSettingsId"
  * On Success, returns updated record
@@ -1081,8 +1081,9 @@ exports.updateStatusFieldMappings=asyncWrapper(async(req,res)=>{
 })
 
 /**
- * 
- * 
+ * After passing through middleware "", function call is passed to this function to update status of Integration master  (active <-> offline)
+ * @params "integrationMasterId" 
+ * On success, returns the updated record 
  */
 exports.updateIntegrationMasterStatus=asyncWrapper(async(req,res)=>{
   const integrationMasterId=req.params.integrationMasterId;
@@ -1100,8 +1101,10 @@ exports.updateIntegrationMasterStatus=asyncWrapper(async(req,res)=>{
       }
     })
 })
-/** 
- * 
+
+/**  
+ * Middleware function to check the status of Integration master and Account record of respective "Integration Settings" record 
+ * @params "integrationSettingsId"
  */
 exports.validateIntegrationSettingsDetails=asyncWrapper(async(req,res, next)=>{
   const integrationSettingsDetails=await integrationsSettingsModel.findOne({_id:req.params.integrationSettingsId}).populate('accountId integrationsMasterId');
