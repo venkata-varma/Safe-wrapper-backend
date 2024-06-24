@@ -18,6 +18,9 @@ const configurations = {
                 },
                 "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
               },
+        },
+        getWorkOrder : {
+          URL : 'https://am-api.corrigopro.com/Direct/api/workOrder?'
         }
     },
     DF : {
@@ -78,6 +81,10 @@ const configurations = {
       },
       updateWorkOrder : {
         URL : 'https://api.dataforma.com/dflowslope-api/workorders/',
+      },
+      searchWorkOrderType : {
+        URL : 'https://api.dataforma.com/dflowslope-api/workorders/types/search',
+        body : {}
       }
     } 
 }
