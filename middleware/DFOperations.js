@@ -239,7 +239,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 CPDWorkOrderId: workOrder.CPDWorkOrderId,
                                 networkCode: error.response.status,
                                 exceptionMessage: error.message,
-                                exceptionTitle: JSON.stringify(error.response.data),
+                                exceptionTitle: JSON.stringify(error.response.data.messages),
                                 integrationsApiServices: 'create-workorder'
                             })
                         });
@@ -268,7 +268,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                     CPDWorkOrderId: workOrder.CPDWorkOrderId,
                                     networkCode: error.response.status,
                                     exceptionMessage: error.message,
-                                    exceptionTitle: JSON.stringify(error.response.data),
+                                    exceptionTitle: JSON.stringify(error.response.data.messages),
                                     integrationsApiServices: 'get-workorder'
                                 })
                             });
@@ -353,7 +353,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
                                 networkCode: error.response.status,
                                 exceptionMessage: error.message,
-                                exceptionTitle: JSON.stringify(error.response.data),
+                                exceptionTitle: JSON.stringify(error.response.data.messages),
                                 integrationsApiServices: 'update-workorder'
                             })
                         });
@@ -380,7 +380,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
                                 networkCode: error.response.status,
                                 exceptionMessage: error.message,
-                                exceptionTitle: JSON.stringify(error.response.data),
+                                exceptionTitle: JSON.stringify(error.response.data.messages),
                                 integrationsApiServices: 'get-workorder'
                             })
                         });
