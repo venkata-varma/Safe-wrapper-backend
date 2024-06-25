@@ -282,7 +282,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 await DFWorkOrdersModel.findOneAndUpdate({
                                     DFWorkOrderId: DFWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
                                     accountId: integrationObject.accountId,
-                                }, { DFWorkOrderStatus: JSON.parse(DFWorkorderList).status, status: "completed" }, { new: true }).lean()
+                                }, { DFWorkOrderStatus: JSON.parse(DFWorkorderList).status, status: "completed",DFWorkOrders: JSON.parse(DFWorkorderList) }, { new: true }).lean()
                             }
                             else {
                                 const DFWorkOrderDetails = await DFWorkOrdersModel.create({
