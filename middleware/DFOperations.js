@@ -88,7 +88,8 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
             })
         });
     if (getCPDWorkOrderDetails) {
-        fieldmappingkeys.buildingId = getCPDWorkOrderDetails.ServiceLocation.SpaceId;
+        fieldmappingkeys.buildingId = getCPDWorkOrderDetails.ServiceLocation.OccupantID;
+        fieldmappingkeys.workDescription = getCPDWorkOrderDetails.WorkDetails.Assets[0].Comment || "DevRabbit Testing WorkOrders (Ignore).";
     }
     return fieldmappingkeys
 
@@ -125,7 +126,8 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
             fieldmappingkeys.status = 'IN_PROGRESS';
         else if (property === "typeListId")
             fieldmappingkeys.typeListId = 687;
-
+        else if (property === "invoiceToText")
+            fieldmappingkeys.invoiceToText = "CBRE/T-Mobile"
         else if (property === "workDescription")
             fieldmappingkeys.workDescription = "DevRabbit Testing WorkOrders (Ignore).";
         else
@@ -393,6 +395,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 DFWorkOrderId: DFWorkOrder.DFWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
                                 accountId: integrationObject.accountId,
                             }, {
+                                DFWorkOrders : JSON.parse(DFWorkorderList),
                                 DFWorkOrderStatus: updatedDFWorkOrderStatus,
                                 status: "completed"
                             }, { new: true }).lean()
