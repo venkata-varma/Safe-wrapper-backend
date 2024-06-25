@@ -10,13 +10,14 @@ const integrationsMasterModel = require("../models/integrationsMasterModels/inte
 const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
 const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel");
 const integrationsSettingsModel = require("../models/integrationsMasterModels/integrationsSettingsModel");
+const { default: mongoose } = require("mongoose");
 
 /**
  * 
  * client_id, client_secret, grant_type, baseUrl required to generate the access token.
  * @returns access token
  */
-const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl,integrationObject) => {
+const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl, integrationObject) => {
     try {
         const tokenResponse = await axios.post(
             // 'https://oauth-pro-v2.corrigo.com/OAuth/Token',
@@ -32,7 +33,7 @@ const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl,i
             networkCode: error.response.status,
             exceptionMessage: "Authorization has been denied for this request.",
             exceptionTitle: error.name,
-            integrationsApiServices : 'auth-failed'
+            integrationsApiServices: 'auth-failed'
         })
         return 'error';
     }
@@ -94,9 +95,9 @@ const validateNewAndUpdatedWO = async (CPDWorkOrderResponse, cronJobDetails, acc
                 }, { new: true, upsert: true });
 
                 // Update respective CPD #WO to Dataforma with status update and then process. 
-                await DFWorkOrdersModel.findOneAndUpdate({"DFWorkOrders.numberAlt":work.WorkOrderNumber, accountId: accountId, integrationsMasterId: integrationsMasterId},{
-                    status : "update-request"
-                },{new : true})
+                await DFWorkOrdersModel.findOneAndUpdate({ "DFWorkOrders.numberAlt": work.WorkOrderNumber, accountId: accountId, integrationsMasterId: integrationsMasterId }, {
+                    status: "update-request"
+                }, { new: true })
             }
         } else {
             if (work.Status === "New") {
@@ -148,65 +149,75 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     // Find integration credentails and then decrypt and pull CPD calls.
     encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials };
     decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-    const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl,integrationObject);    
-    
+    const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl, integrationObject);
+
     let currentDate = new Date()
     let fromDate, toDate
-    const CPDWorkOrdersExist = await CPDWorkordersModel.find({integrationsMasterId: integrationObject.integrationsMasterId, accountId:integrationObject.accountId});
-    console.log('IDSSSSS:==',integrationObject.integrationsMasterId, integrationObject.accountId)
-    if(CPDWorkOrdersExist.length > 0){
+    const CPDWorkOrdersExist = await CPDWorkordersModel.find({ integrationsMasterId: new mongoose.Types.ObjectId("666992eda176298d9f79e2f2"), accountId: integrationObject.accountId });
+    console.log('IDSSSSS:==', integrationObject.integrationsMasterId, integrationObject.accountId)
+    if (CPDWorkOrdersExist.length > 0) {
         fromDate = new Date(currentDate.setDate(currentDate.getDate() - 2))
         toDate = new Date()
     }
-    else{
-        const getFromDateFromIntegrationsSettings = await integrationsSettingsModel.findOne({integrationsMasterId: integrationObject.integrationsMasterId, accountId:integrationObject.accountId});
-        if(getFromDateFromIntegrationsSettings){
+    else {
+        const getFromDateFromIntegrationsSettings = await integrationsSettingsModel.findOne({ integrationsMasterId: new mongoose.Types.ObjectId("666992eda176298d9f79e2f2"), accountId: integrationObject.accountId });
+        if (getFromDateFromIntegrationsSettings) {
             fromDate = getFromDateFromIntegrationsSettings.dataDumpFrom
             toDate = new Date()
+            let differenceInMilliseconds = toDate - fromDate;
+            let differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
+            if (differenceInDays > 30) {
+                toDate = new Date(fromDate);
+                toDate.setDate(toDate.getDate() + 28);
+            } else {
+                toDate = new Date()
+            }
         }
-        else{
+        else {
             fromDate = new Date(currentDate.setDate(currentDate.getDate() - 28))
             toDate = new Date()
         }
-        
+
     }
-    console.log('From:==',fromDate)
-    console.log('To:==',toDate)
+    console.log('From:==', fromDate)
+    console.log('To:==', toDate)
     // Get work orders from the CPD - API calls.
     const CPDWorkOrderResponse = await axios.post(CPDConfigurations.CPD.workOrderSearch.URL,
         // CPDConfigurations.CPD.workOrderSearch.body,
         {
             "Parameters": {
-              //"WorkOrderNumber":"POS4L20001", /*Search by work order number
-              /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
-              "Created": {
-                "From": fromDate,
-                "To": toDate
-                // "To": "2024-02-14T24:00:00.000Z"
-              }
-              /*Search by work order status -> New,Accepted,Recalled,Rejected,CheckedIn,Paused,CheckedOut,OnHold,Verified,NeedsCompletionDetails*/
-              //"Statuses": [ "Accepted","CheckedIn","Rejected","CheckedOut","Verified" ],
-              //,"CustomerId" :"90256"
+                //"WorkOrderNumber":"POS4L20001", /*Search by work order number
+                /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
+                "Created": {
+                    "From": fromDate,
+                    "To": toDate
+                    // "To": "2024-02-14T24:00:00.000Z"
+                }
+                /*Search by work order status -> New,Accepted,Recalled,Rejected,CheckedIn,Paused,CheckedOut,OnHold,Verified,NeedsCompletionDetails*/
+                //"Statuses": [ "Accepted","CheckedIn","Rejected","CheckedOut","Verified" ],
+                //,"CustomerId" :"90256"
             },
             "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
         },
         {
-            headers: { Authorization: `bearer ${corrigoToken.access_token}`}
+            headers: { Authorization: `bearer ${corrigoToken.access_token}` }
         })
-        .then(res=>{console.log('response:==',)
+        .then(res => {
+            console.log('response:==',)
             return res
         })
-        .catch(async (error)=>{console.log("ERROR:==",error)
+        .catch(async (error) => {
+            console.log("ERROR:==", error)
             await integrationsExceptionsModel.create({
                 integrationsMasterId: integrationObject.integrationsMasterId,
                 accountId: integrationObject.accountId,
                 networkCode: error.response.status,
                 exceptionMessage: error.response.data.Message,
                 exceptionTitle: error.name,
-                integrationsApiServices : 'search-workorder'
+                integrationsApiServices: 'search-workorder'
             })
         });
-        // console.log("CPDWorkOrderResponse:==",CPDWorkOrderResponse)
+    // console.log("CPDWorkOrderResponse:==",CPDWorkOrderResponse)
 
     // If you have atlease one work workorder from CPD then process. 
     if (CPDWorkOrderResponse.data.WorkOrders.length > 0) {
