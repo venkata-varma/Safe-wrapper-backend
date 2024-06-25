@@ -569,7 +569,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       { new: true } // Options to return the updated document
     );
   }
-
+console.log("updatedIntegrationsDetails", updatedIntegrationsDetails)
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -796,6 +796,7 @@ exports.editIntegrationMasterSettings = asyncWrapper(async (req, res) => {
     });
   }
   let updatedIntegrationMasterSettings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
+ 
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({

@@ -29,7 +29,7 @@ const integrationsSettingsSchema = new mongoose.Schema({
     currentStatus : {
       type : String,
       enum : ['start','stop'],
-      default : "start"
+      default : "stop"
     },
     periodSettings:{
         type:mongoose.Schema.Types.Mixed,
@@ -41,6 +41,7 @@ const integrationsSettingsSchema = new mongoose.Schema({
         required: [true, "Created by is required."],
         default: null,
       },
+
       updatedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
@@ -49,7 +50,10 @@ const integrationsSettingsSchema = new mongoose.Schema({
       statusFieldMappingKeys:{
         type:Object,
         default:{}
-      }
+      },
+    dataDumpFrom:{
+      type:Date
+    }
 },{timestamps:true});
 
 integrationsSettingsSchema.pre('save', function(next) {
