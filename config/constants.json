@@ -38,6 +38,7 @@
     "MESSAGE_SETTINGS_DETAILS_UPDATE": "Settings updated successfully.",
     "MESSAGE_FIELDS_MANDATORY": "Mobile-Email and Password fields are mandatory.",
     "MESSAGE_MANDATORY_FIELDS": "Fields marked with * are Mandatory.",
+    "MESSAGE_LOGO_MANDATORY": "Logo field is  Mandatory.",
     "MESSAGE_WRONG_PASSWORD": "Invalid Password.",
     "MESSAGE_ACCOUNT_ALREADY_DELETED": "Unauthorised request as the account does'nt exist / is already deleted.",
     "MESSAGE_USER_ALREADY_DELETED": "Unauthorised request as the user does'nt exist / is already deleted.",
