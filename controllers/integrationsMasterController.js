@@ -537,18 +537,28 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   const pastIntegrationDetails = await integrationsMasterModel.findOne({
     integrationsMasterId,
   });
-
   let updatedIntegrationsDetails;
   let integrationsSettings;
-  const existingintegrationsSettings =
-    await integrationsSettingsModel.findOne({
-      integrationsMasterId,
-    });
+  const existingintegrationsSettings =await integrationsSettingsModel.findOne({integrationsMasterId});
+  let statusFieldMappingKeys
+  if(pastIntegrationDetails.from === "CPD" && pastIntegrationDetails.to === "DF"){
+    statusFieldMappingKeys = {
+      "REPORTED": "New",
+      "ESTIMATE-REQUESTED": "Accepted",
+      "ESTIMATE-COMPLETED": "Verified",
+      "ON-HOLD": "OnHold",
+      "SCHEDULED": "CheckedIn",
+      "COMPLETED": "CheckedOut",
+      "CANCELED": "Rejected",
+      "IN-PROGRESS": "Paused"
+  }
+}
 
   if (existingintegrationsSettings) {
     integrationsSettings = await integrationsSettingsModel.findOneAndUpdate(
       { integrationsMasterId },
-      { $set: { ...req.body, updatedBy: req.user._id } },
+      { $set: { ...req.body, updatedBy: req.user._id,
+              statusFieldMappingKeys:statusFieldMappingKeys} },
       { new: true }
     );
     updatedIntegrationsDetails = await integrationsMasterModel.findById(integrationsMasterId)
@@ -557,7 +567,8 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       ...req.body,
       createdBy: req.user._id,
       userId: req.user._id,
-      accountId: req.user.accountId
+      accountId: req.user.accountId,
+      statusFieldMappingKeys:statusFieldMappingKeys
     });
     // Perform the update
     updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
