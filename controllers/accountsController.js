@@ -12,7 +12,7 @@ const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel'
 const integtationExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
 const {sixWeekSales, convertStrToDate}=require('../utils/sixWeekSalesFunction')
-
+const {getImageUrl}=require('../utils/fileUpload')
 
 
 
@@ -24,6 +24,7 @@ If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
     const { accountName, companyName, email, phone, password, city, state, pincode, country } = req.body;
+    
     //console.log(accountName, companyName, email, phone, password,"okkkkk");
     if (!accountName || !companyName || !email || !phone || !password || !city || !state || !country || !pincode) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
@@ -42,41 +43,50 @@ If middleware returns true, this function is to create a New Account along with 
 Returns newly created Account with one associated user.
 */
 exports.createAccount = asyncWrapper(async (req, res) => {
-    const { accountName, companyName, email, phone, password, status } = req.body
-    const accountDetails = await accountsModel.findOne({ $or: [{ email }, { phone }] })
-    if (accountDetails) {
-        return res.status(409).json({
-            status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_ACCOUNT_EXIST
-        })
-    }
-    else {
-        req.body.password = await hashPwd(password)
-        const accountData = await accountsModel.create(req.body)
-        const customId = new mongoose.Types.ObjectId();
+    const baseUrl = req.protocol + '://' + req.get('host');
+    console.log("req.body", req.body)
+    console.log('req.file', req.file)
+    console.log('imageUrl')
+    res.json({
+        body:req.body,
+        file:req.file,
+        imageUrl:baseUrl + `/static/${req.file.originalname}`
+    })
+    // const { accountName, companyName, email, phone, password, status } = req.body
+    // const accountDetails = await accountsModel.findOne({ $or: [{ email }, { phone }] })
+    // if (accountDetails) {
+    //     return res.status(409).json({
+    //         status: customConstants.messages.MESSAGE_FAIL,
+    //         message: customConstants.messages.MESSAGE_ACCOUNT_EXIST
+    //     })
+    // }
+    // else {
+    //     req.body.password = await hashPwd(password)
+    //     const accountData = await accountsModel.create(req.body)
+    //     const customId = new mongoose.Types.ObjectId();
 
-        const user = await usersModel.create({
-            _id: customId,
-            userId: customId,
-            createdBy: customId,
-            accountId: accountData._id,
-            name: accountName,
-            password: req.body.password,
-            companyName: companyName,
-            phone: phone,
-            email: email,
-            role: 'super-admin',
-        });
-        //To delete Password from Response while displaying it.
-        delete accountData._doc.password;
-        delete user._doc.password;
+    //     const user = await usersModel.create({
+    //         _id: customId,
+    //         userId: customId,
+    //         createdBy: customId,
+    //         accountId: accountData._id,
+    //         name: accountName,
+    //         password: req.body.password,
+    //         companyName: companyName,
+    //         phone: phone,
+    //         email: email,
+    //         role: 'super-admin',
+    //     });
+    //     //To delete Password from Response while displaying it.
+    //     delete accountData._doc.password;
+    //     delete user._doc.password;
 
-        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_ACCOUNT_CREATED,
+    //     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
+    //         status: customConstants.messages.MESSAGE_SUCCESS,
+    //         message: customConstants.messages.MESSAGE_ACCOUNT_CREATED,
 
-        })
-    }
+    //     })
+    // }
 });
 
 

@@ -2,10 +2,12 @@ const router = require('express').Router();
 const { access } = require('fs');
 const accountsControllers = require('../controllers/accountsController');
 const auth = require('../middleware/authentication');
+const {upload}=require('../utils/fileUpload')
 
 
-
-router.post('/create-account',accountsControllers.validateAccountRegistration, accountsControllers.createAccount)
+router.post('/create-account',upload.single('logo'),
+    accountsControllers.validateAccountRegistration,
+     accountsControllers.createAccount)
 router.use(auth)
 router.patch('/delete-account/:accountId', accountsControllers.deleteAccount)
 
