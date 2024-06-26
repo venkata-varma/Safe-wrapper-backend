@@ -16,7 +16,6 @@ const {sixWeekSales, convertStrToDate}=require('../utils/sixWeekSalesFunction')
 
 
 
-
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
@@ -24,6 +23,7 @@ If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
     const { accountName, companyName, email, phone, password, city, state, pincode, country } = req.body;
+    
     //console.log(accountName, companyName, email, phone, password,"okkkkk");
     if (!accountName || !companyName || !email || !phone || !password || !city || !state || !country || !pincode) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
@@ -31,6 +31,12 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
             message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
         });
     }
+    // if(!req.file){
+    //     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+    //         status: customConstants.messages.MESSAGE_FAIL,
+    //         message: customConstants.messages.MESSAGE_LOGO_MANDATORY
+    //     });
+    // }
     else {
         next()
     }
@@ -42,6 +48,9 @@ If middleware returns true, this function is to create a New Account along with 
 Returns newly created Account with one associated user.
 */
 exports.createAccount = asyncWrapper(async (req, res) => {
+   
+    const baseUrl = req.protocol + '://' + req.get('host');
+    
     const { accountName, companyName, email, phone, password, status } = req.body
     const accountDetails = await accountsModel.findOne({ $or: [{ email }, { phone }] })
     if (accountDetails) {
@@ -52,7 +61,10 @@ exports.createAccount = asyncWrapper(async (req, res) => {
     }
     else {
         req.body.password = await hashPwd(password)
-        const accountData = await accountsModel.create(req.body)
+        const accountData = await accountsModel.create({
+            ...req.body,
+            logo:req.file? `${baseUrl}/accountLogos/${req.file.filename}`:""
+        })
         const customId = new mongoose.Types.ObjectId();
 
         const user = await usersModel.create({

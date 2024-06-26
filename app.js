@@ -12,7 +12,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
+app.use('/accountLogos', express.static(path.join(__dirname, 'accountLogos')));
 // Database Connection
 mongooseConnect.DbConnect();
 
