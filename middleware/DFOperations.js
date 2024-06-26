@@ -9,6 +9,7 @@ const asyncWrapper = require('./asyncWrapper');
 const integrationsMasterServiceProvidersModel = require('../models/integrationsMasterModels/integrationsMasterServiceProvidersModel');
 const { decryptData } = require('../utils/encryptionAlgorithms');
 const { CPDAuthentication } = require('../utils/serviceProvidersAuthentication');
+const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
 
 /**
  * 
@@ -282,7 +283,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 await DFWorkOrdersModel.findOneAndUpdate({
                                     DFWorkOrderId: DFWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
                                     accountId: integrationObject.accountId,
-                                }, { DFWorkOrderStatus: JSON.parse(DFWorkorderList).status, status: "completed",DFWorkOrders: JSON.parse(DFWorkorderList) }, { new: true }).lean()
+                                }, { DFWorkOrderStatus: JSON.parse(DFWorkorderList).status, status: "completed", DFWorkOrders: JSON.parse(DFWorkorderList) }, { new: true }).lean()
                             }
                             else {
                                 const DFWorkOrderDetails = await DFWorkOrdersModel.create({
@@ -297,6 +298,15 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 workOrderPushedCount++
                                 await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId }, { status: "completed" }, { new: true })
                                 await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
+                                // insert work order life cycle.
+                                await workOrderLifeCycleModel.create({
+                                    workOrderId: DFWorkOrderId,
+                                    workOrderStatus: JSON.parse(DFWorkorderList).status,
+                                    accountId: integrationObject.accountId,
+                                    integrationsMasterId: integrationObject.integrationsMasterId,
+                                    serviceProvider: "DF",
+                                    date_created: new Date()
+                                });
                             }
                         }
                     }
@@ -395,10 +405,20 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 DFWorkOrderId: DFWorkOrder.DFWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
                                 accountId: integrationObject.accountId,
                             }, {
-                                DFWorkOrders : JSON.parse(DFWorkorderList),
+                                DFWorkOrders: JSON.parse(DFWorkorderList),
                                 DFWorkOrderStatus: updatedDFWorkOrderStatus,
                                 status: "completed"
                             }, { new: true }).lean()
+
+                            // insert work order life cycle.
+                            await workOrderLifeCycleModel.create({
+                                workOrderId: DFWorkOrder.DFWorkOrderId,
+                                workOrderStatus: updatedDFWorkOrderStatus,
+                                accountId: integrationObject.accountId,
+                                integrationsMasterId: integrationObject.integrationsMasterId,
+                                serviceProvider: "DF",
+                                date_created: new Date()
+                            });
                         }
                         else {
                             //nothing

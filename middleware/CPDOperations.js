@@ -11,6 +11,7 @@ const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel"
 const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel");
 const integrationsSettingsModel = require("../models/integrationsMasterModels/integrationsSettingsModel");
 const { default: mongoose } = require("mongoose");
+const workOrderLifeCycleModel = require("../models/workOrdersModels/workOrderLifeCycleModel");
 
 /**
  * 
@@ -94,6 +95,16 @@ const validateNewAndUpdatedWO = async (CPDWorkOrderResponse, cronJobDetails, acc
                     CPDWorkOrderStatus: work.Status,
                 }, { new: true, upsert: true });
 
+                // insert work order life cycle.
+                await workOrderLifeCycleModel.create({
+                    workOrderId: work.WorkOrderId,
+                    workOrderStatus: work.Status,
+                    accountId: accountId,
+                    integrationsMasterId: integrationsMasterId,
+                    serviceProvider: "CPD",
+                    date_created: new Date()
+                });
+
                 // Update respective CPD #WO to Dataforma with status update and then process. 
                 await DFWorkOrdersModel.findOneAndUpdate({ "DFWorkOrders.numberAlt": work.WorkOrderNumber, accountId: accountId, integrationsMasterId: integrationsMasterId }, {
                     status: "update-request"
@@ -116,6 +127,16 @@ const validateNewAndUpdatedWO = async (CPDWorkOrderResponse, cronJobDetails, acc
                 integrationsMasterId: integrationsMasterId
             })
             latestWorkOrderCount.pullNewWorkOrdersCount++
+
+            // insert work order life cycle.
+            await workOrderLifeCycleModel.create({
+                workOrderId: work.WorkOrderId,
+                workOrderStatus: work.Status,
+                accountId: workDetails.accountId,
+                integrationsMasterId: integrationsMasterId,
+                serviceProvider: "CPD",
+                date_created: new Date()
+            });
         }
     }
 
@@ -166,7 +187,7 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
             toDate = new Date()
             let differenceInMilliseconds = toDate - fromDate;
             let differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
-            
+
             // Work order for CPD search, Only the dates between the 30 days will be supported by API.
             if (differenceInDays > 30) {
                 toDate = new Date(fromDate);

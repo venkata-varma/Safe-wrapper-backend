@@ -27,7 +27,7 @@ router.patch('/update-integration-master-status/:integrationsMasterId',integrati
 
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
 router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMasterExistForSingleIntegration, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
-router.get('/get-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateIntegrationsMasterExistForSingleIntegration, integrationsMasterControllers.getSingleIntegrationMasterDetails)
+router.get('/get-single-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateIntegrationsMasterExistForSingleIntegration, integrationsMasterControllers.getSingleIntegrationMasterDetails)
 router.get('/pull-latest-workorders-by-accountId/:accountId',integrationsMasterControllers.validateAccountStatus, integrationsMasterControllers.pullLatestWorkOrders);
 router.get('/get-all-integration-exceptions/:accountId', integrationsMasterControllers.validateAccountStatus, integrationsMasterControllers.getAllIntegrationExceptions);
 router.get('/get-field-mappings-by-service/:accountId',integrationsMasterControllers.middlewareForAccountIntegrationExist, integrationsMasterControllers.getFieldMappingsByServiceType)

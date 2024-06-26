@@ -68,6 +68,7 @@
     "MESSAGE_INVOICES": "All invoices.",
     "MESSAGE_INTEGRATION_KEYS": "Integration keys.",
     "MESSAGE_SAVE_KEYS": "Successfully saved.",
+    "MESSAGE_WORK_ORDER_LIFE_CYCLE": "Work order life cycle details",
     "MESSAGE_INTEGRATION_UPDATED": "Integration master details updated successfully.",
     "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_UPDATED": "Integration master service provider updated successfully.",
     "MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED": "Integration master field-mappings updated successfully.",

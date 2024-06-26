@@ -14,6 +14,7 @@ const DFWorkordersModelSchema = mongoose.Schema(
         },
         integrationsMasterId : {
             type : mongoose.Schema.Types.ObjectId,
+            ref : "integrationsMaster",
             default : null
         },
         DFWorkOrderId:{

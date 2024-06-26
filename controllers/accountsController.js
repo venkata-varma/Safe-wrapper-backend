@@ -11,8 +11,8 @@ const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
 const integtationExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
-const {sixWeekSales, convertStrToDate}=require('../utils/sixWeekSalesFunction')
-
+const {sixWeekSales, convertStrToDate}=require('../utils/sixWeekSalesFunction');
+const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
 
 
 
@@ -506,5 +506,27 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
              accountReports,
             sixWeeksSalesGraph
         },
+    })
+});
+
+/**
+ * Get all work orders life cycles based on account and work order ids.
+ */
+
+exports.getWorkOrderLifeCycle = asyncWrapper(async(req,res)=>{
+    const {accountId, workOrderId} = req.query;
+    const verifyAccountStatus = await accountsModel.findById(accountId)
+    console.log('verifyAccountStatus')
+    if (verifyAccountStatus.status === 'deleted') {
+      return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+        status: customConstants.messages.MESSAGE_FAIL,
+        message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+      });
+    }
+    const workOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId:accountId,workOrderId:workOrderId});
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
+        workOrderLifeCycleDetails
     })
 })

@@ -16,6 +16,7 @@ const CPDWorkordersModelSchema = mongoose.Schema(
         },
         integrationsMasterId : {
             type : mongoose.Schema.Types.ObjectId,
+            ref : "integrationsMaster",
             index:true,
             default : null
         },
