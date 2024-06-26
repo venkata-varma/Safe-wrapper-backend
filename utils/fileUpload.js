@@ -1,8 +1,10 @@
 const multer=require('multer');
 const path=require('path')
+
 /**
- * 
- * 
+ * Middlware Funtion to "CreateAccount" controller function to take image file through Multer-npm package  
+ * Datails of Image are contained in "req.file"   and non-image fields are contained in "req.body"
+ * If success, after passing conditions - File name condtion , images are stored in folder "accountLogos"
  */
 const upload = multer({
     storage: multer.diskStorage({
@@ -10,7 +12,7 @@ const upload = multer({
             cb(null, 'accountLogos/'); // 'uploads/' is the folder where files will be stored
         },
         filename: function (req, file, cb) {
-            cb(null,file.originalname.replace(/\\/g, "/"))
+            cb(null,  file.originalname.replace(/\\/g, "/"))
         }
     }),
     // limits: {
@@ -27,15 +29,6 @@ const upload = multer({
   } );
   
 
-
-/**
- * 
- * 
- */
-
-/**
- * Get the static images.
- */
 
 
 
