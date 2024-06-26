@@ -166,6 +166,8 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
             toDate = new Date()
             let differenceInMilliseconds = toDate - fromDate;
             let differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
+            
+            // Work order for CPD search, Only the dates between the 30 days will be supported by API.
             if (differenceInDays > 30) {
                 toDate = new Date(fromDate);
                 toDate.setDate(toDate.getDate() + 28);
