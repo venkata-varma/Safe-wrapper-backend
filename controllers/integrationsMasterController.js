@@ -603,6 +603,27 @@ exports.validateIntegrationsMaster = asyncWrapper(async (req, res, next) => {
 })
 
 
+/**
+ * Validate integration master exist. 
+*/
+
+exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async (req, res, next) => {
+
+  const integrationMasterId = req.params.integrationsMasterId;
+  const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
+
+  if (!integrationMasterDetails) {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
+    });
+  }
+  else {
+    next()
+  }
+})
+
+
 /*
 Function to return datails of a specific Integration master table record by "Params"
 
