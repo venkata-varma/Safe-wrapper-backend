@@ -45,9 +45,6 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
         
       }
     }
-    else {
-      console.log('No active settings found.');
-    }
   });
   schedule.scheduleJob(job_each_minute, async () => {
     const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each minute', currentStatus : "start" }).populate('integrationsMasterId').lean();
@@ -56,9 +53,6 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
         await schedulerIntegrationCronJobs(integration)
         
       }
-    }
-    else {
-      console.log('No active settings found.');
     }
   });
   schedule.scheduleJob(job_each_hour, async () => {
@@ -69,9 +63,6 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
         
       }
     }
-    else {
-      console.log('No active settings found.');
-    }
   });
   schedule.scheduleJob(job_each_day, async () => {
     const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each day', currentStatus : "start" }).populate('integrationsMasterId').lean();
@@ -81,9 +72,6 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
         
       }
     }
-    else {
-      console.log('No active settings found.');
-    }
   });
   schedule.scheduleJob(job_each_month, async () => {
     const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each month', currentStatus : "start" }).populate('integrationsMasterId').lean();
@@ -92,9 +80,6 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
         await schedulerIntegrationCronJobs(integration)
         
       }
-    }
-    else {
-      console.log('No active settings found.');
     }
   })
 });
