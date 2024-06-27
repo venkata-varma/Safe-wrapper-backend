@@ -9,7 +9,9 @@ router.get('/get-images', integrationsMasterControllers.getImages)
 router.use(auth)
 
 router.post('/create-integrationmaster', integrationsMasterControllers.createIntegrationMaster)
-router.post('/create-integrationmaster-service-provider', integrationsMasterControllers.validateintegrationsMasterExist,integrationsMasterControllers.credentialsValidationsMiddleware, integrationsMasterControllers.createIntegrationMasterServiceProviderCredentials)
+router.post('/create-integrationmaster-service-provider', integrationsMasterControllers.validateintegrationsMasterExist,
+    integrationsMasterControllers.credentialsValidationsMiddleware, 
+    integrationsMasterControllers.createIntegrationMasterServiceProviderCredentials)
 router.post('/get-integration-decrypt-result',integrationsMasterControllers.validationForDecrypt, integrationsMasterControllers.getIntegrationCryptoService);
 
 router.patch('/update-integrationmaster-field-mapping',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterFieldMappings)
