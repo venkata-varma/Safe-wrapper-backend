@@ -174,7 +174,7 @@ exports.getIntegrationCryptoService = asyncWrapper(async (req, res) => {
 
 */
 exports.validateCreateIntegrationsCount = asyncWrapper(async (req, res, next) => {
-  const integrationsCount = await integrationsMasterModel.find({ accountId: req.user.accountId, status: 'active' });
+  const integrationsCount = await integrationsMasterModel.find({ accountId: req.user.accountId });
 
   const respectiveAccount = await accountsModel.findById(req.user.accountId);
   if (integrationsCount.length >= respectiveAccount.noOfIntegrations) {

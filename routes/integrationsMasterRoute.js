@@ -8,7 +8,7 @@ router.get('/get-images', integrationsMasterControllers.getImages)
 
 router.use(auth)
 
-router.post('/create-integrationmaster', integrationsMasterControllers.createIntegrationMaster)
+router.post('/create-integrationmaster', integrationsMasterControllers.validateCreateIntegrationsCount, integrationsMasterControllers.createIntegrationMaster)
 router.post('/create-integrationmaster-service-provider', integrationsMasterControllers.validateintegrationsMasterExist,
     integrationsMasterControllers.credentialsValidationsMiddleware, 
     integrationsMasterControllers.createIntegrationMasterServiceProviderCredentials)
