@@ -608,6 +608,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       },
       { new: true } // Options to return the updated document
     );
+    await integrationsMasterModel.findOneAndUpdate({_id:integrationsMasterId,stepCount:5},{status:"active"},{new:true})
   }
   console.log("updatedIntegrationsDetails", updatedIntegrationsDetails)
   return res
