@@ -207,11 +207,11 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
  */
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const integrationsQuery = req.query.integration;
-
+    
     //const integrationsQuery = req.query.integration;
     const priorityQuery = req.query.priority;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
-    const toDateQuery = req.query.toDate ? new Date(req.query.toDate) : (fromDateQuery ? new Date() : null);
+    const toDateQuery = req.query.toDate ? new Date(new Date(req.query.toDate).setDate(new Date(req.query.toDate).getDate()+1)) : (fromDateQuery ? new Date() : null);
     const searchQuery = req.query.search ? new RegExp(`${req.query.search}`, 'i') : null;
     var accountReports=[];
     var sixWeeksSalesGraph=[];

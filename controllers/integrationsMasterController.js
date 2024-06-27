@@ -659,6 +659,12 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
       message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
     });
   }
+  if (integrationMasterDetails.status === "new") {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_INCOMPLETE,
+    });
+  }
   else {
     next()
   }

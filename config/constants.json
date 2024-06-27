@@ -59,6 +59,7 @@
     "MESSAGE_CRON_WORKORDERS": "All cronjob Work orders.",
     "MESSAGE_ACCOUNT_MIDDLEWARE":"Account is deactivated / deleted",
     "MESSAGE_INTEGRATION_MASTER_MIDDLEWARE":"Respective Integration has been Deleted / Blocked",
+    "MESSAGE_INTEGRATION_INCOMPLETE" :"Respective integration is incomplete.Please complete all the required steps to see the integration details.",
     "MESSAGE_INTEGRATION_CREATED": "Integration created successfully.",
     "MESSAGE_INTEGRATION_FIELDS_MAPPINGS_UPDATED": "Field mappings updated between two service providers.",
     "MESSAGE_SERVICE_PROVIDER_CREATED": "Integration service provider created successfully.",
