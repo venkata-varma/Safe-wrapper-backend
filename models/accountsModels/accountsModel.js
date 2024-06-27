@@ -68,8 +68,8 @@ const accountsSchema = new mongoose.Schema({
     },
     status:{
         type:String,
-        enum:['active','deleted', 'blocked'],
-        default:"active"
+        enum:['active','in-progress','deleted', 'blocked'],
+        default:"in-progress"
     },
 },{timestamps:true});
 
