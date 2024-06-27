@@ -42,7 +42,7 @@
     "MESSAGE_WRONG_PASSWORD": "Invalid Password.",
     "MESSAGE_ACCOUNT_ALREADY_DELETED": "Unauthorised request as the account does'nt exist / is already deleted.",
     "MESSAGE_USER_ALREADY_DELETED": "Unauthorised request as the user does'nt exist / is already deleted.",
-    "MESSAGE_INTEGRATION_COUNT_REACHED": "This account already has two Active-Integrations. Thank you!.",
+    "MESSAGE_INTEGRATION_COUNT_REACHED": "You have reached the maximum number of integrations allowed. To request an increase, please reach out to our support team. Thank you.",
     "MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED": "Account is deleted. Please contact admin department.Thank you.",
     "MESSAGE_PREVENT_LOGIN_ACCOUNT_IN_PROGRESS":"Your account is currently on hold. Please contact the administrator(sk@devrabbit.com) to activate it.",
     "MESSAGE_INVALID": "Invalid Credentials.",
