@@ -341,16 +341,41 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
   const { integrationsMasterId } = req.params;
   let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod, updateDataPointURL, updateServiceMethod
 
-  const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId, { from: 1, to: 1 })
+  const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId)
   let get_integration_field_mapping_master_default_keys = await fieldMappingMasterDefaultServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (get_integration_field_mapping_master_default_keys.length > 0) {
+    for (let fromAndTo of get_integration_field_mapping_master_default_keys) {
+      const integrationFieldMappingCreate = await integrationsFieldMappingModel.create({
+        accountId: integrationDetails.accountId,
+        userId: req.user._id,
+        integrationsMasterId: integrationsMasterId,
+        from: integrationDetails.from,
+        to: integrationDetails.to,
+        serviceMethod: fromAndTo.serviceMethod,
+        serviceName: "work-order",
+        createdBy: req.user._id,
+        dataPoints: fromAndTo.dataPoints,
+        requiredKeys: integrationDetails.from === 'CPD' && integrationDetails.to === 'DF' ? {
+          numberAlt: "WorkOrderNumber",
+          budgetedProposedStatus: "NONE",
+          buildingId: 1715,
+          invoiceToCustomerId: 2238,
+          invoiceType: "EXTERNAL_CHARGE",
+          reportedById: 5515,
+          workDescription: "DevRabbit Testing WorkOrders (Ignore)."
 
+        } : {}
+      })
+    }
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
-        data: { get_integration_field_mapping_master_default_keys },
+        data: {
+          get_integration_field_mapping_master_default_keys
+          //  integrationFieldMappingCreate
+        },
       });
   }
   else {
@@ -539,9 +564,9 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   });
   let updatedIntegrationsDetails;
   let integrationsSettings;
-  const existingintegrationsSettings =await integrationsSettingsModel.findOne({integrationsMasterId});
+  const existingintegrationsSettings = await integrationsSettingsModel.findOne({ integrationsMasterId });
   let statusFieldMappingKeys
-  if(pastIntegrationDetails.from === "CPD" && pastIntegrationDetails.to === "DF"){
+  if (pastIntegrationDetails.from === "CPD" && pastIntegrationDetails.to === "DF") {
     statusFieldMappingKeys = {
       "REPORTED": "New",
       "ESTIMATE-REQUESTED": "Accepted",
@@ -551,14 +576,18 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       "COMPLETED": "CheckedOut",
       "CANCELED": "Rejected",
       "IN-PROGRESS": "Paused"
+    }
   }
-}
 
   if (existingintegrationsSettings) {
     integrationsSettings = await integrationsSettingsModel.findOneAndUpdate(
       { integrationsMasterId },
-      { $set: { ...req.body, updatedBy: req.user._id,
-              statusFieldMappingKeys:statusFieldMappingKeys} },
+      {
+        $set: {
+          ...req.body, updatedBy: req.user._id,
+          statusFieldMappingKeys: statusFieldMappingKeys
+        }
+      },
       { new: true }
     );
     updatedIntegrationsDetails = await integrationsMasterModel.findById(integrationsMasterId)
@@ -568,7 +597,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       createdBy: req.user._id,
       userId: req.user._id,
       accountId: req.user.accountId,
-      statusFieldMappingKeys:statusFieldMappingKeys
+      statusFieldMappingKeys: statusFieldMappingKeys
     });
     // Perform the update
     updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
@@ -580,7 +609,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       { new: true } // Options to return the updated document
     );
   }
-console.log("updatedIntegrationsDetails", updatedIntegrationsDetails)
+  console.log("updatedIntegrationsDetails", updatedIntegrationsDetails)
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -828,7 +857,7 @@ exports.editIntegrationMasterSettings = asyncWrapper(async (req, res) => {
     });
   }
   let updatedIntegrationMasterSettings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { ...req.body, updatedBy: req.user.userId } }, { new: true })
- 
+
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
