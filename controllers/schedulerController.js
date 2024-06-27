@@ -13,9 +13,15 @@ const asyncWrapper = require('../middleware/asyncWrapper');
 const CPDOperations = require('../middleware/CPDOperations');
 const DFOperations = require('../middleware/DFOperations');
 const integrationsFieldMappingModel = require('../models/integrationsMasterModels/integrationsFieldMappingModel');
+const { schedulerIntegrationCronJobs } = require('../middleware/schedulerOperations');
 
 
+const job_each_second = humanToCron('each second')
 const job_each_minute = humanToCron('once each minute')
+const job_each_hour = humanToCron('once each hour')
+const job_each_day = humanToCron('once each day')
+const job_each_month = humanToCron('once each month')
+
 
 /**
  * Schedular for every second
@@ -31,28 +37,49 @@ const job_each_minute = humanToCron('once each minute')
 
 exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
   
-  schedule.scheduleJob(job_each_minute, async () => {
-    const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each minute', currentStatus : "start" }).populate('integrationsMasterId').lean();
-    
+  schedule.scheduleJob(job_each_second, async () => {
+    const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'each second', currentStatus : "start" }).populate('integrationsMasterId').lean();
     if (integrationsMasterSettingsDetails.length > 0) {
       for (const integration of integrationsMasterSettingsDetails) {
-        if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'CPD' && integration.integrationsMasterId.to === 'DF') {
-          const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "CPD"}).lean();
-          await CPDOperations.getCPDWorkOrders(CPDCredentials,typeOfCron = "automated");
-
-          const DFCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to : "DF"}).lean();
-          await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "automated")
-        }
-        else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF' && integration.integrationsMasterId.to === 'CPD') {
-          await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider : "DF" }).lean();
-        }
-        else {
-          // nothing
-        }
+        await schedulerIntegrationCronJobs(integration)
+        
       }
     }
-    else {
-      console.log('No active settings with currentStatus: "start" found.');
+  });
+  schedule.scheduleJob(job_each_minute, async () => {
+    const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each minute', currentStatus : "start" }).populate('integrationsMasterId').lean();
+    if (integrationsMasterSettingsDetails.length > 0) {
+      for (const integration of integrationsMasterSettingsDetails) {
+        await schedulerIntegrationCronJobs(integration)
+        
+      }
+    }
+  });
+  schedule.scheduleJob(job_each_hour, async () => {
+    const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each hour', currentStatus : "start" }).populate('integrationsMasterId').lean();
+    if (integrationsMasterSettingsDetails.length > 0) {
+      for (const integration of integrationsMasterSettingsDetails) {
+        await schedulerIntegrationCronJobs(integration)
+        
+      }
+    }
+  });
+  schedule.scheduleJob(job_each_day, async () => {
+    const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each day', currentStatus : "start" }).populate('integrationsMasterId').lean();
+    if (integrationsMasterSettingsDetails.length > 0) {
+      for (const integration of integrationsMasterSettingsDetails) {
+        await schedulerIntegrationCronJobs(integration)
+        
+      }
+    }
+  });
+  schedule.scheduleJob(job_each_month, async () => {
+    const integrationsMasterSettingsDetails = await integrationsSettingsModel.find({ periodType: 'once each month', currentStatus : "start" }).populate('integrationsMasterId').lean();
+    if (integrationsMasterSettingsDetails.length > 0) {
+      for (const integration of integrationsMasterSettingsDetails) {
+        await schedulerIntegrationCronJobs(integration)
+        
+      }
     }
   })
 });
