@@ -30,7 +30,7 @@ const integrationsMasterSchema = new mongoose.Schema(
       type: String,
       enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF"],
       //   require: [true, "Role is required."],
-      default: "",
+      default: "CPD",
     },
     to: {
       type: String,
