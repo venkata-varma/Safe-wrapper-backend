@@ -286,13 +286,14 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 }, { DFWorkOrderStatus: JSON.parse(DFWorkorderList).status, status: "completed", DFWorkOrders: JSON.parse(DFWorkorderList) }, { new: true }).lean()
                             }
                             else {
+                                let updatedDFWorkOrderStatus = JSON.parse(DFWorkorderList).status.split(' ').length > 1 ? JSON.parse(DFWorkorderList).status.split(' ').join('-') : JSON.parse(DFWorkorderList).status
                                 const DFWorkOrderDetails = await DFWorkOrdersModel.create({
                                     integrationsMasterId: integrationObject.integrationsMasterId,
                                     accountId: integrationObject.accountId,
                                     integrationsCronId: workOrder.integrationsCronId,
                                     DFWorkOrderId: DFWorkOrderId,
                                     DFWorkOrders: JSON.parse(DFWorkorderList),
-                                    DFWorkOrderStatus: JSON.parse(DFWorkorderList).status,
+                                    DFWorkOrderStatus: updatedDFWorkOrderStatus,
                                     status: "completed",
                                 });
                                 workOrderPushedCount++
