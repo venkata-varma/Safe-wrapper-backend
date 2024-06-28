@@ -239,6 +239,28 @@ exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) =>
 
 
 /**
+ * Middleware function to Create Integration 
+ * Validate integration master exist
+ * If passed , middleware passes function call to "Create Integration"
+*/
+
+exports.validateintegrationsMasterExistForFieldMapping = asyncWrapper(async (req, res, next) => {
+  const { integrationsMasterId } = req.params;
+  console.log('integrationMasterId:===', integrationsMasterId)
+  const integrationMasterDetails = await integrationsMasterModel.findById(integrationsMasterId)
+  if (!integrationMasterDetails) {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
+    });
+  }
+  else {
+    next()
+  }
+});
+
+
+/**
  * Middleware function to "Create Integration service providers".
  * Function to check whether entered credentials are valid or not.
  * If invalid, throws the required error. 
