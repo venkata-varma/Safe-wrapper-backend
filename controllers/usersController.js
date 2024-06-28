@@ -17,7 +17,7 @@ const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const integrationsExceptionModel = require('../models/integrationsMasterModels/integrationsExceptionsModel')
 const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel')
 const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
-const { validateUserMobileEmailData } = require('../utils/userLoginValidation');
+const { validateUserMobileEmailData, validatePhoneNumber } = require('../utils/userLoginValidation');
 const { getStatusOfWorkOrders } = require('../utils/general');
 const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationsMasterModel = require('../models/integrationsMasterModels/integrationsMasterModel');
@@ -34,6 +34,12 @@ exports.validateUserRegistration = asyncWrapper(async (req, res, next) => {
     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
+    });
+  }
+  if(!await validatePhoneNumber(phone)){
+    return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
     });
   }
   else {

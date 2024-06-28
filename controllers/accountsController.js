@@ -13,6 +13,7 @@ const integtationExceptionsModel = require('../models/integrationsMasterModels/i
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
 const {sixWeekSales, convertStrToDate}=require('../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
+const { validatePhoneNumber } = require('../utils/userLoginValidation');
 
 
 
@@ -37,6 +38,12 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
     //         message: customConstants.messages.MESSAGE_LOGO_MANDATORY
     //     });
     // }
+    if(!await validatePhoneNumber(phone)){
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+          status: customConstants.messages.MESSAGE_FAIL,
+          message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
+        });
+      }
     else {
         next()
     }

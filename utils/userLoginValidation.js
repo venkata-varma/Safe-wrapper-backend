@@ -19,3 +19,9 @@ exports.validateUserMobileEmailData = (data) => {
         return schema.validate(data);
     }
 }
+
+//Validate Phone Number.
+exports.validatePhoneNumber = async (phoneNumber) => {
+    const phoneRegex = /^\d{10}$/;
+    return phoneRegex.test(phoneNumber);
+}
