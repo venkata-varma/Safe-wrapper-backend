@@ -15,7 +15,7 @@
     "MESSAGE_FIELD_MAPPINGS_BY_SERVICE": "Integration field mappings by service type provided successfully",
     "MESSAGE_UPDATE_FIELD_MAPPINGS_BY_SERVICE": "Updated Integration field mappings by service type successfully",
     "MESSAGE_USER_CREATED": "Registration completed successfully.",
-    "MESSAGE_USER_EXIST": "User already exist. Please login.",
+    "MESSAGE_USER_EXIST": "This phone number/email is already associated with an existing user.",
     "MESSAGE_SETTINGS_AUTO_DATA_SYNC_STARTED": "Auto data sync activated successfully",
     "MESSAGE_SETTINGS_AUTO_DATA_SYNC_STOPPED": "Auto data sync deactivated successfully",
     "MESSAGE_SETTINGS_FREQUENCY_UPDATED": "Integration settings frequency updated successfully",
