@@ -61,7 +61,7 @@ exports.createUser = asyncWrapper(async (req, res) => {
   if (userDetails) {
     return res.status(customConstants.statusCodes.DATA_CONFLICAT).json({
       status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_ACCOUNT_EXIST
+      message: customConstants.messages.MESSAGE_USER_EXIST
     })
   }
   else {
