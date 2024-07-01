@@ -189,6 +189,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         {
             $unwind: '$workOrders'
         },
+        
         {
             $group: {
                 _id: '$workOrders.serviceprovider',
