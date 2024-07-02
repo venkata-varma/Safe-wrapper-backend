@@ -1,4 +1,6 @@
 const axios = require('axios')
+const querystring = require('querystring');
+
 // const sessionModel = require('../models/sessionDetailsModel')
 
 const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl) => {
@@ -43,7 +45,37 @@ const DFAuthentication = async (df_auth, df_servicecode, base_url) => {
 }
 
 
+const SNOWAuthentication = async (baseUrl, username, password, client_id, client_secret, grant_type) => {
+    try {
+        const data = querystring.stringify({
+            username: username,
+            password: password,
+            client_id: client_id,
+            client_secret: client_secret,
+            grant_type: grant_type
+        });
+
+        const ValidateSNOWCredentials = await axios.post(
+            baseUrl,
+            data,
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+
+        console.log('ValidateSNOWCredentials:==', ValidateSNOWCredentials.data);
+        return ValidateSNOWCredentials.status;
+    } catch (error) {
+        console.log("SNOWAuthError:==", error.response ? error.response.data : error.message);
+        return 'error';
+    }
+};
+
+
 module.exports = {
     CPDAuthentication,
-    DFAuthentication
+    DFAuthentication,
+    SNOWAuthentication
 }

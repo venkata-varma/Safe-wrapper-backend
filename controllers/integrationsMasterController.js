@@ -20,13 +20,14 @@ const cpdWorkOrdersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel')
 const CPDOperations = require('../middleware/CPDOperations');
 const DFOperations = require('../middleware/DFOperations');
+const SNOWOperations = require('../middleware/SNOWOperations')
 const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
 const usersModel = require("../models/usersModels/usersModel");
 const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
 const serviceProvidersMappingAndServicesModel = require("../models/integrationsMasterModels/serviceProvidersMappingAndServicesModel");
 const { dateAsset } = require('../utils/utilsFunctions');
 const { getServiceWorkOrdersAndStatus } = require("../utils/general");
-const { CPDAuthentication, DFAuthentication } = require('../utils/serviceProvidersAuthentication')
+const { CPDAuthentication, DFAuthentication, SNOWAuthentication } = require('../utils/serviceProvidersAuthentication')
 
 
 /**
@@ -288,6 +289,16 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   }
   if (req.body.serviceProvider === 'DF') {
     const checkDFCredentials = await DFAuthentication(req.body.credentials.df_auth, req.body.credentials.df_servicecode, req.body.credentials.baseUrl)
+
+    if (checkDFCredentials !== 200) {
+      return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+        status: customConstants.messages.MESSAGE_FAIL,
+        message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+      });
+    }
+  }
+  if (req.body.serviceProvider === 'SNOW') {
+    const checkDFCredentials = await SNOWAuthentication(req.body.credentials.baseUrl, req.body.credentials.username, req.body.credentials.password, req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type)
 
     if (checkDFCredentials !== 200) {
       return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
@@ -933,7 +944,7 @@ exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
 
 exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const { accountId } = req.params;
-  const integrationsMasterDetails = await integrationsMasterModel.find({ accountId: accountId });
+  const integrationsMasterDetails = await integrationsMasterModel.find({ accountId: accountId, status : "actives" });
 
   if (integrationsMasterDetails.length > 0) {
     for (const integration of integrationsMasterDetails) {
@@ -944,6 +955,19 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
         const DFCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "DF" }).lean();
 
         await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "manual");
+
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+          status: customConstants.messages.MESSAGE_SUCCESS,
+          message: customConstants.messages.MESSAGE_CRON_MANUAL
+        });
+      }
+      else if (integration.status === 'actives' && integration.from === 'SNOW' && integration.to === 'CPD') {
+        const SNOWCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "SNOW" }).lean();
+
+        await SNOWOperations.getSNOWWorkOrders(SNOWCredentials, typeOfCron = "manual");
+        const CPDCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "CPD" }).lean();
+
+        // await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "manual");
 
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
           status: customConstants.messages.MESSAGE_SUCCESS,

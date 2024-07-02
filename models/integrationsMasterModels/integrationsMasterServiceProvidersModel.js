@@ -33,8 +33,8 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["new", "verified", "failed", "deleted"],
-      default: "active",
+      enum: ["new", "verified","active", "failed", "deleted"],
+      default: "new",
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
