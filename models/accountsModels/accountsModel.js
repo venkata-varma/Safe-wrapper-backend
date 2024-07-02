@@ -28,6 +28,9 @@ const accountsSchema = new mongoose.Schema({
     phone:{
         type:String,
         required:[true, 'Mobile number is required.'],
+        minlength: 10,
+        maxlength: 15,
+        match: /^[0-9]+$/,
         default:"",
         unique:[true, 'Phone must be unique']
     },

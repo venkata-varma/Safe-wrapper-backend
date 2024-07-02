@@ -51,10 +51,14 @@ const integrationsSettingsSchema = new mongoose.Schema({
         type:Object,
         default:{}
       },
-    dataDumpFrom:{
-      type:Date,
-      default : new Date(new Date().setDate(new Date().getDate()-3)) //Three days prior to the current date is the default date.
-    }
+      dataPointsAccess:{
+        type:Object,
+        default:{}
+      },
+      dataDumpFrom:{
+        type:Date,
+        default : new Date(new Date().setDate(new Date().getDate()-3)) //Three days prior to the current date is the default date.
+      }
 },{timestamps:true});
 
 integrationsSettingsSchema.pre('save', function(next) {

@@ -107,6 +107,13 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
     eachMonth: 'once each month',
     custom: "custom"
   }
+  const  dataPointsAccess = {
+    "source":true,
+    "destination":true,
+    "activityLog":true,
+    "fieldMappings":true,
+    "exceptions":true
+}
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -114,7 +121,7 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
       message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
       data: {
         fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker,
-        serviceProvidersMappingAndServices
+        serviceProvidersMappingAndServices, dataPointsAccess
       },
     });
 
