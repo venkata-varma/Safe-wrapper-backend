@@ -86,7 +86,13 @@ const configurations = {
         URL : 'https://api.dataforma.com/dflowslope-api/workorders/types/search',
         body : {}
       }
-    } 
+    },
+
+    SNOW : {
+      getAllIncidents :{
+        URL : 'https://dev187063.service-now.com/api/now/table/incident',
+      }
+    }
 }
 
 module.exports = configurations

@@ -18,8 +18,8 @@ const SNOWWorkordersModelSchema = mongoose.Schema(
             default : null
         },
         SNOWWorkOrderId:{
-            type:Number,
-            default:0
+            type:String,
+            default:""
         },
         SNOWWorkOrders: {
             type: mongoose.Schema.Types.Mixed,
