@@ -944,7 +944,7 @@ exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
 
 exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const { accountId } = req.params;
-  const integrationsMasterDetails = await integrationsMasterModel.find({ accountId: accountId, status : "actives" });
+  const integrationsMasterDetails = await integrationsMasterModel.find({ accountId: accountId });
 
   if (integrationsMasterDetails.length > 0) {
     for (const integration of integrationsMasterDetails) {
@@ -961,7 +961,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
           message: customConstants.messages.MESSAGE_CRON_MANUAL
         });
       }
-      else if (integration.status === 'actives' && integration.from === 'SNOW' && integration.to === 'CPD') {
+      else if (integration.status === 'active' && integration.from === 'SNOW' && integration.to === 'CPD') {
         const SNOWCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "SNOW" }).lean();
 
         await SNOWOperations.getSNOWWorkOrders(SNOWCredentials, typeOfCron = "manual");
