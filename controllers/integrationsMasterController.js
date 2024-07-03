@@ -36,7 +36,7 @@ const { CPDAuthentication, DFAuthentication, SNOWAuthentication } = require('../
 
 exports.getImages = asyncWrapper(async (req, res) => {
   // Constructing the URL based on the request object
-  const baseUrl = req.protocol + '://' + req.get('host');
+  const baseUrl = 'https://cdiapi.dev.devrabbit.co/';
   const imageUrls = [
     {
       name: "TT",
