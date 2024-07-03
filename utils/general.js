@@ -3,6 +3,7 @@ const serviceProviderListModel = require('../models/integrationsMasterModels/ser
 const { dateAsset } = require("./utilsFunctions");
 const mongoose = require('mongoose')
 const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
+const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersModel");
 
 var presentWeekSourceData = [];
 
@@ -102,6 +103,48 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
         serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,destinationStatus);
        return serviceWorkOrdersAndStatus;
     }
+    else if(serviceProvider === "SNOW"){
+      serviceWorkOrdersAndStatus.destinationWorkOrders = await SNOWWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({_id:-1}).limit(15);
+      if(serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0){
+          for (let week of presentWeekData) {
+              presentWeekDestinationData = await SNOWWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
+              week.destinationWorkOrdersCount = presentWeekDestinationData.length >= 0 ? presentWeekDestinationData.length : 0;
+
+            }
+      }
+     
+      const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
+      let destinationStatus = await SNOWWorkOrdersModel.aggregate([
+        {
+          $match: {
+            integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+          }
+        },
+        {
+          $group: {
+            _id: '$SNOWWorkOrderStatus',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            status: '$_id',
+            count: 1
+          }
+        }
+      ]);
+      // const statuses = getDefaultStatus.workOrderStatus;
+      // serviceWorkOrdersAndStatus.destination = statuses.map(status => {
+      //   const match = destinationStatus.find(item => item.status === status);
+      //   return {
+      //     status,
+      //     count: match ? match.count : 0
+      //   };
+      // });
+      serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,destinationStatus);
+     return serviceWorkOrdersAndStatus;
+  }
 }
 
 

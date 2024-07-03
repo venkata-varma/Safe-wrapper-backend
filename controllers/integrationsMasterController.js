@@ -27,7 +27,8 @@ const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel"
 const serviceProvidersMappingAndServicesModel = require("../models/integrationsMasterModels/serviceProvidersMappingAndServicesModel");
 const { dateAsset } = require('../utils/utilsFunctions');
 const { getServiceWorkOrdersAndStatus } = require("../utils/general");
-const { CPDAuthentication, DFAuthentication, SNOWAuthentication } = require('../utils/serviceProvidersAuthentication')
+const { CPDAuthentication, DFAuthentication, SNOWAuthentication } = require('../utils/serviceProvidersAuthentication');
+const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersModel");
 
 
 /**
@@ -773,6 +774,34 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
     }
   ]);
 
+  let getIntegrationLogos = await serviceProviderListModel.aggregate([
+    {
+      $facet: {
+        integrationFromLogo: [
+          { $match: { serviceProviders: integrationDetails.from } },
+          { $project: { _id: 0, logo: 1 } },
+          { $limit: 1 }
+        ],
+        integrationToLogo: [
+          { $match: { serviceProviders: integrationDetails.to } },
+          { $project: { _id: 0, logo: 1 } },
+          { $limit: 1 }
+        ]
+      }
+    },
+    {
+      $project: {
+        integrationFromLogo: { $arrayElemAt: ["$integrationFromLogo.logo", 0] },
+        integrationToLogo: { $arrayElemAt: ["$integrationToLogo.logo", 0] }
+      }
+    }
+  ]);
+  
+  let integrationLogos = {
+    integrationFromLogo: getIntegrationLogos[0].integrationFromLogo,
+    integrationToLogo: getIntegrationLogos[0].integrationToLogo
+  };  
+  
   //Properly parses the above resulted data
   // for (let jsonParse of destinationWorkOrdersAndStatus.destinationWorkOrders) {
   //   jsonParse.DFWorkOrders = jsonParse.DFWorkOrders
@@ -789,6 +818,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GET_INTEGRATIONS,
       data: {
+        integrationLogos,
         integrationDetails,
         integrationsSettingsDetails: settingsDetails,
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
