@@ -70,6 +70,22 @@ exports.getImages = asyncWrapper(async (req, res) => {
     {
       name: "MDS",
       url: baseUrl + '/static/MDS_logo2.png'
+    },
+    {
+      name: "CYRIOUS",
+      url: baseUrl + '/static/cyrious_log.png'
+    },
+    {
+      name: "NO-INTEGRATION",
+      url: baseUrl + '/static/no_integration_screen.png'
+    },
+    {
+      name: "NO-SERVICE",
+      url: baseUrl + '/static/no_service.png'
+    },
+    {
+      name: "Cross",
+      url: baseUrl + '/static/Animation_Cross.gif'
     }
   ]
 
