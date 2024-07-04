@@ -1208,7 +1208,7 @@ exports.updateAutoDataSync = asyncWrapper(async (req, res) => {
  */
 exports.updateIntegrationSettingsFrequency = asyncWrapper(async (req, res) => {
   const integrationSettingsId = req.params.integrationSettingsId;
-  const updatePeriodSetings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { periodSettings: req.body.periodSettings, updatedBy: req.user._id } }, { new: true });
+  const updatePeriodSetings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { periodSettings: req.body.periodSettings,periodType:req.body.periodType, updatedBy: req.user._id } }, { new: true });
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
