@@ -80,7 +80,7 @@ exports.getImages = asyncWrapper(async (req, res) => {
       url: baseUrl + '/static/no_integration_screen.png'
     },
     {
-      name: "NO-SERVICE",
+      name: "NO-SERVICE-PROVIDER",
       url: baseUrl + '/static/no_service_provider.png'
     },
     {
