@@ -154,10 +154,10 @@ exports.validationForDecrypt = asyncWrapper(async (req, res, next) => {
   const { accountId, integrationMasterId, encryptedString } = req.body
   const integrationMasterDetails = await integrationsMasterModel.findOne({ _id: integrationMasterId, accountId }).lean();
   console.log('integrationMasterDetails', integrationMasterDetails)
-  if (integrationMasterDetails.status !== 'active') {
+  if (!integrationMasterDetails) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_INTEGRATION_ID_NOT_ACTIVE, // to be changed now
+      message: customConstants.messages.MESSAGE_INTEGRATION_NOT_FOUND, // to be changed now
     });
 
   }
