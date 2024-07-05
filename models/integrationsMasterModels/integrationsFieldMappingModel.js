@@ -42,7 +42,7 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
       type : String,
       default : ""
     },
-    filedMappingType: {
+    fieldMappingType: {
       type: String,
       enum: ["default", "custom"],
       default: "default",
