@@ -402,6 +402,8 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
   let get_integration_field_mapping_master_default_keys = await fieldMappingMasterDefaultServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (get_integration_field_mapping_master_default_keys.length > 0) {
     for (let fromAndTo of get_integration_field_mapping_master_default_keys) {
+      let integrationsFieldMappingkeysExist  = await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, serviceMethod:fromAndTo.serviceMethod})
+      if(integrationsFieldMappingkeysExist.length < 0){
       const integrationFieldMappingCreate = await integrationsFieldMappingModel.create({
         accountId: integrationDetails.accountId,
         userId: req.user._id,
@@ -423,6 +425,9 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
 
         } : {}
       })
+    }else{
+      // nothing
+    }
     }
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
