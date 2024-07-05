@@ -84,7 +84,7 @@ exports.getImages = asyncWrapper(async (req, res) => {
       url: baseUrl + '/static/no_service_provider.png'
     },
     {
-      name: "Cross",
+      name: "CROSS",
       url: baseUrl + '/static/Animation_Cross.gif'
     }
   ]
