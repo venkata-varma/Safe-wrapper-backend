@@ -688,8 +688,14 @@ exports.validateIntegrationsMaster = asyncWrapper(async (req, res, next) => {
 
   const integrationMasterId = req.params.integrationsMasterId;
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
+  if (!integrationMasterDetails) {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_NOT_FOUND,
+    });
+  }
 
-  if (!integrationMasterDetails || integrationMasterDetails.status === 'deleted' || integrationMasterDetails.status === 'blocked') {
+  else if (integrationMasterDetails.status === 'deleted' || integrationMasterDetails.status === 'blocked') {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
