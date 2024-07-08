@@ -23,7 +23,7 @@ const usersSchema = new mongoose.Schema({
     },
     companyName:{
         type:String,
-        required:[true, 'Company name is required.'],
+        // required:[true, 'Company name is required.'],
         default:""
     },
     phone:{
