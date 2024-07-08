@@ -11,7 +11,7 @@ const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
 const integtationExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
-const {sixWeekSales, convertStrToDate}=require('../utils/sixWeekSalesFunction');
+const {sixWeekSales}=require('../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../utils/userLoginValidation');
 
@@ -506,7 +506,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             $addFields: {
                 sixWeekSales: sixWeekSales.map(week => ({
                     fromDate: week.fromDate,
-                    toDate: week.toDate,
+                    toDate:week.toDate,
                     sourceWorkOrdersCount: {
                         $size: {
                             $filter: {
@@ -514,8 +514,8 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                                 as: "order",
                                 cond: {
                                     $and: [
-                                        { $gte: ["$$order.createdAt", convertStrToDate(week.fromDate)] },
-                                        { $lte: ["$$order.createdAt", convertStrToDate(week.toDate)] }
+                                        { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
+                                        { $lte: ["$$order.createdAt", new Date(week.toDate)] }
                                     ]
                                 }
                             }
@@ -528,8 +528,8 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                                 as: "order",
                                 cond: {
                                     $and: [
-                                        { $gte: ["$$order.createdAt", convertStrToDate(week.fromDate)] },
-                                        { $lte: ["$$order.createdAt", convertStrToDate(week.toDate)] }
+                                        { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
+                                        { $lte: ["$$order.createdAt", new Date(week.toDate)] }
                                     ]
                                 }
                             }
@@ -542,8 +542,8 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                                 as: "exception",
                                 cond: {
                                     $and: [
-                                        { $gte: ["$$exception.createdAt", convertStrToDate(week.fromDate)] },
-                                        { $lte: ["$$exception.createdAt", convertStrToDate(week.toDate)] }
+                                        { $gte: ["$$exception.createdAt", new Date(week.fromDate)] },
+                                        { $lte: ["$$exception.createdAt", new Date(week.toDate)] }
                                     ]
                                 }
                             }

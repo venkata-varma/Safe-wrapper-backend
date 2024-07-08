@@ -44,20 +44,8 @@ for (let i = 0; i < 6; i++) {
     currentEndDate.setMilliseconds(currentEndDate.getMilliseconds() - 1); // Set up for the next week's end date
 }
 
-// Constructing the end of the day for a given date
-function convertStrToDate(date) {
-
-    const convert = new Date(date);
-
-    convert.setHours(convert.getHours() + 5);
-    convert.setMinutes(convert.getMinutes() + 30);
-    
-    return convert;
-}
-
-
 
 module.exports = {
     sixWeekSales,
-    convertStrToDate
+
 }
