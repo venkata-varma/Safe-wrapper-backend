@@ -46,12 +46,12 @@ for (let i = 0; i < 6; i++) {
 
 // Constructing the end of the day for a given date
 function convertStrToDate(date) {
-    console.log('strDate', date )
+
     const convert = new Date(date);
-    console.log('convertFirstInstance', convert)
+
     convert.setHours(convert.getHours() + 5);
     convert.setMinutes(convert.getMinutes() + 30);
-    console.log('finalUnsa', convert)
+    
     return convert;
 }
 
