@@ -11,7 +11,7 @@ const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
 const integtationExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
-const {sixWeekSales, convertStrToDate}=require('../utils/sixWeekSalesFunction');
+const {sixWeekSales}=require('../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../utils/userLoginValidation');
 
@@ -234,171 +234,200 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     var accountReports=[];
     var sixWeeksSalesGraph=[];
     if(integrationsQuery==='null' ||!integrationsQuery){
-        console.log('wtf 1')
+      
         accountReports=[]
         sixWeeksSalesGraph=[];
     }else if(integrationsQuery){
 
-        console.log('wtf 2')
-    accountReports = await integrationsMasterModel.aggregate([
-        {
-            $match: {
-                accountId: new mongoose.Types.ObjectId(req.params.accountId),
-                ...(integrationsQuery !== 'all-integrations' && {
-                    _id: new mongoose.Types.ObjectId(integrationsQuery)
-                })
-            }
-        },
-        { $sort: { createdAt: 1 } },
-        {
-            $lookup: {
-                from: "cpdworkorders",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "CPDWorkOrders"
-            }
-        },
-        {
-            $lookup: {
-                from: "dfworkorders",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "DFWorkOrders"
-            }
-        },
-        {
-            $lookup: {
-                from: "integrationsexceptions",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "integrationsExceptions"
-            }
-        },
 
-        /**
-         * Lets say, There are other service providers , like SNOW, MGP etc; are to be added in either "from"  or "to"
-         * So,  There is a need to make next query dynamic when more work-order models arrive ,
-            which is applying If-else on "from" and "to", and then assigning to "sourceWorkOrders" and "destinationWorkOrders respectively" 
-          */
-        {
-            $addFields: {
-                sourceWorkOrders: {
-                    $cond: {
-                        if: { $eq: ["$from", "CPD"] },
-                        then: "$CPDWorkOrders",
-                        else: "$DFWorkOrders"
-                    }
-                },
-                destinationWorkOrders: {
-                    $cond: {
-                        if: { $eq: ["$to", "CPD"] },
-                        then: "$CPDWorkOrders",
-                        else: "$DFWorkOrders"
-                    }
+        accountReports = await integrationsMasterModel.aggregate([
+            {
+                $match: {
+                    accountId: new mongoose.Types.ObjectId(req.params.accountId),
+                    ...(integrationsQuery !== 'all-integrations' && {
+                        _id: new mongoose.Types.ObjectId(integrationsQuery)
+                    })
                 }
-            }
-        },
-        {
-            $project: {
-                CPDWorkOrders: 0,
-                DFWorkOrders: 0
-            }
-        },
-        ...(priorityQuery || fromDateQuery || searchQuery ? [
+            },
+            { $sort: { createdAt: 1 } },
+            {
+                $lookup: {
+                    from: "cpdworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "CPDWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "dfworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "DFWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "snowworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "SNOWWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "integrationsexceptions",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "integrationsExceptions"
+                }
+            },
             {
                 $addFields: {
                     sourceWorkOrders: {
-                        $filter: {
-                            input: "$sourceWorkOrders",
-                            as: "order",
-                            cond: {
-                                $and: [
-                                    ...(priorityQuery ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
-                                    ...(fromDateQuery ? [
-                                        { $gte: ["$$order.createdAt", fromDateQuery] },
-                                        { $lte: ["$$order.createdAt", toDateQuery] }
-                                    ] : []),
-                                    ...(searchQuery ? [
-                                        {
-                                            $regexMatch: {
-                                                input: {
-                                                    $cond: {
-                                                        if: { $eq: ["$from", "CPD"] },
-                                                        then: "$$order.CPDWorkOrders.WorkOrderNumber",
-                                                        else: "$$order.DFWorkOrders.numberAlt"
-                                                    }
-                                                },
-                                                regex: searchQuery
-                                            }
-                                        }
-                                    ] : [])
-                                ]
-                            }
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$from", "CPD"] }, then: "$CPDWorkOrders" },
+                                { case: { $eq: ["$from", "DF"] }, then: "$DFWorkOrders" },
+                                { case: { $eq: ["$from", "SNOW"] }, then: "$SNOWWorkOrders" }
+                            ],
+                            default: [] // handle default case if needed
                         }
                     },
                     destinationWorkOrders: {
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$to", "CPD"] }, then: "$CPDWorkOrders" },
+                                { case: { $eq: ["$to", "DF"] }, then: "$DFWorkOrders" },
+                                { case: { $eq: ["$to", "SNOW"] }, then: "$SNOWWorkOrders" }
+                            ],
+                            default: [] // handle default case if needed
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    CPDWorkOrders: 0,
+                    DFWorkOrders: 0,
+                    SNOWWorkOrders: 0
+                }
+            },
+            ...(priorityQuery || fromDateQuery || searchQuery ? [
+                {
+                    $addFields: {
+                        sourceWorkOrders: {
+                            $filter: {
+                                input: "$sourceWorkOrders",
+                                as: "order",
+                                cond: {
+                                    $and: [
+                                        ...(priorityQuery ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
+                                        ...(fromDateQuery ? [
+                                            { $gte: ["$$order.createdAt", fromDateQuery] },
+                                            { $lte: ["$$order.createdAt", toDateQuery] }
+                                        ] : []),
+                                        ...(searchQuery ? [
+                                            {
+                                                $regexMatch: {
+                                                    input: {
+                                                        $switch: {
+                                                            branches: [
+                                                                {
+                                                                    case: { $eq: ["$from", "CPD"] },
+                                                                    then: "$$order.CPDWorkOrders.WorkOrderNumber"
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$from", "DF"] },
+                                                                    then: "$$order.DFWorkOrders.numberAlt"
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$from", "SNOW"] },
+                                                                    then: "$$order.SNOWWorkOrders.number"
+                                                                }
+                                                            ],
+                                                            default: "" // handle default case if needed
+                                                        }
+                                                    },
+                                                    regex: searchQuery
+                                                }
+                                            }
+                                        ] : [])
+                                    ]
+                                }
+                            }
+                        },
+                        destinationWorkOrders: {
+                            $filter: {
+                                input: "$destinationWorkOrders",
+                                as: "order",
+                                cond: {
+                                    $and: [
+                                        ...(priorityQuery ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
+                                        ...(fromDateQuery ? [
+                                            { $gte: ["$$order.createdAt", fromDateQuery] },
+                                            { $lte: ["$$order.createdAt", toDateQuery] }
+                                        ] : []),
+                                        ...(searchQuery ? [
+                                            {
+                                                $regexMatch: {
+                                                    input: {
+                                                        $switch: {
+                                                            branches: [
+                                                                {
+                                                                    case: { $eq: ["$to", "CPD"] },
+                                                                    then: "$$order.CPDWorkOrders.WorkOrderNumber"
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$to", "DF"] },
+                                                                    then: "$$order.DFWorkOrders.numberAlt"
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$to", "SNOW"] },
+                                                                    then: "$$order.SNOWWorkOrders.number"
+                                                                }
+                                                            ],
+                                                            default: "" // handle default case if needed
+                                                        }
+                                                    },
+                                                    regex: searchQuery
+                                                }
+                                            }
+                                        ] : [])
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            ] : []),
+            {
+                $addFields: {
+                    integrationsExceptions: {
                         $filter: {
-                            input: "$destinationWorkOrders",
-                            as: "order",
+                            input: "$integrationsExceptions",
+                            as: "exception",
                             cond: {
                                 $and: [
-                                    ...(priorityQuery ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
                                     ...(fromDateQuery ? [
-                                        { $gte: ["$$order.createdAt", fromDateQuery] },
-                                        { $lte: ["$$order.createdAt", toDateQuery] }
-                                    ] : []),
-                                    ...(searchQuery ? [
-                                        {
-                                            $regexMatch: {
-                                                input: {
-                                                    $cond: {
-                                                        if: { $eq: ["$to", "CPD"] },
-                                                        then: "$$order.CPDWorkOrders.WorkOrderNumber",
-                                                        else: "$$order.DFWorkOrders.numberAlt"
-                                                    }
-                                                },
-                                                regex: searchQuery
-                                            }
-                                        }
+                                        { $gte: ["$$exception.createdAt", fromDateQuery] },
+                                        { $lte: ["$$exception.createdAt", toDateQuery] }
                                     ] : [])
                                 ]
                             }
                         }
-                    },
-
-                }
-            },
-
-        ] : []),
-
-        {
-            $addFields: {
-                integrationsExceptions: {
-                    $filter: {
-                        input: "$integrationsExceptions",
-                        as: "exception",
-                        cond: {
-                            $and: [
-                                ...(fromDateQuery ? [
-                                    { $gte: ["$$exception.createdAt", fromDateQuery] },
-                                    { $lte: ["$$exception.createdAt", toDateQuery] }
-                                ] : [])
-                            ]
-                        }
                     }
                 }
+            },
+            {
+                $addFields: {
+                    sourceWorkOrdersCount: { $size: "$sourceWorkOrders" },
+                    destinationWorkOrdersCount: { $size: "$destinationWorkOrders" },
+                    integrationsExceptionsCount: { $size: "$integrationsExceptions" }
+                }
             }
-        },
-        {
-            $addFields: {
-                sourceWorkOrdersCount: { $size: "$sourceWorkOrders" },
-                destinationWorkOrdersCount: { $size: "$destinationWorkOrders" },
-                integrationsExceptionsCount: { $size: "$integrationsExceptions" }
-
-            }
-        },
-    ]);
-
+        ]);
+        
 
     sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
         {
@@ -427,6 +456,14 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
         },
         {
             $lookup: {
+                from: "snowworkorders",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "SNOWWorkOrders"
+            }
+        },
+        {
+            $lookup: {
                 from: "integrationsexceptions",
                 localField: "_id",
                 foreignField: "integrationsMasterId",
@@ -436,17 +473,23 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
         {
             $addFields: {
                 sourceWorkOrders: {
-                    $cond: {
-                        if: { $eq: ["$from", "CPD"] },
-                        then: "$CPDWorkOrders",
-                        else: "$DFWorkOrders"
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$from", "CPD"] }, then: "$CPDWorkOrders" },
+                            { case: { $eq: ["$from", "DF"] }, then: "$DFWorkOrders" },
+                            { case: { $eq: ["$from", "SNOW"] }, then: "$SNOWWorkOrders" }
+                        ],
+                        default: [] // handle default case if needed
                     }
                 },
                 destinationWorkOrders: {
-                    $cond: {
-                        if: { $eq: ["$to", "CPD"] },
-                        then: "$CPDWorkOrders",
-                        else: "$DFWorkOrders"
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$to", "CPD"] }, then: "$CPDWorkOrders" },
+                            { case: { $eq: ["$to", "DF"] }, then: "$DFWorkOrders" },
+                            { case: { $eq: ["$to", "SNOW"] }, then: "$SNOWWorkOrders" }
+                        ],
+                        default: [] // handle default case if needed
                     }
                 }
             }
@@ -455,14 +498,15 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
         {
             $project: {
                 CPDWorkOrders: 0,
-                DFWorkOrders: 0
+                DFWorkOrders: 0,
+                SNOWWorkOrders:0
             }
         },
         {
             $addFields: {
                 sixWeekSales: sixWeekSales.map(week => ({
                     fromDate: week.fromDate,
-                    toDate: week.toDate,
+                    toDate:week.toDate,
                     sourceWorkOrdersCount: {
                         $size: {
                             $filter: {
@@ -470,8 +514,8 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                                 as: "order",
                                 cond: {
                                     $and: [
-                                        { $gte: ["$$order.createdAt", convertStrToDate(week.fromDate)] },
-                                        { $lte: ["$$order.createdAt", convertStrToDate(week.toDate)] }
+                                        { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
+                                        { $lte: ["$$order.createdAt", new Date(week.toDate)] }
                                     ]
                                 }
                             }
@@ -484,8 +528,8 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                                 as: "order",
                                 cond: {
                                     $and: [
-                                        { $gte: ["$$order.createdAt", convertStrToDate(week.fromDate)] },
-                                        { $lte: ["$$order.createdAt", convertStrToDate(week.toDate)] }
+                                        { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
+                                        { $lte: ["$$order.createdAt", new Date(week.toDate)] }
                                     ]
                                 }
                             }
@@ -498,8 +542,8 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                                 as: "exception",
                                 cond: {
                                     $and: [
-                                        { $gte: ["$$exception.createdAt", convertStrToDate(week.fromDate)] },
-                                        { $lte: ["$$exception.createdAt", convertStrToDate(week.toDate)] }
+                                        { $gte: ["$$exception.createdAt", new Date(week.fromDate)] },
+                                        { $lte: ["$$exception.createdAt", new Date(week.toDate)] }
                                     ]
                                 }
                             }
