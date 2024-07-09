@@ -1300,3 +1300,20 @@ exports.validateIntegrationSettingsDetails = asyncWrapper(async (req, res, next)
   }
   next()
 })
+
+/**
+ * Function to return all Service-provider lists 
+ 
+ */
+
+exports.getServiceProviderLists=asyncWrapper(async(req,res)=>{
+  const serviceProviderLists=await serviceProviderListModel.find({status:'active'})
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGES_GET_SERVICE_PROVIDERS,
+    data:{
+      serviceProviderLists
+    }
+  });
+
+})
