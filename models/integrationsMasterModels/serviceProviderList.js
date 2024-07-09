@@ -18,7 +18,7 @@ const serviceProviderListSchema = new mongoose.Schema({
 
     serviceProviders: {
         type: String,
-        enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF"],
+        enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
         default : ""
     },
     testCredentials: {

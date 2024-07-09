@@ -13,6 +13,10 @@ const serviceProvidersMappingAndServicesSchema = mongoose.Schema({
         type : Array,
         default : []
     },
+    filterServices:{
+        type : Array,
+        default : []
+    },
     mapping : {
         type : Object,
         default : {}

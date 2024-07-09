@@ -8,7 +8,7 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
     serviceProvider: {
         type: String,
         required: [true, "Service provider is required"],
-        enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM"],
+        enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"],
         default: ""
     },  
     serviceMethod:{
@@ -26,7 +26,7 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
         required: [true, "Data point url is required"],
         default: ""
     },
-    dataPoint: {
+    dataPoints: {
         type: Array,
         required: [true, "Elements are required"],
         default: ""

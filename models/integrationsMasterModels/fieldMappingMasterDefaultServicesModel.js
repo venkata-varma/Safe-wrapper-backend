@@ -6,11 +6,11 @@ const fieldMappingMasterDefaultServices = new mongoose.Schema({
     },
     from:{
         type:String,
-        enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM"]
+        enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"]
     },
     to: {
         type: String,
-        enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM"]
+        enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"]
     },
     serviceMethod:{
         type:String,
