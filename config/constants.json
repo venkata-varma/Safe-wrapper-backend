@@ -70,6 +70,7 @@
     "MESSAGE_LATEST_WORKORDERS": "Latest work orders.",
     "MESSAGE_WORKORDERS": "All work orders.",
     "MESSAGE_INVOICES": "All invoices.",
+    "MESSAGES_GET_SERVICE_PROVIDERS":"Service provider list.",
     "MESSAGE_INTEGRATION_KEYS": "Integration keys.",
     "MESSAGE_SAVE_KEYS": "Successfully saved.",
     "MESSAGE_WORK_ORDER_LIFE_CYCLE": "Work order life cycle details",
