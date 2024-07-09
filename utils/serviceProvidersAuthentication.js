@@ -73,9 +73,21 @@ const SNOWAuthentication = async (baseUrl, username, password, client_id, client
     }
 };
 
+const CYSAuthentication = async(baseUrl,grant_type,cys_auth) => {
+    try{
+        const CYSResponseStatus = await axios.post(`${baseUrl}get-estimates`)
+        console.log('CYSResponseStatus:==', CYSResponseStatus.status);
+        return CYSResponseStatus.status;
+    }catch(error){
+        console.log('CYS-Auth-Error',error);
+        return 'error'
+    }
+
+}
 
 module.exports = {
     CPDAuthentication,
     DFAuthentication,
-    SNOWAuthentication
+    SNOWAuthentication,
+    CYSAuthentication
 }

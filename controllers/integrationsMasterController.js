@@ -27,7 +27,7 @@ const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel"
 const serviceProvidersMappingAndServicesModel = require("../models/integrationsMasterModels/serviceProvidersMappingAndServicesModel");
 const { dateAsset } = require('../utils/utilsFunctions');
 const { getServiceWorkOrdersAndStatus } = require("../utils/general");
-const { CPDAuthentication, DFAuthentication, SNOWAuthentication } = require('../utils/serviceProvidersAuthentication');
+const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../utils/serviceProvidersAuthentication');
 const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersModel");
 
 
@@ -320,6 +320,16 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   }
   if (req.body.serviceProvider === 'SNOW') {
     const checkDFCredentials = await SNOWAuthentication(req.body.credentials.baseUrl, req.body.credentials.username, req.body.credentials.password, req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type)
+
+    if (checkDFCredentials !== 200) {
+      return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+        status: customConstants.messages.MESSAGE_FAIL,
+        message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+      });
+    }
+  }
+  if (req.body.serviceProvider === 'CYS') {
+    const checkDFCredentials = await CYSAuthentication(req.body.credentials.baseUrl, req.body.credentials.grant_type, req.body.credentials.cys_auth)
 
     if (checkDFCredentials !== 200) {
       return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
