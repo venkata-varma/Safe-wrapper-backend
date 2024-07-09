@@ -174,7 +174,7 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
 
     let currentDate = new Date()
     let fromDate, toDate
-    const CPDWorkOrdersExist = await CPDWorkordersModel.find({ integrationsMasterId: new mongoose.Types.ObjectId("666992eda176298d9f79e2f2"), accountId: integrationObject.accountId });
+    const CPDWorkOrdersExist = await CPDWorkordersModel.find({ integrationsMasterId:integrationObject.integrationsMasterId,  accountId: integrationObject.accountId });
     console.log('IDSSSSS:==', integrationObject.integrationsMasterId, integrationObject.accountId)
     if (CPDWorkOrdersExist.length > 0) {
         fromDate = new Date(currentDate.setDate(currentDate.getDate() - 2))
