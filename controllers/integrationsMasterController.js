@@ -129,13 +129,13 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
     eachMonth: 'once each month',
     custom: "custom"
   }
-  const  dataPointsAccess = {
-    "source":true,
-    "destination":true,
-    "activityLog":true,
-    "fieldMappings":true,
-    "exceptions":true
-}
+  const dataPointsAccess = {
+    "source": true,
+    "destination": true,
+    "activityLog": true,
+    "fieldMappings": true,
+    "exceptions": true
+  }
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -416,32 +416,32 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
   let get_integration_field_mapping_master_default_keys = await fieldMappingMasterDefaultServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (get_integration_field_mapping_master_default_keys.length > 0) {
     for (let fromAndTo of get_integration_field_mapping_master_default_keys) {
-      let integrationsFieldMappingkeysExist  = await integrationsFieldMappingModel.findOne({integrationsMasterId:integrationsMasterId, serviceMethod:fromAndTo.serviceMethod})
-      if(!integrationsFieldMappingkeysExist){
-      const integrationFieldMappingCreate = await integrationsFieldMappingModel.create({
-        accountId: integrationDetails.accountId,
-        userId: req.user._id,
-        integrationsMasterId: integrationsMasterId,
-        from: integrationDetails.from,
-        to: integrationDetails.to,
-        serviceMethod: fromAndTo.serviceMethod,
-        serviceName: "work-order",
-        createdBy: req.user._id,
-        dataPoints: fromAndTo.dataPoints,
-        requiredKeys: integrationDetails.from === 'CPD' && integrationDetails.to === 'DF' ? {
-          numberAlt: "WorkOrderNumber",
-          budgetedProposedStatus: "NONE",
-          buildingId: 1715,
-          invoiceToCustomerId: 2238,
-          invoiceType: "EXTERNAL_CHARGE",
-          reportedById: 5515,
-          workDescription: "DevRabbit Testing WorkOrders (Ignore)."
+      let integrationsFieldMappingkeysExist = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId, serviceMethod: fromAndTo.serviceMethod })
+      if (!integrationsFieldMappingkeysExist) {
+        const integrationFieldMappingCreate = await integrationsFieldMappingModel.create({
+          accountId: integrationDetails.accountId,
+          userId: req.user._id,
+          integrationsMasterId: integrationsMasterId,
+          from: integrationDetails.from,
+          to: integrationDetails.to,
+          serviceMethod: fromAndTo.serviceMethod,
+          serviceName: "work-order",
+          createdBy: req.user._id,
+          dataPoints: fromAndTo.dataPoints,
+          requiredKeys: integrationDetails.from === 'CPD' && integrationDetails.to === 'DF' ? {
+            numberAlt: "WorkOrderNumber",
+            budgetedProposedStatus: "NONE",
+            buildingId: 1715,
+            invoiceToCustomerId: 2238,
+            invoiceType: "EXTERNAL_CHARGE",
+            reportedById: 5515,
+            workDescription: "DevRabbit Testing WorkOrders (Ignore)."
 
-        } : {}
-      })
-    }else{
-      // nothing
-    }
+          } : {}
+        })
+      } else {
+        // nothing
+      }
     }
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -684,7 +684,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       },
       { new: true } // Options to return the updated document
     );
-    await integrationsMasterModel.findOneAndUpdate({_id:integrationsMasterId,stepCount:5},{status:"active"},{new:true})
+    await integrationsMasterModel.findOneAndUpdate({ _id: integrationsMasterId, stepCount: 5 }, { status: "active" }, { new: true })
   }
   console.log("updatedIntegrationsDetails", updatedIntegrationsDetails)
   return res
@@ -838,12 +838,12 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
       }
     }
   ]);
-  
+
   let integrationLogos = {
     integrationFromLogo: getIntegrationLogos[0].integrationFromLogo,
     integrationToLogo: getIntegrationLogos[0].integrationToLogo
-  };  
-  
+  };
+
   //Properly parses the above resulted data
   // for (let jsonParse of destinationWorkOrdersAndStatus.destinationWorkOrders) {
   //   jsonParse.DFWorkOrders = jsonParse.DFWorkOrders
@@ -901,7 +901,7 @@ Returns Updated record with new values
 
 */
 exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (req, res) => {
-  console.log("Bot oworking")
+
   const { integrationsMasterId } = req.params
   const { serviceProviderId } = req.body;
   const integrationServiceProvider = await serviceProvidersModel.findOne({ _id: serviceProviderId });
@@ -911,10 +911,16 @@ exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (re
       message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND,
     });
   }
+
+  const encryptedObjectJson = JSON.stringify(req.body.credentials);
+  const key = Buffer.from(process.env.CRYPTO_KEY, 'hex');
+  let iv = Buffer.from(process.env.CRYPTO_IV, 'hex')
+  let encryptedString = await encryptData(encryptedObjectJson, key, iv)
+
   const updatedServicerProvider = await integrationsMasterServiceProvidersModel.findOneAndUpdate({ _id: serviceProviderId }, {
     $set: {
       serviceProvider: req.body.serviceProvider,
-      credentials: req.body.credentials,
+      credentials: encryptedString,
       updatedBy: req.user.userId
     }
   },
@@ -1234,7 +1240,7 @@ exports.updateAutoDataSync = asyncWrapper(async (req, res) => {
  */
 exports.updateIntegrationSettingsFrequency = asyncWrapper(async (req, res) => {
   const integrationSettingsId = req.params.integrationSettingsId;
-  const updatePeriodSetings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { periodSettings: req.body.periodSettings,periodType:req.body.periodType, updatedBy: req.user._id } }, { new: true });
+  const updatePeriodSetings = await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { $set: { periodSettings: req.body.periodSettings, periodType: req.body.periodType, updatedBy: req.user._id } }, { new: true });
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
@@ -1306,12 +1312,12 @@ exports.validateIntegrationSettingsDetails = asyncWrapper(async (req, res, next)
  
  */
 
-exports.getServiceProviderLists=asyncWrapper(async(req,res)=>{
-  const serviceProviderLists=await serviceProviderListModel.find({status:'active'})
+exports.getServiceProviderLists = asyncWrapper(async (req, res) => {
+  const serviceProviderLists = await serviceProviderListModel.find({ status: 'active' })
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGES_GET_SERVICE_PROVIDERS,
-    data:{
+    data: {
       serviceProviderLists
     }
   });
