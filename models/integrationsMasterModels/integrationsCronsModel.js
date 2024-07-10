@@ -28,7 +28,7 @@ const integrationsCronsSchema = mongoose.Schema({
     },
     pulledCount : {
         type : Number,
-        dafault : 0
+        default : 0
     },
     newWOCount : {
         type : Number,
