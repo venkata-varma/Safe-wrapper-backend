@@ -782,7 +782,11 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
     let toDate = new Date(week.toDate);
 
     let presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } });
+    let presentWeekIntegrationActivityLog = await integrationsCronsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } });
+
     week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length > 0 ? presentWeekIntegrationExceptions.length : 0;
+    week.integrationsActivityLogCount = presentWeekIntegrationActivityLog.length > 0 ? presentWeekIntegrationActivityLog.length : 0;
+
   }
 
   /**
