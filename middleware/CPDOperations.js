@@ -242,10 +242,13 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
         });
     // console.log("CPDWorkOrderResponse:==",CPDWorkOrderResponse)
 
-    // If you have atlease one work workorder from CPD then process. 
-    if (CPDWorkOrderResponse.data.WorkOrders.length > 0) {
-        getCPDWorkOrderdetails = await validateNewAndUpdatedWO(CPDWorkOrderResponse.data, cronJobDetails, integrationObject.accountId, integrationObject.integrationsMasterId)
+    // If you have atlease one work workorder from CPD then process.
+    if(CPDWorkOrderResponse !== undefined){
+        if (CPDWorkOrderResponse.data.WorkOrders.length > 0) {
+            getCPDWorkOrderdetails = await validateNewAndUpdatedWO(CPDWorkOrderResponse.data, cronJobDetails, integrationObject.accountId, integrationObject.integrationsMasterId)
+        }
     }
+    
 
     if (getCPDWorkOrderdetails !== undefined) {
         const cronJob_Details = await integrationsCronJobsModel.findByIdAndUpdate(cronJobDetails._id, {
@@ -255,6 +258,15 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
             status: "completed"
         }, { new: true, upsert: true });
     }
+    else{
+        const cronJob_Details = await integrationsCronJobsModel.findByIdAndUpdate(cronJobDetails._id, {
+            pulledCount: 0,
+            pushedCount: 0,
+            newWOCount: 0,
+            status: "completed"
+        }, { new: true, upsert: true });
+    }
+    
 };
 
 exports.updateCPDWorkOrders = async (integrationObject, typeOfCron, fieldmappingkeys) => {
