@@ -259,10 +259,7 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
         }, { new: true, upsert: true });
     }
     else{
-        const cronJob_Details = await integrationsCronJobsModel.findByIdAndUpdate(cronJobDetails._id, {
-            pulledCount: 0,
-            pushedCount: 0,
-            newWOCount: 0,
+        await integrationsCronJobsModel.findByIdAndUpdate(cronJobDetails._id, {
             status: "completed"
         }, { new: true, upsert: true });
     }
