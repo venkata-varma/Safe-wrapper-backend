@@ -181,13 +181,13 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
         toDate = new Date()
     }
     else {
-        const getFromDateFromIntegrationsSettings = await integrationsSettingsModel.findOne({ integrationsMasterId: new mongoose.Types.ObjectId("666992eda176298d9f79e2f2"), accountId: integrationObject.accountId });
+        const getFromDateFromIntegrationsSettings = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId });
         if (getFromDateFromIntegrationsSettings) {
             fromDate = getFromDateFromIntegrationsSettings.dataDumpFrom
             toDate = new Date()
             let differenceInMilliseconds = toDate - fromDate;
             let differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
-
+            
             // Work order for CPD search, Only the dates between the 30 days will be supported by API.
             if (differenceInDays > 30) {
                 toDate = new Date(fromDate);

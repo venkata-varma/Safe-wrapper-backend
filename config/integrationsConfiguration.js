@@ -92,6 +92,15 @@ const configurations = {
       getAllIncidents :{
         URL : 'https://dev187063.service-now.com/api/now/table/incident',
       }
+    },
+
+    CYS : {
+      createWorkOrder : {
+        URL : 'http://192.168.1.38:3000/create-estimate'
+      },
+      getWorkOrder : {
+        URL : 'http://192.168.1.38:3000/get-estimate'
+      }
     }
 }
 

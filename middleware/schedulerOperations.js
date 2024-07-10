@@ -1,7 +1,8 @@
 const integrationsFieldMappingModel = require("../models/integrationsMasterModels/integrationsFieldMappingModel");
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterModels/integrationsMasterServiceProvidersModel");
 const CPDOperations = require('./CPDOperations');
-const DFOperations = require('./DFOperations')
+const DFOperations = require('./DFOperations');
+const CYSOperations = require('./CPDOperations')
 
 const schedulerIntegrationCronJobs = async (integrationObject) => {
     try {
@@ -33,7 +34,14 @@ const schedulerIntegrationCronJobs = async (integrationObject) => {
                 await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "automated");
             } else if (integrationObject.integrationsMasterId.status === 'active' && integrationObject.integrationsMasterId.from === 'DF' && integrationObject.integrationsMasterId.to === 'CPD') {
                 await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "DF" }).lean();
-            } else {
+            } else if (integrationObject.integrationsMasterId.status === 'active' && integrationObject.integrationsMasterId.from === 'CPD' && integrationObject.integrationsMasterId.to === 'CYS') {
+                const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CPD" }).lean();
+                await CPDOperations.getCPDWorkOrders(CPDCredentials, typeOfCron = "automated");
+
+                const CYSCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, to: "CYS" }).lean();
+                await CYSOperations.CYSCreateWorkorders(CYSCredentials, typeOfCron = "automated");
+            }
+            else {
                 // nothing
             }
         }

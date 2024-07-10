@@ -21,6 +21,7 @@ const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel'
 const CPDOperations = require('../middleware/CPDOperations');
 const DFOperations = require('../middleware/DFOperations');
 const SNOWOperations = require('../middleware/SNOWOperations')
+const CYSOperations = require('../middleware/CYSOperations')
 const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
 const usersModel = require("../models/usersModels/usersModel");
 const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
@@ -1038,7 +1039,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
           status: customConstants.messages.MESSAGE_SUCCESS,
           message: customConstants.messages.MESSAGE_CRON_MANUAL
         });
-      }
+      } 
       else if (integration.status === 'active' && integration.from === 'SNOW' && integration.to === 'CPD') {
         const SNOWCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "SNOW" }).lean();
 
@@ -1051,6 +1052,13 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
           status: customConstants.messages.MESSAGE_SUCCESS,
           message: customConstants.messages.MESSAGE_CRON_MANUAL
         });
+      }
+      else if (integration.status === 'active' && integration.from === 'CPD' && integration.to === 'CYS') {
+        const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "CPD" }).lean();
+        await CPDOperations.getCPDWorkOrders(CPDCredentials, typeOfCron = "manual");
+
+        const CYSCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "CYS" }).lean();
+        await CYSOperations.CYSCreateWorkorders(CYSCredentials, typeOfCron = "manual");
       }
       else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF') {
         const credentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "DF" }).lean();
