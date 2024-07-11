@@ -55,9 +55,9 @@ const integrationsSettingsSchema = new mongoose.Schema({
         type:Object,
         default:{}
       },
-      dataDumpFrom:{
-        type:Date,
-        default : new Date(new Date().setDate(new Date().getDate()-3)) //Three days prior to the current date is the default date.
+      dataDumpRange : {
+        type : Number,
+        default : 1
       }
 },{timestamps:true});
 

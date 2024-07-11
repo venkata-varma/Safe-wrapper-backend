@@ -1334,4 +1334,18 @@ exports.getServiceProviderLists = asyncWrapper(async (req, res) => {
     }
   });
 
+});
+
+/**
+ * Function to update date range.
+ */
+
+exports.updateDateRange = asyncWrapper(async (req,res) => {
+  const {integrationSettingsId} = req.params
+  await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId,{dataDumpRange:req.body.dataDumpRange},{new : true});
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGES_UPDATE_DATE_RANGE,
+  });
+
 })

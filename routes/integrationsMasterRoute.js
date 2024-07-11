@@ -25,6 +25,7 @@ router.patch('/update-field-mappings-by-service',integrationsMasterControllers.m
 router.patch('/update-integration-settings-data-sync/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateAutoDataSync);
 router.patch('/update-integration-settings-frequency/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateIntegrationSettingsFrequency)
 router.patch('/update-integration-workorder-status-field-mappings/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateStatusFieldMappings)
+router.patch('/update-integration-date-range/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateDateRange)
 router.patch('/update-integration-master-status/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.updateIntegrationMasterStatus);
 
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
