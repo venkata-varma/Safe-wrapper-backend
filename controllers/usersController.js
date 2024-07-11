@@ -493,4 +493,77 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
 
   });
 
+});
+
+/*
+Miidleware function to validate user and password
+Mandatory fields -> Phone and Password
+Funtion to check 
+  1.Mandatorys status of Account, 
+  2.Validation of credentials, password
+If returns True, moves to "next" function , "updatePassword"
+*/
+exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
+  console.log("Rweq", req.body)
+  const { mobileEmail, currentPassword, newpassword } = req.body;
+
+  let validatedUserMobileAndEmailData = validateUserMobileEmailData(req.body);
+  if (validatedUserMobileAndEmailData.error) {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      message: customConstants.messages.MESSAGE_REQUEST_BODY_ERROR,
+      status: customConstants.messages.MESSAGE_FAIL,
+      error: validatedUserMobileAndEmailData.error.details
+    });
+  }
+  const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }).populate('accountId');
+
+  // If user not found
+  if (!user) {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
+    });
+  }
+  if (user.accountId.status === 'in-progress') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_IN_PROGRESS,
+    });
+  }
+  if (user.accountId.status === 'deleted' || user.status === 'deleted') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED,
+    });
+  }
+
+  // Compare password 
+  const comparePasswordResult = await comparePassword(currentPassword, user.password);
+  console.log(comparePasswordResult, "comparePasswordResult");
+
+  // If password does not match
+  if (!comparePasswordResult) {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_WRONG_CURRENT_PASSWORD,
+    });
+  }
+  next()
+
+})
+
+/**
+ * Update the user password.
+ */
+
+exports.updatePassword = asyncWrapper(async (req,res) => {
+  const {userId} = req.params;
+  const { mobileEmail, currentPassword, newpassword } = req.body;
+  let updatedPassword = await hashPwd(newpassword)
+
+  const userDetails = await usersModel.findByIdAndUpdate(userId,{password:updatedPassword},{new : true})
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_PASSWORD_UPDATED,
+  });
 })

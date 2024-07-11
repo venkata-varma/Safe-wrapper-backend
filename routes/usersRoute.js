@@ -14,6 +14,7 @@ router.get('/get-account-statistics/:accountId', usersControllers.getAccountStat
 /*
 Following are routes to Admin user to update status on its users
 */
+router.patch('/update-password/:userId',usersControllers.middlewareToUpdatePassword, usersControllers.updatePassword)
 router.patch('/delete-user/:userId',usersControllers.middlewareToDeleteUser, usersControllers.deleteUser);
 router.patch('/update-user-details/:userId', usersControllers.middlewareUpdateUserDetails, usersControllers.updateUserDetails);
 
