@@ -594,7 +594,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
     updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId,{stepCount: pastIntegrationDetails.stepCount + 1},{new : true})
   } else {
     const verifyFieldmappingHasOneRecord = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId })
-    if (verifyFieldmappingHasOneRecord) {
+    if (!verifyFieldmappingHasOneRecord) {
       updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(
         integrationsMasterId,
         {
