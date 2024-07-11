@@ -2,6 +2,7 @@
 const integrationsScheduleCronJobs = require("../controllers/schedulerController");
 const integrationsCronJobsModel = require('../models/integrationsMasterModels/integrationsCronsModel')
 const axios = require('axios');
+const moment = require('moment')
 const { decryptData } = require("../utils/encryptionAlgorithms");
 const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
 const CPDConfigurations = require('../config/integrationsConfiguration')
@@ -12,6 +13,7 @@ const integrationsExceptionsModel = require("../models/integrationsMasterModels/
 const integrationsSettingsModel = require("../models/integrationsMasterModels/integrationsSettingsModel");
 const { default: mongoose } = require("mongoose");
 const workOrderLifeCycleModel = require("../models/workOrdersModels/workOrderLifeCycleModel");
+
 
 /**
  * 
@@ -172,36 +174,19 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
     const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl, integrationObject);
 
-    let currentDate = new Date()
+    
     let fromDate, toDate
     const CPDWorkOrdersExist = await CPDWorkordersModel.find({ integrationsMasterId:integrationObject.integrationsMasterId,  accountId: integrationObject.accountId });
     console.log('IDSSSSS:==', integrationObject.integrationsMasterId, integrationObject.accountId)
-    if (CPDWorkOrdersExist.length > 0) {
-        fromDate = new Date(currentDate.setDate(currentDate.getDate() - 2))
-        toDate = new Date()
-    }
-    else {
-        const getFromDateFromIntegrationsSettings = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId });
-        if (getFromDateFromIntegrationsSettings) {
-            fromDate = getFromDateFromIntegrationsSettings.dataDumpFrom
-            toDate = new Date()
-            let differenceInMilliseconds = toDate - fromDate;
-            let differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
-            
-            // Work order for CPD search, Only the dates between the 30 days will be supported by API.
-            if (differenceInDays > 30) {
-                toDate = new Date(fromDate);
-                toDate.setDate(toDate.getDate() + 28);
-            } else {
-                toDate = new Date()
-            }
-        }
-        else {
-            fromDate = new Date(currentDate.setDate(currentDate.getDate() - 28))
-            toDate = new Date()
-        }
+    const getIntegrationsSettingsDetails = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId });
+    const getDateRange = getIntegrationsSettingsDetails.dataDumpRange
+   
+    let currentDate = moment();
+    let formattedFromDate = moment(currentDate).subtract(getDateRange, 'days').startOf('day');
+    let formattedToDate  = moment().endOf('day');
+    fromDate = formattedFromDate.format('YYYY-MM-DDTHH:mm:ss');
+    toDate   = formattedToDate.format('YYYY-MM-DDTHH:mm:ss');
 
-    }
     console.log('From:==', fromDate)
     console.log('To:==', toDate)
     // Get work orders from the CPD - API calls.
@@ -226,7 +211,7 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
             headers: { Authorization: `bearer ${corrigoToken.access_token}` }
         })
         .then(res => {
-            console.log('response:==',)
+            console.log('response:==',res.data)
             return res
         })
         .catch(async (error) => {
