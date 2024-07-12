@@ -301,7 +301,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   if (req.body.serviceProvider === 'CPD') {
     const checkCPDCredentials = await CPDAuthentication(req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type, req.body.credentials.baseUrl)
 
-    if (checkCPDCredentials === 'error') {
+    if (checkCPDCredentials === 'error' || checkCPDCredentials === undefined) {
 
       return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
         status: customConstants.messages.MESSAGE_FAIL,
