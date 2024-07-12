@@ -149,7 +149,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
     const integrationsOfAccount = await integrationsMasterModel.find({ accountId: accountId });
     const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId });
     const integrationCronsCount = await integrationCronsModel.find({ accountId: accountId });
-
+    
     const integrationsServiceProvidersWorkOrdersCount = await integrationsMasterModel.aggregate([
         {
             $match: {
@@ -175,25 +175,35 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         {
             $project: {
                 CPDWorkOrderCount: { $size: '$CPDWorkOrderDetails' },
-                DFWorkOrderCount: { $size: '$DFWorkOrderDetails' }
+                DFWorkOrderCount: { $size: '$DFWorkOrderDetails' },
+                failedToPushWorkOrdersCount: {
+                    $size: {
+                        $filter: {
+                            input: '$CPDWorkOrderDetails',
+                            as: 'workOrder',
+                            cond: { $eq: ['$$workOrder.status', 'initiated'] }
+                        }
+                    }
+                }
             }
         },
         {
             $project: {
                 workOrders: [
                     { serviceprovider: 'CPD', workOrders: '$CPDWorkOrderCount' },
-                    { serviceprovider: 'DF', workOrders: '$DFWorkOrderCount' }
+                    { serviceprovider: 'DF', workOrders: '$DFWorkOrderCount' },
+                    { serviceprovider: 'failedToPushWorkOrders', workOrders: '$failedToPushWorkOrdersCount' }
                 ]
+                
             }
         },
         {
             $unwind: '$workOrders'
         },
-        
         {
             $group: {
                 _id: '$workOrders.serviceprovider',
-                totalWorkOrders: { $sum: '$workOrders.workOrders' }
+                totalWorkOrders: { $sum: '$workOrders.workOrders' },
             }
         },
         {
@@ -205,6 +215,42 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         }
     ]);
 
+
+// To get the detailed CPD work orders in initiated status:
+const failedCPDWorkOrders = await integrationsMasterModel.aggregate([
+    {
+        $match: {
+            accountId: new mongoose.Types.ObjectId(accountId)
+        }
+    },
+    {
+        $lookup: {
+            from: 'cpdworkorders',
+            localField: '_id',
+            foreignField: 'integrationsMasterId',
+            as: 'CPDWorkOrderDetails'
+        }
+    },
+    {
+        $project: {
+            CPDWorkOrderDetails: {
+                $filter: {
+                    input: '$CPDWorkOrderDetails',
+                    as: 'workOrder',
+                    cond: { $eq: ['$$workOrder.status', 'initiated'] }
+                }
+            }
+        }
+    },
+    {
+        $unwind: '$CPDWorkOrderDetails'
+    },
+    {
+        $replaceRoot: { newRoot: '$CPDWorkOrderDetails' }
+    }
+]);
+    
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_INFORMATION,
@@ -213,7 +259,8 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
             integrationsOfAccount,
             integrationExceptionsCount: integrationExceptions.length,
             dataSyncCount: integrationCronsCount.length,
-            integrationsServiceProvidersWorkOrdersCount
+            failedCPDWorkOrders,
+            integrationsServiceProvidersWorkOrdersCount,
         },
     })
 })

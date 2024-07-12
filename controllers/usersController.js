@@ -467,10 +467,18 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
 
 
   for (let week of twelveWeekSales) {
+    let formttedFromDate = new Date(new Date(week.fromDate).setDate(new Date(week.fromDate).getDate()+1))
+    let formattedToDate = new Date(new Date(week.toDate).setDate(new Date(week.toDate).getDate()+1))
 
-    let weekCPDkWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } }).countDocuments()
-    let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } }).countDocuments()
-    let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } }).countDocuments()
+    let weekCPDkWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
+    let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
+    let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
+
+    
+    // let weekCPDkWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
+    // let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
+    // let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
+    
     week.CPDWorkOrderCount = weekCPDkWorkOrders;
     week.dfWorkOrderCount = weekDFWorkOrders;
     week.integrationsExceptions = integrationsExceptions;
