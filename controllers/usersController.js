@@ -505,7 +505,7 @@ If returns True, moves to "next" function , "updatePassword"
 */
 exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
   console.log("Rweq", req.body)
-  const { mobileEmail, currentPassword, newpassword } = req.body;
+  const { mobileEmail, currentPassword, newPassword } = req.body;
 
   let validatedUserMobileAndEmailData = validateUserMobileEmailData(req.body);
   if (validatedUserMobileAndEmailData.error) {
@@ -558,8 +558,8 @@ exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
 
 exports.updatePassword = asyncWrapper(async (req,res) => {
   const {userId} = req.params;
-  const { mobileEmail, currentPassword, newpassword } = req.body;
-  let updatedPassword = await hashPwd(newpassword)
+  const { mobileEmail, currentPassword, newPassword } = req.body;
+  let updatedPassword = await hashPwd(newPassword)
 
   const userDetails = await usersModel.findByIdAndUpdate(userId,{password:updatedPassword},{new : true})
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
