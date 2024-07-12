@@ -76,7 +76,17 @@ const SNOWAuthentication = async (baseUrl, username, password, client_id, client
 
 const CYSAuthentication = async(baseUrl,grant_type,cys_auth) => {
     try{
-        const CYSResponseStatus = await axios.post(`${baseUrl}get-estimates`)
+        const CYSResponseStatus = await axios.post(`${baseUrl}/auth/token`,
+            {
+                cys_auth : cys_auth,
+                grant_type : grant_type
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        )
         console.log('CYSResponseStatus:==', CYSResponseStatus.status);
         return CYSResponseStatus.status;
     }catch(error){
