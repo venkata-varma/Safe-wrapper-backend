@@ -513,18 +513,10 @@ If returns True, moves to "next" function , "updatePassword"
 */
 exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
   console.log("Rweq", req.body)
-  const { mobileEmail, currentPassword, newPassword } = req.body;
+  const {userId} = req.params
+  const { currentPassword, newPassword } = req.body;
 
-  let validatedUserMobileAndEmailData = validateUserMobileEmailData(req.body);
-  if (validatedUserMobileAndEmailData.error) {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      message: customConstants.messages.MESSAGE_REQUEST_BODY_ERROR,
-      status: customConstants.messages.MESSAGE_FAIL,
-      error: validatedUserMobileAndEmailData.error.details
-    });
-  }
-  const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }).populate('accountId');
-
+  const user = await usersModel.findById(userId).populate('accountId')
   // If user not found
   if (!user) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
@@ -565,8 +557,9 @@ exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
  */
 
 exports.updatePassword = asyncWrapper(async (req,res) => {
+
   const {userId} = req.params;
-  const { mobileEmail, currentPassword, newPassword } = req.body;
+  const { currentPassword, newPassword } = req.body;
   let updatedPassword = await hashPwd(newPassword)
 
   const userDetails = await usersModel.findByIdAndUpdate(userId,{password:updatedPassword},{new : true})
