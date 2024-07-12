@@ -11,7 +11,7 @@ const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersMode
 const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
 const integtationExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
-const {sixWeekSales}=require('../utils/sixWeekSalesFunction');
+const { sixWeekSales } = require('../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../utils/userLoginValidation');
 
@@ -23,8 +23,8 @@ Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, Sta
 If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
-   const { accountName, companyName, email, phone, password, city, state, pincode, country } = req.body;
-    
+    const { accountName, companyName, email, phone, password, city, state, pincode, country } = req.body;
+
     //console.log(accountName, companyName, email, phone, password,"okkkkk");
     if (!accountName || !companyName || !email || !phone || !password || !city || !state || !country || !pincode) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
@@ -38,12 +38,12 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
     //         message: customConstants.messages.MESSAGE_LOGO_MANDATORY
     //     });
     // }
-    if(!await validatePhoneNumber(phone)){
+    if (!await validatePhoneNumber(phone)) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
-          status: customConstants.messages.MESSAGE_FAIL,
-          message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
         });
-      }
+    }
     else {
         next()
     }
@@ -68,7 +68,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            logo:req.file? `${baseUrl}/accountLogos/${req.file.filename}`:""
+            logo: req.file ? `${baseUrl}/accountLogos/${req.file.filename}` : ""
         })
         const customId = new mongoose.Types.ObjectId();
 
@@ -123,19 +123,19 @@ exports.deleteAccount = asyncWrapper(async (req, res) => {
 * If status is active pass the middleware.
 */
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
-    const {accountId} = req.params
+    const { accountId } = req.params
     const verifyAccountStatus = await accountsModel.findById(accountId)
     console.log('verifyAccountStatus')
     if (verifyAccountStatus.status === 'deleted') {
-      return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-        status: customConstants.messages.MESSAGE_FAIL,
-        message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
-      });
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+        });
     }
     else {
         next()
     }
-  });
+});
 
 /**
  * Get account information by accountId.
@@ -144,12 +144,12 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
 
 
 exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
-    const {accountId} = req.params
+    const { accountId } = req.params
     const accountInformation = await accountsModel.findById(accountId);
     const integrationsOfAccount = await integrationsMasterModel.find({ accountId: accountId });
     const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId });
     const integrationCronsCount = await integrationCronsModel.find({ accountId: accountId });
-    
+
     const integrationsServiceProvidersWorkOrdersCount = await integrationsMasterModel.aggregate([
         {
             $match: {
@@ -176,15 +176,6 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
             $project: {
                 CPDWorkOrderCount: { $size: '$CPDWorkOrderDetails' },
                 DFWorkOrderCount: { $size: '$DFWorkOrderDetails' },
-                failedToPushWorkOrdersCount: {
-                    $size: {
-                        $filter: {
-                            input: '$CPDWorkOrderDetails',
-                            as: 'workOrder',
-                            cond: { $eq: ['$$workOrder.status', 'initiated'] }
-                        }
-                    }
-                }
             }
         },
         {
@@ -192,9 +183,8 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
                 workOrders: [
                     { serviceprovider: 'CPD', workOrders: '$CPDWorkOrderCount' },
                     { serviceprovider: 'DF', workOrders: '$DFWorkOrderCount' },
-                    { serviceprovider: 'failedToPushWorkOrders', workOrders: '$failedToPushWorkOrdersCount' }
                 ]
-                
+
             }
         },
         {
@@ -215,41 +205,39 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         }
     ]);
 
-
-// To get the detailed CPD work orders in initiated status:
-const failedCPDWorkOrders = await integrationsMasterModel.aggregate([
-    {
-        $match: {
-            accountId: new mongoose.Types.ObjectId(accountId)
-        }
-    },
-    {
-        $lookup: {
-            from: 'cpdworkorders',
-            localField: '_id',
-            foreignField: 'integrationsMasterId',
-            as: 'CPDWorkOrderDetails'
-        }
-    },
-    {
-        $project: {
-            CPDWorkOrderDetails: {
-                $filter: {
-                    input: '$CPDWorkOrderDetails',
-                    as: 'workOrder',
-                    cond: { $eq: ['$$workOrder.status', 'initiated'] }
+    // To get the detailed CPD work orders in initiated status:
+    const failedCPDWorkOrders = await integrationsMasterModel.aggregate([
+        {
+            $match: {
+                accountId: new mongoose.Types.ObjectId(accountId)
+            }
+        },
+        {
+            $lookup: {
+                from: 'cpdworkorders',
+                localField: '_id',
+                foreignField: 'integrationsMasterId',
+                as: 'CPDWorkOrderDetails'
+            }
+        },
+        {
+            $project: {
+                CPDWorkOrderDetails: {
+                    $filter: {
+                        input: '$CPDWorkOrderDetails',
+                        as: 'workOrder',
+                        cond: { $eq: ['$$workOrder.status', 'initiated'] }
+                    }
                 }
             }
+        },
+        {
+            $unwind: '$CPDWorkOrderDetails'
+        },
+        {
+            $replaceRoot: { newRoot: '$CPDWorkOrderDetails' }
         }
-    },
-    {
-        $unwind: '$CPDWorkOrderDetails'
-    },
-    {
-        $replaceRoot: { newRoot: '$CPDWorkOrderDetails' }
-    }
-]);
-    
+    ]);
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
@@ -272,19 +260,19 @@ const failedCPDWorkOrders = await integrationsMasterModel.aggregate([
  */
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const integrationsQuery = req.query.integration;
-    
+
     //const integrationsQuery = req.query.integration;
     const priorityQuery = req.query.priority;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
-    const toDateQuery = req.query.toDate ? new Date(new Date(req.query.toDate).setDate(new Date(req.query.toDate).getDate()+1)) : (fromDateQuery ? new Date() : null);
+    const toDateQuery = req.query.toDate ? new Date(new Date(req.query.toDate).setDate(new Date(req.query.toDate).getDate() + 1)) : (fromDateQuery ? new Date() : null);
     const searchQuery = req.query.search ? new RegExp(`${req.query.search}`, 'i') : null;
-    var accountReports=[];
-    var sixWeeksSalesGraph=[];
-    if(integrationsQuery==='null' ||!integrationsQuery){
-      
-        accountReports=[]
-        sixWeeksSalesGraph=[];
-    }else if(integrationsQuery){
+    var accountReports = [];
+    var sixWeeksSalesGraph = [];
+    if (integrationsQuery === 'null' || !integrationsQuery) {
+
+        accountReports = []
+        sixWeeksSalesGraph = [];
+    } else if (integrationsQuery) {
 
 
         accountReports = await integrationsMasterModel.aggregate([
@@ -474,143 +462,143 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                 }
             }
         ]);
-        
 
-    sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
-        {
-            $match: {
-                accountId: new mongoose.Types.ObjectId(req.params.accountId),
-                ...(integrationsQuery !== 'all-integrations' && {
-                    _id: new mongoose.Types.ObjectId(integrationsQuery)
-                })
-            }
-        },
-        {
-            $lookup: {
-                from: "cpdworkorders",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "CPDWorkOrders"
-            }
-        },
-        {
-            $lookup: {
-                from: "dfworkorders",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "DFWorkOrders"
-            }
-        },
-        {
-            $lookup: {
-                from: "snowworkorders",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "SNOWWorkOrders"
-            }
-        },
-        {
-            $lookup: {
-                from: "integrationsexceptions",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "integrationExceptions"
-            }
-        },
-        {
-            $addFields: {
-                sourceWorkOrders: {
-                    $switch: {
-                        branches: [
-                            { case: { $eq: ["$from", "CPD"] }, then: "$CPDWorkOrders" },
-                            { case: { $eq: ["$from", "DF"] }, then: "$DFWorkOrders" },
-                            { case: { $eq: ["$from", "SNOW"] }, then: "$SNOWWorkOrders" }
-                        ],
-                        default: [] // handle default case if needed
-                    }
-                },
-                destinationWorkOrders: {
-                    $switch: {
-                        branches: [
-                            { case: { $eq: ["$to", "CPD"] }, then: "$CPDWorkOrders" },
-                            { case: { $eq: ["$to", "DF"] }, then: "$DFWorkOrders" },
-                            { case: { $eq: ["$to", "SNOW"] }, then: "$SNOWWorkOrders" }
-                        ],
-                        default: [] // handle default case if needed
+
+        sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
+            {
+                $match: {
+                    accountId: new mongoose.Types.ObjectId(req.params.accountId),
+                    ...(integrationsQuery !== 'all-integrations' && {
+                        _id: new mongoose.Types.ObjectId(integrationsQuery)
+                    })
+                }
+            },
+            {
+                $lookup: {
+                    from: "cpdworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "CPDWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "dfworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "DFWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "snowworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "SNOWWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "integrationsexceptions",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "integrationExceptions"
+                }
+            },
+            {
+                $addFields: {
+                    sourceWorkOrders: {
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$from", "CPD"] }, then: "$CPDWorkOrders" },
+                                { case: { $eq: ["$from", "DF"] }, then: "$DFWorkOrders" },
+                                { case: { $eq: ["$from", "SNOW"] }, then: "$SNOWWorkOrders" }
+                            ],
+                            default: [] // handle default case if needed
+                        }
+                    },
+                    destinationWorkOrders: {
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$to", "CPD"] }, then: "$CPDWorkOrders" },
+                                { case: { $eq: ["$to", "DF"] }, then: "$DFWorkOrders" },
+                                { case: { $eq: ["$to", "SNOW"] }, then: "$SNOWWorkOrders" }
+                            ],
+                            default: [] // handle default case if needed
+                        }
                     }
                 }
-            }
-        },
-        
-        {
-            $project: {
-                CPDWorkOrders: 0,
-                DFWorkOrders: 0,
-                SNOWWorkOrders:0
-            }
-        },
-        {
-            $addFields: {
-                sixWeekSales: sixWeekSales.map(week => ({
-                    fromDate: week.fromDate,
-                    toDate:week.toDate,
-                    sourceWorkOrdersCount: {
-                        $size: {
-                            $filter: {
-                                input: "$sourceWorkOrders",
-                                as: "order",
-                                cond: {
-                                    $and: [
-                                        { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
-                                        { $lte: ["$$order.createdAt", new Date(week.toDate)] }
-                                    ]
+            },
+
+            {
+                $project: {
+                    CPDWorkOrders: 0,
+                    DFWorkOrders: 0,
+                    SNOWWorkOrders: 0
+                }
+            },
+            {
+                $addFields: {
+                    sixWeekSales: sixWeekSales.map(week => ({
+                        fromDate: week.fromDate,
+                        toDate: week.toDate,
+                        sourceWorkOrdersCount: {
+                            $size: {
+                                $filter: {
+                                    input: "$sourceWorkOrders",
+                                    as: "order",
+                                    cond: {
+                                        $and: [
+                                            { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
+                                            { $lte: ["$$order.createdAt", new Date(week.toDate)] }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        destinationWorkOrdersCount: {
+                            $size: {
+                                $filter: {
+                                    input: "$destinationWorkOrders",
+                                    as: "order",
+                                    cond: {
+                                        $and: [
+                                            { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
+                                            { $lte: ["$$order.createdAt", new Date(week.toDate)] }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        integrationExceptionCount: {
+                            $size: {
+                                $filter: {
+                                    input: "$integrationExceptions",
+                                    as: "exception",
+                                    cond: {
+                                        $and: [
+                                            { $gte: ["$$exception.createdAt", new Date(week.fromDate)] },
+                                            { $lte: ["$$exception.createdAt", new Date(week.toDate)] }
+                                        ]
+                                    }
                                 }
                             }
                         }
-                    },
-                    destinationWorkOrdersCount: {
-                        $size: {
-                            $filter: {
-                                input: "$destinationWorkOrders",
-                                as: "order",
-                                cond: {
-                                    $and: [
-                                        { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
-                                        { $lte: ["$$order.createdAt", new Date(week.toDate)] }
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    integrationExceptionCount: {
-                        $size: {
-                            $filter: {
-                                input: "$integrationExceptions",
-                                as: "exception",
-                                cond: {
-                                    $and: [
-                                        { $gte: ["$$exception.createdAt", new Date(week.fromDate)] },
-                                        { $lte: ["$$exception.createdAt", new Date(week.toDate)] }
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                }))
+                    }))
+                }
+            },
+            {
+                $project: {
+                    sixWeekSales: 1
+                }
             }
-        }, 
-        {
-            $project:{
-                sixWeekSales:1
-            }
-        }
-    ]);
+        ]);
     }
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED,
         data: {
-             accountReports,
+            accountReports,
             sixWeeksSalesGraph
         },
     })
@@ -620,17 +608,17 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
  * Get all work orders life cycles based on account and work order ids.
  */
 
-exports.getWorkOrderLifeCycle = asyncWrapper(async(req,res)=>{
-    const {accountId, workOrderId} = req.query;
+exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
+    const { accountId, workOrderId } = req.query;
     const verifyAccountStatus = await accountsModel.findById(accountId)
     console.log('verifyAccountStatus')
     if (verifyAccountStatus.status === 'deleted') {
-      return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-        status: customConstants.messages.MESSAGE_FAIL,
-        message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
-      });
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+        });
     }
-    const workOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId:accountId,workOrderId:workOrderId});
+    const workOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, workOrderId: workOrderId });
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
