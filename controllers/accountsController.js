@@ -644,20 +644,30 @@ exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
 
     workOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId:integrationsMasterId, workOrderId: workOrderId });
     if(workOrderLifeCycleDetails.length > 0){
+        const sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId:integrationsMasterId, workOrderId: workOrderId })
+        const destinationWorkOrderDetails = await DFWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId:integrationsMasterId, "DFWorkOrders.numberAlt" : sourceWorkOrderDetails.WorkOrderNumber})
+
       return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
           status: customConstants.messages.MESSAGE_SUCCESS,
           message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
-          workOrderLifeCycleDetails
+          workOrderLifeCycleDetails,
+          sourceWorkOrderDetails,
+          destinationWorkOrderDetails
       })
     }
     else{
-      let getCPDWorkOrderID = await CPDWorkordersModel.findOne({ accountId: accountId, "CPDWorkOrders.WorkOrderNumber" : workOrderId},{CPDWorkOrderId:1})
-      console.log('getCPDWorkOrderID:==',getCPDWorkOrderID)
-      workOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId:integrationsMasterId, workOrderId: getCPDWorkOrderID.CPDWorkOrderId });
+      let sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, "CPDWorkOrders.WorkOrderNumber" : workOrderId})
+      console.log('sourceWorkOrderDetails:==',sourceWorkOrderDetails)
+      workOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId:integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId });
+    //   const sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId:integrationsMasterId, workOrderId: workOrderId })
+      const destinationWorkOrderDetails = await DFWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId:integrationsMasterId, "DFWorkOrders.numberAlt" : sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber})
+
       return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
           status: customConstants.messages.MESSAGE_SUCCESS,
           message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
-          workOrderLifeCycleDetails
+          workOrderLifeCycleDetails,
+          sourceWorkOrderDetails,
+          destinationWorkOrderDetails
     })
     }
         
