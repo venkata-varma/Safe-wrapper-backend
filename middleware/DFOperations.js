@@ -108,9 +108,6 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
         else if (property === "budgetedProposedStatus")
             fieldmappingkeys.budgetedProposedStatus = "NONE";
 
-        else if (property === "buildingId")
-            fieldmappingkeys.buildingId = 1715;
-
         else if (property === "divisionId")
             fieldmappingkeys.divisionId = 1;
 
