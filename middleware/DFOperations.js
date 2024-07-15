@@ -102,10 +102,8 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
 const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
     // Customize field mapping keys of DF - create API request. 
     for (const property in fieldmappingkeys) {
-        if (property === "numberAlt")
-            fieldmappingkeys.numberAlt = '';
- 
-        else if (property === "budgetedProposedStatus")
+        
+        if (property === "budgetedProposedStatus")
             fieldmappingkeys.budgetedProposedStatus = "NONE";
 
         else if (property === "divisionId")
@@ -120,10 +118,6 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
         else if (property === "reportedById")
             fieldmappingkeys.reportedById = 5515;
 
-        else if (property === "status")
-            fieldmappingkeys.status = 'IN_PROGRESS';
-        else if (property === "typeListId")
-            fieldmappingkeys.typeListId = 687;
         else if (property === "invoiceToText")
             fieldmappingkeys.invoiceToText = "CBRE/T-Mobile"
         else if (property === "workDescription")
@@ -163,12 +157,12 @@ const getWorkOrderFieldMappingkeys = async (fieldmappingkeys, WorkOrderNumber, C
     else if (CPDWorkOrderStatus === "Rejected") {
         fieldmappingkeys.status = 'CANCELED';
     }
-    else if (WorkType === "PMRM") {
-        fieldmappingkeys.typeListId = 1237;
-    }
-    else if (WorkType !== "PMRM") {
-        fieldmappingkeys.typeListId = 687;
-    }
+    // else if (WorkType === "PMRM") {
+    //     fieldmappingkeys.typeListId = 1237;
+    // }
+    // else if (WorkType !== "PMRM") {
+    //     fieldmappingkeys.typeListId = 687;
+    // }
     return fieldmappingkeys
 }
 
