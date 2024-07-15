@@ -91,7 +91,8 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
     if (getCPDWorkOrderDetails) {
         fieldmappingkeys.buildingId = getCPDWorkOrderDetails.ServiceLocation.OccupantID;
         fieldmappingkeys.workDescription = getCPDWorkOrderDetails.WorkDetails.Assets[0].Comment || "DevRabbit Testing WorkOrders (Ignore).";
-    }
+        fieldmappingkeys.statusDate = getCPDWorkOrderDetails.LastUpdate || new Date()
+    }   
     return fieldmappingkeys
 
 }
@@ -198,6 +199,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "DF" });
                     let credentailsObj = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
                     let decryptConfigCredentials = JSON.parse(await decryptData(credentailsObj, process.env.CRYPTO_KEY))
+                    fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, workOrder.CPDWorkOrders.Type, integrationObject)
 
                     // Find integration credentails and then decrypt and pull CPD calls.
                     let CPDAuthCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CPD" })
@@ -206,7 +208,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     const corrigoToken = await CPDAuthentication(CPDdecryptConfigCredentials.client_id, CPDdecryptConfigCredentials.client_secret, CPDdecryptConfigCredentials.grant_type, CPDdecryptConfigCredentials.baseUrl);
                     let CPDFieldMappingkeys = await getCPDFieldMappingkeys(workOrder.CPDWorkOrderId, workOrder.MessageId, fieldmappingkeys, corrigoToken, integrationObject)
 
-
+                    console.log('fieldmappingkeys:===',fieldmappingkeys)
                     let DFWorkOrderId; let DFWorkorderList = {};
                     let createWorkOrderConfig = {
                         method: 'post',
