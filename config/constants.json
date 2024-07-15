@@ -76,6 +76,7 @@
     "MESSAGES_UPDATE_DATE_RANGE":"Data dump range updated successfully.",
     "MESSAGE_INTEGRATION_KEYS": "Integration keys.",
     "MESSAGE_SAVE_KEYS": "Successfully saved.",
+    "MESSAGE_WORK_ORDER_LIFE_CYCLE_VALIDATION":"WorkOrderId doesn't exist/Please Enter Valid workOrderId",
     "MESSAGE_WORK_ORDER_LIFE_CYCLE": "Work order life cycle details",
     "MESSAGE_INTEGRATION_UPDATED": "Integration master details updated successfully.",
     "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_UPDATED": "Integration master service provider updated successfully.",

@@ -605,23 +605,60 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
 });
 
 /**
- * Get all work orders life cycles based on account and work order ids.
+ * Validate the integration and account status in active.
+ * Validate that workOrderId exist.
  */
 
-exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
-    const { accountId, workOrderId } = req.query;
-    const verifyAccountStatus = await accountsModel.findById(accountId)
+exports.ValidateAccountAndIntegrationsStatus = asyncWrapper(async (req,res, next) => {
+    const { accountId,integrationsMasterId, workOrderId } = req.query;
+    const verifyAccountStatus = await integrationsMasterModel.findById(integrationsMasterId).populate('accountId')
     console.log('verifyAccountStatus')
-    if (verifyAccountStatus.status === 'deleted') {
+    if (verifyAccountStatus.accountId.status === 'deleted' || verifyAccountStatus.accountId.status === 'in-progress') {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
         });
     }
-    const workOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, workOrderId: workOrderId });
-    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
-        workOrderLifeCycleDetails
+    if(verifyAccountStatus.status === 'deleted' || verifyAccountStatus.status === 'blocked'){
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
+        });
+    }
+    if(!workOrderId){
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE_VALIDATION,
+        });
+    }
+    next()
+})
+
+/**
+ * Get all work orders life cycles based on account and work order ids.
+ */
+
+exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
+    const { accountId,integrationsMasterId, workOrderId } = req.query;
+    let workOrderLifeCycleDetails 
+
+    workOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId:integrationsMasterId, workOrderId: workOrderId });
+    if(workOrderLifeCycleDetails.length > 0){
+      return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+          status: customConstants.messages.MESSAGE_SUCCESS,
+          message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
+          workOrderLifeCycleDetails
+      })
+    }
+    else{
+      let getCPDWorkOrderID = await CPDWorkordersModel.findOne({ accountId: accountId, "CPDWorkOrders.WorkOrderNumber" : workOrderId},{CPDWorkOrderId:1})
+      console.log('getCPDWorkOrderID:==',getCPDWorkOrderID)
+      workOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId:integrationsMasterId, workOrderId: getCPDWorkOrderID.CPDWorkOrderId });
+      return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+          status: customConstants.messages.MESSAGE_SUCCESS,
+          message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
+          workOrderLifeCycleDetails
     })
+    }
+        
 })
