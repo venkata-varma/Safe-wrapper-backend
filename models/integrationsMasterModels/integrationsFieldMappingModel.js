@@ -9,17 +9,20 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
     accountId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "accounts",
+      index : true,
       default: null,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
+      index : true,
       default: null,
     },
     integrationsMasterId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "integrationsMaster",
       required: [true, "integrationId required"],
+      index : true,
       default: null,
     },
     from: {

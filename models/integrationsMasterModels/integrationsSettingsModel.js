@@ -9,21 +9,25 @@ const integrationsSettingsSchema = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:"integrationsMaster",
         required:[true,"integrationId required"],
+        index : true,
         default:null
     },
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "accounts",
+        index : true,
         default: null,
       },
       userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
+        index : true,
         default: null,
       },
     periodType:{
         type:String,
         enum:["each second","once each minute","once each hour","once each day","once each month"],
+        required : [true, 'periodType required'],
         default:""
     },
     currentStatus : {
@@ -57,6 +61,7 @@ const integrationsSettingsSchema = new mongoose.Schema({
       },
       dataDumpRange : {
         type : Number,
+        required : [true, 'data dump range is required'],
         default : 1
       }
 },{timestamps:true});

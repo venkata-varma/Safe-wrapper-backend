@@ -9,11 +9,13 @@ const integrationsMasterSchema = new mongoose.Schema(
     accountId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "accounts",
+      index : true,
       default: null,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
+      index : true,
       default: null,
     },
     title: {

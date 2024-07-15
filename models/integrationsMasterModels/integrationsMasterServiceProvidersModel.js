@@ -9,16 +9,19 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
     integrationsMasterId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "integrationsMaster",
+      index : true,
       default: null,
     },
     accountId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "accounts",
+      index : true,
       default: null,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
+      index : true,
       default: null,
     },
     credentials: {

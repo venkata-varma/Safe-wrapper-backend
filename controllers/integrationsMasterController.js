@@ -949,7 +949,7 @@ Returns Updated record with new values
 
 */
 exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
-  const { fieldMappingId, dataPoints, serviceMethod } = req.body;
+  const { fieldMappingId, dataPoints, serviceMethod, from, to } = req.body;
   const integrationFieldMapping = await integrationsFieldMappingModel.findById(fieldMappingId);
 
   if (!integrationFieldMapping) {
@@ -959,7 +959,7 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
     });
   }
 
-  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { dataPoints: dataPoints } }, { new: true });
+  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { dataPoints: dataPoints,from:from, to:to, serviceMethod:serviceMethod  } }, { new: true });
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,

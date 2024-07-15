@@ -9,6 +9,7 @@ const usersSchema = new mongoose.Schema({
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
         ref:"accounts",
+        index : true,
         default:null
     },
     name:{
