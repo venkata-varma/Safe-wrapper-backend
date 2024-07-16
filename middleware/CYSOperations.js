@@ -24,7 +24,7 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
 
     let getCPDWorkOrderDetails = await axios.get(`${configurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderId}`,
         {
-            headers: { Authorization: `bearer ${corrigoToken.access_token}` }
+            headers: { Authorization: `bearer ${corrigoToken}` }
         })
         .then(res => {
             // console.log('response:==',res.data)
