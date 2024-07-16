@@ -38,7 +38,7 @@ const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersMo
 
 exports.getImages = asyncWrapper(async (req, res) => {
   // Constructing the URL based on the request object
-  const baseUrl = 'https://cdiapi.dev.devrabbit.co/';
+  const baseUrl = 'https://ihubapi.dev.devrabbit.co/';
   const imageUrls = [
     {
       name: "TT",
