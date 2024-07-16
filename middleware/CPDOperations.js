@@ -247,6 +247,8 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
         await integrationsCronJobsModel.findByIdAndUpdate(cronJobDetails._id, {
             status: "completed"
         }, { new: true, upsert: true });
+        await integrationsMasterModel.findByIdAndUpdate(integrationObject.integrationsMasterId, { lastPullDate: new Date() }, { new: true });
+       
     }
     
 };

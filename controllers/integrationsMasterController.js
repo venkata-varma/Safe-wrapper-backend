@@ -1029,49 +1029,46 @@ exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
 */
 
 exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
-  const { accountId } = req.params;
-  const integrationsMasterDetails = await integrationsMasterModel.find({ accountId: accountId, status: "active" });
+  const { integrationsMasterId } = req.params;
+  const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
 
-  if (integrationsMasterDetails.length > 0) {
-    for (const integration of integrationsMasterDetails) {
-
+  if (integrationsMasterDetails) {
       let fromCredentials, toCredentials;
 
-      switch (integration.from) {
+      switch (integrationsMasterDetails.from) {
         case 'CPD':
-          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "CPD" }).lean();
+          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "CPD" }).lean();
           await CPDOperations.getCPDWorkOrders(fromCredentials, "manual");
 
-          if (integration.to === 'DF') {
-            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "DF" }).lean();
+          if (integrationsMasterDetails.to === 'DF') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "DF" }).lean();
             await DFOperations.DFCreateWorkorders(toCredentials, "manual");
-          } else if (integration.to === 'CYS') {
-            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "CYS" }).lean();
+          } else if (integrationsMasterDetails.to === 'CYS') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "CYS" }).lean();
             console.log('CYS Credentials:', toCredentials);
-            console.log('integration:===', integration)
+            console.log('integrationsMasterDetails:===', integrationsMasterDetails)
             await CYSOperations.CYSCreateWorkorders(toCredentials, "manual");
           }
           break;
 
         case 'SNOW':
-          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "SNOW" }).lean();
+          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "SNOW" }).lean();
           await SNOWOperations.getSNOWWorkOrders(fromCredentials, "manual");
 
-          if (integration.to === 'CPD') {
-            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "CPD" }).lean();
+          if (integrationsMasterDetails.to === 'CPD') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "CPD" }).lean();
 
           }
           break;
 
         case 'DF':
-          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "DF" }).lean();
+          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "DF" }).lean();
           // integrationCredentials.push(fromCredentials); // Uncomment if needed
           break;
 
         default:
-          console.log('No matching integration type found.');
+          console.log('No matching integrationsMasterDetails type found.');
       }
-    }
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
@@ -1080,11 +1077,10 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   } else {
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: 'No active integrations found.'
+      message: customConstants.messages.MESSAGE_INTEGRATION_VALIDATE_STATUS
     });
   }
 });
-
 
 /*
 * Verify the status of account.
@@ -1098,6 +1094,32 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+    });
+  }
+  else {
+    next()
+  }
+})
+
+
+/*
+* Verify the status of integration and account.
+* If status is active pass the middleware.
+*/
+exports.validateIntegrationStatus = asyncWrapper(async (req, res, next) => {
+  const { integrationsMasterId } = req.params
+  const verifyAccountStatus = await integrationsMasterModel.findById(integrationsMasterId).populate('accountId')
+  console.log('verifyAccountStatus')
+  if (verifyAccountStatus.accountId.status === 'deleted') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+    });
+  }
+  if (verifyAccountStatus.status !== 'active') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_VALIDATE_STATUS,
     });
   }
   else {
