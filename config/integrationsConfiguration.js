@@ -96,10 +96,10 @@ const configurations = {
 
     CYS : {
       createWorkOrder : {
-        URL : 'http://192.168.1.38:3000/create-estimate'
+        URL : 'https://cyrious-api.dev.devrabbit.co/create-estimate'
       },
       getWorkOrder : {
-        URL : 'http://192.168.1.38:3000/get-estimate'
+        URL : 'https://cyrious-api.dev.devrabbit.co/get-estimate'
       }
     }
 }
