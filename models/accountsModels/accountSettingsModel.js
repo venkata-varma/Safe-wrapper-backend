@@ -34,8 +34,8 @@ const accountSettingsSchema = mongoose.Schema({
         default: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
     },
     dataPoints: {
-        type: Object,
-        default: {
+        type: Array,
+        default:[{
             "interationDetails": {
                 "source": true,
                 "destination": true,
@@ -43,7 +43,7 @@ const accountSettingsSchema = mongoose.Schema({
                 "fieldMappings": true,
                 "exceptions": true
             }
-        }
+        }]
     }
 
 }, { timestamps: true });
@@ -53,4 +53,4 @@ accountSettingsSchema.pre('save', function (next) {
     next()
 });
 
-module.exports = mongoose.model('accountlevelsettings', accountSettingsSchema)
+module.exports = mongoose.model('accountsettings', accountSettingsSchema)

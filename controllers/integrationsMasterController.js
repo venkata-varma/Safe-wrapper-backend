@@ -1030,51 +1030,58 @@ exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
 
 exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const { accountId } = req.params;
-  const integrationsMasterDetails = await integrationsMasterModel.find({ accountId: accountId });
+  const integrationsMasterDetails = await integrationsMasterModel.find({ accountId: accountId, status: "active" });
 
   if (integrationsMasterDetails.length > 0) {
     for (const integration of integrationsMasterDetails) {
-      if (integration.status === 'active' && integration.from === 'CPD' && integration.to === 'DF') {
-        const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "CPD" }).lean();
 
-        await CPDOperations.getCPDWorkOrders(CPDCredentials, typeOfCron = "manual");
-        const DFCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "DF" }).lean();
+      let fromCredentials, toCredentials;
 
-        await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "manual");
+      switch (integration.from) {
+        case 'CPD':
+          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "CPD" }).lean();
+          await CPDOperations.getCPDWorkOrders(fromCredentials, "manual");
 
-        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-          status: customConstants.messages.MESSAGE_SUCCESS,
-          message: customConstants.messages.MESSAGE_CRON_MANUAL
-        });
-      } 
-      else if (integration.status === 'active' && integration.from === 'SNOW' && integration.to === 'CPD') {
-        const SNOWCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "SNOW" }).lean();
+          if (integration.to === 'DF') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "DF" }).lean();
+            await DFOperations.DFCreateWorkorders(toCredentials, "manual");
+          } else if (integration.to === 'CYS') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "CYS" }).lean();
+            console.log('CYS Credentials:', toCredentials);
+            console.log('integration:===', integration)
+            await CYSOperations.CYSCreateWorkorders(toCredentials, "manual");
+          }
+          break;
 
-        await SNOWOperations.getSNOWWorkOrders(SNOWCredentials, typeOfCron = "manual");
-        const CPDCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "CPD" }).lean();
+        case 'SNOW':
+          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "SNOW" }).lean();
+          await SNOWOperations.getSNOWWorkOrders(fromCredentials, "manual");
 
-        // await DFOperations.DFCreateWorkorders(DFCredentials, typeOfCron = "manual");
+          if (integration.to === 'CPD') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "CPD" }).lean();
 
-        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-          status: customConstants.messages.MESSAGE_SUCCESS,
-          message: customConstants.messages.MESSAGE_CRON_MANUAL
-        });
-      }
-      else if (integration.status === 'active' && integration.from === 'CPD' && integration.to === 'CYS') {
-        const CPDCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "CPD" }).lean();
-        await CPDOperations.getCPDWorkOrders(CPDCredentials, typeOfCron = "manual");
+          }
+          break;
 
-        const CYSCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integration.integrationsMasterId, to: "CYS" }).lean();
-        await CYSOperations.CYSCreateWorkorders(CYSCredentials, typeOfCron = "manual");
-      }
-      else if (integration.integrationsMasterId.status === 'active' && integration.integrationsMasterId.from === 'DF') {
-        const credentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "DF" }).lean();
-        // integrationCredentials.push(credentials)
-      }
-      else {
-        // nothing
+        case 'DF':
+          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integration.integrationsMasterId, serviceProvider: "DF" }).lean();
+          // integrationCredentials.push(fromCredentials); // Uncomment if needed
+          break;
+
+        default:
+          console.log('No matching integration type found.');
       }
     }
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_CRON_MANUAL,
+    });
+  } else {
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: 'No active integrations found.'
+    });
   }
 });
 

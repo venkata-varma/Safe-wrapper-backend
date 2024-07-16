@@ -1,5 +1,6 @@
 // const axios = require('axios');
 const accountsModel = require('../models/accountsModels/accountsModel');
+const accountSettingsModel = require('../models/accountsModels/accountSettingsModel')
 const authentication = require('../utils/authentication');
 const asyncWrapper = require('../middleware/asyncWrapper');
 const customConstants = require('../config/constants.json');
@@ -84,6 +85,9 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             email: email,
             role: 'super-admin',
         });
+        await accountSettingsModel.create({
+            accountId: accountData._id
+        })
         //To delete Password from Response while displaying it.
         delete accountData._doc.password;
         delete user._doc.password;
