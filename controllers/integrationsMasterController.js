@@ -74,7 +74,7 @@ exports.getImages = asyncWrapper(async (req, res) => {
     },
     {
       name: "QSP",
-      url: baseUrl + '/static/Qsp_logo.png'
+      url: baseUrl + '/static/Qsp_logo2.png'
     },
     {
       name: "CYS",
