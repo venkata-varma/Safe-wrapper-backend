@@ -85,6 +85,9 @@ const configurations = {
       searchWorkOrderType : {
         URL : 'https://api.dataforma.com/dflowslope-api/workorders/types/search',
         body : {}
+      },
+      searchbuildings: {
+        URL: 'https://api.dataforma.com/dflowslope-api/buildings?limit=5000'
       }
     },
 

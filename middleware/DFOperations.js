@@ -10,6 +10,7 @@ const integrationsMasterServiceProvidersModel = require('../models/integrationsM
 const { decryptData } = require('../utils/encryptionAlgorithms');
 const { CPDAuthentication } = require('../utils/serviceProvidersAuthentication');
 const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
+const CPDtoDFBuildingMasterModel = require('../models/workOrdersModels/CPDtoDFBuildingMasterModel');
 
 /**
  * 
@@ -60,6 +61,84 @@ const getDFTypeListIdFromSearchAPI = async (fieldmappingkeys, decryptConfigCrede
     return fieldmappingkeys;
 }
 
+/**
+ * Check wheather we have the required buildingId and salespersonId by spaceName from CPDWorkOrders.
+ * If not, From the CPDWorkOrders get location name.
+ * From Serach buildings API get all building data of DF and then compare the location names from CPD and DF.
+ * When the location name matches assign the buildingId and salesPersonId values in fieldMappingkeys object.
+ * Else assign the buildingId and salesPersonId default values.
+ * @returns fieldmappingKeys.
+ */
+
+const getDFBuildingId = async(CPDWorkOrders,fieldmappingkeys, decryptConfigCredentials, integrationObject) => {
+    const getBuildingDetails = await CPDtoDFBuildingMasterModel.find({CPDBuildingName: CPDWorkOrders.ServiceLocation.SpaceName})
+    if(getBuildingDetails.length === 0){
+        let getBuildingConfig = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: `${DFConfigurations.DF.searchbuildings.URL}`,
+            headers: {
+                'df-auth': decryptConfigCredentials.df_auth,
+                'df-servicecode': decryptConfigCredentials.df_servicecode,
+                'Content-Type': 'application/json',
+            }
+        }
+        const getDFBuildingData = await axios.request(getBuildingConfig)
+        .then((response) => {
+            // console.log("getDFBuildingData:===", JSON.stringify(response.data));
+            return response.data
+        })
+        .catch(async (error) => {
+            console.log("ERROR:==", error);
+            await integrationsExceptionsModel.create({
+                integrationsMasterId: integrationObject.integrationsMasterId,
+                accountId: integrationObject.accountId,
+                CPDWorkOrderId: CPDWorkOrders.CPDWorkOrderId,
+                networkCode: error.response.status,
+                exceptionMessage: error.message,
+                exceptionTitle: error.response.data.messages || error.response.data.error,
+                integrationsApiServices: 'search-buildings'
+            })
+        });
+        if(getDFBuildingData !== undefined){
+            let buildingIdDetails = getDFBuildingData.find((item) => {
+                return item.name.toLowerCase() === CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase();
+            });
+            console.log("buildingIdDetails:==",buildingIdDetails)
+    
+            if(buildingIdDetails){
+                fieldmappingkeys.buildingId = buildingIdDetails.id;
+                fieldmappingkeys.salespersonId = buildingIdDetails.defaultSalesPersonId
+    
+                await CPDtoDFBuildingMasterModel.create({
+                    DFBuildingId : buildingIdDetails.id,
+                    DFSalesPersonId : buildingIdDetails.defaultSalesPersonId,
+                    DFInvoiceRootId : buildingIdDetails.defaultInvoiceToRootId,
+                    DFBuildingName : buildingIdDetails.name,
+                    DFBuildingObject : buildingIdDetails,
+                    CPDBuildingName : CPDWorkOrders.ServiceLocation.SpaceName,
+                    CPDOccupantId : CPDWorkOrders.ServiceLocation.OccupantID,
+                    CPDOccupantSpaceId : CPDWorkOrders.ServiceLocation.SpaceId,
+                    CPDBuildingObject : CPDWorkOrders.ServiceLocation
+                })
+            }
+            else{
+                // nothing
+            }
+        }
+        else{
+            fieldmappingkeys.buildingId = CPDWorkOrders.ServiceLocation.OccupantID 
+            fieldmappingkeys.salespersonId = ""
+        }
+        }
+        else{
+            fieldmappingkeys.buildingId    = getBuildingDetails[0].DFBuildingId || CPDWorkOrders.ServiceLocation.OccupantID
+            fieldmappingkeys.salespersonId = getBuildingDetails[0].DFSalesPersonId || ""
+        }   
+        
+    return fieldmappingkeys;
+}
+
 // Function to get nested property value
 const getNestedValue = (obj, path) => {
     if (!path) return '';
@@ -95,7 +174,7 @@ const mapResponseToDataPoints = (response, dataPoints) => {
  * @returns updated fieldmappingkeys
  */
 
-const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject) => {
+const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials) => {
 
     let getCPDWorkOrderDetails = await axios.get(`${DFConfigurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderId}`,
         {
@@ -118,6 +197,7 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
         });
     if (getCPDWorkOrderDetails) {
         fieldmappingkeys = mapResponseToDataPoints(getCPDWorkOrderDetails, fieldmappingkeys);
+        fieldmappingkeys = await getDFBuildingId(getCPDWorkOrderDetails,fieldmappingkeys, decryptConfigCredentials, integrationObject)
     }
     return fieldmappingkeys
 
@@ -229,7 +309,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     let encryptedDetails = { iv: process.env.CRYPTO_IV, encryptedData: CPDAuthCredentials.credentials };
                     let CPDdecryptConfigCredentials = JSON.parse(await decryptData(encryptedDetails, process.env.CRYPTO_KEY));
                     const corrigoToken = await CPDAuthentication(CPDdecryptConfigCredentials.client_id, CPDdecryptConfigCredentials.client_secret, CPDdecryptConfigCredentials.grant_type, CPDdecryptConfigCredentials.baseUrl);
-                    fieldmappingkeys = await getCPDFieldMappingkeys(workOrder.CPDWorkOrderId, workOrder.MessageId, fieldmappingkeys, corrigoToken, integrationObject)
+                    fieldmappingkeys = await getCPDFieldMappingkeys(workOrder.CPDWorkOrderId, workOrder.MessageId, fieldmappingkeys, corrigoToken, integrationObject,decryptConfigCredentials)
 
                     fieldmappingkeys = await getWorkOrderFieldMappingkeys(fieldmappingkeys, workOrder.CPDWorkOrders.WorkOrderNumber, workOrder.CPDWorkOrderStatus, workOrder.CPDWorkOrders.WorkType)
                     fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
@@ -349,17 +429,18 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     let CPDdecryptConfigCredentials = JSON.parse(await decryptData(encryptedDetails, process.env.CRYPTO_KEY));
                     const corrigoToken = await CPDAuthentication(CPDdecryptConfigCredentials.client_id, CPDdecryptConfigCredentials.client_secret, CPDdecryptConfigCredentials.grant_type, CPDdecryptConfigCredentials.baseUrl);
                     
-                    fieldmappingkeys = await getCPDFieldMappingkeys(getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.MessageId, fieldmappingkeys, corrigoToken, integrationObject)
-
-                    fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
-                    fieldmappingkeys = await getWorkOrderFieldMappingkeys(fieldmappingkeys, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, getCPDWorkOrderStatus.CPDWorkOrderStatus, getCPDWorkOrderStatus.CPDWorkOrders.WorkType)
-
-                    fieldmappingkeys.statusDate = new Date().toJSON()
+                    
                     let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "DF" });
                     let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
                     // console.log("Step-1 called");
 
                     let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
+                    fieldmappingkeys = await getCPDFieldMappingkeys(getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials)
+
+                    fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
+                    fieldmappingkeys = await getWorkOrderFieldMappingkeys(fieldmappingkeys, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, getCPDWorkOrderStatus.CPDWorkOrderStatus, getCPDWorkOrderStatus.CPDWorkOrders.WorkType)
+                    fieldmappingkeys.statusDate = new Date().toJSON()
+
                     // Find and map the typeListId value
                     fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, getCPDWorkOrderStatus.CPDWorkOrders.Type, integrationObject)
                     console.log('fieldmappingkeys:===',fieldmappingkeys)
