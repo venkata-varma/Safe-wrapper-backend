@@ -95,6 +95,22 @@ exports.getImages = asyncWrapper(async (req, res) => {
     {
       name: "CROSS",
       url: baseUrl + '/static/cross_icon.png'
+    },
+    {
+      name: "CURRENT-FREQUENCY",
+      url: baseUrl + '/static/frequency_icon.png'
+    },
+    {
+      name: "AUTO-DATA-SYNC",
+      url: baseUrl + '/static/data_sync_icon.png'
+    },
+    {
+      name: "UPDATE-FREQUENCY",
+      url: baseUrl + '/static/update_frequency_icon.png'
+    },
+    {
+      name: "DATA-DUMP-RANGE",
+      url: baseUrl + '/static/data_range_icon.png'
     }
   ]
 
