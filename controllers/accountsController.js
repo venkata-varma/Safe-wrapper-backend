@@ -177,9 +177,18 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
             }
         },
         {
+            $lookup: {
+                from: 'cysworkorders',
+                localField: '_id',
+                foreignField: 'integrationsMasterId',
+                as: 'CYSWorkOrderDetails'
+            }
+        },
+        {
             $project: {
                 CPDWorkOrderCount: { $size: '$CPDWorkOrderDetails' },
                 DFWorkOrderCount: { $size: '$DFWorkOrderDetails' },
+                CYSWorkOrderCount: { $size: '$CYSWorkOrderDetails' },
             }
         },
         {
@@ -187,6 +196,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
                 workOrders: [
                     { serviceprovider: 'CPD', workOrders: '$CPDWorkOrderCount' },
                     { serviceprovider: 'DF', workOrders: '$DFWorkOrderCount' },
+                    { serviceprovider: 'CYS', workOrders: '$CYSWorkOrderCount' },
                 ]
 
             }
