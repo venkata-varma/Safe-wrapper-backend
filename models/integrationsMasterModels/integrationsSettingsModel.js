@@ -63,6 +63,16 @@ const integrationsSettingsSchema = new mongoose.Schema({
         type : Number,
         required : [true, 'data dump range is required'],
         default : 1
+      },
+      repeatOn: {
+        repeatStatus: {
+          type: String,
+          default: ""
+        },
+        repeatDate: {
+          type: Date,
+          default: new Date()
+        }
       }
 },{timestamps:true});
 
