@@ -13,11 +13,13 @@ router.post('/create-integrationmaster-service-provider', integrationsMasterCont
     integrationsMasterControllers.credentialsValidationsMiddleware, 
     integrationsMasterControllers.createIntegrationMasterServiceProviderCredentials)
 router.post('/get-integration-decrypt-result',integrationsMasterControllers.validationForDecrypt, integrationsMasterControllers.getIntegrationCryptoService);
-
+ 
 router.patch('/update-integrationmaster-field-mapping',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterFieldMappings)
 router.patch('/update-integrationmaster-settings',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterSettings)
 router.patch('/edit-integrationmaster/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.editIntegrationMaster);
-router.patch('/edit-integrationmaster-service-provider/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster,integrationsMasterControllers.credentialsValidationsMiddleware, integrationsMasterControllers.editIntegrationMasterServiceProviderCredentials)
+router.patch('/edit-integrationmaster-service-provider/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster,
+    integrationsMasterControllers.credentialsValidationsMiddleware, 
+    integrationsMasterControllers.editIntegrationMasterServiceProviderCredentials)
 router.patch('/edit-integrationmaster-field-mappings/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.editIntegrationMasterFieldMappings)
 router.patch('/edit-integrationmaster-settings/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.editIntegrationMasterSettings)
 router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.deactivateInteragtionMasterCrons)
