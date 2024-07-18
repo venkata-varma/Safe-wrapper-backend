@@ -5,12 +5,12 @@ const querystring = require('querystring');
 
 const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl) => {
     try {
-        console.log('baseUrl:==',baseUrl)
+        // console.log('baseUrl:==',baseUrl)
         const tokenResponse = await axios.post(
             `${baseUrl}`,
             `client_id=${client_id}&client_secret=${client_secret}&grant_type=${grant_type}`
         );
-        console.log('tokenResponse.data:==',tokenResponse.data.access_token)
+        // console.log('tokenResponse.data:==',tokenResponse.data.access_token)
         return tokenResponse.data.access_token;
     } catch (error) {
         console.log("CPD Auth Error=", error);

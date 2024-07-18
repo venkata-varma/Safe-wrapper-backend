@@ -211,7 +211,7 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
             headers: { Authorization: `bearer ${corrigoToken.access_token}` }
         })
         .then(res => {
-            console.log('response:==',res.data)
+            console.log('response:==')
             return res
         })
         .catch(async (error) => {
