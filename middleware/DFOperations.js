@@ -71,8 +71,8 @@ const getDFTypeListIdFromSearchAPI = async (fieldmappingkeys, decryptConfigCrede
  */
 
 const getDFBuildingId = async(CPDWorkOrders,fieldmappingkeys, decryptConfigCredentials, integrationObject) => {
-    const getBuildingDetails = await CPDtoDFBuildingMasterModel.find({CPDBuildingName: CPDWorkOrders.ServiceLocation.SpaceName})
-    if(getBuildingDetails.length === 0){
+    const getBuildingDetails = await CPDtoDFBuildingMasterModel.find({CPDBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase(), DFBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase()})
+    if(getBuildingDetails.length <= 0){
         let getBuildingConfig = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -97,7 +97,7 @@ const getDFBuildingId = async(CPDWorkOrders,fieldmappingkeys, decryptConfigCrede
                 networkCode: error.response.status,
                 exceptionMessage: error.message,
                 exceptionTitle: error.response.data.messages || error.response.data.error,
-                integrationsApiServices: 'search-buildings'
+                integrationsApiServices: 'df-search-buildings'
             })
         });
         if(getDFBuildingData !== undefined){
@@ -114,9 +114,9 @@ const getDFBuildingId = async(CPDWorkOrders,fieldmappingkeys, decryptConfigCrede
                     DFBuildingId : buildingIdDetails.id,
                     DFSalesPersonId : buildingIdDetails.defaultSalesPersonId,
                     DFInvoiceRootId : buildingIdDetails.defaultInvoiceToRootId,
-                    DFBuildingName : buildingIdDetails.name,
+                    DFBuildingName : buildingIdDetails.name.toLowerCase(),
                     DFBuildingObject : buildingIdDetails,
-                    CPDBuildingName : CPDWorkOrders.ServiceLocation.SpaceName,
+                    CPDBuildingName : CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase(),
                     CPDOccupantId : CPDWorkOrders.ServiceLocation.OccupantID,
                     CPDOccupantSpaceId : CPDWorkOrders.ServiceLocation.SpaceId,
                     CPDBuildingObject : CPDWorkOrders.ServiceLocation
@@ -153,8 +153,8 @@ const getNestedValue = (obj, path) => {
     }, obj) || '';
 };
 
-// Map the values from response to dataPoints
-const mapResponseToDataPoints = (response, dataPoints) => {
+// Map the CPD values from response to DF fieldMapping keys
+const mapCPDValuesToDFFieldMappingKeys = async(response, dataPoints) => {
     const workOrder = response;
     const mappedDataPoints = {};
 
@@ -196,7 +196,7 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
             })
         });
     if (getCPDWorkOrderDetails) {
-        fieldmappingkeys = mapResponseToDataPoints(getCPDWorkOrderDetails, fieldmappingkeys);
+        fieldmappingkeys = await mapCPDValuesToDFFieldMappingKeys(getCPDWorkOrderDetails, fieldmappingkeys);
         fieldmappingkeys = await getDFBuildingId(getCPDWorkOrderDetails,fieldmappingkeys, decryptConfigCredentials, integrationObject)
     }
     return fieldmappingkeys
