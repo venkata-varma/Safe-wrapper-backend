@@ -455,10 +455,11 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                         },
                         data: JSON.stringify(fieldmappingkeys)
                     }
-                    await axios.request(updateWorkOrderConfig)
+                    const DFUpdatedWorkOrderId = await axios.request(updateWorkOrderConfig)
                         .then((response) => {
                             DFWorkorderList = JSON.stringify(response.data)
                             console.log("DFUpdateWorkorderListresponse:===", JSON.stringify(response.data));
+                            return response.data.id
                         })
                         .catch(async (error) => {
                             console.log("UpdateERROR:==", JSON.stringify(error.response.data));
@@ -472,10 +473,11 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 integrationsApiServices: 'update-workorder'
                             })
                         });
+                        console.log('DFUpdatedWorkOrderId:==',DFUpdatedWorkOrderId)
                     let getWorkOrderConfig = {
                         method: 'get',
                         maxBodyLength: Infinity,
-                        url: `${DFConfigurations.DF.getWorkOrderById.URL}${DFWorkOrder.DFWorkOrderId}`,
+                        url: `${DFConfigurations.DF.getWorkOrderById.URL}${DFUpdatedWorkOrderId}`,
                         headers: {
                             'df-auth': decryptConfigCredentials.df_auth,
                             'df-servicecode': decryptConfigCredentials.df_servicecode,
@@ -494,14 +496,14 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 accountId: integrationObject.accountId,
                                 CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
                                 networkCode: error.response.status,
-                                exceptionMessage: error.message,
-                                exceptionTitle: JSON.stringify(error.response.data.messages),
+                                exceptionMessage: JSON.stringify(error.response.data),
+                                exceptionTitle: error.message,
                                 integrationsApiServices: 'get-workorder'
                             })
                         });
                     if (DFWorkorderList) {
                         DFWorkOrderId = DFWorkorderList.id
-                        const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: DFWorkOrder.DFWorkOrderId }).lean();
+                        const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: DFUpdatedWorkOrderId }).lean();
                         if (listOfDFWorkorderDetails) {
                             let updatedDFWorkOrderStatus = JSON.parse(DFWorkorderList).status.split(' ').length > 1 ? JSON.parse(DFWorkorderList).status.split(' ').join('-') : JSON.parse(DFWorkorderList).status
                             await DFWorkOrdersModel.findOneAndUpdate({
