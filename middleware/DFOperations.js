@@ -227,9 +227,7 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
         
         else if (property === "invoiceToText")
             fieldmappingkeys.invoiceToText = "CBRE/T-Mobile"
-        else if (property === "workDescription")
-            fieldmappingkeys.workDescription = "DevRabbit Testing WorkOrders (Ignore).";
-       
+        
     }
     return fieldmappingkeys
 }
