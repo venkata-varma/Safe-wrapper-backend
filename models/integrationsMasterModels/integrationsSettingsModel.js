@@ -64,15 +64,9 @@ const integrationsSettingsSchema = new mongoose.Schema({
         required : [true, 'data dump range is required'],
         default : 1
       },
-      repeatOn: {
-        repeatStatus: {
-          type: String,
-          default: ""
-        },
-        repeatDate: {
+      expiresOn: {
           type: Date,
           default: new Date()
-        }
       }
 },{timestamps:true});
 
