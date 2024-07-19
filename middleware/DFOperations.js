@@ -11,6 +11,7 @@ const { decryptData } = require('../utils/encryptionAlgorithms');
 const { CPDAuthentication } = require('../utils/serviceProvidersAuthentication');
 const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
 const CPDtoDFBuildingMasterModel = require('../models/workOrdersModels/CPDtoDFBuildingMasterModel');
+const integrationsSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel');
 
 /**
  * 
@@ -247,33 +248,11 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
  * @param {*} WorkType 
  * @returns updated fieldmappingkeys
  */
-const getWorkOrderFieldMappingkeys = async (fieldmappingkeys, WorkOrderNumber, CPDWorkOrderStatus, WorkType) => {
-    // fieldmappingkeys.numberAlt = WorkOrderNumber;
-    if (CPDWorkOrderStatus === "New") {
-        fieldmappingkeys.status = 'REPORTED';
-    }
-    else if (CPDWorkOrderStatus === "Accepted") {
-        fieldmappingkeys.status = 'ESTIMATE_REQUESTED';
-    }
-    else if (CPDWorkOrderStatus === "CheckedIn") {
-        fieldmappingkeys.status = 'SCHEDULED';
-    }
-    else if (CPDWorkOrderStatus === "CheckedOut") {
-        fieldmappingkeys.status = 'COMPLETED';
-    }
-    else if (CPDWorkOrderStatus === "OnHold") {
-        fieldmappingkeys.status = 'ON_HOLD';
-    }
-    else if (CPDWorkOrderStatus === "Rejected") {
-        fieldmappingkeys.status = 'CANCELED';
-    }
-    else if (CPDWorkOrderStatus === "Recalled") {
-        fieldmappingkeys.status = 'REPORTED';
-    }
-    else if (CPDWorkOrderStatus === "Pending") {
-        fieldmappingkeys.status = 'IN_PROGRESS';
-    }
-    return fieldmappingkeys
+const getWorkOrderStatusFieldMappingkeys = async (integrationFieldMappingkeys, CPDWorkOrderStatus, IntegrationStatusMappingKeys) => {
+    
+    integrationFieldMappingkeys.status = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "IN_PROGRESS";
+        
+    return integrationFieldMappingkeys;
 }
 
 /**
@@ -298,14 +277,12 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
 
             if (integrationObject.serviceMethod === "create") {
-                // fieldmappingkeys = integrationObject.dataPoints
 
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
-                fieldmappingkeys = integrationObject.dataPoints
-                    // console.log('fieldmappingkeys:===',fieldmappingkeys)
-                    // fieldmappingkeys = await getWorkOrderFieldMappingkeys(fieldmappingkeys, workOrder.CPDWorkOrders.WorkOrderNumber, workOrder.CPDWorkOrderStatus, workOrder.CPDWorkOrders.WorkType)
-
+                    fieldmappingkeys = integrationObject.dataPoints
+                    const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
+                    
                     // Find list of DF credentails (encrypted) & then decrypt. 
                     let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "DF" });
                     let credentailsObj = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
@@ -318,7 +295,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     const corrigoToken = await CPDAuthentication(CPDdecryptConfigCredentials.client_id, CPDdecryptConfigCredentials.client_secret, CPDdecryptConfigCredentials.grant_type, CPDdecryptConfigCredentials.baseUrl);
                     fieldmappingkeys = await getCPDFieldMappingkeys(workOrder.CPDWorkOrderId, workOrder.MessageId, fieldmappingkeys, corrigoToken, integrationObject,decryptConfigCredentials)
 
-                    fieldmappingkeys = await getWorkOrderFieldMappingkeys(fieldmappingkeys, workOrder.CPDWorkOrders.WorkOrderNumber, workOrder.CPDWorkOrderStatus, workOrder.CPDWorkOrders.WorkType)
+                    fieldmappingkeys = await getWorkOrderStatusFieldMappingkeys(fieldmappingkeys, workOrder.CPDWorkOrderStatus, getWorkOrderStatusDefaultMappingKeys.statusFieldMappingKeys)
                     fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
                     fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, workOrder.CPDWorkOrders.Type, integrationObject)
                     fieldmappingkeys.statusDate = new Date().toJSON()
@@ -410,6 +387,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 // insert work order life cycle.
                                 await workOrderLifeCycleModel.create({
                                     workOrderId: DFWorkOrderId,
+                                    WorkOrderNumber:DFWorkorderList.numberAlt,
                                     workOrderStatus: JSON.parse(DFWorkorderList).status,
                                     accountId: integrationObject.accountId,
                                     integrationsMasterId: integrationObject.integrationsMasterId,
@@ -429,6 +407,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                 for (let DFWorkOrder of updateRequestDFWorkorders) {
                     fieldmappingkeys = integrationObject.dataPoints
                     const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, "CPDWorkOrders.WorkOrderNumber": DFWorkOrder.DFWorkOrders.numberAlt })
+                    const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
 
                     // Find integration credentails and then decrypt and pull CPD calls.
                     let CPDAuthCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CPD" })
@@ -445,13 +424,12 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     fieldmappingkeys = await getCPDFieldMappingkeys(getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials)
 
                     fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
-                    fieldmappingkeys = await getWorkOrderFieldMappingkeys(fieldmappingkeys, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, getCPDWorkOrderStatus.CPDWorkOrderStatus, getCPDWorkOrderStatus.CPDWorkOrders.WorkType)
+                    fieldmappingkeys = await getWorkOrderStatusFieldMappingkeys(fieldmappingkeys, getCPDWorkOrderStatus.CPDWorkOrderStatus, getWorkOrderStatusDefaultMappingKeys.statusFieldMappingKeys)
                     fieldmappingkeys.statusDate = new Date().toJSON()
 
                     // Find and map the typeListId value
                     fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, getCPDWorkOrderStatus.CPDWorkOrders.Type, integrationObject)
                     console.log('Updatefieldmappingkeys:===',fieldmappingkeys);
-                    
                     let DFWorkorderList = {}
                     let DFWorkOrderId
                     let updateWorkOrderConfig = {
@@ -528,6 +506,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             // insert work order life cycle.
                             await workOrderLifeCycleModel.create({
                                 workOrderId: DFWorkOrder.DFWorkOrderId,
+                                WorkOrderNumber:DFWorkorderList.numberAlt,
                                 workOrderStatus: updatedDFWorkOrderStatus,
                                 accountId: integrationObject.accountId,
                                 integrationsMasterId: integrationObject.integrationsMasterId,
