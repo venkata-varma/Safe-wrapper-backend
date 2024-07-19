@@ -692,7 +692,8 @@ exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
-        workOrderLifeCycleDetails:workOrderLifeCyclSourceAndDestinationeDetails.workOrderLifeCycleDetails,
+        sourceWorkOrderLifeCycleDetails:workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderLifeCycleDetails,
+        destinationWorkOrderLifeCycleDetails:workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderLifeCycleDetails,
         sourceWorkorders:workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderDetails,
         destinationWorkOrders:workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderDetails
     })
