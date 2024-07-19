@@ -387,6 +387,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 // insert work order life cycle.
                                 await workOrderLifeCycleModel.create({
                                     workOrderId: DFWorkOrderId,
+                                    WorkOrderNumber:DFWorkorderList.numberAlt,
                                     workOrderStatus: JSON.parse(DFWorkorderList).status,
                                     accountId: integrationObject.accountId,
                                     integrationsMasterId: integrationObject.integrationsMasterId,
@@ -505,6 +506,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             // insert work order life cycle.
                             await workOrderLifeCycleModel.create({
                                 workOrderId: DFWorkOrder.DFWorkOrderId,
+                                WorkOrderNumber:DFWorkorderList.numberAlt,
                                 workOrderStatus: updatedDFWorkOrderStatus,
                                 accountId: integrationObject.accountId,
                                 integrationsMasterId: integrationObject.integrationsMasterId,
