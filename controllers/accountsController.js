@@ -148,11 +148,10 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
 exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
     const { accountId } = req.params
     const accountInformation = await accountsModel.findById(accountId);
-    const integrationsOfAccount = await integrationsMasterModel.find({ accountId: accountId });
-    const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId });
-    const integrationCronsCount = await integrationCronsModel.find({ accountId: accountId });
-
-    const integrationsServiceProvidersWorkOrdersCount = await integrationsMasterModel.aggregate([
+    const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId }).countDocuments();
+    const integrationsActivitylogCount = await integrationCronsModel.find({ accountId: accountId }).countDocuments();
+    
+    let integrationsOfAccount = await integrationsMasterModel.aggregate([
         {
             $match: {
                 accountId: new mongoose.Types.ObjectId(accountId)
@@ -160,64 +159,101 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         },
         {
             $lookup: {
-                from: 'cpdworkorders',
-                localField: '_id',
-                foreignField: 'integrationsMasterId',
-                as: 'CPDWorkOrderDetails'
+                from: "cpdworkorders",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "CPDWorkOrders"
             }
         },
         {
             $lookup: {
-                from: 'dfworkorders',
-                localField: '_id',
-                foreignField: 'integrationsMasterId',
-                as: 'DFWorkOrderDetails'
+                from: "dfworkorders",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "DFWorkOrders"
             }
         },
         {
             $lookup: {
-                from: 'cysworkorders',
-                localField: '_id',
-                foreignField: 'integrationsMasterId',
-                as: 'CYSWorkOrderDetails'
+                from: "snowworkorders",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "SNOWWorkOrders"
+            }
+        },
+        {
+            $lookup: {
+                from: "cysworkorders",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "CYSWorkOrders"
+            }
+        },
+        {
+            $addFields: {
+                sourceWorkOrders: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$from", "CPD"] }, then: "$CPDWorkOrders" },
+                            { case: { $eq: ["$from", "DF"] }, then: "$DFWorkOrders" },
+                            { case: { $eq: ["$from", "SNOW"] }, then: "$SNOWWorkOrders" },
+                            { case: { $eq: ["$from", "CYS"] }, then: "$CYSWorkOrders" }
+                        ],
+                        default: [] // handle default case if needed
+                    }
+                },
+                destinationWorkOrders: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$to", "CPD"] }, then: "$CPDWorkOrders" },
+                            { case: { $eq: ["$to", "DF"] }, then: "$DFWorkOrders" },
+                            { case: { $eq: ["$to", "SNOW"] }, then: "$SNOWWorkOrders" },
+                            { case: { $eq: ["$to", "CYS"] }, then: "$CYSWorkOrders" }
+                        ],
+                        default: [] // handle default case if needed
+                    }
+                }
+            }
+        },
+        {
+            $addFields: {
+                sourceWorkOrderCount: { $size: "$sourceWorkOrders" },
+                destinationWorkOrderCount: { $size: "$destinationWorkOrders" }
+            }
+        },
+        {
+            $addFields: {
+                integrationsMasterDetails: {
+                    $mergeObjects: ["$$ROOT"]
+                }
             }
         },
         {
             $project: {
-                CPDWorkOrderCount: { $size: '$CPDWorkOrderDetails' },
-                DFWorkOrderCount: { $size: '$DFWorkOrderDetails' },
-                CYSWorkOrderCount: { $size: '$CYSWorkOrderDetails' },
-            }
-        },
-        {
-            $project: {
-                workOrders: [
-                    { serviceprovider: 'CPD', workOrders: '$CPDWorkOrderCount' },
-                    { serviceprovider: 'DF', workOrders: '$DFWorkOrderCount' },
-                    { serviceprovider: 'CYS', workOrders: '$CYSWorkOrderCount' },
-                ]
-
-            }
-        },
-        {
-            $unwind: '$workOrders'
-        },
-        {
-            $group: {
-                _id: '$workOrders.serviceprovider',
-                totalWorkOrders: { $sum: '$workOrders.workOrders' },
-            }
-        },
-        {
-            $project: {
-                _id: 0,
-                serviceprovider: '$_id',
-                workOrders: '$totalWorkOrders'
+                    _id: 1,
+                    integrationsMasterId: 1,
+                    accountId: 1,
+                    userId: 1,
+                    title: 1,
+                    description: 1,
+                    from: 1,
+                    to:1,
+                    status: 1,
+                    stepCount: 1,
+                    lastPullDate: 1,
+                    createdBy: 1,
+                    updatedBy: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    // sourceWorkOrders:1,
+                    // destinationWorkOrders:1,
+                    sourceWorkOrderCount: 1,
+                    destinationWorkOrderCount: 1
+                
             }
         }
     ]);
 
-    // To get the detailed CPD work orders in initiated status:
     const failedCPDWorkOrders = await integrationsMasterModel.aggregate([
         {
             $match: {
@@ -257,10 +293,9 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         data: {
             accountInformation,
             integrationsOfAccount,
-            integrationExceptionsCount: integrationExceptions.length,
-            dataSyncCount: integrationCronsCount.length,
+            integrationExceptionsCount: integrationExceptions,
+            dataSyncCount: integrationsActivitylogCount,
             failedCPDWorkOrders,
-            integrationsServiceProvidersWorkOrdersCount,
         },
     })
 })
