@@ -142,6 +142,7 @@ const getDFBuildingId = async(CPDWorkOrders,fieldmappingkeys, decryptConfigCrede
 // Function to get nested property value
 const getNestedValue = (obj, path) => {
     if (!path) return '';
+    if (typeof path !== 'string') return '';
     return path.split('.').reduce((acc, part) => {
         const arrayMatch = part.match(/(\w+)\[(\d+)\]/);
         if (arrayMatch) {
@@ -154,13 +155,18 @@ const getNestedValue = (obj, path) => {
 };
 
 // Map the CPD values from response to DF fieldMapping keys
-const mapCPDValuesToDFFieldMappingKeys = async(response, dataPoints) => {
+const mapCPDValuesToDFFieldMappingKeys = async (response, dataPoints) => {
     const workOrder = response;
     const mappedDataPoints = {};
 
-    Object.keys(dataPoints).forEach(key => {
+    Object.keys(dataPoints).forEach((key) => {
         const modelKey = dataPoints[key];
-        mappedDataPoints[key] = modelKey ? getNestedValue(workOrder, modelKey) : '';
+        if (typeof modelKey === 'string') {
+            mappedDataPoints[key] = modelKey ? getNestedValue(workOrder, modelKey) : '';
+        }
+        else{
+            mappedDataPoints[key] = modelKey;
+        }
     });
 
     return mappedDataPoints;
@@ -175,7 +181,7 @@ const mapCPDValuesToDFFieldMappingKeys = async(response, dataPoints) => {
  */
 
 const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials) => {
-
+    
     let getCPDWorkOrderDetails = await axios.get(`${DFConfigurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderId}`,
         {
             headers: { Authorization: `bearer ${corrigoToken}` }
@@ -196,8 +202,9 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
             })
         });
     if (getCPDWorkOrderDetails) {
-        fieldmappingkeys = await mapCPDValuesToDFFieldMappingKeys(getCPDWorkOrderDetails, fieldmappingkeys);
         fieldmappingkeys = await getDFBuildingId(getCPDWorkOrderDetails,fieldmappingkeys, decryptConfigCredentials, integrationObject)
+        fieldmappingkeys = await mapCPDValuesToDFFieldMappingKeys(getCPDWorkOrderDetails, fieldmappingkeys);
+        fieldmappingkeys.workDescription = getCPDWorkOrderDetails.WorkDetails.Assets[0].Comment === '' ? "(DR) - No Comment" : getCPDWorkOrderDetails.WorkDetails.Assets[0].Comment;
     }
     return fieldmappingkeys
 
@@ -227,8 +234,8 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
         
         else if (property === "invoiceToText")
             fieldmappingkeys.invoiceToText = "CBRE/T-Mobile"
-        
-    }
+
+        }
     return fieldmappingkeys
 }
 
@@ -291,10 +298,12 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
 
             if (integrationObject.serviceMethod === "create") {
-                fieldmappingkeys = integrationObject.dataPoints
+                // fieldmappingkeys = integrationObject.dataPoints
 
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
+                fieldmappingkeys = integrationObject.dataPoints
+                    // console.log('fieldmappingkeys:===',fieldmappingkeys)
                     // fieldmappingkeys = await getWorkOrderFieldMappingkeys(fieldmappingkeys, workOrder.CPDWorkOrders.WorkOrderNumber, workOrder.CPDWorkOrderStatus, workOrder.CPDWorkOrders.WorkType)
 
                     // Find list of DF credentails (encrypted) & then decrypt. 
@@ -313,7 +322,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
                     fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, workOrder.CPDWorkOrders.Type, integrationObject)
                     fieldmappingkeys.statusDate = new Date().toJSON()
-                    console.log('fieldmappingkeys:===',fieldmappingkeys)
+                    console.log('Createfieldmappingkeys:===',fieldmappingkeys)
 
                     let DFWorkOrderId; let DFWorkorderList = {};
                     let createWorkOrderConfig = {
@@ -441,7 +450,8 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
 
                     // Find and map the typeListId value
                     fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, getCPDWorkOrderStatus.CPDWorkOrders.Type, integrationObject)
-                    console.log('fieldmappingkeys:===',fieldmappingkeys)
+                    console.log('Updatefieldmappingkeys:===',fieldmappingkeys);
+                    
                     let DFWorkorderList = {}
                     let DFWorkOrderId
                     let updateWorkOrderConfig = {
