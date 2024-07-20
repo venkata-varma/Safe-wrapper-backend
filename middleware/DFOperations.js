@@ -249,8 +249,8 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
  * @returns updated fieldmappingkeys
  */
 const getWorkOrderStatusFieldMappingkeys = async (integrationFieldMappingkeys, CPDWorkOrderStatus, IntegrationStatusMappingKeys) => {
-    
-    integrationFieldMappingkeys.status = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "IN_PROGRESS";
+    let statusMappingValue = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "IN_PROGRESS";
+    integrationFieldMappingkeys.status = statusMappingValue.split('-').length > 1 ? statusMappingValue.split('-').join('_') : statusMappingValue
         
     return integrationFieldMappingkeys;
 }
