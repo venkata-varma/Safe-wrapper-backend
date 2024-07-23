@@ -100,6 +100,7 @@ const validateNewAndUpdatedWO = async (CPDWorkOrderResponse, cronJobDetails, acc
                 // insert work order life cycle.
                 await workOrderLifeCycleModel.create({
                     workOrderId: work.WorkOrderId,
+                    WorkOrderNumber:work.WorkOrderNumber,
                     workOrderStatus: work.Status,
                     accountId: accountId,
                     integrationsMasterId: integrationsMasterId,
@@ -133,6 +134,7 @@ const validateNewAndUpdatedWO = async (CPDWorkOrderResponse, cronJobDetails, acc
             // insert work order life cycle.
             await workOrderLifeCycleModel.create({
                 workOrderId: work.WorkOrderId,
+                WorkOrderNumber:work.WorkOrderNumber,
                 workOrderStatus: work.Status,
                 accountId: workDetails.accountId,
                 integrationsMasterId: integrationsMasterId,
@@ -211,7 +213,7 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
             headers: { Authorization: `bearer ${corrigoToken.access_token}` }
         })
         .then(res => {
-            console.log('response:==',res.data)
+            console.log('response:==')
             return res
         })
         .catch(async (error) => {

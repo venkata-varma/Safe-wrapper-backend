@@ -9,6 +9,10 @@ const workOrderLifeCycleSchema = new mongoose.Schema({
         type : String,
         default : ""
     },
+    WorkOrderNumber: {
+        type: String,
+        default:""
+    },
     workOrderStatus : {
         type : String,
         default : ""

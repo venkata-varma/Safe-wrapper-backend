@@ -27,7 +27,7 @@ const usersModel = require("../models/usersModels/usersModel");
 const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
 const serviceProvidersMappingAndServicesModel = require("../models/integrationsMasterModels/serviceProvidersMappingAndServicesModel");
 const { dateAsset } = require('../utils/utilsFunctions');
-const { getServiceWorkOrdersAndStatus } = require("../utils/general");
+const { getServiceWorkOrdersAndStatus, getStatusFieldMappings } = require("../utils/general");
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../utils/serviceProvidersAuthentication');
 const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersModel");
 
@@ -661,19 +661,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   let updatedIntegrationsDetails;
   let integrationsSettings;
   const existingintegrationsSettings = await integrationsSettingsModel.findOne({ integrationsMasterId });
-  let statusFieldMappingKeys
-  if (pastIntegrationDetails.from === "CPD" && pastIntegrationDetails.to === "DF") {
-    statusFieldMappingKeys = {
-      "REPORTED": "New",
-      "ESTIMATE-REQUESTED": "Accepted",
-      "ESTIMATE-COMPLETED": "Verified",
-      "ON-HOLD": "OnHold",
-      "SCHEDULED": "CheckedIn",
-      "COMPLETED": "CheckedOut",
-      "CANCELED": "Rejected",
-      "IN-PROGRESS": "Paused"
-    }
-  }
+  let statusFieldMappingKeys=await getStatusFieldMappings(integrationsMasterId)
 
   if (existingintegrationsSettings) {
     integrationsSettings = await integrationsSettingsModel.findOneAndUpdate(
@@ -1059,10 +1047,10 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
           if (integrationsMasterDetails.to === 'DF') {
             toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "DF" }).lean();
             await DFOperations.DFCreateWorkorders(toCredentials, "manual");
-          } else if (integrationsMasterDetails.to === 'CYS') {
+          } else if (integrationsMasterDetails.to === 'CYS') { 
             toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "CYS" }).lean();
-            console.log('CYS Credentials:', toCredentials);
-            console.log('integrationsMasterDetails:===', integrationsMasterDetails)
+            // console.log('CYS Credentials:', toCredentials);
+            // console.log('integrationsMasterDetails:===', integrationsMasterDetails)
             await CYSOperations.CYSCreateWorkorders(toCredentials, "manual");
           }
           break;

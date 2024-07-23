@@ -85,6 +85,9 @@ const configurations = {
       searchWorkOrderType : {
         URL : 'https://api.dataforma.com/dflowslope-api/workorders/types/search',
         body : {}
+      },
+      searchbuildings: {
+        URL: 'https://api.dataforma.com/dflowslope-api/buildings?limit=5000'
       }
     },
 
@@ -96,10 +99,12 @@ const configurations = {
 
     CYS : {
       createWorkOrder : {
-        URL : 'https://cyrious-api.dev.devrabbit.co/create-estimate'
+        // URL : 'https://cyrious-api.dev.devrabbit.co/create-estimate',
+        URL : 'http://192.168.1.31:8091/create-estimate'
       },
       getWorkOrder : {
-        URL : 'https://cyrious-api.dev.devrabbit.co/get-estimate'
+        // URL : 'https://cyrious-api.dev.devrabbit.co/get-estimate',
+        URL : 'http://192.168.1.31:8091/get-estimate'
       }
     }
 }

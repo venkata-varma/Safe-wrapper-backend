@@ -12,6 +12,51 @@ const { CPDAuthentication } = require('../utils/serviceProvidersAuthentication')
 const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
 const configurations = require('../config/integrationsConfiguration');
 const CYSWorkordersModel = require('../models/workOrdersModels/CYSWorkordersModel');
+const integrationsSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel');
+
+// Function to get nested property value
+const getNestedValue = (CPDWorkOrderResponse, integrationFieldMappingKey) => {
+    if (!integrationFieldMappingKey) return "";
+    if (typeof integrationFieldMappingKey !== 'string') return "";
+
+    return integrationFieldMappingKey.split('.').reduce((currentValue, fieldMappingkey) => {
+        const fieldMappingkeyMatch = fieldMappingkey.match(/(\w+)\[(\d+)\]/);
+        if (fieldMappingkeyMatch) {
+            const fieldMappingMatchKey = fieldMappingkeyMatch[1];
+            const index = parseInt(fieldMappingkeyMatch[2], 10);
+            return currentValue && currentValue[fieldMappingMatchKey] && currentValue[fieldMappingMatchKey][index];
+        }
+        return currentValue && currentValue[fieldMappingkey];
+    }, CPDWorkOrderResponse) || "";
+}
+
+// Map the CPD values from response to DF fieldMapping keys
+const mapCPDValuestoCYSFieldMappingKeys = async(CPDWorkOrderResponse, integrationFieldMappingKeys) => {
+    const mappedDataPoints = {};
+
+    Object.keys(integrationFieldMappingKeys).forEach((key) => {
+        const CPDWorkOrderMappingKey = integrationFieldMappingKeys[key];
+
+        if (typeof CPDWorkOrderMappingKey === 'object' && !Array.isArray(CPDWorkOrderMappingKey)) {
+            mappedDataPoints[key] = {};
+            Object.keys(CPDWorkOrderMappingKey).forEach((subKey) => {
+                const modelKey = CPDWorkOrderMappingKey[subKey];
+                if (typeof modelKey === 'string') {
+                    mappedDataPoints[key][subKey] = modelKey ? getNestedValue(CPDWorkOrderResponse, modelKey) : "";
+                } else {
+                    mappedDataPoints[key][subKey] = modelKey;
+                }
+            });
+        } else if (typeof CPDWorkOrderMappingKey === 'string') {
+            mappedDataPoints[key] = CPDWorkOrderMappingKey ? getNestedValue(CPDWorkOrderResponse, CPDWorkOrderMappingKey) : "";
+        } else {
+            mappedDataPoints[key] = CPDWorkOrderMappingKey;
+        }
+    });
+    return mappedDataPoints;
+}
+
+
 
 /**
  * 
@@ -21,13 +66,13 @@ const CYSWorkordersModel = require('../models/workOrdersModels/CYSWorkordersMode
  */
 
 const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject) => {
-
+    
     let getCPDWorkOrderDetails = await axios.get(`${configurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderId}`,
         {
             headers: { Authorization: `bearer ${corrigoToken}` }
         })
         .then(res => {
-            // console.log('response:==',res.data)
+            // console.log('response:==',res.data.WorkOrders[0])
             return res.data.WorkOrders[0]
         })
         .catch(async (error) => {
@@ -42,15 +87,11 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
             })
         });
     if (getCPDWorkOrderDetails) {
-        fieldmappingkeys.estimate.PONumber = getCPDWorkOrderDetails.WorkOrderId;
-        fieldmappingkeys.userDefinedFields["[WorkOrderID]"] = getCPDWorkOrderDetails.WorkOrderId;
-        fieldmappingkeys.userDefinedFields["[BE]"] = getCPDWorkOrderDetails.WorkOrderId;
-        fieldmappingkeys.userDefinedFields["[Project]"] = getCPDWorkOrderDetails.WorkOrderId;
-        fieldmappingkeys.userDefinedFields["[WO Corrigo On Site By]"] = getCPDWorkOrderDetails.Sla.OnSiteBy === null ? "" : getCPDWorkOrderDetails.Sla.OnSiteBy;
-        fieldmappingkeys.userDefinedFields["[WO Corrigo Completion Due Date]"] = getCPDWorkOrderDetails.Sla.DueDate;
+        fieldmappingkeys = await mapCPDValuestoCYSFieldMappingKeys(getCPDWorkOrderDetails, fieldmappingkeys)
+        fieldmappingkeys['estimate.CompanyName'] = getCPDWorkOrderDetails.Customer.Name + " - " + getCPDWorkOrderDetails.ServiceLocation.Address.Street1 || ""
+        fieldmappingkeys['estimate.description'] = CPDWorkOrderId + " - " + getCPDWorkOrderDetails.ServiceLocation.Address.Street1 || "DevRabbit Testing WorkOrders (Ignore)."
     }
     return fieldmappingkeys
-
 }
 
 /**
@@ -67,27 +108,27 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
 
     // Customize field mapping keys of cyrious - create API request.
     for (const property in fieldmappingkeys) {
-        console.log('property:==', property);
+        // console.log('property:==', property);
 
         if (property.startsWith("estimate.")) {
             const key = property.split(".")[1];
-            if (key === "StoreId") {
-                fieldmappingkeys.estimate.StoreId = '-1';
+            if (key === "StoreID") {
+                fieldmappingkeys.estimate.StoreID = '-1';
             } else if (key === "ClassTypeID") {
                 fieldmappingkeys.estimate.ClassTypeID = "10000";
-            } else if (key === "description") {
-                fieldmappingkeys.estimate.description = "DevRabbit Testing WorkOrders (Ignore).";
-            } else if (key === "SalesPerson1ID") {
+            }
+            else if (key === "SalesPerson1ID") {
                 fieldmappingkeys.estimate.SalesPerson1ID = "-1";
-            } else {
+            } 
+            else {
                 fieldmappingkeys.estimate[key] = fieldmappingkeys[property];
             }
         } else if (property.startsWith("userDefinedFields[")) {
             const fieldName = property.match(/\[(.*?)\]/)[1];
             if (fieldName === "ID") {
                 fieldmappingkeys.userDefinedFields["[ID]"] = '';
-            } else if (fieldName === "StoreId") {
-                fieldmappingkeys.userDefinedFields["[StoreId]"] = "-1";
+            } else if (fieldName === "StoreID") {
+                fieldmappingkeys.userDefinedFields["[StoreID]"] = "-1";
             } else if (fieldName === "ClassTypeID") {
                 fieldmappingkeys.userDefinedFields["[ClassTypeID]"] = '10000';
             } else if (fieldName === "WO NTE Limit") {
@@ -95,11 +136,11 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
             } else if (fieldName === "WO Corrigo Accept 2F Reject Date") {
                 fieldmappingkeys.userDefinedFields["[WO Corrigo Accept 2F Reject Date]"] = "";
             } else if (fieldName === "WO Corrigo Web Link") {
-                fieldmappingkeys.userDefinedFields["[WO Corrigo Web Link]"] = "DevRabbit Testing WorkOrders (Ignore).";
+                fieldmappingkeys.userDefinedFields["[WO Corrigo Web Link]"] = "www.google.com";
             } else if (fieldName === "1 QSP Job Type") {
                 fieldmappingkeys.userDefinedFields["[1 QSP Job Type]"] = "Corrigo-JLL-Admin";
             } else {
-                fieldmappingkeys.userDefinedFields[`[${fieldName}]`] = "";
+                fieldmappingkeys.userDefinedFields[`[${fieldName}]`] = fieldmappingkeys[property];
             }
         }
     }
@@ -121,28 +162,9 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
  * @returns updated fieldmappingkeys
  */
 
-const getWorkOrderFieldMappingkeys = async (fieldmappingkeys, WorkOrderNumber, CPDWorkOrderStatus, WorkType) => {
-    
-        if (CPDWorkOrderStatus === "New") {
-            fieldmappingkeys.estimate.StatusText = 'Requested';
-        }
-        else if (CPDWorkOrderStatus === "Accepted") {
-            fieldmappingkeys.estimate.StatusText = 'Approved';
-        }
-        else if (CPDWorkOrderStatus === "CheckedIn") {
-            fieldmappingkeys.estimate.StatusText = 'Built';
-        }
-        else if (CPDWorkOrderStatus === "CheckedOut") {
-            fieldmappingkeys.estimate.StatusText = 'Closed';
-        }
-        else if (CPDWorkOrderStatus === "OnHold") {
-            fieldmappingkeys.estimate.StatusText = 'Pending';
-        }
-        else if (CPDWorkOrderStatus === "Rejected") {
-            fieldmappingkeys.estimate.StatusText = 'Cancelled';
-        }
-    
-    return fieldmappingkeys
+const getWorkOrderStatusFieldMappingkeys = async (integrationFieldMappingkeys, CPDWorkOrderStatus, IntegrationStatusMappingKeys) => {
+    integrationFieldMappingkeys.estimate.StatusText = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "Open";
+    return integrationFieldMappingkeys;
 }
 
 /**
@@ -167,11 +189,12 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
             
             if (integrationObject.serviceMethod === "create") {
-                fieldmappingkeys = await getDefaultFieldMappingKeys(integrationObject.dataPoints)
                 
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
-                    fieldmappingkeys = await getWorkOrderFieldMappingkeys(fieldmappingkeys, workOrder.CPDWorkOrders.WorkOrderNumber, workOrder.CPDWorkOrderStatus, workOrder.CPDWorkOrders.WorkType)
+                    fieldmappingkeys = integrationObject.dataPoints
+
+                    const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
 
                     // Find list of DF credentails (encrypted) & then decrypt. 
                     let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CYS" });
@@ -183,9 +206,13 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     let encryptedDetails = { iv: process.env.CRYPTO_IV, encryptedData: CPDAuthCredentials.credentials };
                     let CPDdecryptConfigCredentials = JSON.parse(await decryptData(encryptedDetails, process.env.CRYPTO_KEY));
                     const corrigoToken = await CPDAuthentication(CPDdecryptConfigCredentials.client_id, CPDdecryptConfigCredentials.client_secret, CPDdecryptConfigCredentials.grant_type, CPDdecryptConfigCredentials.baseUrl);
-                    let CPDFieldMappingkeys = await getCPDFieldMappingkeys(workOrder.CPDWorkOrderId, workOrder.MessageId, fieldmappingkeys, corrigoToken, integrationObject)
+                    fieldmappingkeys = await getCPDFieldMappingkeys(workOrder.CPDWorkOrderId, workOrder.MessageId, fieldmappingkeys, corrigoToken, integrationObject)
+
+                    fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
+                    fieldmappingkeys = await getWorkOrderStatusFieldMappingkeys(fieldmappingkeys, workOrder.CPDWorkOrderStatus, getWorkOrderStatusDefaultMappingKeys.statusFieldMappingKeys)
+
                     console.log('fieldmappingkeys:===',fieldmappingkeys)
-                    
+                    // return 'done'
 
                     let CYSWorkorderListId = '';
                     let createWorkOrderConfig = {
@@ -225,7 +252,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                         };
                         const getCYSWorkOrderList = await axios.request(getWorkOrderConfig)
                             .then((response) => {
-                                console.log("getCYSWorkOrderList:===", response.data.data);
+                                // console.log("getCYSWorkOrderList:===", response.data.data);
                                 return response.data.data
                             })
                             .catch(async (error) => {
