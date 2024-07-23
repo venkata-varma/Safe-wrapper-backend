@@ -1047,10 +1047,10 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
           if (integrationsMasterDetails.to === 'DF') {
             toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "DF" }).lean();
             await DFOperations.DFCreateWorkorders(toCredentials, "manual");
-          } else if (integrationsMasterDetails.to === 'CYS') {
+          } else if (integrationsMasterDetails.to === 'CYS') { 
             toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "CYS" }).lean();
-            console.log('CYS Credentials:', toCredentials);
-            console.log('integrationsMasterDetails:===', integrationsMasterDetails)
+            // console.log('CYS Credentials:', toCredentials);
+            // console.log('integrationsMasterDetails:===', integrationsMasterDetails)
             await CYSOperations.CYSCreateWorkorders(toCredentials, "manual");
           }
           break;
