@@ -33,14 +33,6 @@ const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl, 
     } catch (error) {
         console.log("Error message=", error);
         await exceptionOperation(integrationObject, error.response?.status || 401, "Authorization has been denied for this request.", error.name, JSON.stringify(error.config.url+" , "+error.response.data.error || "unsupported_credentials"), 'auth-failed',CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
-        // await integrationsExceptionsModel.create({
-        //     integrationsMasterId: integrationObject.integrationsMasterId,
-        //     accountId: integrationObject.accountId,
-        //     networkCode: error.response.status,
-        //     exceptionMessage: "Authorization has been denied for this request.",
-        //     exceptionTitle: error.name,
-        //     integrationsApiServices: 'auth-failed'
-        // })
         return 'error';
     }
 };
@@ -225,14 +217,6 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
         .catch(async (error) => {
             console.log("ERROR:==", error)
             await exceptionOperation(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, 'cpd-search-workorder', CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
-            // await integrationsExceptionsModel.create({
-            //     integrationsMasterId: integrationObject.integrationsMasterId,
-            //     accountId: integrationObject.accountId,
-            //     networkCode: error.response.status,
-            //     exceptionMessage: error.response.data.Message,
-            //     exceptionTitle: error.name,
-            //     integrationsApiServices: 'search-workorder'
-            // })
         });
     // console.log("CPDWorkOrderResponse:==",CPDWorkOrderResponse)
 
