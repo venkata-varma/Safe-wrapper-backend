@@ -324,12 +324,13 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             .then((response) => {
                                 DFWorkorderList = JSON.stringify(response.data)
                                 console.log("DFWorkorderListresponse:===", JSON.stringify(response.data));
+                                return response.data
                             })
                             .catch(async (error) => {
                                 console.log("DF Create Get ERROR:==", error.response.data);
                                 await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.url + " \n Invalid Request"), "df-get-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, DFWorkOrderId)
                             });
-
+                            
                         if (getDFWorkOrderList !== undefined) {
                             DFWorkOrderId = JSON.parse(DFWorkorderList).id
                             const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: DFWorkOrderId, }).lean();
