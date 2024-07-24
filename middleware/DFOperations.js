@@ -56,7 +56,7 @@ const getDFTypeListIdFromSearchAPI = async (fieldmappingkeys, decryptConfigCrede
         }
     }
     else{
-        fieldmappingkeys.typeListId = "";
+        fieldmappingkeys.typeListId = 687;
     }
     
     return fieldmappingkeys;
