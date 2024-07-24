@@ -18,8 +18,16 @@ const integrationsExceptionsSchema = new mongoose.Schema({
         default : null
     },
     CPDWorkOrderId : {
-        type : Number,
+        type : String,
         deafult : 0
+    },
+    CPDWorkOrderNumber:{
+        type: String,
+        default:""
+    },
+    runnigWorkOrderId: {
+        type: String,
+        default: ""
     },
     networkCode : {
         type : Number,
@@ -36,6 +44,10 @@ const integrationsExceptionsSchema = new mongoose.Schema({
     exceptionMessage : {
         type : String,
         default : ""
+    },
+    exceptionRequestObject: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {}
     },
     dateCreated : {
         type : Date,
