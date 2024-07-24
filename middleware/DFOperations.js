@@ -12,6 +12,7 @@ const { CPDAuthentication } = require('../utils/serviceProvidersAuthentication')
 const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
 const CPDtoDFBuildingMasterModel = require('../models/workOrdersModels/CPDtoDFBuildingMasterModel');
 const integrationsSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel');
+const { exceptionOperation } = require('./exceptionOperation');
 
 /**
  * 
@@ -21,7 +22,7 @@ const integrationsSettingsModel = require('../models/integrationsMasterModels/in
  * This function used to get the typeListId value and then return the updated fieldmapping keys
  */
 
-const getDFTypeListIdFromSearchAPI = async (fieldmappingkeys, decryptConfigCredentials, WorkType, integrationObject) => {
+const getDFTypeListIdFromSearchAPI = async (fieldmappingkeys, decryptConfigCredentials, WorkType, integrationObject, CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId) => {
     let searchTypeListId = {
         method: 'post',
         // maxBodyLength: Infinity,
@@ -39,26 +40,25 @@ const getDFTypeListIdFromSearchAPI = async (fieldmappingkeys, decryptConfigCrede
             return response.data
         })
         .catch(async (error) => {
-            console.log("ERROR:==", error);
-            // await integrationsExceptionsModel.create({
-            //     integrationsMasterId: integrationObject.integrationsMasterId,
-            //     accountId: integrationObject.accountId,
-            //     CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
-            //     networkCode: error.response.status,
-            //     exceptionMessage: error.message,
-            //     exceptionTitle: error.response.data.messages || error.response.data.error,
-            //     integrationsApiServices: 'update-workorder'
-            // })
+            // console.log("getDFTypeListIdFromSearchAPIERROR:==", error);
+            await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.url + " /n data: " + error.config.data), "df-typeList-search", CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
+            
         });
     console.log('WorkType:==', WorkType)
-    if (WorkType === "PMRM") {
-        const workOrderType = getTypeListIdDetails.find((item) => item.listValue === "Preventive Maintenance");
-        fieldmappingkeys.typeListId = workOrderType ? workOrderType.id : 1237;
+    if(getTypeListIdDetails){
+        if (WorkType === "PMRM") {
+            const workOrderType = getTypeListIdDetails.find((item) => item.listValue === "Preventive Maintenance");
+            fieldmappingkeys.typeListId = workOrderType ? workOrderType.id : 1237;
+        }
+        else if (WorkType !== "PMRM") {
+            const workOrderType = getTypeListIdDetails.find((item) => item.listValue === "Office & Engineering");
+            fieldmappingkeys.typeListId = workOrderType ? workOrderType.id : 687;
+        }
     }
-    else if (WorkType !== "PMRM") {
-        const workOrderType = getTypeListIdDetails.find((item) => item.listValue === "Office & Engineering");
-        fieldmappingkeys.typeListId = workOrderType ? workOrderType.id : 687;
+    else{
+        fieldmappingkeys.typeListId = 687;
     }
+    
     return fieldmappingkeys;
 }
 
@@ -71,7 +71,7 @@ const getDFTypeListIdFromSearchAPI = async (fieldmappingkeys, decryptConfigCrede
  * @returns fieldmappingKeys.
  */
 
-const getDFBuildingId = async(CPDWorkOrders,fieldmappingkeys, decryptConfigCredentials, integrationObject) => {
+const getDFBuildingId = async(CPDWorkOrders,fieldmappingkeys, decryptConfigCredentials, integrationObject, CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId) => {
     const getBuildingDetails = await CPDtoDFBuildingMasterModel.find({CPDBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase(), DFBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase()})
     if(getBuildingDetails.length <= 0){
         let getBuildingConfig = {
@@ -90,16 +90,8 @@ const getDFBuildingId = async(CPDWorkOrders,fieldmappingkeys, decryptConfigCrede
             return response.data
         })
         .catch(async (error) => {
-            console.log("ERROR:==", error);
-            await integrationsExceptionsModel.create({
-                integrationsMasterId: integrationObject.integrationsMasterId,
-                accountId: integrationObject.accountId,
-                CPDWorkOrderId: CPDWorkOrders.CPDWorkOrderId,
-                networkCode: error.response.status,
-                exceptionMessage: error.message,
-                exceptionTitle: error.response.data.messages || error.response.data.error,
-                integrationsApiServices: 'df-search-buildings'
-            })
+            console.log("getDFBuildingIdERROR:==", error);
+            await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.url +" /n data: No building data available."), "df-search-buildings", CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
         });
         if(getDFBuildingData !== undefined){
             let buildingIdDetails = getDFBuildingData.find((item) => {
@@ -181,7 +173,7 @@ const mapCPDValuesToDFFieldMappingKeys = async (response, dataPoints) => {
  * @returns updated fieldmappingkeys
  */
 
-const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials) => {
+const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials, CPDWorkOrderNumber, DFWorkOrderId) => {
     
     let getCPDWorkOrderDetails = await axios.get(`${DFConfigurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderId}`,
         {
@@ -193,17 +185,10 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
         })
         .catch(async (error) => {
             console.log("ERROR:==", error)
-            await integrationsExceptionsModel.create({
-                integrationsMasterId: integrationObject.integrationsMasterId,
-                accountId: integrationObject.accountId,
-                networkCode: error.response.status,
-                exceptionMessage: error.response.data.Message,
-                exceptionTitle: error.name,
-                integrationsApiServices: 'get-workorder'
-            })
+            await exceptionOperation(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
         });
     if (getCPDWorkOrderDetails) {
-        fieldmappingkeys = await getDFBuildingId(getCPDWorkOrderDetails,fieldmappingkeys, decryptConfigCredentials, integrationObject)
+        fieldmappingkeys = await getDFBuildingId(getCPDWorkOrderDetails,fieldmappingkeys, decryptConfigCredentials, integrationObject, CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
         fieldmappingkeys = await mapCPDValuesToDFFieldMappingKeys(getCPDWorkOrderDetails, fieldmappingkeys);
         fieldmappingkeys.workDescription = getCPDWorkOrderDetails.WorkDetails.Assets[0].Comment === '' ? "(DR) - No Comment" : getCPDWorkOrderDetails.WorkDetails.Assets[0].Comment;
     }
@@ -275,7 +260,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
         for (let integrationObject of integrationFieldObject) {
             // find initiated count of WO to push to DF. 
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
-
+            
             if (integrationObject.serviceMethod === "create") {
 
                 // Now loop the CPDWO and then push to DF by API.
@@ -293,11 +278,11 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     let encryptedDetails = { iv: process.env.CRYPTO_IV, encryptedData: CPDAuthCredentials.credentials };
                     let CPDdecryptConfigCredentials = JSON.parse(await decryptData(encryptedDetails, process.env.CRYPTO_KEY));
                     const corrigoToken = await CPDAuthentication(CPDdecryptConfigCredentials.client_id, CPDdecryptConfigCredentials.client_secret, CPDdecryptConfigCredentials.grant_type, CPDdecryptConfigCredentials.baseUrl);
-                    fieldmappingkeys = await getCPDFieldMappingkeys(workOrder.CPDWorkOrderId, workOrder.MessageId, fieldmappingkeys, corrigoToken, integrationObject,decryptConfigCredentials)
+                    fieldmappingkeys = await getCPDFieldMappingkeys(workOrder.CPDWorkOrderId, workOrder.MessageId, fieldmappingkeys, corrigoToken, integrationObject,decryptConfigCredentials, workOrder.CPDWorkOrders.WorkOrderNumber, "")
 
                     fieldmappingkeys = await getWorkOrderStatusFieldMappingkeys(fieldmappingkeys, workOrder.CPDWorkOrderStatus, getWorkOrderStatusDefaultMappingKeys.statusFieldMappingKeys)
                     fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
-                    fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, workOrder.CPDWorkOrders.Type, integrationObject)
+                    fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, workOrder.CPDWorkOrders.Type, integrationObject, workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
                     fieldmappingkeys.statusDate = new Date().toJSON()
                     console.log('Createfieldmappingkeys:===',fieldmappingkeys)
 
@@ -321,15 +306,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                         })
                         .catch(async (error) => {
                             console.log("ERRORSS create DF:==", error.response.data);
-                            await integrationsExceptionsModel.create({
-                                integrationsMasterId: integrationObject.integrationsMasterId,
-                                accountId: integrationObject.accountId,
-                                CPDWorkOrderId: workOrder.CPDWorkOrderId,
-                                networkCode: error.response.status,
-                                exceptionMessage: error.message,
-                                exceptionTitle: JSON.stringify(error.response.data.messages),
-                                integrationsApiServices: 'create-workorder'
-                            })
+                            await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.data), "df-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
                         });
                     console.log("DFWorkOrderId:===", DFWorkOrderId);
                     if (DFWorkOrderId !== undefined) {
@@ -349,19 +326,11 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 console.log("DFWorkorderListresponse:===", JSON.stringify(response.data));
                             })
                             .catch(async (error) => {
-                                console.log("Create Get ERROR:==", error.response.data);
-                                await integrationsExceptionsModel.create({
-                                    integrationsMasterId: integrationObject.integrationsMasterId,
-                                    accountId: integrationObject.accountId,
-                                    CPDWorkOrderId: workOrder.CPDWorkOrderId,
-                                    networkCode: error.response.status,
-                                    exceptionMessage: error.message,
-                                    exceptionTitle: JSON.stringify(error.response.data.messages),
-                                    integrationsApiServices: 'get-workorder'
-                                })
+                                console.log("DF Create Get ERROR:==", error.response.data);
+                                await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.url + " \n Invalid Request"), "df-get-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, DFWorkOrderId)
                             });
 
-                        if (DFWorkorderList) {
+                        if (getDFWorkOrderList !== undefined) {
                             DFWorkOrderId = JSON.parse(DFWorkorderList).id
                             const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: DFWorkOrderId, }).lean();
                             if (listOfDFWorkorderDetails) {
@@ -398,7 +367,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                         }
                     }
                 }
-            }
+            }            
             else if (integrationObject.serviceMethod === "update") {
 
                 // Update work orders to the Dataforma.
@@ -421,14 +390,14 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     // console.log("Step-1 called");
 
                     let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
-                    fieldmappingkeys = await getCPDFieldMappingkeys(getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials)
+                    fieldmappingkeys = await getCPDFieldMappingkeys(getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, DFWorkOrder.DFWorkOrderId)
 
                     fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
                     fieldmappingkeys = await getWorkOrderStatusFieldMappingkeys(fieldmappingkeys, getCPDWorkOrderStatus.CPDWorkOrderStatus, getWorkOrderStatusDefaultMappingKeys.statusFieldMappingKeys)
                     fieldmappingkeys.statusDate = new Date().toJSON()
-
+                    
                     // Find and map the typeListId value
-                    fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, getCPDWorkOrderStatus.CPDWorkOrders.Type, integrationObject)
+                    fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, getCPDWorkOrderStatus.CPDWorkOrders.Type, integrationObject, getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, DFWorkOrder.DFWorkOrderId)
                     console.log('Updatefieldmappingkeys:===',fieldmappingkeys);
                     let DFWorkorderList = {}
                     let DFWorkOrderId
@@ -450,16 +419,8 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             return response.data.id
                         })
                         .catch(async (error) => {
-                            console.log("UpdateERROR:==", JSON.stringify(error.response.data));
-                            await integrationsExceptionsModel.create({
-                                integrationsMasterId: integrationObject.integrationsMasterId,
-                                accountId: integrationObject.accountId,
-                                CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
-                                networkCode: error.response.status,
-                                exceptionMessage: error.message,
-                                exceptionTitle: JSON.stringify(error.response.data.messages),
-                                integrationsApiServices: 'update-workorder'
-                            })
+                            console.log("UpdateERROR:==", error);
+                            await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.data), "df-update-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, DFWorkOrder.DFWorkOrderId)
                         });
                         console.log('DFUpdatedWorkOrderId:==',DFUpdatedWorkOrderId)
                     let getWorkOrderConfig = {
@@ -475,21 +436,15 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     const getDFWorkOrderList = await axios.request(getWorkOrderConfig)
                         .then((response) => {
                             DFWorkorderList = JSON.stringify(response.data)
+                            return response.data
                             // console.log("DFWorkorderListresponse:===", JSON.stringify(response.data));
                         })
                         .catch(async (error) => {
-                            console.log("ERROR:==", error.response.data);
-                            await integrationsExceptionsModel.create({
-                                integrationsMasterId: integrationObject.integrationsMasterId,
-                                accountId: integrationObject.accountId,
-                                CPDWorkOrderId: getCPDWorkOrderStatus.CPDWorkOrderId,
-                                networkCode: error.response.status,
-                                exceptionMessage: JSON.stringify(error.response.data),
-                                exceptionTitle: error.message,
-                                integrationsApiServices: 'get-workorder'
-                            })
+                            console.log("DF Update Get ERROR:==", error.response.data);
+                            await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.url + " \n Invalid Request"), "df-get-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, DFWorkOrder.DFWorkOrderId)
                         });
-                    if (DFWorkorderList) {
+                        console.log('getDFWorkOrderList:==',getDFWorkOrderList)
+                    if (getDFWorkOrderList !== undefined) {
                         DFWorkOrderId = DFWorkorderList.id
                         const listOfDFWorkorderDetails = await DFWorkOrdersModel.findOne({ DFWorkOrderId: DFUpdatedWorkOrderId }).lean();
                         if (listOfDFWorkorderDetails) {
