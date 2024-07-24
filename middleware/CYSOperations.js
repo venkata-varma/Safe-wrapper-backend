@@ -244,16 +244,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             })
                             .catch(async (error) => {
                                 console.log("Create Get ERROR:==", error);
-                                await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.url,error.config.data), "cys-get-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, CYSWorkorderListId)
-                                // await integrationsExceptionsModel.create({
-                                //     integrationsMasterId: integrationObject.integrationsMasterId,
-                                //     accountId: integrationObject.accountId,
-                                //     CPDWorkOrderId: workOrder.CPDWorkOrderId,
-                                //     networkCode: error.response.status,
-                                //     exceptionMessage: error.message,
-                                //     exceptionTitle: JSON.stringify(error.response.data.message),
-                                //     integrationsApiServices: 'get-workorder'
-                                // })
+                                await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.url+" \n data: No data available"), "cys-get-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, CYSWorkorderListId)
                             });
                         if (getCYSWorkOrderList) {
                             const listOfDFWorkorderDetails = await CYSWorkordersModel.findOne({ CYSWorkOrderId: CYSWorkorderListId}).lean();
