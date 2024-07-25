@@ -54,7 +54,7 @@ If middleware returns true, this function is to create a New Account along with 
 Returns newly created Account with one associated user.
 */
 exports.createAccount = asyncWrapper(async (req, res) => {
-    const baseUrl = 'https://ihubapi.dev.devrabbit.co/';
+    const baseUrl = process.env.DOMAIN_NAME;
     const { accountName, companyName, email, phone, password, status } = req.body
     const accountDetails = await accountsModel.findOne({ $or: [{ email }, { phone }] })
     if (accountDetails) {
