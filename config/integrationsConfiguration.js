@@ -99,15 +99,15 @@ const configurations = {
 
     CYS : {
       createWorkOrder : {
-        URL : 'https://cyrious-api.dev.devrabbit.co/create-estimate',
+        URL : 'https://cyriousapi.dev.isyncrabbit.com/create-estimate',
         // URL : 'http://192.168.1.31:8091/create-estimate'
       },
       getWorkOrder : {
-        URL : 'https://cyrious-api.dev.devrabbit.co/get-estimate',
+        URL : 'https://cyriousapi.dev.isyncrabbit.com/get-estimate',
         // URL : 'http://192.168.1.31:8091/get-estimate'
       },
       updateWorkOrder: {
-        URL : 'https://cyrious-api.dev.devrabbit.co/update-estimate',
+        URL : 'https://cyriousapi.dev.isyncrabbit.com/update-estimate',
         // URL : 'http://192.168.1.31:8091/update-estimate'
       }
     }
