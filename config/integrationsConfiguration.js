@@ -105,6 +105,10 @@ const configurations = {
       getWorkOrder : {
         URL : 'https://cyrious-api.dev.devrabbit.co/get-estimate',
         // URL : 'http://192.168.1.31:8091/get-estimate'
+      },
+      updateWorkOrder: {
+        URL : 'https://cyrious-api.dev.devrabbit.co/update-estimate',
+        // URL : 'http://192.168.1.31:8091/update-estimate'
       }
     }
 }
