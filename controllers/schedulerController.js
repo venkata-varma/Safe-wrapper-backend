@@ -23,7 +23,7 @@ const job_each_minute = humanToCron('once each minute')
 const job_each_hour = humanToCron('once each hour')
 const job_each_day = humanToCron('once each day')
 const job_each_month = humanToCron('once each month')
-
+const job_email_notification = humanToCron('every day at 12:00 AM');
 
 /**
  * Schedular for every second
@@ -84,9 +84,10 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
       }
     }
   })
-  schedule.scheduleJob(job_each_minute, async ()=> {
+  schedule.scheduleJob(job_email_notification, async ()=> {
     const currentDateAndTime = new Date()
-    if(currentDateAndTime.getDay() === 5){
+    console.log('Job executed at', currentDateAndTime);
+    if(currentDateAndTime.getDay() === 0){
       const getAllActiveAccounts = await accountsModel.find({ status:"active"})
       for(let account of getAllActiveAccounts){
         await schedulerEmailJobs(await integrationsMasterModel.find({accountId:account._id, status:"active"}), currentDateAndTime)
