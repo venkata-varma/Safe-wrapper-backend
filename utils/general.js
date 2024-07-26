@@ -286,7 +286,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.DFWorkOrderId });
       }
       else if(from === 'CPD' && to === 'CYS'){
-        destinationWorkOrderDetails = await CYSWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "CYSWorkOrders.estimate.PONumber": sourceWorkOrderDetails.CPDWorkOrderId  })
+        destinationWorkOrderDetails = await CYSWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "CYSWorkOrders.estimate.PONumber": sourceWorkOrderDetails.CPDWorkOrderId.toString() })
         destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.CYSWorkOrderId });
       }
   }
@@ -294,9 +294,26 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
   
 }
 
+const getServiceProviderName = async(serviceProviderName) => {
+  if(serviceProviderName === 'CPD'){
+    return "CorrigoPro"
+  }
+  else if(serviceProviderName === 'DF'){
+    return "MDS Builders"
+  }
+  else if(serviceProviderName === 'SNOW'){
+    return "Servicenow"
+  }
+  else if(serviceProviderName === 'CYS'){
+    return "QSP Technologies"
+  }
+}
+
+
 module.exports = {
   getServiceWorkOrdersAndStatus,
   getStatusOfWorkOrders,
   getStatusFieldMappings,
   getSourceAndDestinationWOLifeCycle,
+  getServiceProviderName
 }

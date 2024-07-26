@@ -44,4 +44,22 @@ function dateAsset() {
   });
 }
 
-module.exports = { dateAsset }
+function EmailDateAsset(currentDateAndTime) {
+  const now = currentDateAndTime;
+
+  // Array to hold the 7 objects
+  return Array.from({ length: 7 }, (_, i) => {
+      const currentDate = new Date(now);
+      currentDate.setDate(now.getDate() - i);
+      const fromDate = new Date(currentDate);
+      const toDate = new Date(currentDate);
+      toDate.setHours(23, 59, 59, 999);
+      return {
+          fromDate: formatDate(fromDate),
+          toDate: formatDate(toDate, true),
+          day: formatDate(fromDate).split('T')[0]
+      };
+  });
+}
+
+module.exports = { dateAsset,EmailDateAsset }

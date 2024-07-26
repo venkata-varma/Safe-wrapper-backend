@@ -13,7 +13,9 @@ const asyncWrapper = require('../middleware/asyncWrapper');
 const CPDOperations = require('../middleware/CPDOperations');
 const DFOperations = require('../middleware/DFOperations');
 const integrationsFieldMappingModel = require('../models/integrationsMasterModels/integrationsFieldMappingModel');
-const { schedulerIntegrationCronJobs } = require('../middleware/schedulerOperations');
+const { schedulerIntegrationCronJobs, schedulerEmailJobs } = require('../middleware/schedulerOperations');
+const accountsModel = require('../models/accountsModels/accountsModel');
+const mongoose = require('mongoose')
 
 
 const job_each_second = humanToCron('each second')
@@ -82,4 +84,13 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
       }
     }
   })
+  schedule.scheduleJob(job_each_minute, async ()=> {
+    const currentDateAndTime = new Date()
+    if(currentDateAndTime.getDay() === 5){
+      const getAllActiveAccounts = await accountsModel.find({ status:"active"})
+      for(let account of getAllActiveAccounts){
+        await schedulerEmailJobs(await integrationsMasterModel.find({accountId:account._id, status:"active"}), currentDateAndTime)
+      }
+    }
+  });
 });
