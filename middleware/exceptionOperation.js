@@ -1,7 +1,7 @@
 const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel")
 
 
-exports.exceptionOperation = async(integrationObject, status, exceptionMessage, exceptionTitle, exceptionErrorObject, integrationsApiServices, CPDWorkOrderId, CPDWorkOrderNumber, runnigWorkOrderId) => {
+exports.exceptionLogs = async(integrationObject, status, exceptionMessage, exceptionTitle, exceptionErrorObject, integrationsApiServices, CPDWorkOrderId, CPDWorkOrderNumber, runnigWorkOrderId) => {
     await integrationsExceptionsModel.create({
         integrationsMasterId: integrationObject.integrationsMasterId,
         accountId: integrationObject.accountId,
