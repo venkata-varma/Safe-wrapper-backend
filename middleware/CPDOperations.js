@@ -13,7 +13,7 @@ const integrationsExceptionsModel = require("../models/integrationsMasterModels/
 const integrationsSettingsModel = require("../models/integrationsMasterModels/integrationsSettingsModel");
 const { default: mongoose } = require("mongoose");
 const workOrderLifeCycleModel = require("../models/workOrdersModels/workOrderLifeCycleModel");
-const { exceptionOperation } = require("./exceptionOperation");
+const { exceptionLogs } = require("./exceptionOperation");
 const CYSWorkordersModel = require("../models/workOrdersModels/CYSWorkordersModel");
 
 
@@ -32,7 +32,7 @@ const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl, 
         return tokenResponse.data;
     } catch (error) {
         console.log("Error message=", error);
-        await exceptionOperation(integrationObject, error.response?.status || 401, "Authorization has been denied for this request.", error.name, JSON.stringify(error.config.url+" , "+error.response.data.error || "unsupported_credentials"), 'auth-failed',CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
+        await exceptionLogs(integrationObject, error.response?.status || 401, "Authorization has been denied for this request.", error.name, JSON.stringify(error.config.url+" , "+error.response.data.error || "unsupported_credentials"), 'auth-failed',CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
         return 'error';
     }
 };
@@ -216,7 +216,7 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
         })
         .catch(async (error) => {
             console.log("ERROR:==", error)
-            await exceptionOperation(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, 'cpd-search-workorder', CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
+            await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, 'cpd-search-workorder', CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
         });
     // console.log("CPDWorkOrderResponse:==",CPDWorkOrderResponse)
 

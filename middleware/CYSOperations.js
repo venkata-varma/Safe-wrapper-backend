@@ -13,7 +13,7 @@ const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLif
 const configurations = require('../config/integrationsConfiguration');
 const CYSWorkordersModel = require('../models/workOrdersModels/CYSWorkordersModel');
 const integrationsSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel');
-const { exceptionOperation } = require('./exceptionOperation');
+const { exceptionLogs } = require('./exceptionOperation');
 
 // Function to get nested property value
 const getNestedValue = (CPDWorkOrderResponse, integrationFieldMappingKey) => {
@@ -78,7 +78,7 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
         })
         .catch(async (error) => {
             console.log("ERROR:==", error)   
-            await exceptionOperation(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, CYSWorkOrderId)
+            await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, CYSWorkOrderId)
         });
     if (getCPDWorkOrderDetails) {
         fieldmappingkeys = await mapCPDValuestoCYSFieldMappingKeys(getCPDWorkOrderDetails, fieldmappingkeys)
@@ -225,7 +225,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                         })
                         .catch(async (error) => {
                             console.log("ERRORSS create CYS:==", error.response.data);
-                            await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.message), JSON.stringify(error.config.data), "cys-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
+                            await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.message), JSON.stringify(error.config.data), "cys-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
                             
                         });
                     console.log("CYSWorkorderListId:===", CYSWorkorderListId);
@@ -244,7 +244,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             })
                             .catch(async (error) => {
                                 console.log("Create Get ERROR:==", error);
-                                await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.url+" \n data: No data available"), "cys-get-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, CYSWorkorderListId)
+                                await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.url+" \n data: No data available"), "cys-get-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, CYSWorkorderListId)
                             });
                         if (getCYSWorkOrderList) {
                             const listOfDFWorkorderDetails = await CYSWorkordersModel.findOne({ CYSWorkOrderId: CYSWorkorderListId}).lean();
@@ -324,7 +324,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                         })
                         .catch(async (error) => {
                             console.log("UpdateCYSERROR:==", error);
-                            await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.message), JSON.stringify(error.config.data), "cys-update-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, CYSWorkOrder.CYSWorkOrderId)
+                            await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.message), JSON.stringify(error.config.data), "cys-update-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, CYSWorkOrder.CYSWorkOrderId)
                         });
                         console.log('CYSUpdatedWorkOrderId:==',CYSUpdatedWorkOrderId)
                     let getWorkOrderConfig = {
@@ -340,7 +340,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                         })
                         .catch(async (error) => {
                             console.log("CYS Update Get ERROR:==", error.response.data);
-                            await exceptionOperation(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.url+" \n data: No data available"), "cys-get-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, CYSWorkOrder.CYSWorkOrderId)
+                            await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.url+" \n data: No data available"), "cys-get-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, CYSWorkOrder.CYSWorkOrderId)
                         });
                         // console.log('getCYSWorkOrderList:==',getCYSWorkOrderList)
                     if (getCYSWorkOrderList !== undefined) {
