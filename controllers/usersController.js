@@ -21,6 +21,7 @@ const { validateUserMobileEmailData, validatePhoneNumber } = require('../utils/u
 const { getStatusOfWorkOrders } = require('../utils/general');
 const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
 const integrationsMasterModel = require('../models/integrationsMasterModels/integrationsMasterModel');
+const accountSettingsModel = require('../models/accountsModels/accountSettingsModel');
 
 /*
 Miidleware function to controller, "createUser"
@@ -233,6 +234,12 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
     });
   }
+  if (!req.originalUrl.includes("super-admin")&& user.accountId.accountType !== 'customer') {
+    return res.status(customConstants.statusCodes.FORBIDDEN).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_ONLY_CUSTOMER_ENTRY,
+    });
+  }
   if (user.accountId.status === 'in-progress') {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
@@ -293,7 +300,7 @@ exports.loginUser = asyncWrapper(async (req, res) => {
   const integrationsCount = await integrationMasterModel.find({ accountId: user.accountId, status: 'active' });
   //const accountUpdateIntegrationsCount = await accountsModel.findByIdAndUpdate(user.accountId, { $set: { noOfIntegrations: integrationsCount.length } }, { new: true })
   user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
-
+  user_details.accountSettings = await accountSettingsModel.findOne({accountId:user.accountId})
 
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
