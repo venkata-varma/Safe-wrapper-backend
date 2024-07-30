@@ -21,7 +21,8 @@
       "MESSAGE_USER_DETAILS":"User details provided successfully",
       "MESSAGE_All_INTEGRATIONS_ACCOUNT":"All Integrations of provided account.",
       "MESSAGE_ALL_INTEGRATIONS":"All Integration Masters.",
-      "MESSAGE_ACCOUNT_EXIST": "Account already exist. Please login."
+      "MESSAGE_ACCOUNT_EXIST": "Account already exist. Please login.",
+      "MESSAGE_ACCOUNT_STATUS_UPDATED":"Account status updated."
     },
     "statusCodes": {
       "FORBIDDEN": 403,

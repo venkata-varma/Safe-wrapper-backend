@@ -88,7 +88,9 @@
     "MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND": "Details of Service providers found.",
     "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND": "Respective Integration service provider details not found.",
     "MESSAGE_INTEGRATION_ID_NOT_ACTIVE": "Respective integration is not in active state. Please contact admin.",
-    "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials."
+    "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials.",
+    "MESSAGE_ONLY_CUSTOMER_ENTRY":"Entry is forbidden! Only customers are allowed."
+
   },
   "statusCodes": {
     "FORBIDDEN": 403,
