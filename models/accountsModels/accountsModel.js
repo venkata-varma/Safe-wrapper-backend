@@ -16,6 +16,12 @@ const accountsSchema = new mongoose.Schema({
         required:[true, 'Account name is required.'],
         default:""
     },
+    accountType: {
+        type: String,
+        required: [true, "Account type is required"],
+        enum: ['customer', 'super-admin'],
+        default:"customer"
+    },
     companyName:{
         type:String,
         required:[true, 'Company name is required.'],

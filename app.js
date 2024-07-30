@@ -22,6 +22,9 @@ const usersRoute = require('./routes/usersRoute');
 const integrationsRoute = require('./routes/integrationsMasterRoute');
 const workOrderRoute = require('./routes/workOrderRoute');
 const errorcontroller = require('./controllers/errorcontroller');
+//super-admin-routes
+const superAdminAccountRoute=require('./superAdminPanel/superAdminRoutes/superAdminAccountsRoute')
+const superAdminUsersRoute=require('./superAdminPanel/superAdminRoutes/superAdminUsersRoute')
 
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
@@ -30,6 +33,8 @@ app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/integrations', integrationsRoute);
 app.use('/api/workOrders', workOrderRoute);
+app.use('/api/super-admin/accounts',superAdminAccountRoute )
+app.use('/api/super-admin/users', superAdminUsersRoute)
 const integrationsSchedules = require('./controllers/schedulerController');
 const DFintegrations = require('./middleware/DFOperations')
 
