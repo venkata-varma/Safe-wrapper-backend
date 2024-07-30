@@ -5,7 +5,7 @@
     "MESSAGE_SESSION_NO_USER": "User not found. User object is empty. This incident will record.",
     "MESSAGE_EXPIRED": "session-expired.",
     "MESSAGE_SUCCESS": "success",
-    "MESSAGE_FAIL": "fail",
+    "MESSAGE_FAIL": "fail", 
     "MESSAGE_WARNING": "warning",
     "MESSAGE_REQUEST_BODY_ERROR": "Payload validation error.",
     "MESSAGE_SESSION_EXPIRED": "Your session has expired or token no longer available. This incident wil record.",
