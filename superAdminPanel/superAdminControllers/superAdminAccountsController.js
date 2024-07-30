@@ -96,4 +96,37 @@ exports.superAdminAccountRegister = asyncWrapper(async (req, res) => {
 })
 
 
+/**
+ * 
+ * 
+ */
+exports.getAllAccounts = asyncWrapper(async (req, res) => {
+    const allAccounts = await accountsModel.find({}, {password:0});
 
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_ALL_ACCOUNTS,
+        data: {
+            count:allAccounts.length,
+            allAccounts
+        }
+    })
+})
+
+/**
+ * 
+ * 
+ */
+exports.updateAccountStatus=asyncWrapper(async(req,res)=>{
+    const updateAccountStatus=await accountsModel.findOneAndUpdate({_id:req.params.accountId}, {$set:{status:req.body.status}},{new:true,runValidators:true})
+
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_ACCOUNT_STATUS_UPDATED,
+        data: {
+            updateAccountStatus
+        }
+    })
+
+})

@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
-const usersModel = require("../models/usersModels/usersModel");
-const sessionModel = require("../models/sessionModels/sessionsModel");
-const customConstants = require("../config/constants.json");
-const asyncWrapper = require("./asyncWrapper");
+const usersModel = require("../../models/usersModels/usersModel");
+const sessionModel = require("../../models/sessionModels/sessionsModel");
+const customConstants = require("../config/customConstants.json");
+const asyncWrapper = require("../../middleware/asyncWrapper");
 
-const auth = asyncWrapper(async (req, _res, next) => {
+const superAdminAuth = asyncWrapper(async (req, _res, next) => {
   const authHeader = req.headers.authorization;
 
   const token = authHeader.split(" ")[1];
@@ -17,7 +17,6 @@ const auth = asyncWrapper(async (req, _res, next) => {
     const payload = await jwt.verify(token, "secret");
     console.log(payload.userId, token, "goood");
     const user = await usersModel.findById(payload.userId).populate('accountId');
-    
     const sessionObject = await sessionModel.findOne({
       userId: payload.userId,
       accessToken: token,
@@ -35,18 +34,16 @@ const auth = asyncWrapper(async (req, _res, next) => {
           status: customConstants.messages.MESSAGE_EXPIRED,
           message: customConstants.messages.MESSAGE_SESSION_EXPIRED,
         });
-    }else if(user.accountId.accountType!=='customer'){
-      console.log('not allowed===================')
+    } else if(user.accountId.accountType!=='super-admin'){
       _res
       .status(customConstants.statusCodes.FORBIDDEN)
       .json({
         status: customConstants.messages.MESSAGE_FAIL,
-        message: customConstants.messages.MESSAGE_ONLY_CUSTOMER_ENTRY,
+        message: customConstants.messages.MESSAGE_SUPER_ADMIN_ENTRY,
       });
     }
-     
     
-    else {
+    else{
       req.user=user;
 
       next();
@@ -54,4 +51,4 @@ const auth = asyncWrapper(async (req, _res, next) => {
   }
 });
 
-module.exports = auth;
+module.exports = {superAdminAuth};
