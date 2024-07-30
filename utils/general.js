@@ -7,6 +7,7 @@ const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersMo
 const CYSWorkordersModel = require("../models/workOrdersModels/CYSWorkordersModel");
 const workOrderLifeCycleModel = require("../models/workOrdersModels/workOrderLifeCycleModel");
 const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
+const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fieldMappingsMasterModel");
 
 var presentWeekSourceData = [];
 
@@ -194,6 +195,12 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
 
 }
 
+// Function to return default field mapping keys based of "from" .
+const defaultSatusMappingKeys = async (from, serviceMethod) => {
+  let statusMappingDetails = await fieldMappingsMasterModel.find({serviceProvider:from, serviceType:{$in:['work-order','work-order-status']}, serviceMethod:serviceMethod})
+  return statusMappingDetails
+}
+
 
 /**
  * Function to return Status field mapping keys based on "from" & "to"
@@ -315,5 +322,6 @@ module.exports = {
   getStatusOfWorkOrders,
   getStatusFieldMappings,
   getSourceAndDestinationWOLifeCycle,
-  getServiceProviderName
+  getServiceProviderName,
+  defaultSatusMappingKeys
 }

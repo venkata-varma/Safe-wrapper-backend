@@ -27,7 +27,7 @@ const usersModel = require("../models/usersModels/usersModel");
 const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
 const serviceProvidersMappingAndServicesModel = require("../models/integrationsMasterModels/serviceProvidersMappingAndServicesModel");
 const { dateAsset } = require('../utils/utilsFunctions');
-const { getServiceWorkOrdersAndStatus, getStatusFieldMappings } = require("../utils/general");
+const { getServiceWorkOrdersAndStatus, getStatusFieldMappings, defaultSatusMappingKeys } = require("../utils/general");
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../utils/serviceProvidersAuthentication');
 const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersModel");
 
@@ -432,7 +432,7 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
 exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.params;
   let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod, updateDataPointURL, updateServiceMethod
-
+  let defaultMappingKeys
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId)
   let get_integration_field_mapping_master_default_keys = await fieldMappingMasterDefaultServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (get_integration_field_mapping_master_default_keys.length > 0) {
@@ -449,28 +449,21 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
           serviceName: "work-order",
           createdBy: req.user._id,
           dataPoints: fromAndTo.dataPoints,
-          requiredKeys: integrationDetails.from === 'CPD' && integrationDetails.to === 'DF' ? {
-            numberAlt: "WorkOrderNumber",
-            budgetedProposedStatus: "NONE",
-            buildingId: 1715,
-            invoiceToCustomerId: 2238,
-            invoiceType: "EXTERNAL_CHARGE",
-            reportedById: 5515,
-            workDescription: "DevRabbit Testing WorkOrders (Ignore)."
-
-          } : {}
+          requiredKeys: await getStatusFieldMappings(integrationsMasterId)
         })
       } else {
         // nothing
       }
     }
+    defaultMappingKeys = await defaultSatusMappingKeys(integrationDetails.from, 'get')
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
         data: {
-          get_integration_field_mapping_master_default_keys
+          get_integration_field_mapping_master_default_keys,
+          defaultMappingKeys
           //  integrationFieldMappingCreate
         },
       });
