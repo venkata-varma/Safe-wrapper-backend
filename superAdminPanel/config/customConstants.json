@@ -7,7 +7,7 @@
       "MESSAGE_SESSION_EXPIRED": "Your session has expired or token no longer available. This incident wil record.",
       "MESSAGE_REQUEST_BODY_ERROR": "Payload validation error.",
       "MESSAGE_FIELDS_MANDATORY": "Mobile-Email and Password fields are mandatory.",
-      "MESSAGE_SUPER_ADMIN_ENTRY": "Entry is forbidden! Only Super-admin is allowed",
+      "MESSAGE_SUPER_ADMIN_ENTRY": "No access. Access restricted for this site.",
       "MESSAGE_ACCOUNT_CREATED": "Your account has been created successfully.",
       "MESSAGE_MANDATORY_FIELDS": "Fields marked with * are Mandatory.",
       "MESSAGE_PHONE_NUMBER_VALIDATE": "Phone number must be 10 digits.",
@@ -22,7 +22,9 @@
       "MESSAGE_All_INTEGRATIONS_ACCOUNT":"All Integrations of provided account.",
       "MESSAGE_ALL_INTEGRATIONS":"All Integration Masters.",
       "MESSAGE_ACCOUNT_EXIST": "Account already exist. Please login.",
-      "MESSAGE_ACCOUNT_STATUS_UPDATED":"Account status updated."
+      "MESSAGE_ACCOUNT_STATUS_UPDATED":"Account status updated.",
+      "MESSAGE_ALL_INTEGRATIONS_OF_ACCOUNT":"All Integrations of account.",
+      "MESSAGE_UPDATE_ACCOUNT_SETTINGS":"Update account settings."
     },
     "statusCodes": {
       "FORBIDDEN": 403,
