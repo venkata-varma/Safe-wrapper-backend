@@ -44,6 +44,10 @@ const accountSettingsSchema = mongoose.Schema({
                 "exceptions": true
             }
         }]
+    },
+    timeZone:{
+        type:String,
+        default:"IST"
     }
 
 }, { timestamps: true });

@@ -1,0 +1,39 @@
+{
+    "messages": {
+      "MESSAGE_EXPIRED": "session-expired.",
+      "MESSAGE_SUCCESS": "success",
+      "MESSAGE_FAIL": "fail",
+      "MESSAGE_WARNING": "warning",
+      "MESSAGE_SESSION_EXPIRED": "Your session has expired or token no longer available. This incident wil record.",
+      "MESSAGE_REQUEST_BODY_ERROR": "Payload validation error.",
+      "MESSAGE_FIELDS_MANDATORY": "Mobile-Email and Password fields are mandatory.",
+      "MESSAGE_SUPER_ADMIN_ENTRY": "Entry is forbidden! Only Super-admin is allowed",
+      "MESSAGE_ACCOUNT_CREATED": "Your account has been created successfully.",
+      "MESSAGE_MANDATORY_FIELDS": "Fields marked with * are Mandatory.",
+      "MESSAGE_PHONE_NUMBER_VALIDATE": "Phone number must be 10 digits.",
+      "MESSAGE_PHONE_NOT_EXISTS": "The account does not exist. Please check your credentials and try again.",
+      "MESSAGE_PREVENT_LOGIN_ACCOUNT_IN_PROGRESS": "Your account is currently on hold. Please contact the administrator(sk@devrabbit.com) to activate it.",
+      "MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED": "Account is deleted. Please contact admin department.Thank you.",
+      "MESSAGE_WRONG_PASSWORD": "Invalid Password.",
+      "MESSAGE_USER_LOGIN": "Super-admin Login successfull.",
+      "MESSAGE_GET_ALL_ACCOUNTS":"All Accounts",
+      "MESSAGE_ALL_USERS_OF_ACCOUNT": "All Users of this account.",
+      "MESSAGE_USER_DETAILS":"User details provided successfully",
+      "MESSAGE_All_INTEGRATIONS_ACCOUNT":"All Integrations of provided account.",
+      "MESSAGE_ALL_INTEGRATIONS":"All Integration Masters.",
+      "MESSAGE_ACCOUNT_EXIST": "Account already exist. Please login."
+    },
+    "statusCodes": {
+      "FORBIDDEN": 403,
+      "UNAUTHORIZED": 401,
+      "SUCCESS_STATUS_CODE_CREATED": 201,
+      "SUCCESS_STATUS_CODE_SUCCESS": 200,
+      "SUCCESS_STATUS_CODE_NO_CONTENT": 204,
+      "ERROR_STATUS_CODE_NOT_FOUND": 404,
+      "UNPROCESSABLE_STATUS_CODE_FAIL": 422,
+      "BAD_REQUEST": 400,
+      "DATA_CONFLICAT": 409,
+      "DATA_ALREADY_EXISTED": 409,
+      "UNHANDLED_EXCEPTION": 500
+    }
+  }
