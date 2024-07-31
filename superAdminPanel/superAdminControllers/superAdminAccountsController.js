@@ -162,8 +162,7 @@ exports.getAllIntegrations=asyncWrapper(async(req,res)=>{
  * 
  */
 exports.updateAccountSettings=asyncWrapper(async(req,res)=>{
-    const accountSettings=await accountSettingsModel.findOne({accountId:req.params.accountId})
-    console.log("accountSettings",accountSettings)
+   
 const updateAccountSettings=await accountSettingsModel.findOneAndUpdate({accountId:req.params.accountId}, req.body, {new:true, runValidators:true})
 
 return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
