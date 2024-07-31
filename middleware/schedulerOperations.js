@@ -243,7 +243,7 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
             <div class="title">Thank you for choosing our services!</div>
             <div class="subtitle">Last week work orders report<br>${workOrdersFromDate} to ${workOrdersToDate}</div>
             ${allIntegrationDetailsHtml}
-            <div style = "margin:auto"><a href="${process.env.DOMAIN_NAME}Integrations/dashboard" class="button ">View My Account</a></div>
+            <div style = "margin:auto"><a href="${process.env.WEB_DOMAIN_NAME}" class="button ">View My Account</a></div>
             
             <div class="footer">Thanks for being a great customer.<br>&copy; Copyright 2024 DevRabbit IT Solutions, Inc. All Rights Reserved.</div>
         </div>
