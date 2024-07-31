@@ -22,7 +22,7 @@ exports.sendWorkOrderEmail = (finalHtml) => {
                 resolve(true)
             })
             .catch((err) => {
-                console.log(err, "Error:")
+                console.log(JSON.stringify(err), "Error:")
                 resolve(false)
             })
             console.log("===================== Email END OBJET ================");
