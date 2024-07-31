@@ -156,6 +156,23 @@ exports.getAllIntegrations=asyncWrapper(async(req,res)=>{
 })
 
 /**
+ * 
+ * 
+ */
+exports.getAccountSettings=asyncWrapper(async(req,res)=>{
+    const accountSettings=await accountSettingsModel.findOne({accountId:req.params.accountId}).lean();
+    
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_ACCOUNT_SETTINGS,
+        data: {
+            accountSettings
+        }
+    })
+})
+
+
+/**
  * Function to update settings of account
  * @params AccountId
  * 
