@@ -10,7 +10,7 @@ exports.sendWorkOrderEmail = (finalHtml) => {
         console.log('SENDGRID_API_KEY:==',SENDGRID_API_KEY)
         sgMail.setApiKey(SENDGRID_API_KEY);
         const msg = {
-            to: 'chandusai.pendyala@devrabbit.com',
+            to: 'chandubr2255@gmail.com',
             from: "info@isyncrabbit.com",
             subject: 'Testing webhooks',
             text: "Weekly Work Order Report.",
