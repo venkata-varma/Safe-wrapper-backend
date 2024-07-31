@@ -89,7 +89,7 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
     console.log('Job executed at', currentDateAndTime);
     console.log('Job executed at', currentDateAndTime.getDay());
 
-    if(currentDateAndTime.getDay() === 3){
+    if(currentDateAndTime.getDay() === 4){
       const getAllActiveAccounts = await accountsModel.find({ _id: new mongoose.Types.ObjectId('667d4177bc77277e43bc1e2f'), status:"active"})
       for(let account of getAllActiveAccounts){
         await schedulerEmailJobs(await integrationsMasterModel.find({accountId:new mongoose.Types.ObjectId('667d4177bc77277e43bc1e2f'), status:"active"}), currentDateAndTime)
