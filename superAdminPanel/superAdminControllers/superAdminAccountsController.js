@@ -5,6 +5,8 @@ const {validatePhoneNumber} = require('../../utils/userLoginValidation')
 const { hashPwd, comparePassword } = require('../../utils/helpers')
 const usersModel = require('../../models/usersModels/usersModel')
 const mongoose = require('mongoose')
+const integrationsMasterModel=require('../../models/integrationsMasterModels/integrationsMasterModel');
+const accountSettingsModel = require('../../models/accountsModels/accountSettingsModel');
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
@@ -41,9 +43,8 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
 })
 
 /**
- * 
- * 
- * 
+ * Function to create super-admin account
+ * Account Type=super-admin
  */
 
 
@@ -97,7 +98,7 @@ exports.superAdminAccountRegister = asyncWrapper(async (req, res) => {
 
 
 /**
- * 
+ * Function to get all accounts
  * 
  */
 exports.getAllAccounts = asyncWrapper(async (req, res) => {
@@ -114,8 +115,9 @@ exports.getAllAccounts = asyncWrapper(async (req, res) => {
 })
 
 /**
- * 
- * 
+ * Function to update "Account status"
+ * @params AccountId
+ * Returns Updated account record
  */
 exports.updateAccountStatus=asyncWrapper(async(req,res)=>{
     const updateAccountStatus=await accountsModel.findOneAndUpdate({_id:req.params.accountId}, {$set:{status:req.body.status}},{new:true,runValidators:true})
@@ -128,5 +130,65 @@ exports.updateAccountStatus=asyncWrapper(async(req,res)=>{
             updateAccountStatus
         }
     })
+
+})
+
+
+
+
+/**
+ * Function to get all integrations of respective account
+ * @params AccountId
+ * 
+ */
+exports.getAllIntegrations=asyncWrapper(async(req,res)=>{
+    const allIntegrations=await integrationsMasterModel.find({accountId:req.params.accountId});
+
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_ALL_INTEGRATIONS_OF_ACCOUNT,
+        data: {
+            count:allIntegrations.length,
+            allIntegrations
+        }
+    })
+})
+
+/**
+ * 
+ * 
+ */
+exports.getAccountSettings=asyncWrapper(async(req,res)=>{
+    const accountSettings=await accountSettingsModel.findOne({accountId:req.params.accountId}).lean();
+    
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_ACCOUNT_SETTINGS,
+        data: {
+            accountSettings
+        }
+    })
+})
+
+
+/**
+ * Function to update settings of account
+ * @params AccountId
+ * 
+ * 
+ */
+exports.updateAccountSettings=asyncWrapper(async(req,res)=>{
+   
+const updateAccountSettings=await accountSettingsModel.findOneAndUpdate({accountId:req.params.accountId}, req.body, {new:true, runValidators:true})
+
+return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_UPDATE_ACCOUNT_SETTINGS,
+    data: {
+        updateAccountSettings
+    }
+})
+
 
 })
