@@ -13,8 +13,8 @@ exports.sendWorkOrderEmail = (finalHtml) => {
             to: 'chandusai.pendyala@devrabbit.com',
             from: "info@isyncrabbit.com",
             subject: 'Testing webhooks',
-            text: finalHtml,
-            //html: getTemplateData(data),
+            text: "Weekly Work Order Report.",
+            html: finalHtml,
         };
         sgMail.send(msg)
             .then((data) => {
