@@ -82,6 +82,7 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
       // Integration exception count for last 7 days
       const integrationsExceptionsCount = await integrationsExceptionsModel.find({ integrationsMasterId: integrationsMasterId }).countDocuments();
       serviceProviderComapanyLogo = await accountsModel.findById(integration.accountId)
+      console.log('serviceProviderComapanyLogo:===',serviceProviderComapanyLogo.logo)
       for (let week of presentWeekData) {
         let fromDate = new Date(week.fromDate);
         let toDate = new Date(week.toDate);
@@ -238,11 +239,12 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
     </head>
     <body>
         <div class="container">
-            <img style="width:200px; height:60px" src=${serviceProviderComapanyLogo.logo} alt="MDS Builders Inc Logo" class="logo">
+            <img style="width:30%; margin:auto" src=${JSON.stringify(serviceProviderComapanyLogo.logo)} alt="Company Logo" class="logo">
             <div class="title">Thank you for choosing our services!</div>
             <div class="subtitle">Last week work orders report<br>${workOrdersFromDate} to ${workOrdersToDate}</div>
             ${allIntegrationDetailsHtml}
-            <a href="#" class="button">View My Account</a>
+            <div style = "margin:auto"><a href="#" class="button ">View My Account</a></div>
+            
             <div class="footer">Thanks for being a great customer.<br>&copy; Copyright 2024 DevRabbit IT Solutions, Inc. All Rights Reserved.</div>
         </div>
     </body>
