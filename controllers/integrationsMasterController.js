@@ -111,6 +111,10 @@ exports.getImages = asyncWrapper(async (req, res) => {
     {
       name: "DATA-DUMP-RANGE",
       url: baseUrl + '/static/data_range_icon.png'
+    },
+    {
+      name : "Super-Admin-Logo",
+      url : baseUrl + '/static/Super_Admin_Logo.png'
     }
   ]
 
