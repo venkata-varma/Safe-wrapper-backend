@@ -239,7 +239,7 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
     </head>
     <body>
         <div class="container">
-            <img style="width:30%; margin:auto" src=${JSON.stringify(serviceProviderComapanyLogo.logo)} alt="Company Logo" class="logo">
+            <img style="width:30%; margin:auto" src= "${serviceProviderComapanyLogo.logo}" alt="Company Logo" class="logo">
             <div class="title">Thank you for choosing our services!</div>
             <div class="subtitle">Last week work orders report<br>${workOrdersFromDate} to ${workOrdersToDate}</div>
             ${allIntegrationDetailsHtml}
