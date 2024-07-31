@@ -13,6 +13,7 @@ const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersMode
 const { oneWeekWorkOrderEmailNotifcation } = require("../emailNotifications/workOrdersEmailNotifications");
 const fs = require('fs');
 const accountsModel = require('../models/accountsModels/accountsModel');
+const { sendWorkOrderEmail } = require('../emailNotifications/sendWorkOrderEmails');
 
 const schedulerIntegrationCronJobs = async (integrationObject) => {
     try {
@@ -248,15 +249,18 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
     </html>
     `;
   
-    // // Write the combined HTML content to a file
-    // const fileName = 'example.html';
-    // fs.writeFile(fileName, finalHtml, (err) => {
-    //   if (err) {
-    //     console.error('Error writing to file:', err);
-    //   } else {
-    //     console.log('File has been created and content written!');
-    //   }
-    // });
+    // Write the combined HTML content to a file
+    const fileName = 'example.html';
+    fs.writeFile(fileName, finalHtml, (err) => {
+      if (err) {
+        console.error('Error writing to file:', err);
+      } else {
+        console.log('File has been created and content written!');
+      }
+    });
+
+    await sendWorkOrderEmail(finalHtml)
+
 }
 
 module.exports = {
