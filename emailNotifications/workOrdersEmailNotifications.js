@@ -17,8 +17,8 @@ exports.oneWeekWorkOrderEmailNotifcation = async(source, destination, integratio
                 <tr>
                     <td colspan="1">Total</td>
                     <td>${sourceStatusTotalCount}</td>
-                    <td>${destinationStatusTotalCount}</td>
-                    <td>${Math.round((destinationStatusTotalCount/sourceStatusTotalCount)*100) === NaN ? 0+'%' : Math.round((destinationStatusTotalCount/sourceStatusTotalCount)*100) + "%"}</td>
+                    <td>${destinationStatusTotalCount}</td>                   
+                    <td>${isNaN(Math.round((destinationStatusTotalCount/sourceStatusTotalCount)*100)) ? '0%' : Math.round((destinationStatusTotalCount/sourceStatusTotalCount)*100) + '%'}</td>
                 </tr>
             </tfoot>
         </table>
