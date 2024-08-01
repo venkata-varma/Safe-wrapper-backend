@@ -84,16 +84,16 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
       }
     }
   })
-  schedule.scheduleJob(job_email_notification, async ()=> {
+  schedule.scheduleJob(job_each_minute, async ()=> {
     const currentDateAndTime = new Date()
     console.log('Job executed at', currentDateAndTime);
     console.log('Job executed at', currentDateAndTime.getDay());
 
-    if(currentDateAndTime.getDay() === 0){
-      const getAllActiveAccounts = await accountsModel.find({status:"active"})
+    // if(currentDateAndTime.getDay() === 0){
+      const getAllActiveAccounts = await accountsModel.find({_id: new mongoose.Types.ObjectId('667d4177bc77277e43bc1e2f') , status:"active"})
       for(let account of getAllActiveAccounts){
-        await schedulerEmailJobs(await integrationsMasterModel.find({accountId:account._id, status:"active"}), currentDateAndTime)
+        await schedulerEmailJobs(await integrationsMasterModel.find({accountId:new mongoose.Types.ObjectId('667d4177bc77277e43bc1e2f'), status:"active"}), currentDateAndTime)
       }
-    }
+    // }
   });
 });
