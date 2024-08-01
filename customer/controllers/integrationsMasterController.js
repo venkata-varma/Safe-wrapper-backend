@@ -755,9 +755,9 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_INTEGRATION_INCOMPLETE,
       data:{
-        integrationMasterDetails,
-        settingsDetails,
-        integrationMasterFieldMappingDetails,
+        integrationDetails:integrationMasterDetails,
+        integrationsSettingsDetails: settingsDetails,
+        integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
         integrationMasterServiceProviders,
       }
     });
