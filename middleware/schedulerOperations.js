@@ -13,6 +13,7 @@ const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersMode
 const { oneWeekWorkOrderEmailNotifcation } = require("../emailNotifications/workOrdersEmailNotifications");
 const fs = require('fs');
 const accountsModel = require('../models/accountsModels/accountsModel');
+const { sendWorkOrderEmail } = require('../emailNotifications/sendWorkOrderEmails');
 
 const schedulerIntegrationCronJobs = async (integrationObject) => {
     try {
@@ -81,6 +82,7 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
       // Integration exception count for last 7 days
       const integrationsExceptionsCount = await integrationsExceptionsModel.find({ integrationsMasterId: integrationsMasterId }).countDocuments();
       serviceProviderComapanyLogo = await accountsModel.findById(integration.accountId)
+      console.log('serviceProviderComapanyLogo:===',serviceProviderComapanyLogo.logo)
       for (let week of presentWeekData) {
         let fromDate = new Date(week.fromDate);
         let toDate = new Date(week.toDate);
@@ -237,26 +239,30 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
     </head>
     <body>
         <div class="container">
-            <img style="width:200px; height:60px" src=${serviceProviderComapanyLogo.logo} alt="MDS Builders Inc Logo" class="logo">
+            <div style="width:60%; margin:auto"><img style="width:30%; margin:auto" src= "${serviceProviderComapanyLogo.logo}" alt="Company Logo" class="logo"></div>
             <div class="title">Thank you for choosing our services!</div>
             <div class="subtitle">Last week work orders report<br>${workOrdersFromDate} to ${workOrdersToDate}</div>
             ${allIntegrationDetailsHtml}
-            <a href="#" class="button">View My Account</a>
+            <div style = "margin:auto"><a href="${process.env.WEB_DOMAIN_NAME}" class="button ">View My Account</a></div>
+            
             <div class="footer">Thanks for being a great customer.<br>&copy; Copyright 2024 DevRabbit IT Solutions, Inc. All Rights Reserved.</div>
         </div>
     </body>
     </html>
     `;
   
-    // // Write the combined HTML content to a file
-    // const fileName = 'example.html';
-    // fs.writeFile(fileName, finalHtml, (err) => {
-    //   if (err) {
-    //     console.error('Error writing to file:', err);
-    //   } else {
-    //     console.log('File has been created and content written!');
-    //   }
-    // });
+    // Write the combined HTML content to a file
+    const fileName = 'example.html';
+    fs.writeFile(fileName, finalHtml, (err) => {
+      if (err) {
+        console.error('Error writing to file:', err);
+      } else {
+        console.log('File has been created and content written!');
+      }
+    });
+
+    await sendWorkOrderEmail(finalHtml)
+
 }
 
 module.exports = {
