@@ -754,10 +754,12 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
     return res.status(customConstants.statusCodes.PARTIAL_CONTENT).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_INTEGRATION_INCOMPLETE,
-      integrationMasterDetails,
-      settingsDetails,
-      integrationMasterFieldMappingDetails,
-      integrationMasterServiceProviders,
+      data:{
+        integrationMasterDetails,
+        settingsDetails,
+        integrationMasterFieldMappingDetails,
+        integrationMasterServiceProviders,
+      }
     });
   }
   else {
