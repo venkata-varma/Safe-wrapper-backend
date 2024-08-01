@@ -1,13 +1,13 @@
 
 const SNOWConfigurations = require('../config/integrationsConfiguration');
-const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
+const integrationsExceptionsModel = require('../models/integrationsExceptionsModel');
 const { decryptData } = require('../utils/encryptionAlgorithms');
 const querystring = require('querystring')
 const axios = require('axios');
-const integrationsCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
-const SNOWWorkOrdersModel = require('../models/workOrdersModels/SNOWWorkOrdersModel');
-const integrationsMasterModel = require('../models/integrationsMasterModels/integrationsMasterModel');
-const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel')
+const integrationsCronsModel = require('../models/integrationsCronsModel');
+const SNOWWorkOrdersModel = require('../models/SNOWWorkOrdersModel');
+const integrationsMasterModel = require('../models/integrationsMasterModel');
+const workOrderLifeCycleModel = require('../models/workOrderLifeCycleModel')
 /**
  * 
  * baseUrl, username, password, client_id, client_secret, grant_type, required to generate the access token.

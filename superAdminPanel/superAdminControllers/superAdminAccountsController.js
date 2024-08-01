@@ -1,12 +1,12 @@
-const accountsModel = require('../../models/accountsModels/accountsModel');
+const accountsModel = require('../../models/accountsModel');
 const asyncWrapper = require('../../middleware/asyncWrapper')
 const customConstants = require('../config/customConstants.json');
 const {validatePhoneNumber} = require('../../utils/userLoginValidation')
 const { hashPwd, comparePassword } = require('../../utils/helpers')
-const usersModel = require('../../models/usersModels/usersModel')
+const usersModel = require('../../models/usersModel')
 const mongoose = require('mongoose')
-const integrationsMasterModel=require('../../models/integrationsMasterModels/integrationsMasterModel');
-const accountSettingsModel = require('../../models/accountsModels/accountSettingsModel');
+const integrationsMasterModel=require('../../models/integrationsMasterModel');
+const accountSettingsModel = require('../../models/accountSettingsModel');
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
