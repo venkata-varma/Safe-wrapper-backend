@@ -1,10 +1,8 @@
-const AppError = require('../utils/appErrors');
+const AppError = require('../../utils/appErrors');
 
 const handleCastErrorDB = (err) => {
   const message = `Invalid ${err.path}: ${err.value}.`;
   return new AppError(message, 400);
-};
-
 const handleDuplicateFieldsDB = (err) => {
   console.log("handleDuplicateFieldsDB");
   console.log(err);

@@ -1,20 +1,20 @@
 
-const integrationsScheduleCronJobs = require("../controllers/schedulerController");
-const integrationsCronJobsModel = require('../models/integrationsMasterModels/integrationsCronsModel')
+const integrationsScheduleCronJobs = require("../customer/controllers/schedulerController");
+const integrationsCronJobsModel = require('../models/integrationsCronsModel')
 const axios = require('axios');
 const moment = require('moment')
 const { decryptData } = require("../utils/encryptionAlgorithms");
-const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
+const CPDWorkordersModel = require("../models/CPDWorkordersModel");
 const CPDConfigurations = require('../config/integrationsConfiguration')
 const asyncWrapper = require("./asyncWrapper");
-const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
-const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
-const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel");
-const integrationsSettingsModel = require("../models/integrationsMasterModels/integrationsSettingsModel");
+const integrationsMasterModel = require("../models/integrationsMasterModel");
+const DFWorkOrdersModel = require("../models/DFWorkOrdersModel");
+const integrationsExceptionsModel = require("../models/integrationsExceptionsModel");
+const integrationsSettingsModel = require("../models/integrationsSettingsModel");
 const { default: mongoose } = require("mongoose");
-const workOrderLifeCycleModel = require("../models/workOrdersModels/workOrderLifeCycleModel");
+const workOrderLifeCycleModel = require("../models/workOrderLifeCycleModel");
 const { exceptionLogs } = require("./exceptionOperation");
-const CYSWorkordersModel = require("../models/workOrdersModels/CYSWorkordersModel");
+const CYSWorkordersModel = require("../models/CYSWorkordersModel");
 
 
 /**

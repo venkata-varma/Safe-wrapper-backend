@@ -1,21 +1,21 @@
 // const axios = require('axios');
-const accountsModel = require('../models/accountsModels/accountsModel');
-const accountSettingsModel = require('../models/accountsModels/accountSettingsModel')
-const authentication = require('../utils/authentication');
-const asyncWrapper = require('../middleware/asyncWrapper');
-const customConstants = require('../config/constants.json');
-const { hashPwd } = require('../utils/helpers');
-const usersModel = require('../models/usersModels/usersModel');
+const accountsModel = require('../../models/accountsModel');
+const accountSettingsModel = require('../../models/accountSettingsModel')
+const authentication = require('../../utils/authentication');
+const asyncWrapper = require('../../middleware/asyncWrapper');
+const customConstants = require('../../config/constants.json');
+const { hashPwd } = require('../../utils/helpers');
+const usersModel = require('../../models/usersModel');
 const mongoose = require("mongoose")
-const integrationsMasterModel = require('../models/integrationsMasterModels/integrationsMasterModel');
-const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
-const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
-const integtationExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
-const integrationCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
-const { sixWeekSales } = require('../utils/sixWeekSalesFunction');
-const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
-const { validatePhoneNumber } = require('../utils/userLoginValidation');
-const {getSourceAndDestinationWOLifeCycle}=require('../utils/general')
+const integrationsMasterModel = require('../../models/integrationsMasterModel');
+const CPDWorkordersModel = require('../../models/CPDWorkordersModel');
+const DFWorkOrdersModel = require('../../models/DFWorkOrdersModel');
+const integtationExceptionsModel = require('../../models/integrationsExceptionsModel');
+const integrationCronsModel = require('../../models/integrationsCronsModel');
+const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
+const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
+const { validatePhoneNumber } = require('../../utils/userLoginValidation');
+const {getSourceAndDestinationWOLifeCycle}=require('../../utils/general')
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country

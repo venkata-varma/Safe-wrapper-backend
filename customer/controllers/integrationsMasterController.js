@@ -1,35 +1,35 @@
 // const axios = require('axios');
-const serviceProvidersModel = require("../models/integrationsMasterModels/integrationsMasterServiceProvidersModel");
-const integrationsFieldMappingModel = require("../models/integrationsMasterModels/integrationsFieldMappingModel");
-const integrationsSettingsModel = require("../models/integrationsMasterModels/integrationsSettingsModel");
-const authentication = require("../utils/authentication");
-const asyncWrapper = require("../middleware/asyncWrapper");
-const customConstants = require("../config/constants.json");
-const sessionsModel = require("../models/sessionModels/sessionsModel");
-const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
-const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterModels/integrationsMasterServiceProvidersModel");
-const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fieldMappingsMasterModel");
-const fieldMappingMasterDefaultServicesModel = require("../models/integrationsMasterModels/fieldMappingMasterDefaultServicesModel");
-const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
-const { encryptData, decryptData } = require('../utils/encryptionAlgorithms')
-const accountsModel = require('../models/accountsModels/accountsModel')
-const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel");
-const integrationsCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel')
+const serviceProvidersModel = require("../../models/integrationsMasterServiceProvidersModel");
+const integrationsFieldMappingModel = require("../../models/integrationsFieldMappingModel");
+const integrationsSettingsModel = require("../../models/integrationsSettingsModel");
+const authentication = require("../../utils/authentication");
+const asyncWrapper = require("../../middleware/asyncWrapper");
+const customConstants = require("../../config/constants.json");
+const sessionsModel = require("../../models/sessionsModel");
+const integrationsMasterModel = require("../../models/integrationsMasterModel");
+const integrationsMasterServiceProvidersModel = require("../../models/integrationsMasterServiceProvidersModel");
+const fieldMappingsMasterModel = require("../../models/fieldMappingsMasterModel");
+const fieldMappingMasterDefaultServicesModel = require("../../models/fieldMappingMasterDefaultServicesModel");
+const serviceProviderListModel = require('../../models/serviceProviderList')
+const { encryptData, decryptData } = require('../../utils/encryptionAlgorithms')
+const accountsModel = require('../../models/accountsModel')
+const integrationsExceptionsModel = require("../../models/integrationsExceptionsModel");
+const integrationsCronsModel = require('../../models/integrationsCronsModel')
 const mongoose = require('mongoose')
-const cpdWorkOrdersModel = require('../models/workOrdersModels/CPDWorkordersModel')
-const dfWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel')
-const CPDOperations = require('../middleware/CPDOperations');
-const DFOperations = require('../middleware/DFOperations');
-const SNOWOperations = require('../middleware/SNOWOperations')
-const CYSOperations = require('../middleware/CYSOperations')
-const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
-const usersModel = require("../models/usersModels/usersModel");
-const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
-const serviceProvidersMappingAndServicesModel = require("../models/integrationsMasterModels/serviceProvidersMappingAndServicesModel");
-const { dateAsset } = require('../utils/utilsFunctions');
-const { getServiceWorkOrdersAndStatus, getStatusFieldMappings, defaultSatusMappingKeys } = require("../utils/general");
-const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../utils/serviceProvidersAuthentication');
-const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersModel");
+const cpdWorkOrdersModel = require('../../models/CPDWorkordersModel')
+const dfWorkOrdersModel = require('../../models/DFWorkOrdersModel')
+const CPDOperations = require('../../middleware/CPDOperations');
+const DFOperations = require('../../middleware/DFOperations');
+const SNOWOperations = require('../../middleware/SNOWOperations')
+const CYSOperations = require('../../middleware/CYSOperations')
+const CPDWorkordersModel = require("../../models/CPDWorkordersModel");
+const usersModel = require("../../models/usersModel");
+const DFWorkOrdersModel = require("../../models/DFWorkOrdersModel");
+const serviceProvidersMappingAndServicesModel = require("../../models/serviceProvidersMappingAndServicesModel");
+const { dateAsset } = require('../../utils/utilsFunctions');
+const { getServiceWorkOrdersAndStatus, getStatusFieldMappings, defaultSatusMappingKeys } = require("../../utils/general");
+const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../../utils/serviceProvidersAuthentication');
+const SNOWWorkOrdersModel = require("../../models/SNOWWorkOrdersModel");
 
 
 /**
@@ -739,6 +739,10 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
 
   const integrationMasterId = req.params.integrationsMasterId;
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
+  const settingsDetails = await integrationsSettingsModel.find({ integrationsMasterId: integrationMasterId }).lean();
+  const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationMasterId }).lean();
+  const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationMasterId });
+  
 
   if (!integrationMasterDetails) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
@@ -747,10 +751,15 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
     });
   }
   if (integrationMasterDetails.status === "new") {
-    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-      status: customConstants.messages.MESSAGE_FAIL,
+    return res.status(customConstants.statusCodes.PARTIAL_CONTENT).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_INTEGRATION_INCOMPLETE,
-      integrationMasterDetails
+      data:{
+        integrationDetails:integrationMasterDetails,
+        integrationsSettingsDetails: settingsDetails,
+        integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
+        integrationMasterServiceProviders,
+      }
     });
   }
   else {

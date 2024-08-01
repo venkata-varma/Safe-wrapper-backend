@@ -2,7 +2,7 @@
 const router = require('express').Router();
 const { access } = require('fs');
 const integrationsMasterControllers = require('../controllers/integrationsMasterController');
-const auth = require('../middleware/authentication');
+const auth = require('../../middleware/authentication');
 
 router.get('/get-images', integrationsMasterControllers.getImages)
 
