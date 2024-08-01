@@ -739,6 +739,10 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
 
   const integrationMasterId = req.params.integrationsMasterId;
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
+  const settingsDetails = await integrationsSettingsModel.find({ integrationsMasterId: integrationMasterId }).lean();
+  const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationMasterId }).lean();
+  const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationMasterId });
+  
 
   if (!integrationMasterDetails) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
@@ -747,10 +751,13 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
     });
   }
   if (integrationMasterDetails.status === "new") {
-    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-      status: customConstants.messages.MESSAGE_FAIL,
+    return res.status(customConstants.statusCodes.PARTIAL_CONTENT).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_INTEGRATION_INCOMPLETE,
-      integrationMasterDetails
+      integrationMasterDetails,
+      settingsDetails,
+      integrationMasterFieldMappingDetails,
+      integrationMasterServiceProviders,
     });
   }
   else {
