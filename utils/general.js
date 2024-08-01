@@ -1,13 +1,13 @@
-const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
-const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
+const CPDWorkordersModel = require("../models/CPDWorkordersModel");
+const serviceProviderListModel = require('../models/serviceProviderList')
 const { dateAsset } = require("./utilsFunctions");
 const mongoose = require('mongoose')
-const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
-const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersModel");
-const CYSWorkordersModel = require("../models/workOrdersModels/CYSWorkordersModel");
-const workOrderLifeCycleModel = require("../models/workOrdersModels/workOrderLifeCycleModel");
-const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
-const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fieldMappingsMasterModel");
+const DFWorkOrdersModel = require("../models/DFWorkOrdersModel");
+const SNOWWorkOrdersModel = require("../models/SNOWWorkOrdersModel");
+const CYSWorkordersModel = require("../models/CYSWorkordersModel");
+const workOrderLifeCycleModel = require("../models/workOrderLifeCycleModel");
+const integrationsMasterModel = require("../models/integrationsMasterModel");
+const fieldMappingsMasterModel = require("../models/fieldMappingsMasterModel");
 
 var presentWeekSourceData = [];
 

@@ -1,4 +1,4 @@
-const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel")
+const integrationsExceptionsModel = require("../models/integrationsExceptionsModel")
 
 
 exports.exceptionLogs = async(integrationObject, status, exceptionMessage, exceptionTitle, exceptionErrorObject, integrationsApiServices, CPDWorkOrderId, CPDWorkOrderNumber, runnigWorkOrderId) => {

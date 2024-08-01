@@ -1,17 +1,17 @@
 
 const DFConfigurations = require('../config/integrationsConfiguration')
 const axios = require('axios');
-const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
-const DFWorkOrdersModel = require('../models/workOrdersModels/DFWorkOrdersModel');
-const integrationsExceptionsModel = require('../models/integrationsMasterModels/integrationsExceptionsModel');
-const integrationsCronsModel = require('../models/integrationsMasterModels/integrationsCronsModel');
+const CPDWorkordersModel = require('../models/CPDWorkordersModel');
+const DFWorkOrdersModel = require('../models/DFWorkOrdersModel');
+const integrationsExceptionsModel = require('../models/integrationsExceptionsModel');
+const integrationsCronsModel = require('../models/integrationsCronsModel');
 const asyncWrapper = require('./asyncWrapper');
-const integrationsMasterServiceProvidersModel = require('../models/integrationsMasterModels/integrationsMasterServiceProvidersModel');
+const integrationsMasterServiceProvidersModel = require('../models/integrationsMasterServiceProvidersModel');
 const { decryptData } = require('../utils/encryptionAlgorithms');
 const { CPDAuthentication } = require('../utils/serviceProvidersAuthentication');
-const workOrderLifeCycleModel = require('../models/workOrdersModels/workOrderLifeCycleModel');
-const CPDtoDFBuildingMasterModel = require('../models/workOrdersModels/CPDtoDFBuildingMasterModel');
-const integrationsSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel');
+const workOrderLifeCycleModel = require('../models/workOrderLifeCycleModel');
+const CPDtoDFBuildingMasterModel = require('../models/CPDtoDFBuildingMasterModel');
+const integrationsSettingsModel = require('../models/integrationsSettingsModel');
 const { exceptionLogs } = require('./exceptionOperation');
 
 /**
