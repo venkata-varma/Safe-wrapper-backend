@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { access } = require('fs');
 const usersControllers = require('../controllers/usersController');
-const auth = require('../middleware/authentication');
+const auth = require('../../middleware/authentication');
 
 
 

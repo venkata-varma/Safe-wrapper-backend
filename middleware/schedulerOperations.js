@@ -1,18 +1,18 @@
 const moment = require('moment')
-const integrationsFieldMappingModel = require("../models/integrationsMasterModels/integrationsFieldMappingModel");
-const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterModels/integrationsMasterServiceProvidersModel");
+const integrationsFieldMappingModel = require("../models/integrationsFieldMappingModel");
+const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
 const CPDOperations = require('./CPDOperations');
 const DFOperations = require('./DFOperations');
 const CYSOperations = require('./CYSOperations');
 const { EmailDateAsset } = require("../utils/utilsFunctions");
-const integrationsExceptionsModel = require("../models/integrationsMasterModels/integrationsExceptionsModel");
+const integrationsExceptionsModel = require("../models/integrationsExceptionsModel");
 const { getServiceWorkOrdersAndStatus, getServiceProviderName } = require("../utils/general");
-const integrationsCronsModel = require("../models/integrationsMasterModels/integrationsCronsModel");
-const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
-const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
+const integrationsCronsModel = require("../models/integrationsCronsModel");
+const integrationsMasterModel = require("../models/integrationsMasterModel");
+const CPDWorkordersModel = require("../models/CPDWorkordersModel");
 const { oneWeekWorkOrderEmailNotifcation } = require("../emailNotifications/workOrdersEmailNotifications");
 const fs = require('fs');
-const accountsModel = require('../models/accountsModels/accountsModel');
+const accountsModel = require('../models/accountsModel');
 const { sendWorkOrderEmail } = require('../emailNotifications/sendWorkOrderEmails');
 
 const schedulerIntegrationCronJobs = async (integrationObject) => {
