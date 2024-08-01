@@ -35,15 +35,16 @@ const auth = asyncWrapper(async (req, _res, next) => {
           status: customConstants.messages.MESSAGE_EXPIRED,
           message: customConstants.messages.MESSAGE_SESSION_EXPIRED,
         });
-    }else if(user.accountId.accountType!=='customer'){
-      console.log('not allowed===================')
-      _res
-      .status(customConstants.statusCodes.FORBIDDEN)
-      .json({
-        status: customConstants.messages.MESSAGE_FAIL,
-        message: customConstants.messages.MESSAGE_ONLY_CUSTOMER_ENTRY,
-      });
     }
+    // else if(user.accountId.accountType!=='customer'){
+    //   console.log('not allowed===================')
+    //   _res
+    //   .status(customConstants.statusCodes.FORBIDDEN)
+    //   .json({
+    //     status: customConstants.messages.MESSAGE_FAIL,
+    //     message: customConstants.messages.MESSAGE_ONLY_CUSTOMER_ENTRY,
+    //   });
+    // }
      
     
     else {

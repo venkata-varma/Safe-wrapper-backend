@@ -8,6 +8,9 @@ router.post('/create-super-admin-account', upload.single('logo'), superAdminAcco
 
 router.use(superAdminAuth)
 router.get('/get-all-accounts', superAdminAccountsController.getAllAccounts)
+router.get('/get-all-integrations/:accountId', superAdminAccountsController.getAllIntegrations)
+router.get('/get-account-settings/:accountId', superAdminAccountsController.getAccountSettings)
 
 router.patch('/update-account-status/:accountId',superAdminAccountsController.updateAccountStatus)
+router.patch('/update-account-settings/:accountId', superAdminAccountsController.updateAccountSettings)
 module.exports=router
