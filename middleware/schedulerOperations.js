@@ -128,7 +128,7 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>MDS Builders Inc Work Orders Report</title>
-         <style>
+          <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -137,17 +137,20 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+        }
+
+        .int{
+            text-align: start;
         }
 
         .container {
             background-color: #ffffff;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 600px;
             padding: 20px;
-            display:inline;
             text-align: center;
+            max-width: 100%;
         }
 
         .logo {
@@ -167,12 +170,13 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
         }
 
         .subtitlee {
-            font-size: 45px;
+            font-size: 24px;
         }
 
         .stats {
             display: flex;
-            justify-content: center;
+            flex-wrap: wrap;
+            justify-content: space-around;
             margin-bottom: 30px;
         }
 
@@ -180,16 +184,18 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
             background-color: #ffe0b2;
             border-radius: 5px;
             padding: 10px 20px;
-            width: 30%;
+            flex: 1 1 200px;
             margin: 4px;
+            max-width: 30%;
         }
 
         .stat.mds {
-            background-color: #2160a3;
+            background-color: #96bbe2;
             border-radius: 5px;
             padding: 10px 20px;
-            width: 30%;
+            flex: 1 1 200px;
             margin: 4px;
+            max-width: 30%;
         }
 
         .stat.failed {
@@ -231,15 +237,14 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
             color: #888888;
             font-size: 12px;
         }
-
-        .text-left {
+            .text-left {
             text-align: left;
         }
     </style>
     </head>
     <body>
         <div class="container">
-            <div style="width:60%; margin:auto"><img style="width:30%; margin:auto" src= "${serviceProviderComapanyLogo.logo}" alt="Company Logo" class="logo"></div>
+            <div style="width:60%; margin:auto"><img style="width:30%; margin:auto" src="${serviceProviderComapanyLogo?.logo}" alt="Company Logo" class="logo"></div>
             <div class="title">Thank you for choosing our services!</div>
             <div class="subtitle">Last week work orders report<br>${workOrdersFromDate} to ${workOrdersToDate}</div>
             ${allIntegrationDetailsHtml}
