@@ -451,6 +451,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
     for (let fromAndTo of get_integration_field_mapping_master_default_keys) {
       let integrationsFieldMappingkeysExist = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId, serviceMethod: fromAndTo.serviceMethod })
       if (!integrationsFieldMappingkeysExist) {
+        let getRequiredKeys = await getStatusFieldMappings(integrationsMasterId)
         const integrationFieldMappingCreate = await integrationsFieldMappingModel.create({
           accountId: integrationDetails.accountId,
           userId: req.user._id,
@@ -461,7 +462,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
           serviceName: "work-order",
           createdBy: req.user._id,
           dataPoints: fromAndTo.dataPoints,
-          requiredKeys: await getStatusFieldMappings(integrationsMasterId)
+          requiredKeys: getRequiredKeys.requiredKeys
         })
       } else {
         // nothing
@@ -667,14 +668,13 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   let integrationsSettings;
   const existingintegrationsSettings = await integrationsSettingsModel.findOne({ integrationsMasterId });
   let statusFieldMappingKeys=await getStatusFieldMappings(integrationsMasterId)
-
   if (existingintegrationsSettings) {
     integrationsSettings = await integrationsSettingsModel.findOneAndUpdate(
       { integrationsMasterId },
       {
         $set: {
           ...req.body, updatedBy: req.user._id,
-          statusFieldMappingKeys: statusFieldMappingKeys
+          statusFieldMappingKeys: statusFieldMappingKeys.statusFieldMappingKeys
         }
       },
       { new: true }
@@ -686,7 +686,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
       createdBy: req.user._id,
       userId: req.user._id,
       accountId: req.user.accountId,
-      statusFieldMappingKeys: statusFieldMappingKeys
+      statusFieldMappingKeys: statusFieldMappingKeys.statusFieldMappingKeys
     });
     // Perform the update
     updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(

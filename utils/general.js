@@ -209,9 +209,18 @@ const defaultSatusMappingKeys = async (from, serviceMethod) => {
   */
 const getStatusFieldMappings = async(integrationMasterId) => {
   const integrationMaster = await integrationsMasterModel.findById(integrationMasterId);
-
+  let statusFieldMappingKeys, requiredKeys
   if (integrationMaster.from === "CPD" && integrationMaster.to === "DF") {
-    return {
+      requiredKeys = {
+      "numberAlt": "WorkOrderNumber",
+      "budgetedProposedStatus": "NONE",
+      "buildingId": "ServiceLocation.OccupantID",
+      "invoiceToCustomerId": 2238,
+      "invoiceType": "EXTERNAL_CHARGE",
+      "reportedById": 5515,
+      "workDescription": "WorkDetails.Assets[0].Comment"
+    }
+    statusFieldMappingKeys = {
       "REPORTED": "New",
       "ESTIMATE-REQUESTED": "Accepted",
       "ESTIMATE-COMPLETED": "Verified",
@@ -221,8 +230,10 @@ const getStatusFieldMappings = async(integrationMasterId) => {
       "CANCELED": "Rejected",
       "IN-PROGRESS": "Paused"
     }
+    return {requiredKeys, statusFieldMappingKeys}
   } else if (integrationMaster.from === "CPD" && integrationMaster.to === "CYS") {
-    return {
+    requiredKeys = {}
+    statusFieldMappingKeys = {
       "Requested": "New",
       "Approved": "Accepted",
       "Cancelled": "Rejected",
@@ -231,6 +242,7 @@ const getStatusFieldMappings = async(integrationMasterId) => {
       "Pending": "Paused",
       "Closed": "CheckedOut"
     }
+    return {requiredKeys, statusFieldMappingKeys}
   }
 }
 
