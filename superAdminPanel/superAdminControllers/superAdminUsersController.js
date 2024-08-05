@@ -1,10 +1,10 @@
-const accountsModel = require('../../models/accountsModels/accountsModel');
-const usersModel = require('../../models/usersModels/usersModel')
+const accountsModel = require('../../models/accountsModel');
+const usersModel = require('../../models/usersModel')
 const asyncWrapper = require('../../middleware/asyncWrapper')
 const { validateUserMobileEmailData, validatePhoneNumber } = require('../../utils/userLoginValidation')
 const { hashPwd, comparePassword } = require('../../utils/helpers')
 const customConstants = require('../config/customConstants.json')
-const sessionsModel = require('../../models/sessionModels/sessionsModel')
+const sessionsModel = require('../../models/sessionsModel')
 /*
 Miidleware function to controller, "loginUser"
 Mandatory fields -> Phone and Password

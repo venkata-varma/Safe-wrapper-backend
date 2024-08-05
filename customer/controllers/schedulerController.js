@@ -4,17 +4,17 @@ const humanToCron = require('human-to-cron');
 
 // const mongooseConnect = require('../config/dbConnection');
 // mongooseConnect.DbConnect();
-const integrationsSettingsModel = require('../models/integrationsMasterModels/integrationsSettingsModel');
-const integrationsMasterModel = require('../models/integrationsMasterModels/integrationsMasterModel');
-const integrationsMasterServiceProvidersModel = require('../models/integrationsMasterModels/integrationsMasterServiceProvidersModel');
-const CPDWorkordersModel = require('../models/workOrdersModels/CPDWorkordersModel');
-const { integrationsCronId } = require('../models/integrationsMasterModels/integrationsCronsModel');
-const asyncWrapper = require('../middleware/asyncWrapper');
-const CPDOperations = require('../middleware/CPDOperations');
-const DFOperations = require('../middleware/DFOperations');
-const integrationsFieldMappingModel = require('../models/integrationsMasterModels/integrationsFieldMappingModel');
-const { schedulerIntegrationCronJobs, schedulerEmailJobs } = require('../middleware/schedulerOperations');
-const accountsModel = require('../models/accountsModels/accountsModel');
+const integrationsSettingsModel = require('../../models/integrationsSettingsModel');
+const integrationsMasterModel = require('../../models/integrationsMasterModel');
+const integrationsMasterServiceProvidersModel = require('../../models/integrationsMasterServiceProvidersModel');
+const CPDWorkordersModel = require('../../models/CPDWorkordersModel');
+const { integrationsCronId } = require('../../models/integrationsCronsModel');
+const asyncWrapper = require('../../middleware/asyncWrapper');
+const CPDOperations = require('../../middleware/CPDOperations');
+const DFOperations = require('../../middleware/DFOperations');
+const integrationsFieldMappingModel = require('../../models/integrationsFieldMappingModel');
+const { schedulerIntegrationCronJobs, schedulerEmailJobs } = require('../../middleware/schedulerOperations');
+const accountsModel = require('../../models/accountsModel');
 const mongoose = require('mongoose')
 
 
@@ -84,7 +84,7 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
       }
     }
   })
-  schedule.scheduleJob(job_email_notification, async ()=> {
+  schedule.scheduleJob(job_each_day, async ()=> {
     const currentDateAndTime = new Date()
     console.log('Job executed at', currentDateAndTime);
     console.log('Job executed at', currentDateAndTime.getDay());
@@ -92,7 +92,7 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
     if(currentDateAndTime.getDay() === 0){
       const getAllActiveAccounts = await accountsModel.find({status:"active"})
       for(let account of getAllActiveAccounts){
-        await schedulerEmailJobs(await integrationsMasterModel.find({accountId:account._id, status:"active"}), currentDateAndTime)
+        await schedulerEmailJobs(await integrationsMasterModel.find({accountId:account._id, status:"active"}), currentDateAndTime, accountLogo = account?.logo)
       }
     }
   });

@@ -1,13 +1,13 @@
-const CPDWorkordersModel = require("../models/workOrdersModels/CPDWorkordersModel");
-const serviceProviderListModel = require('../models/integrationsMasterModels/serviceProviderList')
+const CPDWorkordersModel = require("../models/CPDWorkordersModel");
+const serviceProviderListModel = require('../models/serviceProviderList')
 const { dateAsset } = require("./utilsFunctions");
 const mongoose = require('mongoose')
-const DFWorkOrdersModel = require("../models/workOrdersModels/DFWorkOrdersModel");
-const SNOWWorkOrdersModel = require("../models/workOrdersModels/SNOWWorkOrdersModel");
-const CYSWorkordersModel = require("../models/workOrdersModels/CYSWorkordersModel");
-const workOrderLifeCycleModel = require("../models/workOrdersModels/workOrderLifeCycleModel");
-const integrationsMasterModel = require("../models/integrationsMasterModels/integrationsMasterModel");
-const fieldMappingsMasterModel = require("../models/integrationsMasterModels/fieldMappingsMasterModel");
+const DFWorkOrdersModel = require("../models/DFWorkOrdersModel");
+const SNOWWorkOrdersModel = require("../models/SNOWWorkOrdersModel");
+const CYSWorkordersModel = require("../models/CYSWorkordersModel");
+const workOrderLifeCycleModel = require("../models/workOrderLifeCycleModel");
+const integrationsMasterModel = require("../models/integrationsMasterModel");
+const fieldMappingsMasterModel = require("../models/fieldMappingsMasterModel");
 
 var presentWeekSourceData = [];
 
@@ -209,9 +209,18 @@ const defaultSatusMappingKeys = async (from, serviceMethod) => {
   */
 const getStatusFieldMappings = async(integrationMasterId) => {
   const integrationMaster = await integrationsMasterModel.findById(integrationMasterId);
-
+  let statusFieldMappingKeys, requiredKeys
   if (integrationMaster.from === "CPD" && integrationMaster.to === "DF") {
-    return {
+      requiredKeys = {
+      "numberAlt": "WorkOrderNumber",
+      "budgetedProposedStatus": "NONE",
+      "buildingId": "ServiceLocation.OccupantID",
+      "invoiceToCustomerId": 2238,
+      "invoiceType": "EXTERNAL_CHARGE",
+      "reportedById": 5515,
+      "workDescription": "WorkDetails.Assets[0].Comment"
+    }
+    statusFieldMappingKeys = {
       "REPORTED": "New",
       "ESTIMATE-REQUESTED": "Accepted",
       "ESTIMATE-COMPLETED": "Verified",
@@ -221,8 +230,10 @@ const getStatusFieldMappings = async(integrationMasterId) => {
       "CANCELED": "Rejected",
       "IN-PROGRESS": "Paused"
     }
+    return {requiredKeys, statusFieldMappingKeys}
   } else if (integrationMaster.from === "CPD" && integrationMaster.to === "CYS") {
-    return {
+    requiredKeys = {}
+    statusFieldMappingKeys = {
       "Requested": "New",
       "Approved": "Accepted",
       "Cancelled": "Rejected",
@@ -231,6 +242,7 @@ const getStatusFieldMappings = async(integrationMasterId) => {
       "Pending": "Paused",
       "Closed": "CheckedOut"
     }
+    return {requiredKeys, statusFieldMappingKeys}
   }
 }
 

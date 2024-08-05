@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
-const usersModel = require("../models/usersModels/usersModel");
-const sessionModel = require("../models/sessionModels/sessionsModel");
+const usersModel = require("../models/usersModel");
+const sessionModel = require("../models/sessionsModel");
 const customConstants = require("../config/constants.json");
 const asyncWrapper = require("./asyncWrapper");
 
