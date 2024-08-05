@@ -65,9 +65,8 @@ const schedulerIntegrationCronJobs = async (integrationObject) => {
 };
 
 
-const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
+const schedulerEmailJobs = async (integrationDetails, currentDateAndTime, accountLogo) => {
     let allIntegrationDetailsHtml = '';
-    let serviceProviderComapanyLogo 
     let workOrdersToDate
     let workOrdersFromDate
     for (let integration of integrationDetails) {
@@ -81,9 +80,7 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
       
       // Integration exception count for last 7 days
       const integrationsExceptionsCount = await integrationsExceptionsModel.find({ integrationsMasterId: integrationsMasterId }).countDocuments();
-      serviceProviderComapanyLogo = await accountsModel.findById(integration.accountId)
-      console.log('serviceProviderComapanyLogo:===',serviceProviderComapanyLogo.logo)
-      for (let week of presentWeekData) {
+     for (let week of presentWeekData) {
         let fromDate = new Date(week.fromDate);
         let toDate = new Date(week.toDate);
         
@@ -116,11 +113,11 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
     //   console.log('integrationsExceptionsCount:===', integrationsExceptionsCount);
   
       const emailNotificationContent = `${await oneWeekWorkOrderEmailNotifcation(integration.from, integration.to, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount, sourceStatusTotalCount, destinationStatusTotalCount, workOrdersFromDate, workOrdersToDate
-                                        ,sourceServiceProviderName, destinationServiceProviderName, serviceProviderComapanyLogo.logo, integration.title)}`
+                                        ,sourceServiceProviderName, destinationServiceProviderName, integration.title)}`
       
       allIntegrationDetailsHtml += emailNotificationContent;
     }
-
+    console.log('accountLogo:==',accountLogo)
     const finalHtml = `
     <!DOCTYPE html>
     <html lang="en">
@@ -128,118 +125,153 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>MDS Builders Inc Work Orders Report</title>
-         <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+     <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        -webkit-text-size-adjust: none;
+        width: 100% !important;
+        -ms-text-size-adjust: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
 
-        .container {
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 600px;
-            padding: 20px;
-            display:inline;
-            text-align: center;
-        }
+      .container {
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        text-align: center;
+        max-width: 600px;
+        width: 100%;
+        display: inline;
+      }
 
-        .logo {
-            width: 100px;
-            margin: 0 auto 20px;
-        }
+      .logo {
+        width: 100px;
+        margin: 0 auto 20px;
+      }
 
-        .title {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
+      .title {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
 
-        .subtitle {
-            color: #888888;
-            margin-bottom: 30px;
-            font-size: 20px;
-        }
+      .subtitle {
+        color: #888888;
+        margin-bottom: 30px;
+        font-size: 20px;
+      }
 
-        .subtitlee {
-            font-size: 45px;
-        }
+      .subtitlee {
+        font-size: 18px;
+        margin-bottom: 20px;
+      }
 
+      .int {
+        text-align: left;
+        font-size: 16px;
+        margin-bottom: 20px;
+      }
+
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        margin-bottom: 30px;
+      }
+
+      .stat {
+        background-color: #ffe0b2;
+        border-radius: 5px;
+        padding: 10px 20px;
+        flex: 1 1 calc(33.33% - 20px);
+        margin: 10px;
+        max-width: calc(33.33% - 20px);
+        box-sizing: border-box;
+      }
+
+      .stat.mds {
+        background-color: #96bbe2;
+      }
+
+      .stat.failed {
+        background-color: #ffcdd2;
+      }
+
+      .stat.exceptions {
+        background-color: #ffebee;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 30px;
+        padding-left: 10px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #dddddd;
+        text-align: center;
+        white-space: normal;
+        word-break: break-word;
+      }
+
+      th {
+        background-color: #f4f4f4;
+      }
+
+      .button {
+        display: inline-block;
+        background-color: #007bff;
+        color: #ffffff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        margin-bottom: 20px;
+      }
+
+      .footer {
+        color: #888888;
+        font-size: 12px;
+      }
+
+      @media (max-width: 600px) {
         .stats {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
+          flex-direction: column;
+          align-items: center;
+          display: flex;
+          justify-content: space-around;
         }
 
         .stat {
-            background-color: #ffe0b2;
-            border-radius: 5px;
-            padding: 10px 20px;
-            width: 30%;
-            margin: 4px;
+          flex: 1 1 100%;
+          max-width: 100%;
+          display: inline;
+          min-width: 275px;
         }
 
-        .stat.mds {
-            background-color: #2160a3;
-            border-radius: 5px;
-            padding: 10px 20px;
-            width: 30%;
-            margin: 4px;
+        .title,
+        .subtitle,
+        .subtitlee {
+          font-size: 18px;
         }
 
-        .stat.failed {
-            background-color: #ffcdd2;
+        .int {
+          font-size: 14px;
         }
-
-        .stat.exceptions {
-            background-color: #ffebee;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-
-        th,
-        td {
-            padding: 10px;
-            border: 1px solid #dddddd;
-            text-align: center;
-        }
-
-        th {
-            background-color: #f4f4f4;
-        }
-
-        .button {
-            display: inline-block;
-            background-color: #007bff;
-            color: #ffffff;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            margin-bottom: 20px;
-        }
-
-        .footer {
-            color: #888888;
-            font-size: 12px;
-        }
-
-        .text-left {
-            text-align: left;
-        }
+      }
     </style>
     </head>
     <body>
         <div class="container">
-            <div style="width:60%; margin:auto"><img style="width:30%; margin:auto" src= "${serviceProviderComapanyLogo.logo}" alt="Company Logo" class="logo"></div>
+            <div style="width:60%; margin:auto"><img style="width:30%; margin:auto" src="${accountLogo}" alt="Company Logo" class="logo"></div>
             <div class="title">Thank you for choosing our services!</div>
             <div class="subtitle">Last week work orders report<br>${workOrdersFromDate} to ${workOrdersToDate}</div>
             ${allIntegrationDetailsHtml}

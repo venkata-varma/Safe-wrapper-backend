@@ -84,7 +84,7 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
       }
     }
   })
-  schedule.scheduleJob(job_email_notification, async ()=> {
+  schedule.scheduleJob(job_each_day, async ()=> {
     const currentDateAndTime = new Date()
     console.log('Job executed at', currentDateAndTime);
     console.log('Job executed at', currentDateAndTime.getDay());
@@ -92,7 +92,7 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
     if(currentDateAndTime.getDay() === 0){
       const getAllActiveAccounts = await accountsModel.find({status:"active"})
       for(let account of getAllActiveAccounts){
-        await schedulerEmailJobs(await integrationsMasterModel.find({accountId:account._id, status:"active"}), currentDateAndTime)
+        await schedulerEmailJobs(await integrationsMasterModel.find({accountId:account._id, status:"active"}), currentDateAndTime, accountLogo = account?.logo)
       }
     }
   });
