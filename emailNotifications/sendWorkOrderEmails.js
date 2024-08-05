@@ -1,6 +1,6 @@
 const sgMail = require('@sendgrid/mail');
 require('dotenv').config()
-//, 'akram.shaik@devrabbit.com', 'sandeep.raj.ambekar@gmail.com', 'sandeep.ambekar@devrabbit.com'
+
 exports.sendWorkOrderEmail = (finalHtml) => {
     
     return new Promise(async (resolve, reject) => {

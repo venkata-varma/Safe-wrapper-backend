@@ -1,9 +1,5 @@
-exports.oneWeekWorkOrderEmailNotifcation = async(source, destination, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount, sourceStatusTotalCount, destinationStatusTotalCount, workOrdersFromDate, workOrdersToDate, sourceServiceProviderName, destinationServiceProviderName,serviceProviderComapanyLogo,integrationTitle) => {
-  const html =  `<!DOCTYPE html>
-<html lang="en">
-
-<body>
-    <div class="container">
+exports.oneWeekWorkOrderEmailNotifcation = async(source, destination, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount, sourceStatusTotalCount, destinationStatusTotalCount, workOrdersFromDate, workOrdersToDate, sourceServiceProviderName, destinationServiceProviderName,integrationTitle) => {
+  const html =  `
      <h3 class="text-left">Integration: <span class="text-gray fs-6"> ${integrationTitle} </span></h3>
         <div class="stats">
             <div class="stat">${sourceServiceProviderName} Work Orders<br><strong>${sourceStatusTotalCount}</strong></div>
@@ -21,10 +17,7 @@ exports.oneWeekWorkOrderEmailNotifcation = async(source, destination, integratio
                     <td>${isNaN(Math.round((destinationStatusTotalCount/sourceStatusTotalCount)*100)) ? '0%' : Math.round((destinationStatusTotalCount/sourceStatusTotalCount)*100) + '%'}</td>
                 </tr>
             </tfoot>
-        </table>
-        </div>
-</body>
-</html>`;
+        </table>`;
   return html;
 };
 
