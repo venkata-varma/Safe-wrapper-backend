@@ -50,7 +50,7 @@ class Database {
         useUnifiedTopology: true
       };
 
-      mongoose.connect(dbPassword, connectionParams).then(() => {
+      mongoose.connect(dbPassword).then(() => {
         console.log(`MongoDB Atlas database connected successfully ...`);
         resolve();
       });

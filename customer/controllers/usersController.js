@@ -30,14 +30,14 @@ Funtion to check existence of mandatory fields in payload
 If returns True, moves to "next" function , "createUser"
 */
 exports.validateUserRegistration = asyncWrapper(async (req, res, next) => {
-  const { name, companyName, email, phone, role, password } = req.body
-  if (!name || !companyName || !email || !role || !phone || !password) {
+  const { name, email, phone, role, password } = req.body
+  if (!name || !email || !role || !phone || !password) {
     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
     });
   }
-  if(!await validatePhoneNumber(phone)){
+  if (!await validatePhoneNumber(phone)) {
     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
@@ -56,7 +56,7 @@ Returns newly created user
 
 */
 exports.createUser = asyncWrapper(async (req, res) => {
-  const { name, companyName, email, phone, role, password, createdBy } = req.body
+  const { name, email, phone, role, password, createdBy } = req.body
   const userDetails = await usersModel.findOne({ $or: [{ email }, { phone }] })
   console.log(password, "password")
   if (userDetails) {
@@ -120,7 +120,7 @@ exports.middlewareToDeleteUser = asyncWrapper(async (req, res, next) => {
 
 */
 exports.deleteUser = asyncWrapper(async (req, res) => {
-  const deactivateUser = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'deleted', updatedBy:req.user_id } }, { new: true });
+  const deactivateUser = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'deleted', updatedBy: req.user_id } }, { new: true });
   delete deactivateUser.password;
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -151,8 +151,8 @@ exports.getUserDetails = asyncWrapper(async (req, res) => {
  *@params "accountId" 
  * 
  */
-exports.getAllUsers=asyncWrapper(async(req,res)=>{
-  const users=await usersModel.find({accountId:req.params.accountId},{password : 0}) ;
+exports.getAllUsers = asyncWrapper(async (req, res) => {
+  const users = await usersModel.find({ accountId: req.params.accountId }, { password: 0 });
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_ALL_USERS_DETAILS,
@@ -160,7 +160,7 @@ exports.getAllUsers=asyncWrapper(async(req,res)=>{
       users
     },
   });
-  
+
 })
 
 
@@ -186,13 +186,33 @@ exports.middlewareUpdateUserDetails = asyncWrapper(async (req, res, next) => {
  * @params User Id
  */
 exports.updateUserDetails = asyncWrapper(async (req, res) => {
-  const updateUser = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { ...req.body, updatedBy: req.user._id } }, { new: true });
+  const user = await usersModel.findById(req.params.userId).lean()
 
+  const mainUser = await accountsModel.findOne({ accountId: user.accountId, phone: user.phone, email: user.email });
+
+  var updateAccount;
+  var updateUser;
+  if (mainUser) {
+
+    updateAccount = await accountsModel.findOneAndUpdate({ _id: mainUser._id }, { $set: { accountName: req.body.name, ...req.body } }, { new: true, runValidators: true })
+    updateUser = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { ...req.body, updatedBy: req.user._id } }, { new: true });
+
+  } else if (!mainUser) {
+
+    updateUser = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { ...req.body, updatedBy: req.user._id } }, { new: true, runValidators: true });
+
+  }
+  const userObject = updateUser.toObject();
+  delete userObject.password;
+  console.log("updateUser-delete password", userObject);
+  
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_USER_DETAILS_UPDATED,
-    data: updateUser,
+    data: {
+      userObject
+    }
   });
 
 })
@@ -234,7 +254,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
     });
   }
-  if (!req.originalUrl.includes("super-admin")&& user.accountId.accountType !== 'customer') {
+  if (!req.originalUrl.includes("super-admin") && user.accountId.accountType !== 'customer') {
     return res.status(customConstants.statusCodes.FORBIDDEN).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_ONLY_CUSTOMER_ENTRY,
@@ -300,7 +320,7 @@ exports.loginUser = asyncWrapper(async (req, res) => {
   const integrationsCount = await integrationMasterModel.find({ accountId: user.accountId, status: 'active' });
   //const accountUpdateIntegrationsCount = await accountsModel.findByIdAndUpdate(user.accountId, { $set: { noOfIntegrations: integrationsCount.length } }, { new: true })
   user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
-  user_details.accountSettings = await accountSettingsModel.findOne({accountId:user.accountId})
+  user_details.accountSettings = await accountSettingsModel.findOne({ accountId: user.accountId })
 
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -380,31 +400,31 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   // for (let exceptionsCount of integrationsOfAccount) {
   //   exceptionsCount.integrationsExceptionsCount = exceptionsCount.integrationsExceptions.length;
   // }
-/*
-  const activityLog = await CPDWorkordersModel.aggregate([
-    {
-      $match: { accountId: new mongoose.Types.ObjectId(accountId) }
-    },
-    {
-      $sort: { createdAt: -1 }
-    },
-    {
-      $lookup: {
-        "from": "integrationscrons",
-        "localField": "integrationsCronId",
-        "foreignField": "_id",
-        "as": "cronInfo"
+  /*
+    const activityLog = await CPDWorkordersModel.aggregate([
+      {
+        $match: { accountId: new mongoose.Types.ObjectId(accountId) }
+      },
+      {
+        $sort: { createdAt: -1 }
+      },
+      {
+        $lookup: {
+          "from": "integrationscrons",
+          "localField": "integrationsCronId",
+          "foreignField": "_id",
+          "as": "cronInfo"
+        }
+      },
+      { $unwind: "$cronInfo" },
+      {
+        $sort: { "cronInfo.createdAt": -1 }
       }
-    },
-    { $unwind: "$cronInfo" },
-    {
-      $sort: { "cronInfo.createdAt": -1 }
-    }
-  ]);
-  console.log('activityLog:==',activityLog)
-  */
+    ]);
+    console.log('activityLog:==',activityLog)
+    */
   const activityLog = await integrationCronsModel.find({ accountId }).sort({ createdAt: -1 }).limit(10)
-  
+
   const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: "CPD" })
   const highPrioritycpdWorkOrders = await cpdWorkOrdersModel.find({ accountId, $or: [{ priority: 'high' }, { priority: 'medium' }] }).sort({ createdAt: -1 })
   let sourceStatus = await CPDWorkordersModel.aggregate([
@@ -427,27 +447,31 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
       }
     }
   ]);
-  let workOrderStates = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,sourceStatus);
+  let workOrderStates = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, sourceStatus);
 
   const integrationsExceptionsApiservices = await integrationsExceptionsModel.aggregate([
-    { $match: { accountId: new mongoose.Types.ObjectId(accountId)
-        }
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId)
+      }
     },
-    { $group:
-      { _id: '$integrationsApiServices', 
+    {
+      $group:
+      {
+        _id: '$integrationsApiServices',
         count: { $sum: 1 }
       }
     }
-]);
+  ]);
 
-// Get all source and destination work orders
+  // Get all source and destination work orders
   const getAllWorkOrdersCount = async (accountId, serviceprovider) => {
     let workOrdersCount = 0
-        if (serviceprovider === "CPD") {
-          workOrdersCount += await cpdWorkOrdersModel.find({ accountId: accountId }).countDocuments();
-        } else if (serviceprovider === "DF") {
-          workOrdersCount += await dfWorkOrdersModel.find({ accountId: accountId }).countDocuments();
-        }
+    if (serviceprovider === "CPD") {
+      workOrdersCount += await cpdWorkOrdersModel.find({ accountId: accountId }).countDocuments();
+    } else if (serviceprovider === "DF") {
+      workOrdersCount += await dfWorkOrdersModel.find({ accountId: accountId }).countDocuments();
+    }
     return workOrdersCount
   }
 
@@ -462,30 +486,30 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
     totalSourceWorkOrdersCount += sourceCounts;
     totalDestinationWorkOrdersCount += destinationCounts;
   }
-  
-  const exceptionsCount = await integrationsExceptionModel.find({accountId:accountId}).countDocuments()
+
+  const exceptionsCount = await integrationsExceptionModel.find({ accountId: accountId }).countDocuments()
   accountDetails.insightsWorkOrdersCount = {
-    sourceWorkOrdersCount : totalSourceWorkOrdersCount,
-    destinationWorkOrdersCount : totalDestinationWorkOrdersCount,
-    exceptionsCount : exceptionsCount
+    sourceWorkOrdersCount: totalSourceWorkOrdersCount,
+    destinationWorkOrdersCount: totalDestinationWorkOrdersCount,
+    exceptionsCount: exceptionsCount
   }
 
   const twelveWeekSales = twelveWeeksSales;
 
 
   for (let week of twelveWeekSales) {
-    let formttedFromDate = new Date(new Date(week.fromDate).setDate(new Date(week.fromDate).getDate()+1))
-    let formattedToDate = new Date(new Date(week.toDate).setDate(new Date(week.toDate).getDate()+1))
+    let formttedFromDate = new Date(new Date(week.fromDate).setDate(new Date(week.fromDate).getDate() + 1))
+    let formattedToDate = new Date(new Date(week.toDate).setDate(new Date(week.toDate).getDate() + 1))
 
     let weekCPDkWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
     let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
     let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
 
-    
+
     // let weekCPDkWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
     // let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
     // let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
-    
+
     week.CPDWorkOrderCount = weekCPDkWorkOrders;
     week.dfWorkOrderCount = weekDFWorkOrders;
     week.integrationsExceptions = integrationsExceptions;
@@ -520,7 +544,7 @@ If returns True, moves to "next" function , "updatePassword"
 */
 exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
   console.log("Rweq", req.body)
-  const {userId} = req.params
+  const { userId } = req.params
   const { currentPassword, newPassword } = req.body;
 
   const user = await usersModel.findById(userId).populate('accountId')
@@ -563,13 +587,26 @@ exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
  * Update the user password.
  */
 
-exports.updatePassword = asyncWrapper(async (req,res) => {
+exports.updatePassword = asyncWrapper(async (req, res) => {
 
-  const {userId} = req.params;
+  const { userId } = req.params;
+  const user = await usersModel.findById(req.params.userId).lean()
+
+  const mainUser = await accountsModel.findOne({ accountId: user.accountId, phone: user.phone, email: user.email });
+
   const { currentPassword, newPassword } = req.body;
   let updatedPassword = await hashPwd(newPassword)
+  var updateAccountPassword;
+  var updateUserPassword
+  if (mainUser) {
+    updateAccountPassword = await accountsModel.findOneAndUpdate({ _id: mainUser._id }, { $set: { password: updatedPassword } }, { new: true, runValidators: true })
+    updateUserPassword = await usersModel.findByIdAndUpdate(userId, { password: updatedPassword }, { new: true, runValidators: true })
+  } else if (!mainUser) {
+    updateUserPassword = await usersModel.findByIdAndUpdate(userId, { password: updatedPassword }, { new: true, runValidators: true })
+  }
 
-  const userDetails = await usersModel.findByIdAndUpdate(userId,{password:updatedPassword},{new : true})
+
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_PASSWORD_UPDATED,
