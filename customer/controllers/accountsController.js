@@ -309,30 +309,25 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const integrationsQuery = req.query.integration;
 
     //const integrationsQuery = req.query.integration;
-    const priorityQuery = req.query.priority;
+    const priorityQuery = req.query.priority ? req.query.priority.toLowerCase() : null;;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
     const toDateQuery = req.query.toDate ? new Date(new Date(req.query.toDate).setDate(new Date(req.query.toDate).getDate() + 1)) : (fromDateQuery ? new Date() : null);
     const searchQuery = req.query.search ? new RegExp(`${req.query.search}`, 'i') : null;
+   
+// Define valid priority values
+const validPriorities = ['all', 'high', 'medium', 'low'];
     var accountReports = [];
     var sixWeeksSalesGraph = [];
-    if (integrationsQuery === 'null' || !integrationsQuery) {
+    if (integrationsQuery === 'null' || !integrationsQuery  ) {
 
         accountReports = []
         sixWeeksSalesGraph = [];
-    } else if (integrationsQuery) {
+    }  else if (integrationsQuery) {
+     if(priorityQuery && !validPriorities.includes(priorityQuery)){
+        accountReports=[]
+     }
 
-        const integrationsQuery = req.query.integration;
-        const priorityQuery = req.query.priority;
-        const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
-        const toDateQuery = req.query.toDate ? new Date(new Date(req.query.toDate).setDate(new Date(req.query.toDate).getDate() + 1)) : (fromDateQuery ? new Date() : null);
-        const searchQuery = req.query.search ? new RegExp(`${(req.query.search).toString()}`, 'i') : null;
-        var accountReports = [];
-        var sixWeeksSalesGraph = [];
 
-        if (integrationsQuery === 'null' || !integrationsQuery) {
-            accountReports = [];
-            sixWeeksSalesGraph = [];
-        } else if (integrationsQuery) {
             accountReports = await integrationsMasterModel.aggregate([
                 {
                     $match: {
@@ -427,7 +422,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                                     as: "order",
                                     cond: {
                                         $and: [
-                                            ...(priorityQuery && priorityQuery !== 'ALL' ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
+                                            ...(priorityQuery && priorityQuery !== 'all' ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
                                             ...(fromDateQuery ? [
                                                 { $gte: ["$$order.createdAt", fromDateQuery] },
                                                 { $lte: ["$$order.createdAt", toDateQuery] }
@@ -472,7 +467,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                                     as: "order",
                                     cond: {
                                         $and: [
-                                            ...(priorityQuery && priorityQuery !== 'ALL' ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
+                                            ...(priorityQuery && priorityQuery !== 'all' ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
                                             ...(fromDateQuery ? [
                                                 { $gte: ["$$order.createdAt", fromDateQuery] },
                                                 { $lte: ["$$order.createdAt", toDateQuery] }
@@ -540,7 +535,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                     }
                 }
             ]);
-        }
+        
 
 
 

@@ -183,7 +183,9 @@ exports.middlewareUpdateUserDetails = asyncWrapper(async (req, res, next) => {
 
 /**
  * Function to update details of user
- * @params User Id
+ * * If user matches with main account, it gets changed in main account too. 
+ * Or else, It changes in respective user.
+ * @params userId
  */
 exports.updateUserDetails = asyncWrapper(async (req, res) => {
   const user = await usersModel.findById(req.params.userId).lean()
@@ -585,6 +587,9 @@ exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
 
 /**
  * Update the user password.
+ * If user matches with main account, it gets changed in main account too. 
+ * Or else, It changes in respective user.
+ * @params userId
  */
 
 exports.updatePassword = asyncWrapper(async (req, res) => {
