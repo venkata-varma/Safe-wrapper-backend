@@ -22,11 +22,6 @@ const usersSchema = new mongoose.Schema({
         required:[true, 'Password is required.'],
         default:""
     },
-    companyName:{
-        type:String,
-        // required:[true, 'Company name is required.'],
-        default:""
-    },
     phone:{
         type:String,
         required:[true, 'Mobile number is required.'],
