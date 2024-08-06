@@ -1,23 +1,26 @@
 const accountsModel = require('../../models/accountsModel');
 const asyncWrapper = require('../../middleware/asyncWrapper')
 const customConstants = require('../config/customConstants.json');
-const {validatePhoneNumber} = require('../../utils/userLoginValidation')
+const { validatePhoneNumber } = require('../../utils/userLoginValidation')
 const { hashPwd, comparePassword } = require('../../utils/helpers')
 const usersModel = require('../../models/usersModel')
 const mongoose = require('mongoose')
-const integrationsMasterModel=require('../../models/integrationsMasterModel');
+const integrationsMasterModel = require('../../models/integrationsMasterModel');
 const accountSettingsModel = require('../../models/accountSettingsModel');
+const serviceProvidersListModel = require('../../models/serviceProviderList')
+const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../../utils/serviceProvidersAuthentication')
+const {encryptData,decryptData}=require('../../utils/encryptionAlgorithms')
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
 If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
-   console.log('reqoriginal', req.originalUrl.includes('super-admin'))
+    console.log('reqoriginal', req.originalUrl.includes('super-admin'))
     const { accountName, companyName, email, phone, password, city, state, pincode, country, accountType } = req.body;
 
     //console.log(accountName, companyName, email, phone, password,"okkkkk");
-    if (!accountName || !companyName || !email || !phone || !password || !accountType || !city || !state || !country || !pincode   )  {
+    if (!accountName || !companyName || !email || !phone || !password || !accountType || !city || !state || !country || !pincode) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
@@ -64,7 +67,7 @@ exports.superAdminAccountRegister = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            status:"active",
+            status: "active",
             logo: req.file ? `${baseUrl}/accountLogos/${req.file.filename}` : ""
         })
         const customId = new mongoose.Types.ObjectId();
@@ -102,13 +105,13 @@ exports.superAdminAccountRegister = asyncWrapper(async (req, res) => {
  * 
  */
 exports.getAllAccounts = asyncWrapper(async (req, res) => {
-    const allAccounts = await accountsModel.find({}, {password:0});
+    const allAccounts = await accountsModel.find({}, { password: 0 });
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_ALL_ACCOUNTS,
         data: {
-            count:allAccounts.length,
+            count: allAccounts.length,
             allAccounts
         }
     })
@@ -119,8 +122,8 @@ exports.getAllAccounts = asyncWrapper(async (req, res) => {
  * @params AccountId
  * Returns Updated account record
  */
-exports.updateAccountStatus=asyncWrapper(async(req,res)=>{
-    const updateAccountStatus=await accountsModel.findOneAndUpdate({_id:req.params.accountId}, {$set:{status:req.body.status}},{new:true,runValidators:true})
+exports.updateAccountStatus = asyncWrapper(async (req, res) => {
+    const updateAccountStatus = await accountsModel.findOneAndUpdate({ _id: req.params.accountId }, { $set: { status: req.body.status } }, { new: true, runValidators: true })
 
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -141,15 +144,15 @@ exports.updateAccountStatus=asyncWrapper(async(req,res)=>{
  * @params AccountId
  * 
  */
-exports.getAllIntegrations=asyncWrapper(async(req,res)=>{
-    const allIntegrations=await integrationsMasterModel.find({accountId:req.params.accountId});
+exports.getAllIntegrations = asyncWrapper(async (req, res) => {
+    const allIntegrations = await integrationsMasterModel.find({ accountId: req.params.accountId });
 
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ALL_INTEGRATIONS_OF_ACCOUNT,
         data: {
-            count:allIntegrations.length,
+            count: allIntegrations.length,
             allIntegrations
         }
     })
@@ -159,9 +162,9 @@ exports.getAllIntegrations=asyncWrapper(async(req,res)=>{
  * 
  * 
  */
-exports.getAccountSettings=asyncWrapper(async(req,res)=>{
-    const accountSettings=await accountSettingsModel.findOne({accountId:req.params.accountId}).lean();
-    
+exports.getAccountSettings = asyncWrapper(async (req, res) => {
+    const accountSettings = await accountSettingsModel.findOne({ accountId: req.params.accountId }).lean();
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_ACCOUNT_SETTINGS,
@@ -178,17 +181,132 @@ exports.getAccountSettings=asyncWrapper(async(req,res)=>{
  * 
  * 
  */
-exports.updateAccountSettings=asyncWrapper(async(req,res)=>{
-   
-const updateAccountSettings=await accountSettingsModel.findOneAndUpdate({accountId:req.params.accountId}, req.body, {new:true, runValidators:true})
+exports.updateAccountSettings = asyncWrapper(async (req, res) => {
 
-return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_UPDATE_ACCOUNT_SETTINGS,
-    data: {
-        updateAccountSettings
-    }
+    const updateAccountSettings = await accountSettingsModel.findOneAndUpdate({ accountId: req.params.accountId }, req.body, { new: true, runValidators: true })
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_UPDATE_ACCOUNT_SETTINGS,
+        data: {
+            updateAccountSettings
+        }
+    })
+
+
 })
 
 
+/**
+ * Middleware function to check whether given credentials are valid or not.
+ * If valid, this middleware passes function call to next function "updateServiceProviderList"
+ * 
+ */
+exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
+      const serviceProviderList=await serviceProvidersListModel.findOne({_id:req.params.serviceProviderListId})
+  
+
+  
+    if (serviceProviderList.serviceProviders === 'CPD') {
+      const checkCPDCredentials = await CPDAuthentication(req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type, req.body.credentials.baseUrl)
+  
+      if (checkCPDCredentials === 'error' || checkCPDCredentials === undefined) {
+        console.log("CPD-------------------Middleware failed")
+        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+          status: customConstants.messages.MESSAGE_FAIL,
+          message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+        });
+      }
+    }
+    if (serviceProviderList.serviceProviders === 'DF') {
+      const checkDFCredentials = await DFAuthentication(req.body.credentials.df_auth, req.body.credentials.df_servicecode, req.body.credentials.baseUrl)
+  
+      if (checkDFCredentials !== 200) {
+        console.log("DF-------------------Middleware failed")
+        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+          status: customConstants.messages.MESSAGE_FAIL,
+          message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+        });
+      }
+    }
+    if (serviceProviderList.serviceProviders === 'SNOW') {
+      const checkDFCredentials = await SNOWAuthentication(req.body.credentials.baseUrl, req.body.credentials.username, req.body.credentials.password, req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type)
+  
+      if (checkDFCredentials !== 200) {
+        console.log("SNOW-------------------Middleware failed")
+        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+          status: customConstants.messages.MESSAGE_FAIL,
+          message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+        });
+      }
+    }
+    if (serviceProviderList.serviceProviders === 'CYS') {
+      const checkDFCredentials = await CYSAuthentication(req.body.credentials.baseUrl, req.body.credentials.grant_type, req.body.credentials.cys_auth)
+  
+      if (checkDFCredentials !== 200) {
+        console.log("CYS-------------------Middleware failed")
+        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+          status: customConstants.messages.MESSAGE_FAIL,
+          message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+        });
+      }
+    }
+    console.log("0-------------------Middleware passed")
+    next()
+  })
+  
+  
+
+
+
+
+/**
+ * Function to retreive all the records from table "service provider list "
+ * 
+ */
+exports.getAllServiceProvidersList = asyncWrapper(async (req, res) => {
+    const allServiceProviders = await serviceProvidersListModel.find({ status: "active" });
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_SERVICE_PROVIDERS,
+        data: {
+            allServiceProviders
+        }
+    })
+})
+
+/**
+ * After middleware to validate credentials is passed, this funtion is to encrypt credentials and update it in record
+ * On success, it returns newly updated value
+ * 
+ */
+
+exports.updateServiceProviderList = asyncWrapper(async (req, res) => {
+
+const encryptCode=await encryptData(req.body.credentials)
+
+const updateServiceProviderList = await serviceProvidersListModel.findOneAndUpdate({ _id: req.params.serviceProviderListId }, {$set:{testCredentials:encryptCode}},{new:true, runValidators:true} )
+return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER_LIST,
+    data: {
+        updateServiceProviderList
+    }
+})
+})
+
+/**
+ * Function to delete (deactivate) service provider list from super-admin side
+ *  @params {*} serviceProviderListId
+ * If success, returns newly updated service provider list record 
+ */
+exports.deleteServiceProviderList=asyncWrapper(async(req,res)=>{
+    const deleteServiceProviderList=await serviceProvidersListModel.findOneAndUpdate({_id:req.params.serviceProviderListId}, {$set:{status:req.body.status}}, {new:true, runValidators:true})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_DELETE_SERVICE_PROVIDER_LIST,
+        data: {
+            deleteServiceProviderList
+        }
+    })
 })
