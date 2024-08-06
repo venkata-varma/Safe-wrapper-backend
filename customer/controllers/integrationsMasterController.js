@@ -330,6 +330,7 @@ exports.validateintegrationsMasterExistForFieldMapping = asyncWrapper(async (req
  */
 
 exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
+
   if (req.body.serviceProvider === 'CPD') {
     const checkCPDCredentials = await CPDAuthentication(req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type, req.body.credentials.baseUrl)
 
@@ -386,14 +387,11 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
   const { serviceProvider, integrationsMasterId, credentials } =
     req.body;
 
-  const encryptedObjectJson = JSON.stringify(req.body.credentials);
-  const key = Buffer.from(process.env.CRYPTO_KEY, 'hex');
-  let iv = Buffer.from(process.env.CRYPTO_IV, 'hex')
 
   // Create a new service provider
   const serviceProviderDetails = await serviceProvidersModel.create({
     ...req.body,
-    credentials: encryptData(encryptedObjectJson, key, iv),
+    credentials: encryptData(req.body.credentials),
     createdBy: req.user._id,
     userId: req.user._id,
     accountId: req.user.accountId
@@ -749,7 +747,7 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
   const settingsDetails = await integrationsSettingsModel.find({ integrationsMasterId: integrationMasterId }).lean();
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationMasterId }).lean();
-  const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationMasterId });
+  const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId:integrationMasterId });
   
 
   if (!integrationMasterDetails) {
@@ -937,10 +935,7 @@ exports.editIntegrationMasterServiceProviderCredentials = asyncWrapper(async (re
     });
   }
 
-  const encryptedObjectJson = JSON.stringify(req.body.credentials);
-  const key = Buffer.from(process.env.CRYPTO_KEY, 'hex');
-  let iv = Buffer.from(process.env.CRYPTO_IV, 'hex')
-  let encryptedString = await encryptData(encryptedObjectJson, key, iv)
+  let encryptedString = await encryptData(req.body.credentials)
 
   const updatedServicerProvider = await integrationsMasterServiceProvidersModel.findOneAndUpdate({ _id: serviceProviderId }, {
     $set: {
