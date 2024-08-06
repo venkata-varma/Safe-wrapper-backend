@@ -747,7 +747,7 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
   const settingsDetails = await integrationsSettingsModel.find({ integrationsMasterId: integrationMasterId }).lean();
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationMasterId }).lean();
-  const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationMasterId });
+  const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId:integrationMasterId });
   
 
   if (!integrationMasterDetails) {
