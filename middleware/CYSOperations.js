@@ -264,8 +264,8 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                     CYSWorkOrderStatus: getCYSWorkOrderList.estimate.StatusText,
                                     status: "completed",
                                 });
-                                workOrderPushedCount++
                                 await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
+                                workOrderPushedCount++
                                 await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
                                 // insert work order life cycle.
                                 await workOrderLifeCycleModel.create({

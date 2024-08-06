@@ -352,8 +352,8 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                     status: "completed",
                                 });
                                 await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
-                                await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
                                 workOrderPushedCount++
+                                await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
                                 // insert work order life cycle.
                                 await workOrderLifeCycleModel.create({
                                     workOrderId: DFWorkOrderId,
