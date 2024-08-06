@@ -312,7 +312,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const priorityQuery = req.query.priority ? req.query.priority.toLowerCase() : null;;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
     const toDateQuery = req.query.toDate ? new Date(new Date(req.query.toDate).setDate(new Date(req.query.toDate).getDate() + 1)) : (fromDateQuery ? new Date() : null);
-    const searchQuery = req.query.search ? new RegExp(`${req.query.search}`, 'i') : null;
+    const searchQuery = req.query.search ? new RegExp(`${(req.query.search).toString()}`, 'i') : null;
    
 // Define valid priority values
 const validPriorities = ['all', 'high', 'medium', 'low'];
