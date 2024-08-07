@@ -12,7 +12,7 @@ router.post('/create-integrationmaster', integrationsMasterControllers.validateC
 router.post('/create-integrationmaster-service-provider', integrationsMasterControllers.validateintegrationsMasterExist,
     integrationsMasterControllers.credentialsValidationsMiddleware, 
     integrationsMasterControllers.createIntegrationMasterServiceProviderCredentials)
-router.post('/get-integration-decrypt-result',integrationsMasterControllers.validationForDecrypt, integrationsMasterControllers.getIntegrationCryptoService);
+router.post('/get-integration-decrypt-result', integrationsMasterControllers.getIntegrationCryptoService);
  
 router.patch('/update-integrationmaster-field-mapping',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterFieldMappings)
 router.patch('/update-integrationmaster-settings',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterSettings)
