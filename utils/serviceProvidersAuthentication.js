@@ -96,9 +96,41 @@ const CYSAuthentication = async(baseUrl,grant_type,cys_auth) => {
 
 }
 
+
+const SNOWAuthToken = async (baseUrl, username, password, client_id, client_secret, grant_type) => {
+    try {
+        const data = querystring.stringify({
+            username: username,
+            password: password,
+            client_id: client_id,
+            client_secret: client_secret,
+            grant_type: grant_type
+        });
+
+        const ValidateSNOWCredentials = await axios.post(
+            baseUrl,
+            data,
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+
+
+        return ValidateSNOWCredentials.data;
+    } catch (error) {
+
+        return error.response.data;
+    }
+};
+
+
+
 module.exports = {
     CPDAuthentication,
     DFAuthentication,
     SNOWAuthentication,
-    CYSAuthentication
+    CYSAuthentication,
+    SNOWAuthToken
 }
