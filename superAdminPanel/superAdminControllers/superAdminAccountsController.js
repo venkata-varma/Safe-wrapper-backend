@@ -265,7 +265,7 @@ exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res,
  * 
  */
 exports.getAllServiceProvidersList = asyncWrapper(async (req, res) => {
-    const allServiceProviders = await serviceProvidersListModel.find({ status: "active" });
+    const allServiceProviders = await serviceProvidersListModel.find({});
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_SERVICE_PROVIDERS,
