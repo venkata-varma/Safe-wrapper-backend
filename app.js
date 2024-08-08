@@ -50,3 +50,15 @@ app.listen(8090, () => {
 module.exports = app;
 
 
+
+
+const SNOWOperations=require('./middleware/SNOWOperations');
+const integrationsFieldMappingModel = require('./models/integrationsFieldMappingModel');
+const mongoose=require('mongoose')
+const testSNow=async()=>{
+const toCred=await integrationsFieldMappingModel.find({integrationsMasterId: new mongoose.Types.ObjectId("668fd9a91a785a4e7fe5d8ed"), to: "SNOW" }).lean();
+//console.log("roCred", toCred)
+await SNOWOperations.SNOWCreateIncidents(toCred,"manual")
+}
+
+testSNow()
