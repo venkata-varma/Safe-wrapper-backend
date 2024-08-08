@@ -213,6 +213,31 @@ exports.getSNOWWorkOrders = async (integrationObject, typeOfCron) => {
 
 }
 
+/**
+ * 
+ * @param {*} fieldmappingkeys 
+ * @param {*} WorkOrderNumber used to assign the value to numberAlt of DF.
+ * @param {*} CPDWorkOrderStatus is used to change the status key of DF as per the CPD work order status.
+ * @param {*} WorkType 
+ * @returns updated fieldmappingkeys
+ */
+const getWorkOrderStatusFieldMappingkeysAndPriority = async (integrationFieldMappingkeys, CPDWorkOrderStatus, IntegrationStatusMappingKeys, CPDWorkOrderNumber) => {
+    let statusMappingValue = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "2";
+
+    integrationFieldMappingkeys.state = statusMappingValue.split('-').length > 1 ? statusMappingValue.split('-').join('_') : statusMappingValue
+    //-------To set Priority, Urgency
+    if(CPDWorkOrderNumber.includes('TMC')){
+        integrationFieldMappingkeys.urgency=1;
+        integrationFieldMappingkeys.severity=1;
+        integrationFieldMappingkeys.priority=1;
+        
+    }
+
+    return integrationFieldMappingkeys;
+}
+
+
+
 // Function to get nested property value
 const getNestedValue = (obj, path) => {
     if (!path) return '';
@@ -251,7 +276,7 @@ const mapCPDToSNOWFieldMappingKeys=async(response, dataPoints)=>{
 
 
 const CPDSNOWMappings=async(CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials, CPDWorkOrderNumber)=>{
-const corrigoTokenn="eyJBdXRoZW50aWNhdGlvblR5cGUiOiJCZWFyZXIiLCJOYW1lQ2xhaW1UeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlJvbGVDbGFpbVR5cGUiOiJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIiwiQ2xhaW1zIjpbeyJUeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlZhbHVlIjoiQTAxODFBQzlDODg5QkI5MTRBRTI0RUM4Q0RFRjVFNDkiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9LHsiVHlwZSI6InVybjpvYXV0aDpzY29wZSIsIlZhbHVlIjoiIiwiVmFsdWVUeXBlIjoiaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEjc3RyaW5nIiwiSXNzdWVyIjoiTE9DQUwgQVVUSE9SSVRZIiwiT3JpZ2luYWxJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkifSx7IlR5cGUiOiJBdWQiLCJWYWx1ZSI6IkNvcnJpZ29Qcm9EaXJlY3QiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9XSwiUHJvcGVydGllcyI6eyJEaWN0aW9uYXJ5Ijp7Ii5pc3N1ZWQiOiJUaHUsIDA4IEF1ZyAyMDI0IDEwOjA2OjI2IEdNVCIsIi5leHBpcmVzIjoiVGh1LCAwOCBBdWcgMjAyNCAxMDoyNjoyNiBHTVQifX19<---->DQLf3OHbeZy0olYv9Gqe9-bB3QSv86pAnnohXYae_EielbIIOyHO24WQJi_9wIuhmYk7SVm1z8SodMMAlK4Q7mpHDcXSivZGsNTskA3HQxBzbzx_3MbgNO5JQHRGMdh9kHLmSZsTUPeDqGUJV_WRz1eiy_HcxDNuQUSKY4OPnWAy4hiC98jhRZ6tgKP2jdkZ9m6WBDQPv9qJ40FbYu7uHPzrsYfzZxBU9BYrX0RLTpWERFEQ5SHXtZcGYCpiDvDWtxcwxgQtWcp6TMKgiGvNmo6vFPQ6wZdjIf46a42_9ZbA61ieftuxioUTRFaMZp4B__YWwaw7qIghcUH9lGAYyQ"
+const corrigoTokenn="eyJBdXRoZW50aWNhdGlvblR5cGUiOiJCZWFyZXIiLCJOYW1lQ2xhaW1UeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlJvbGVDbGFpbVR5cGUiOiJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIiwiQ2xhaW1zIjpbeyJUeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlZhbHVlIjoiQTAxODFBQzlDODg5QkI5MTRBRTI0RUM4Q0RFRjVFNDkiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9LHsiVHlwZSI6InVybjpvYXV0aDpzY29wZSIsIlZhbHVlIjoiIiwiVmFsdWVUeXBlIjoiaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEjc3RyaW5nIiwiSXNzdWVyIjoiTE9DQUwgQVVUSE9SSVRZIiwiT3JpZ2luYWxJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkifSx7IlR5cGUiOiJBdWQiLCJWYWx1ZSI6IkNvcnJpZ29Qcm9EaXJlY3QiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9XSwiUHJvcGVydGllcyI6eyJEaWN0aW9uYXJ5Ijp7Ii5pc3N1ZWQiOiJUaHUsIDA4IEF1ZyAyMDI0IDEzOjA4OjQ2IEdNVCIsIi5leHBpcmVzIjoiVGh1LCAwOCBBdWcgMjAyNCAxMzoyODo0NiBHTVQifX19<---->p64oMFU3N3ARiV_Dg5O3XXUHNjdpY1Ul4vHHXlfJOzzuxbYGv-xCoIh81vyxNMlZEEQ_xkriW1r4WtnvjjK-eR-_R3V4X2aXgA1H6c-VXbOILqVeEhl79RZ-fJ-mWYsdqHRfpJ_h2rfGG_bzPoDp7oo5hxbhnUlhN50xXFFUNlXwRF3hpm5H27g1fSL16gEdZSwXzu7bobCVITQ1xYt05EPb_wDi8yiftXpxXUdetpgZVt_UAI9nWME4IYJEhQS8FZoV4FmOhyZR8_eSpaInIwykleOVwb_ZqMRSdHxcuDIyK2wN8JQGhdplICW4JAk6k8kLzP0rdoqqbaIOPfFM3Q"
 const  CPDWorkOrderIdd="27796463"
 let getCPDWorkOrderDetails = await axios.get(`${urlConfigurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderIdd}`,
         {
@@ -265,7 +290,7 @@ let getCPDWorkOrderDetails = await axios.get(`${urlConfigurations.CPD.getWorkOrd
             console.log("ERROR:==", error)
             await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber)
         });
-        console.log(";;;;;;;;;;;;;;;;;;;;;;;", getCPDWorkOrderDetails)
+     
 if(getCPDWorkOrderDetails){
     fieldmappingkeys=await mapCPDToSNOWFieldMappingKeys(getCPDWorkOrderDetails, fieldmappingkeys)
  
@@ -282,7 +307,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
           
             // find initiated count of WO to push to DF. 
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
-            console.log("CPD", CPDWorkOrderDetails.length)
+            console.log("CPD", CPDWorkOrderDetails)
             if (integrationObject.serviceMethod === "create") {
 
                 // Now loop the CPDWO and then push to DF by API.
@@ -303,11 +328,13 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                     const corrigoToken = await CPDAuthentication(CPDdecryptConfigCredentials.client_id, CPDdecryptConfigCredentials.client_secret, CPDdecryptConfigCredentials.grant_type, CPDdecryptConfigCredentials.baseUrl);
                 
                     fieldmappingkeys = await CPDSNOWMappings(workOrder.CPDWorkOrderId, workOrder.MessageId, fieldmappingkeys, corrigoToken, integrationObject,decryptConfigCredentials, workOrder.CPDWorkOrders.WorkOrderNumber)
-                   console.log('Createfieldmappingkeys:===',fieldmappingkeys)
+           
+               
+                    fieldmappingkeys = await getWorkOrderStatusFieldMappingkeysAndPriority(fieldmappingkeys, workOrder.CPDWorkOrderStatus, getWorkOrderStatusDefaultMappingKeys.statusFieldMappingKeys, workOrder.CPDWorkOrders.WorkOrderNumber)
+                   
+                    console.log('Createfieldmappingkeys:===',fieldmappingkeys)
 
-                    fieldmappingkeys = await getWorkOrderStatusFieldMappingkeys(fieldmappingkeys, workOrder.CPDWorkOrderStatus, getWorkOrderStatusDefaultMappingKeys.statusFieldMappingKeys)
-                    // fieldmappingkeys = await getDefaultFieldMappingKeys(fieldmappingkeys)
-                    // fieldmappingkeys = await getDFTypeListIdFromSearchAPI(fieldmappingkeys, decryptConfigCredentials, workOrder.CPDWorkOrders.Type, integrationObject, workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
+
                     // fieldmappingkeys.statusDate = new Date().toJSON()
                     // console.log('Createfieldmappingkeys:===',fieldmappingkeys)
 
