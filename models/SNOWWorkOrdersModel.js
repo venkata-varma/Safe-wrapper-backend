@@ -29,7 +29,7 @@ const SNOWWorkordersModelSchema = mongoose.Schema(
             default: null
         },
         SNOWWorkOrderStatus:{
-            type : String,
+            type : mongoose.Schema.Types.Mixed,
             default : ""
         },
         status: {
