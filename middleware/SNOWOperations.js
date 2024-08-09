@@ -227,6 +227,11 @@ const getWorkOrderStatusFieldMappingkeysAndPriority = async (integrationFieldMap
 
     integrationFieldMappingkeys.state = statusMappingValue.split('-').length > 1 ? statusMappingValue.split('-').join('_') : statusMappingValue
     integrationFieldMappingkeys.user_input = CPDWorkOrderNumber
+    if (statusMappingValue === "6" || statusMappingValue === "7" || statusMappingValue === "8") {
+        integrationFieldMappingkeys.close_notes = "Closed/Resolved by Caller"
+        integrationFieldMappingkeys.close_code = "Closed/Resolved by Caller"
+    }
+
     //-------To set Priority, Urgency
     if (CPDWorkOrderNumber.includes('TMC')) {
         integrationFieldMappingkeys.urgency = 1;
@@ -275,7 +280,8 @@ const mapCPDToSNOWFieldMappingKeys = async (response, dataPoints) => {
             mappedDataPoints[key] = modelKey;
         }
     });
-
+    console.log("Response", workOrder.ServiceLocation)
+    mappedDataPoints.location = `${workOrder.ServiceLocation.Address.Street1}, ${workOrder.ServiceLocation.Address.State}, ${workOrder.ServiceLocation.Address.Country}- ${workOrder.ServiceLocation.Address.PostalCode}`
     return mappedDataPoints;
 
 }
@@ -283,7 +289,7 @@ const mapCPDToSNOWFieldMappingKeys = async (response, dataPoints) => {
 
 
 const CPDSNOWMappings = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials, CPDWorkOrderNumber, SNOWWorkOrderId) => {
-    const corrigoTokenn = "eyJBdXRoZW50aWNhdGlvblR5cGUiOiJCZWFyZXIiLCJOYW1lQ2xhaW1UeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlJvbGVDbGFpbVR5cGUiOiJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIiwiQ2xhaW1zIjpbeyJUeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlZhbHVlIjoiQTAxODFBQzlDODg5QkI5MTRBRTI0RUM4Q0RFRjVFNDkiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9LHsiVHlwZSI6InVybjpvYXV0aDpzY29wZSIsIlZhbHVlIjoiIiwiVmFsdWVUeXBlIjoiaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEjc3RyaW5nIiwiSXNzdWVyIjoiTE9DQUwgQVVUSE9SSVRZIiwiT3JpZ2luYWxJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkifSx7IlR5cGUiOiJBdWQiLCJWYWx1ZSI6IkNvcnJpZ29Qcm9EaXJlY3QiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9XSwiUHJvcGVydGllcyI6eyJEaWN0aW9uYXJ5Ijp7Ii5pc3N1ZWQiOiJGcmksIDA5IEF1ZyAyMDI0IDA4OjQxOjE1IEdNVCIsIi5leHBpcmVzIjoiRnJpLCAwOSBBdWcgMjAyNCAwOTowMToxNSBHTVQifX19<---->OJrnyFGIoUUzzuqtg1wYE8_H6ayTttuwslJIyfk0FtVCD_AtHRhRC9xkYSnnFDdFB2COdrut0hPx8IE-2vKBMaqM4I_Dqd8Y-ZFvDlQZz0DT-TAuDn__Bep9N4Ox0ZghX_NQmQLWJlpI8AGpETSGQOkBoOIrqBp4wc_cxW0yNWNt-5gTtNyo8C4iZl_-Rz2-_IdSHQp0AqxCtks-k6De05g5rnS5kmvRLirokrWxMK1zYAzGcaIUY5eTNibPlM8cp05F4tQL04wGUkKigaDKe_zrEnsew4A63IutIwUpBk0RUsvBbuZRtXK0r94EGDbaapwBsyg7aF1f3qqmEibSqw"
+    const corrigoTokenn = "eyJBdXRoZW50aWNhdGlvblR5cGUiOiJCZWFyZXIiLCJOYW1lQ2xhaW1UeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlJvbGVDbGFpbVR5cGUiOiJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIiwiQ2xhaW1zIjpbeyJUeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlZhbHVlIjoiQTAxODFBQzlDODg5QkI5MTRBRTI0RUM4Q0RFRjVFNDkiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9LHsiVHlwZSI6InVybjpvYXV0aDpzY29wZSIsIlZhbHVlIjoiIiwiVmFsdWVUeXBlIjoiaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEjc3RyaW5nIiwiSXNzdWVyIjoiTE9DQUwgQVVUSE9SSVRZIiwiT3JpZ2luYWxJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkifSx7IlR5cGUiOiJBdWQiLCJWYWx1ZSI6IkNvcnJpZ29Qcm9EaXJlY3QiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9XSwiUHJvcGVydGllcyI6eyJEaWN0aW9uYXJ5Ijp7Ii5pc3N1ZWQiOiJGcmksIDA5IEF1ZyAyMDI0IDE5OjI5OjUwIEdNVCIsIi5leHBpcmVzIjoiRnJpLCAwOSBBdWcgMjAyNCAxOTo0OTo1MCBHTVQifX19<---->wbq97MI0p5N0z-rb-qLdxrEvsc58sfMcI-2qcAsSsC61PYwjyOV6_A_OcJD0UC8bTwtIx--1TDTs3wtg28faeCAzq2mSEn6LGxx9bBR7aZTusL0myFU1TIrrDXjZxbbWpfY-PES7UAiG1tcxNFX3X1bU5GDt_0riDQoVR3p4PDyGNAeCzlbVpI88hdP-o78Ff72LHZXkTFAWipVOtEp0Kmmwh0YsV48FR_uKLJ3DnLlWN9BDIAgyA0FMbkr7iTG7xd7yuw6OJTTw2ebAmEwTSZw-t0chdwBVbMfdRSkJrBVg7K_NEZD5GhoAnyvWAw28a1LVZ_34SzkqCHhKAMZuFQ"
     const CPDWorkOrderIdd = "27796463"
     let getCPDWorkOrderDetails = await axios.get(`${urlConfigurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderIdd}`,
         {
@@ -296,10 +302,12 @@ const CPDSNOWMappings = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corr
         .catch(async (error) => {
             console.log("ERROR:==", error)
             await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, "")
+        
         });
 
     if (getCPDWorkOrderDetails) {
         fieldmappingkeys = await mapCPDToSNOWFieldMappingKeys(getCPDWorkOrderDetails, fieldmappingkeys)
+
         return fieldmappingkeys
     }
 
@@ -364,49 +372,28 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
                     ).then((res) => {
                         console.log("snowowkrirdrId", res.data.result.number)
-                        return res.data.result.sys_id
+                        return res.data.result
                     }).catch(async (err) => {
                         console.log("err", err)
                         await exceptionLogs(integrationObject, err.response.status, err.response.data.Message, err.name, err.config.data, "snow-post-incident", CPDWorkOrderId, CPDWorkOrderNumber, " ")
-                        //        return err
+                            return 'error'
                     })
 
 
-                    if (SNOWWorkOrderId !== undefined) {
-                        let getWorkOrderConfig = {
-                            method: 'get',
-                            maxBodyLength: Infinity,
-                            url: `${urlConfigurations.SNOW.getIncidentById.URL}/${SNOWWorkOrderId}`,
-                            headers: {
-                                'Authorization': `Bearer ${snowAuthToken.access_token}`,
-                                'Content-Type': 'application/json',
-                            },
-                        };
-                        const getSNOWWorkOrderList = await axios.request(getWorkOrderConfig)
-                            .then((response) => {
-                                SNOWWorkorderList = JSON.stringify(response.data)
-
-                                return response.data
-                            })
-                            .catch(async (error) => {
-                                console.log("SNOW Create Get ERROR:==", error.response.data);
-                                await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.url + " \n Invalid Request"), "snow-get-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, SNOWWorkOrderId)
-                            });
-                        //Remove this bracket
+                    if (SNOWWorkOrderId !== 'error') {
 
 
-
-                        if (getSNOWWorkOrderList !== undefined) {
-                            let updatedSNOWWorkOrderStatus = urlConfigurations.SNOW.SNOWStatusMappings[getSNOWWorkOrderList.result.state]
-                            let snowWorkOrderId = getSNOWWorkOrderList.result.number
+                        
+                            let updatedSNOWWorkOrderStatus = urlConfigurations.SNOW.SNOWStatusMappings[SNOWWorkOrderId.state]
+                            let snowWorkOrderId = SNOWWorkOrderId.number
 
                             const listOfSNOWWorkorderDetails = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: snowWorkOrderId, }).lean();
                             console.log("listOfSNOWWorkorderDetails", listOfSNOWWorkorderDetails)
                             if (listOfSNOWWorkorderDetails) {
                                 await SNOWWorkOrdersModel.findOneAndUpdate({
-                                    SNOWWorkOrderId: getSNOWWorkOrderList.result.number, integrationsMasterId: integrationObject.integrationsMasterId,
+                                    SNOWWorkOrderId: SNOWWorkOrderId.number, integrationsMasterId: integrationObject.integrationsMasterId,
                                     accountId: integrationObject.accountId,
-                                }, { SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus, status: "completed", SNOWWorkOrders: getSNOWWorkOrderList.result }, { new: true, runValidators: true }).lean()
+                                }, { SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus, status: "completed", SNOWWorkOrders: SNOWWorkOrderId }, { new: true, runValidators: true }).lean()
                             }
                             else {
 
@@ -416,10 +403,10 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                                     integrationsMasterId: integrationObject.integrationsMasterId,
                                     accountId: integrationObject.accountId,
                                     integrationsCronId: workOrder.integrationsCronId,
-                                    SNOWWorkOrderId: getSNOWWorkOrderList.result.number,
-                                    SNOWWorkOrders: getSNOWWorkOrderList.result,
+                                    SNOWWorkOrderId: SNOWWorkOrderId.number,
+                                    SNOWWorkOrders: SNOWWorkOrderId,
                                     SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus,
-                                    priority: getSNOWWorkOrderList.result.urgency === "1" ? "high" : "medium",
+                                    priority: SNOWWorkOrderId.state === "1" ? "high" : "medium",
                                     status: "completed",
                                 });
                                 await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
@@ -427,8 +414,8 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                                 await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
                                 // insert work order life cycle.
                                 await workOrderLifeCycleModel.create({
-                                    workOrderId: getSNOWWorkOrderList.result.sys_id,
-                                    WorkOrderNumber: getSNOWWorkOrderList.result.number,
+                                    workOrderId: SNOWWorkOrderId.sys_id,
+                                    WorkOrderNumber: SNOWWorkOrderId.number,
                                     workOrderStatus: updatedSNOWWorkOrderStatus,
                                     accountId: integrationObject.accountId,
                                     integrationsMasterId: integrationObject.integrationsMasterId,
@@ -436,121 +423,99 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                                     date_created: new Date()
                                 });
                             }
-                        }
+                        
                     }
                 }
             }
-            else if (integrationObject.serviceMethod === "update") {
+            // else if (integrationObject.serviceMethod === "update") {
 
-                // Update work orders to the Dataforma.
-                const updateRequestDFWorkorders = await SNOWWorkOrdersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "update-request" })
+            //     // Update work orders to the Dataforma.
+            //     const updateRequestSNOWWorkorders = await SNOWWorkOrdersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "update-request" })
 
-                for (let SNOWWorkOrder of updateRequestDFWorkorders) {
-                    fieldmappingkeys = integrationObject.dataPoints
-                    const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, "CPDWorkOrders.WorkOrderNumber": SNOWWorkOrder.SNOWWorkOrders.user_input })
-                    const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
+            //     for (let SNOWWorkOrder of updateRequestSNOWWorkorders) {
+            //         fieldmappingkeys = integrationObject.dataPoints
+            //         const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, "CPDWorkOrders.WorkOrderNumber": SNOWWorkOrder.SNOWWorkOrders.user_input })
 
-                    // Find integration credentails and then decrypt and pull CPD calls.
-                    let CPDAuthCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CPD" })
-                    let encryptedDetails = { iv: process.env.CRYPTO_IV, encryptedData: CPDAuthCredentials.credentials };
-                    let CPDdecryptConfigCredentials = JSON.parse(await decryptData(encryptedDetails, process.env.CRYPTO_KEY));
-                    const corrigoToken = await CPDAuthentication(CPDdecryptConfigCredentials.client_id, CPDdecryptConfigCredentials.client_secret, CPDdecryptConfigCredentials.grant_type, CPDdecryptConfigCredentials.baseUrl);
+            //         const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
 
+            //         // Find integration credentails and then decrypt and pull CPD calls.
+            //         let CPDAuthCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CPD" })
+            //         let encryptedDetails = { iv: process.env.CRYPTO_IV, encryptedData: CPDAuthCredentials.credentials };
+            //         let CPDdecryptConfigCredentials = JSON.parse(await decryptData(encryptedDetails, process.env.CRYPTO_KEY));
+            //         const corrigoToken = await CPDAuthentication(CPDdecryptConfigCredentials.client_id, CPDdecryptConfigCredentials.client_secret, CPDdecryptConfigCredentials.grant_type, CPDdecryptConfigCredentials.baseUrl);
 
-                    let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "SNOW" });
-                    let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
-                    // console.log("Step-1 called");
+            //         let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "SNOW" });
+            //         let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
+            //         // console.log("Step-1 called");
 
-                    let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
-                    fieldmappingkeys = await CPDSNOWMappings(getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
+            //         let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY))
 
+            //         fieldmappingkeys = await CPDSNOWMappings(getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
 
-                    fieldmappingkeys = await getWorkOrderStatusFieldMappingkeysAndPriority(fieldmappingkeys, getCPDWorkOrderStatus.CPDWorkOrderStatus, getWorkOrderStatusDefaultMappingKeys.statusFieldMappingKeys)
-                    // Find and map the typeListId value
-
+            //         fieldmappingkeys = await getWorkOrderStatusFieldMappingkeysAndPriority(fieldmappingkeys, getCPDWorkOrderStatus.CPDWorkOrderStatus, getWorkOrderStatusDefaultMappingKeys.statusFieldMappingKeys, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber)
 
 
-                    let snowAuthToken = await SNOWAuthToken(decryptConfigCredentials.baseUrl, decryptConfigCredentials.username, decryptConfigCredentials.password, decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, "password")
+            //         let snowAuthToken = await SNOWAuthToken(decryptConfigCredentials.baseUrl, decryptConfigCredentials.username, decryptConfigCredentials.password, decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, "password")
 
-                    if (snowAuthToken.hasOwnProperty('error')) {
-                        //  await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.data), "snow-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber)
-                    }
-                    console.log('Updatefieldmappingkeys:===', fieldmappingkeys);
-                    let SNOWWorkorderList = {}
-                    let SNOWWorkOrderId
-                    let updateWorkOrderConfig = {
-                        method: 'patch',
-                        maxBodyLength: Infinity,
-                        url: `${urlConfigurations.SNOW.updateIncidentById.URL}${SNOWWorkOrder.SNOWWorkOrders.sys_id}`,
-                        headers: {
-                            'Authorization': `Bearer ${snowAuthToken.access_token}`,
-                            'Content-Type': 'application/json',
-                        },
-                        data: fieldmappingkeys
-                    }
-                    const SNOWUpdatedWorkOrderId = await axios.request(updateWorkOrderConfig)
-                        .then((response) => {
-                            SNOWWorkorderList = JSON.stringify(response.data)
-                            console.log("DFUpdateWorkorderListresponse:===", JSON.stringify(response.data));
-                            return response.data.result.sys_id
-                        })
-                        .catch(async (error) => {
-                            console.log("UpdateERROR:==", error);
-                            await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.data), "snow-update-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
-                        });
-                    console.log('SNOWUpdatedWorkOrderId:==', SNOWUpdatedWorkOrderId)
-                    let getWorkOrderConfig = {
-                        method: 'get',
-                        maxBodyLength: Infinity,
-                        url: `${urlConfigurations.SNOW.getIncidentById.URL}/${SNOWUpdatedWorkOrderId}`,
-                        headers: {
-                            'Authorization': `Bearer ${snowAuthToken.access_token}`,
-                            'Content-Type': 'application/json',
-                        },
-                    };
-                    const getSNOWWorkOrderList = await axios.request(getWorkOrderConfig)
-                        .then((response) => {
-                            SNOWWorkorderList = JSON.stringify(response.data)
-                            return response.result.data
-                           
-                        })
-                        .catch(async (error) => {
-                            console.log("SNOW Update Get ERROR:==", error.response.data);
-                            await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.url + " \n Invalid Request"), "snow-get-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
-                        });
-                    console.log('getSNOWWorkOrderList:==', getSNOWWorkOrderList)
-                    if (getSNOWWorkOrderList !== undefined) {
-                        let updatedSNOWWorkOrderStatus = urlConfigurations.SNOW.SNOWStatusMappings[getSNOWWorkOrderList.result.state]
-                     let    SNOWWorkOrderNumber = getSNOWWorkOrderList.result.number
-                        const listOfDFWorkorderDetails = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: SNOWWorkOrderNumber }).lean();
-                        if (listOfDFWorkorderDetails) {
+            //         if (!snowAuthToken.hasOwnProperty('access_token')) {
+            //             await exceptionLogs(integrationObject, snowAuthToken.response.status, snowAuthToken.message, JSON.stringify(snowAuthToken.response.data.messages), JSON.stringify(snowAuthToken.config.data), "snow-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
+            //         }
+            //         //     console.log('Updatefieldmappingkeys:===', fieldmappingkeys);
+            //         let SNOWWorkorderList = {}
+            //         let SNOWWorkOrderId
+            //         console.log("clodesdnotsmandatory", fieldmappingkeys)
+            //         let SNOWUpdatedWorkOrderId=await axios.patch(
+            //             `${urlConfigurations.SNOW.updateIncidentById.URL}/${SNOWWorkOrder.SNOWWorkOrders.sys_id}`,
+            //             fieldmappingkeys, 
+            //             {
+            //                 headers: {
+            //                     'Authorization': `Bearer ${snowAuthToken.access_token}`,
+            //                     'Content-Type': 'application/json',
+            //                     'Accept': 'application/json'
+            //                 }
+            //             },
 
-                            await SNOWWorkOrdersModel.findOneAndUpdate({
-                                SNOWWorkOrderId: SNOWWorkOrder.SNOWWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
-                                accountId: integrationObject.accountId,
-                            }, {
-                                DFWorkOrders: getSNOWWorkOrderList.result,
-                                DFWorkOrderStatus: updatedSNOWWorkOrderStatus,
-                                status: "completed"
-                            }, { new: true }).lean()
+            //         ).then((res) => {
+            //             console.log("SNOWUpdatedWorkOrderId", res.data.result.number)
+            //             return res.data.result
+            //         }).catch(async (err) => {
+            //             console.log("err", err)
+            //             await exceptionLogs(integrationObject, err.response.status, err.response.data.Message, err.name, err.config.data, "snow-patch-incident", CPDWorkOrderId, CPDWorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
+            //                     return 'error'
+            //         })
 
-                            // insert work order life cycle.
-                            await workOrderLifeCycleModel.create({
-                                workOrderId: getSNOWWorkOrderList.result.sys_id,
-                                WorkOrderNumber: getSNOWWorkOrderList.result.number,
-                                workOrderStatus: updatedSNOWWorkOrderStatus,
-                                accountId: integrationObject.accountId,
-                                integrationsMasterId: integrationObject.integrationsMasterId,
-                                serviceProvider: "SNOW",
-                                date_created: new Date()
-                            });
-                        }
-                        else {
-                            //nothing
-                        }
-                    }
-                }
-            }
+            //             if (SNOWUpdatedWorkOrderId !== 'error' ) {
+            //                 let updatedSNOWWorkOrderStatus = urlConfigurations.SNOW.SNOWStatusMappings[SNOWUpdatedWorkOrderId.state]
+            //              let    SNOWWorkOrderNumber = SNOWUpdatedWorkOrderId.number
+            //                 const listOfSNOWWorkorderDetails = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: SNOWWorkOrderNumber }).lean();
+            //                 if (listOfSNOWWorkorderDetails) {
+
+            //                     await SNOWWorkOrdersModel.findOneAndUpdate({
+            //                         SNOWWorkOrderId: SNOWWorkOrder.SNOWWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
+            //                         accountId: integrationObject.accountId,
+            //                     }, {
+            //                         SNOWWorkOrders: SNOWUpdatedWorkOrderId,
+            //                         SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus,
+            //                         status: "completed"
+            //                     }, { new: true }).lean()
+
+            //                     // insert work order life cycle.
+            //                     await workOrderLifeCycleModel.create({
+            //                         workOrderId: SNOWUpdatedWorkOrderId.sys_id,
+            //                         WorkOrderNumber: SNOWUpdatedWorkOrderId.number,
+            //                         workOrderStatus: updatedSNOWWorkOrderStatus,
+            //                         accountId: integrationObject.accountId,
+            //                         integrationsMasterId: integrationObject.integrationsMasterId,
+            //                         serviceProvider: "SNOW",
+            //                         date_created: new Date()
+            //                     });
+            //                 }
+            //                 else {
+            //                     //nothing
+            //                 }
+            //             }
+            //     }
+            // }
         }
     }
 }

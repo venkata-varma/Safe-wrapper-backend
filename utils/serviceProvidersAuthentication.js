@@ -121,7 +121,7 @@ const SNOWAuthToken = async (baseUrl, username, password, client_id, client_secr
         return ValidateSNOWCredentials.data;
     } catch (error) {
 
-        return error.response.data;
+        return error;
     }
 };
 

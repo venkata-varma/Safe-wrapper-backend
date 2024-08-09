@@ -49,13 +49,47 @@ app.listen(8090, () => {
 
 module.exports = app;
 
-const SNOWOperations=require('./middleware/SNOWOperations');
+const SNOWOperations = require('./middleware/SNOWOperations');
 const integrationsFieldMappingModel = require('./models/integrationsFieldMappingModel');
-const mongoose=require('mongoose')
+const mongoose = require('mongoose')
 const testSNow=async()=>{
 const toCred=await integrationsFieldMappingModel.find({integrationsMasterId: new mongoose.Types.ObjectId("668fd9a91a785a4e7fe5d8ed"), to: "SNOW" }).lean();
-//console.log("roCred", toCred)
+console.log("roCred", toCred)
 await SNOWOperations.SNOWCreateIncidents(toCred,"manual")
 }
 
-testSNow()
+ testSNow()
+// const newId = new mongoose.Types.ObjectId('668fd9c71a785a4e7fe5d93a')
+// async function hp() {
+//     const update = {
+//         _id: newId,
+//         fieldMappingId: newId,
+//         accountId: new mongoose.Types.ObjectId('667d4177bc77277e43bc1e2f'),
+//         userId: new mongoose.Types.ObjectId('667d4177bc77277e43bc1e31'),
+//         integrationsMasterId: new mongoose.Types.ObjectId('668fd9a91a785a4e7fe5d8ed'),
+//         from: 'CPD',
+//         to: 'SNOW',
+//         serviceMethod: 'create',
+//         serviceName: 'work-order',
+//         fieldMappingType: 'custom',
+//         dataPoints: {
+//             delivery_task: 'WorkDetails.Assets[0].Path',
+//             due_date: 'Sla.DueDate',
+//             impact: 'WorkDetails.Assets.Model.Name',
+//             knowledge: 'WorkDetails.Specialty',
+//             rfc: 'ServiceLocation.Address.Country',
+//             short_description: 'WorkDetails.Specialty.Name',
+//             sla_due: 'Sla.DueDate'
+//         },
+//         createdBy: new mongoose.Types.ObjectId('667d4177bc77277e43bc1e31'),
+//         updatedBy: new mongoose.Types.ObjectId('667d4177bc77277e43bc1e31'),
+
+//         __v: 0
+//     }
+//     console.log("Update", update)
+//     const inseert =await integrationsFieldMappingModel.create(update)
+//     console.log("uinsert", inseert)
+//     // const toCred = await integrationsFieldMappingModel.find({ integrationsMasterId: new mongoose.Types.ObjectId("668fd9a91a785a4e7fe5d8ed"), to: "SNOW" }).lean();
+//     // console.log("toCred", toCred)
+// }
+// hp()
