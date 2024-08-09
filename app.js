@@ -22,8 +22,8 @@ const usersRoute = require('./customer/routes/usersRoute');
 const integrationsRoute = require('./customer/routes/integrationsMasterRoute');
 const errorcontroller = require('./customer/controllers/errorcontroller');
 //super-admin-routes
-const superAdminAccountRoute=require('./superAdminPanel/superAdminRoutes/superAdminAccountsRoute')
-const superAdminUsersRoute=require('./superAdminPanel/superAdminRoutes/superAdminUsersRoute')
+const superAdminAccountRoute = require('./superAdminPanel/superAdminRoutes/superAdminAccountsRoute')
+const superAdminUsersRoute = require('./superAdminPanel/superAdminRoutes/superAdminUsersRoute')
 
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
@@ -31,7 +31,7 @@ app.use('/static', express.static(path.join(__dirname, 'assets')));
 app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/integrations', integrationsRoute);
-app.use('/api/super-admin/accounts',superAdminAccountRoute )
+app.use('/api/super-admin/accounts', superAdminAccountRoute)
 app.use('/api/super-admin/users', superAdminUsersRoute)
 const integrationsSchedules = require('./customer/controllers/schedulerController');
 const DFintegrations = require('./middleware/DFOperations')
@@ -48,9 +48,6 @@ app.listen(8090, () => {
 });
 
 module.exports = app;
-
-
-
 
 const SNOWOperations=require('./middleware/SNOWOperations');
 const integrationsFieldMappingModel = require('./models/integrationsFieldMappingModel');

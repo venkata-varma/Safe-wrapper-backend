@@ -367,7 +367,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                         return res.data.result.sys_id
                     }).catch(async (err) => {
                         console.log("err", err)
-                        await exceptionLogs(integrationObject, err.response.status, err.response.data.Message, err.name, err.config.data, "snow-post-incident", CPDWorkOrderId, CPDWorkOrderNumber)
+                        await exceptionLogs(integrationObject, err.response.status, err.response.data.Message, err.name, err.config.data, "snow-post-incident", CPDWorkOrderId, CPDWorkOrderNumber, " ")
                         //        return err
                     })
 
