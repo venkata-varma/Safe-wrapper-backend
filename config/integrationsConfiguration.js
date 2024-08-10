@@ -101,6 +101,9 @@ const configurations = {
       updateIncidentById:{
         URL:'https://dev276358.service-now.com/api/now/table/incident'
       },
+      postIncident:{
+        URL:'https://dev276358.service-now.com/api/now/table/incident'
+      },
       SNOWStatusMappings:{
         1:"New",
         2:"In Progress",
