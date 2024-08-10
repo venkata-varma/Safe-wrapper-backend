@@ -289,11 +289,10 @@ const mapCPDToSNOWFieldMappingKeys = async (response, dataPoints) => {
 
 
 const CPDSNOWMappings = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials, CPDWorkOrderNumber, SNOWWorkOrderId) => {
-    const corrigoTokenn = "eyJBdXRoZW50aWNhdGlvblR5cGUiOiJCZWFyZXIiLCJOYW1lQ2xhaW1UeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlJvbGVDbGFpbVR5cGUiOiJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIiwiQ2xhaW1zIjpbeyJUeXBlIjoiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSIsIlZhbHVlIjoiQTAxODFBQzlDODg5QkI5MTRBRTI0RUM4Q0RFRjVFNDkiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9LHsiVHlwZSI6InVybjpvYXV0aDpzY29wZSIsIlZhbHVlIjoiIiwiVmFsdWVUeXBlIjoiaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEjc3RyaW5nIiwiSXNzdWVyIjoiTE9DQUwgQVVUSE9SSVRZIiwiT3JpZ2luYWxJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkifSx7IlR5cGUiOiJBdWQiLCJWYWx1ZSI6IkNvcnJpZ29Qcm9EaXJlY3QiLCJWYWx1ZVR5cGUiOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSNzdHJpbmciLCJJc3N1ZXIiOiJMT0NBTCBBVVRIT1JJVFkiLCJPcmlnaW5hbElzc3VlciI6IkxPQ0FMIEFVVEhPUklUWSJ9XSwiUHJvcGVydGllcyI6eyJEaWN0aW9uYXJ5Ijp7Ii5pc3N1ZWQiOiJTYXQsIDEwIEF1ZyAyMDI0IDEwOjI5OjMzIEdNVCIsIi5leHBpcmVzIjoiU2F0LCAxMCBBdWcgMjAyNCAxMDo0OTozMyBHTVQifX19<---->qfOly1Rf5pThh0Lb9jVZaK_sMyZi7fFVbbydR_aw19GognYnL-FRu3WPr9HDK7nIo_m8KRKMtevWctFYJZeLbIqwbpELXLpQFlKNedIzT18yoLQvCvzZ8dMocVKp_QgbaIxck9A2dh7P3axTLMOo2HvbnkojIdbeWfNJAvtBPpsWn7BaL0l1YWVLG2TaX8Uiigtc5wW-LyKPYWiKLAOoL0HghjJkwHXCHjUjDMyMdOT1an48VuVRjqDPdUc8GZ9jEej9I-xyClUt0g-cKXWri6SkthW7edAxqf_EOLxlbtgggNgskjys95DD4UwQ2mKnJ5IOLFzsV0fT-r1aMmXUOw"
-    const CPDWorkOrderIdd = "27796463"
-    let getCPDWorkOrderDetails = await axios.get(`${urlConfigurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderIdd}`,
+  
+    let getCPDWorkOrderDetails = await axios.get(`${urlConfigurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderId}`,
         {
-            headers: { Authorization: `bearer ${corrigoTokenn}` }
+            headers: { Authorization: `bearer ${corrigoToken}` }
         })
         .then(res => {
             // console.log('response:==',res.data)
