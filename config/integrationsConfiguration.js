@@ -93,7 +93,24 @@ const configurations = {
 
     SNOW : {
       getAllIncidents :{
-        URL : 'https://dev187063.service-now.com/api/now/table/incident',
+        URL : 'https://dev276358.service-now.com/api/now/table/incident',
+      },
+      getIncidentById:{
+        URL:'https://dev276358.service-now.com/api/now/table/incident'
+      },
+      updateIncidentById:{
+        URL:'https://dev276358.service-now.com/api/now/table/incident'
+      },
+      postIncident:{
+        URL:'https://dev276358.service-now.com/api/now/table/incident'
+      },
+      SNOWStatusMappings:{
+        1:"New",
+        2:"In Progress",
+        3:"On Hold",
+        6:"Resolved",
+        7:"Closed",
+        8:"Cancelled"
       }
     },
 

@@ -1094,6 +1094,9 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
             // console.log('CYS Credentials:', toCredentials);
             // console.log('integrationsMasterDetails:===', integrationsMasterDetails)
             await CYSOperations.CYSCreateWorkorders(toCredentials, "manual");
+          } else if (integrationsMasterDetails.to === 'SNOW') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "SNOW" }).lean();
+            await SNOWOperations.SNOWCreateIncidents(toCredentials, "manual");
           }
           break;
 
