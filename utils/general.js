@@ -246,14 +246,13 @@ const getStatusFieldMappings = async(integrationMasterId) => {
     requiredKeys = {}
     statusFieldMappingKeys = {
       "1":"New",
-      "2":"InProgress",
-      "3":"OnHold",
+      "2":"In Progress",
+      "3":"On Hold",
       "6":"Resolved",
       "7":"Closed",
       "8":"Cancelled"
     }
   }
-  
   return {requiredKeys, statusFieldMappingKeys}
 }
 
