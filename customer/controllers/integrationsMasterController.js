@@ -210,7 +210,9 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
       data: {
-        fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker,
+        fieldMappingMasterDefaultServices, fieldMappingsMasters, 
+        // serviceproviderlists, 
+        cronSchedulePicker,
         serviceProvidersMappingAndServices, dataPointsAccess
       },
     });
