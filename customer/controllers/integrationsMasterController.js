@@ -31,7 +31,8 @@ const { getServiceWorkOrdersAndStatus, getStatusFieldMappings, defaultSatusMappi
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../../utils/serviceProvidersAuthentication');
 const SNOWWorkOrdersModel = require("../../models/SNOWWorkOrdersModel");
 const { default: axios } = require("axios");
-const DFConfigurations = require('../../config/integrationsConfiguration')
+const DFConfigurations = require('../../config/integrationsConfiguration');
+const { getAllDFBuldingsData, searchDFBuildingsByStateAndCountry, searchDFBuildingByNameAndStreet } = require("../../middleware/findDFBuildingOperation");
 
 /**
  * Get the static images.
@@ -140,119 +141,35 @@ exports.getImages = asyncWrapper(async (req, res) => {
     });
 });
 
-const findRightBuildingsByStateAndCountry = async(State, getDFBuildingData) => {
-  let getFilteredBuildingDetails = getDFBuildingData.filter((item)=>{
-    return (item.state === State)
-  });
-  return getFilteredBuildingDetails
-}
-
-async function levenshteinAlgorithm(str1, str2) {
-
-  // Calculate Levenshtein distance
-  function levenshtein(a, b) {
-      const matrix = [];
-    // console.log('a:==',a)
-
-      // Increment along the first column of each row
-      for (let i = 0; i <= b.length; i++) {
-          matrix[i] = [i];
-      }
-
-      // Increment each column in the first row
-      for (let j = 0; j <= a.length; j++) {
-          matrix[0][j] = j;
-      }
-
-      // Fill in the rest of the matrix
-      for (let i = 1; i <= b.length; i++) {
-          for (let j = 1; j <= a.length; j++) {
-              if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                  matrix[i][j] = matrix[i - 1][j - 1];
-              } else {
-                  matrix[i][j] = Math.min(
-                      matrix[i - 1][j - 1] + 1, // substitution
-                      Math.min(
-                          matrix[i][j - 1] + 1, // insertion
-                          matrix[i - 1][j] + 1 // deletion
-                      )
-                  );
-              }
-          }
-      }
-      return matrix[b.length][a.length];
-  }
-  const distance = levenshtein(str1, str2);
-
-  // Define the maximum possible distance (the length of the longer string)
-  const maxDistance = Math.max(str1.length, str2.length);
-
-  // Map the distance to a reward value between 0 and 1
-  const reward = 1 - (distance / maxDistance);
-
-  return reward;
-}
-
-// Example usage
-// console.log(levenshteinAlgorithm('32, My Street, Kingston, New York 12401', '32, My, Kingston, New')); // Output: 0.5714285714285714
-
+/**
+ * Get the serviceProvider Credentials to authenticate the dataforma.
+ * Get all DataForms buildingDetails from getAllDFBuldingsData.
+ * Search the buildings by country and state from searchDFBuildingByNameAndStreet.
+ * Search the matched building by CPD SpaceName and Street with the DF buildingName name and street from the getFilteredDFBuildings.
+ * @returns matchedDFBuildingData and partialBuildingsMatchedData.
+ */
 exports.getCPDToDFMatchedBuildingDetails = asyncWrapper(async (req, res) => {
   const { ServiceLocation } = req.body
-  let getBuildingConfig = {
-    method: 'get',
-    maxBodyLength: Infinity,
-    url: `${DFConfigurations.DF.searchbuildings.URL}`,
-    headers: {
-      'df-auth': "ad7412b5-1928-49b9-a237-aa43d764bec4",
-      'df-servicecode': "mds552",
-      'Content-Type': 'application/json',
-    }
-  }
-  const getDFBuildingData = await axios.request(getBuildingConfig)
-    .then((response) => {
-      // console.log("getDFBuildingData:===", JSON.stringify(response.data));
-      return response.data
-    })
-    .catch(async (error) => {
-      console.log("getDFBuildingIdERROR:==", error);
-      // await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.url + " /n data: No building data available."), "df-search-buildings", CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
-    });
-  const bestBuildings = await findRightBuildingsByStateAndCountry(ServiceLocation.Address.State, getDFBuildingData)
-  let matchedDFBUildingData
-  let TotalRewards = 0
-  let buildingArray = []
-  for(let building of bestBuildings){
-    let findBestReward = 0
-    if(ServiceLocation.SpaceName.toLowerCase() === building.name.toLowerCase()){
-      console.log('SpaceName:=====')
-      matchedDFBUildingData = building
-      break
-    }
-    else if(ServiceLocation.Address.Street1.toLowerCase() === building.street1.toLowerCase()){
-      console.log('Street1:=====')
-      matchedDFBUildingData = building
-      break
-    }
-    else{
-      console.log('ELSE:==')
-      let SpaceNameRewards = await levenshteinAlgorithm(ServiceLocation.SpaceName, building.name)
-      let streetRewars = await levenshteinAlgorithm(ServiceLocation.Address.Street1, building.street1)
-      TotalRewards = SpaceNameRewards + streetRewars
-      if(TotalRewards > findBestReward){
-        buildingArray.push(building)
-        findBestReward = TotalRewards
-        matchedDFBUildingData = building
-      }
 
-    }
-  }
+  // Find list of DF credentails (encrypted) & then decrypt. 
+  let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: new mongoose.Types.ObjectId('66699103a176298d9f79dfdd'), serviceProvider: "DF" });
+  let credentailsObj = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
+  let decryptConfigCredentials = JSON.parse(await decryptData(credentailsObj, process.env.CRYPTO_KEY))
+
+  const getDFBuildingDetails = await getAllDFBuldingsData(decryptConfigCredentials)
+  const serviceLocationCountry = ServiceLocation.Address.Country === "US" ? "USA" : "USA"
+  const getFilteredDFBuildings = await searchDFBuildingsByStateAndCountry(serviceLocationCountry, ServiceLocation.Address.State, getDFBuildingDetails)
+  const getMatchedDFBuilding = await searchDFBuildingByNameAndStreet(ServiceLocation, getFilteredDFBuildings)
+
+  
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: "DF Building Details.",
       data: {
-        matchedDFBUildingData,buildingArray
+        matchedDFBuildingData:getMatchedDFBuilding.matchedDFBuildingData,
+        partialBuildingsMatchedData: getMatchedDFBuilding.partialBuildingsMatchedData
       },
     });
 })
@@ -1177,6 +1094,9 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
             // console.log('CYS Credentials:', toCredentials);
             // console.log('integrationsMasterDetails:===', integrationsMasterDetails)
             await CYSOperations.CYSCreateWorkorders(toCredentials, "manual");
+          } else if (integrationsMasterDetails.to === 'SNOW') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "SNOW" }).lean();
+            await SNOWOperations.SNOWCreateIncidents(toCredentials, "manual");
           }
           break;
 
