@@ -185,8 +185,9 @@ exports.getCPDToDFMatchedBuildingDetails = asyncWrapper(async (req, res) => {
 exports.getGlobalConstants = asyncWrapper(async (req, res) => {
   const fieldMappingMasterDefaultServices = await fieldMappingMasterDefaultServicesModel.find({});
   const fieldMappingsMasters = await fieldMappingsMasterModel.find({});
-  const serviceproviderlists = await serviceProviderListModel.find({});
+  // const serviceproviderlists = await serviceProviderListModel.find({});
   const serviceProvidersMappingAndServices = await serviceProvidersMappingAndServicesModel.find({});
+  const timeZones = ["GMT", "UTC", "IST", "CST", "PST", "PDT", "CAT", "ECT", "PDT"]
 
   const cronSchedulePicker = {
     eachSecond: 'each second',
