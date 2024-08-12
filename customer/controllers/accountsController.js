@@ -15,7 +15,7 @@ const integrationCronsModel = require('../../models/integrationsCronsModel');
 const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
-const {getSourceAndDestinationWOLifeCycle}=require('../../utils/general')
+const { getSourceAndDestinationWOLifeCycle } = require('../../utils/general')
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
@@ -85,7 +85,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         });
         await accountSettingsModel.create({
             accountId: accountData._id,
-            timeZone : req.body.timeZone || "IST"
+            timeZone: req.body.timeZone || "IST"
         })
         //To delete Password from Response while displaying it.
         delete accountData._doc.password;
@@ -151,7 +151,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
     const accountInformation = await accountsModel.findById(accountId);
     const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId }).countDocuments();
     const integrationsActivitylogCount = await integrationCronsModel.find({ accountId: accountId }).countDocuments();
-    
+
     let integrationsOfAccount = await integrationsMasterModel.aggregate([
         {
             $match: {
@@ -160,100 +160,87 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         },
         {
             $lookup: {
-                from: "cpdworkorders",
+                from: "integrationssettings",
                 localField: "_id",
                 foreignField: "integrationsMasterId",
-                as: "CPDWorkOrders"
+                as: "integrationSettings"
             }
         },
         {
-            $lookup: {
-                from: "dfworkorders",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "DFWorkOrders"
-            }
-        },
-        {
-            $lookup: {
-                from: "snowworkorders",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "SNOWWorkOrders"
-            }
-        },
-        {
-            $lookup: {
-                from: "cysworkorders",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "CYSWorkOrders"
-            }
+            $unwind: "$integrationSettings"
         },
         {
             $addFields: {
-                sourceWorkOrders: {
-                    $switch: {
-                        branches: [
-                            { case: { $eq: ["$from", "CPD"] }, then: "$CPDWorkOrders" },
-                            { case: { $eq: ["$from", "DF"] }, then: "$DFWorkOrders" },
-                            { case: { $eq: ["$from", "SNOW"] }, then: "$SNOWWorkOrders" },
-                            { case: { $eq: ["$from", "CYS"] }, then: "$CYSWorkOrders" }
-                        ],
-                        default: [] // handle default case if needed
-                    }
-                },
-                destinationWorkOrders: {
-                    $switch: {
-                        branches: [
-                            { case: { $eq: ["$to", "CPD"] }, then: "$CPDWorkOrders" },
-                            { case: { $eq: ["$to", "DF"] }, then: "$DFWorkOrders" },
-                            { case: { $eq: ["$to", "SNOW"] }, then: "$SNOWWorkOrders" },
-                            { case: { $eq: ["$to", "CYS"] }, then: "$CYSWorkOrders" }
-                        ],
-                        default: [] // handle default case if needed
-                    }
-                }
-            }
-        },
-        {
-            $addFields: {
-                sourceWorkOrderCount: { $size: "$sourceWorkOrders" },
-                destinationWorkOrderCount: { $size: "$destinationWorkOrders" }
-            }
-        },
-        {
-            $addFields: {
-                integrationsMasterDetails: {
-                    $mergeObjects: ["$$ROOT"]
-                }
+                statusFieldMappingKeys: "$integrationSettings.statusFieldMappingKeys"
             }
         },
         {
             $project: {
-                    _id: 1,
-                    integrationsMasterId: 1,
-                    accountId: 1,
-                    userId: 1,
-                    title: 1,
-                    description: 1,
-                    from: 1,
-                    to:1,
-                    status: 1,
-                    stepCount: 1,
-                    lastPullDate: 1,
-                    createdBy: 1,
-                    updatedBy: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    // sourceWorkOrders:1,
-                    // destinationWorkOrders:1,
-                    sourceWorkOrderCount: 1,
-                    destinationWorkOrderCount: 1
-                
+                integrationSettings: 0
+            }
+        },
+        {
+            $lookup: {
+                from: "workorderlifecycles",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "workorderlifecycles"
             }
         }
+
     ]);
+
+    integrationsOfAccount.forEach((integration) => {
+        // Initialize group arrays with objects containing status and count
+        integration.sourceWorkOrderGroup = [];
+        integration.destinationWorkOrderGroup = [];
+
+        // Initialize the new fields
+        integration.sourceNewWorkOrdersCount = 0;
+        integration.sourceUpdatedWorkOrders = 0;
+        integration.destinationNewWorkOrdersCount = 0;
+        integration.destinationUpdatedWorkOrders = 0;
+
+        // Helper function to update status counts
+        function updateStatusGroup(group, status) {
+            let statusObj = group.find(item => item.status === status);
+            if (statusObj) {
+                statusObj.count += 1;
+            } else {
+                group.push({ status, count: 1 });
+            }
+        }
+        integration.workorderlifecycles.forEach((order) => {
+            
+            let statusField;
+            switch (integration.from) {
+                
+                case order.serviceProvider: 
+                statusField=order.workOrderStatus
+                break;
+
+                    // case 'CPD':
+                    //     statusField = order.workOrderStatus;
+                    //     break;
+                    // case 'DF':
+                    //     statusField = order.workOrderStatus;
+                    //     break;
+                    // case 'CYS':
+                    //     statusField = order.workOrderStatus;
+                    //     break;
+                    // case 'SNOW':
+                    //     statusField = order.workOrderStatus;
+                    //     break;
+                    // default:
+                    //     statusField = null;
+
+            }
+
+
+            updateStatusGroup(integration.sourceWorkOrderGroup, statusField)
+           // updateStatusGroup(integration.destinationWorkOrderGroup, statusField)
+        })
+    })
 
     const failedCPDWorkOrders = await integrationsMasterModel.aggregate([
         {
@@ -294,9 +281,9 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         data: {
             accountInformation,
             integrationsOfAccount,
-            integrationExceptionsCount: integrationExceptions,
-            dataSyncCount: integrationsActivitylogCount,
-            failedCPDWorkOrders,
+            // integrationExceptionsCount: integrationExceptions,
+            // dataSyncCount: integrationsActivitylogCount,
+            // failedCPDWorkOrders,
         },
     })
 })
@@ -314,229 +301,229 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
     const toDateQuery = req.query.toDate ? new Date(new Date(req.query.toDate).setDate(new Date(req.query.toDate).getDate() + 1)) : (fromDateQuery ? new Date() : null);
     const searchQuery = req.query.search ? new RegExp(`${(req.query.search).toString()}`, 'i') : null;
-   
-// Define valid priority values
-const validPriorities = ['all', 'high', 'medium', 'low'];
+
+    // Define valid priority values
+    const validPriorities = ['all', 'high', 'medium', 'low'];
     var accountReports = [];
     var sixWeeksSalesGraph = [];
-    if (integrationsQuery === 'null' || !integrationsQuery  ) {
+    if (integrationsQuery === 'null' || !integrationsQuery) {
 
         accountReports = []
         sixWeeksSalesGraph = [];
-    }  else if (integrationsQuery) {
-     if(priorityQuery && !validPriorities.includes(priorityQuery)){
-        accountReports=[]
-     }
+    } else if (integrationsQuery) {
+        if (priorityQuery && !validPriorities.includes(priorityQuery)) {
+            accountReports = []
+        }
 
 
-            accountReports = await integrationsMasterModel.aggregate([
-                {
-                    $match: {
-                        accountId: new mongoose.Types.ObjectId(req.params.accountId),
-                        status:"active",
-                        ...(integrationsQuery !== 'all-integrations' && {
-                            _id: new mongoose.Types.ObjectId(integrationsQuery)
-                        })
+        accountReports = await integrationsMasterModel.aggregate([
+            {
+                $match: {
+                    accountId: new mongoose.Types.ObjectId(req.params.accountId),
+                    status: "active",
+                    ...(integrationsQuery !== 'all-integrations' && {
+                        _id: new mongoose.Types.ObjectId(integrationsQuery)
+                    })
+                }
+            },
+            { $sort: { createdAt: 1 } },
+            {
+                $lookup: {
+                    from: "cpdworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "CPDWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "dfworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "DFWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "snowworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "SNOWWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "cysworkorders",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "CYSWorkOrders"
+                }
+            },
+            {
+                $lookup: {
+                    from: "integrationsexceptions",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "integrationsExceptions"
+                }
+            },
+            {
+                $addFields: {
+                    sourceWorkOrders: {
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$from", "CPD"] }, then: "$CPDWorkOrders" },
+                                { case: { $eq: ["$from", "DF"] }, then: "$DFWorkOrders" },
+                                { case: { $eq: ["$from", "SNOW"] }, then: "$SNOWWorkOrders" },
+                                { case: { $eq: ["$from", "CYS"] }, then: "$CYSWorkOrders" }
+                            ],
+                            default: [] // handle default case if needed
+                        }
+                    },
+                    destinationWorkOrders: {
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$to", "CPD"] }, then: "$CPDWorkOrders" },
+                                { case: { $eq: ["$to", "DF"] }, then: "$DFWorkOrders" },
+                                { case: { $eq: ["$to", "SNOW"] }, then: "$SNOWWorkOrders" },
+                                { case: { $eq: ["$to", "CYS"] }, then: "$CYSWorkOrders" }
+                            ],
+                            default: [] // handle default case if needed
+                        }
                     }
-                },
-                { $sort: { createdAt: 1 } },
-                {
-                    $lookup: {
-                        from: "cpdworkorders",
-                        localField: "_id",
-                        foreignField: "integrationsMasterId",
-                        as: "CPDWorkOrders"
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "dfworkorders",
-                        localField: "_id",
-                        foreignField: "integrationsMasterId",
-                        as: "DFWorkOrders"
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "snowworkorders",
-                        localField: "_id",
-                        foreignField: "integrationsMasterId",
-                        as: "SNOWWorkOrders"
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "cysworkorders",
-                        localField: "_id",
-                        foreignField: "integrationsMasterId",
-                        as: "CYSWorkOrders"
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "integrationsexceptions",
-                        localField: "_id",
-                        foreignField: "integrationsMasterId",
-                        as: "integrationsExceptions"
-                    }
-                },
+                }
+            },
+            {
+                $project: {
+                    CPDWorkOrders: 0,
+                    DFWorkOrders: 0,
+                    SNOWWorkOrders: 0,
+                    CYSWorkOrders: 0
+                }
+            },
+            ...(priorityQuery || fromDateQuery || searchQuery ? [
                 {
                     $addFields: {
                         sourceWorkOrders: {
-                            $switch: {
-                                branches: [
-                                    { case: { $eq: ["$from", "CPD"] }, then: "$CPDWorkOrders" },
-                                    { case: { $eq: ["$from", "DF"] }, then: "$DFWorkOrders" },
-                                    { case: { $eq: ["$from", "SNOW"] }, then: "$SNOWWorkOrders" },
-                                    { case: { $eq: ["$from", "CYS"] }, then: "$CYSWorkOrders" }
-                                ],
-                                default: [] // handle default case if needed
+                            $filter: {
+                                input: "$sourceWorkOrders",
+                                as: "order",
+                                cond: {
+                                    $and: [
+                                        ...(priorityQuery && priorityQuery !== 'all' ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
+                                        ...(fromDateQuery ? [
+                                            { $gte: ["$$order.createdAt", fromDateQuery] },
+                                            { $lte: ["$$order.createdAt", toDateQuery] }
+                                        ] : []),
+                                        ...(searchQuery ? [
+                                            {
+                                                $regexMatch: {
+                                                    input: {
+                                                        $switch: {
+                                                            branches: [
+                                                                {
+                                                                    case: { $eq: ["$from", "CPD"] },
+                                                                    then: { $toString: "$$order.CPDWorkOrders.WorkOrderNumber" }
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$from", "DF"] },
+                                                                    then: { $toString: "$$order.DFWorkOrders.numberAlt" }
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$from", "SNOW"] },
+                                                                    then: { $toString: "$$order.SNOWWorkOrders.number" }
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$from", "CYS"] },
+                                                                    then: { $toString: "$$order.CYSWorkOrderId" }
+                                                                }
+                                                            ],
+                                                            default: "" // handle default case if needed
+                                                        }
+                                                    },
+                                                    regex: searchQuery
+                                                }
+                                            }
+                                        ] : [])
+                                    ]
+                                }
                             }
                         },
                         destinationWorkOrders: {
-                            $switch: {
-                                branches: [
-                                    { case: { $eq: ["$to", "CPD"] }, then: "$CPDWorkOrders" },
-                                    { case: { $eq: ["$to", "DF"] }, then: "$DFWorkOrders" },
-                                    { case: { $eq: ["$to", "SNOW"] }, then: "$SNOWWorkOrders" },
-                                    { case: { $eq: ["$to", "CYS"] }, then: "$CYSWorkOrders" }
-                                ],
-                                default: [] // handle default case if needed
-                            }
-                        }
-                    }
-                },
-                {
-                    $project: {
-                        CPDWorkOrders: 0,
-                        DFWorkOrders: 0,
-                        SNOWWorkOrders: 0,
-                        CYSWorkOrders: 0
-                    }
-                },
-                ...(priorityQuery || fromDateQuery || searchQuery ? [
-                    {
-                        $addFields: {
-                            sourceWorkOrders: {
-                                $filter: {
-                                    input: "$sourceWorkOrders",
-                                    as: "order",
-                                    cond: {
-                                        $and: [
-                                            ...(priorityQuery && priorityQuery !== 'all' ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
-                                            ...(fromDateQuery ? [
-                                                { $gte: ["$$order.createdAt", fromDateQuery] },
-                                                { $lte: ["$$order.createdAt", toDateQuery] }
-                                            ] : []),
-                                            ...(searchQuery ? [
-                                                {
-                                                    $regexMatch: {
-                                                        input: {
-                                                            $switch: {
-                                                                branches: [
-                                                                    {
-                                                                        case: { $eq: ["$from", "CPD"] },
-                                                                        then: { $toString: "$$order.CPDWorkOrders.WorkOrderNumber" }
-                                                                    },
-                                                                    {
-                                                                        case: { $eq: ["$from", "DF"] },
-                                                                        then: { $toString: "$$order.DFWorkOrders.numberAlt" }
-                                                                    },
-                                                                    {
-                                                                        case: { $eq: ["$from", "SNOW"] },
-                                                                        then: { $toString: "$$order.SNOWWorkOrders.number" }
-                                                                    },
-                                                                    {
-                                                                        case: { $eq: ["$from", "CYS"] },
-                                                                        then: { $toString: "$$order.CYSWorkOrderId" }
-                                                                    }
-                                                                ],
-                                                                default: "" // handle default case if needed
-                                                            }
-                                                        },
-                                                        regex: searchQuery
-                                                    }
-                                                }
-                                            ] : [])
-                                        ]
-                                    }
-                                }
-                            },
-                            destinationWorkOrders: {
-                                $filter: {
-                                    input: "$destinationWorkOrders",
-                                    as: "order",
-                                    cond: {
-                                        $and: [
-                                            ...(priorityQuery && priorityQuery !== 'all' ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
-                                            ...(fromDateQuery ? [
-                                                { $gte: ["$$order.createdAt", fromDateQuery] },
-                                                { $lte: ["$$order.createdAt", toDateQuery] }
-                                            ] : []),
-                                            ...(searchQuery ? [
-                                                {
-                                                    $regexMatch: {
-                                                        input: {
-                                                            $switch: {
-                                                                branches: [
-                                                                    {
-                                                                        case: { $eq: ["$to", "CPD"] },
-                                                                        then: { $toString: "$$order.CPDWorkOrders.WorkOrderNumber" }
-                                                                    },
-                                                                    {
-                                                                        case: { $eq: ["$to", "DF"] },
-                                                                        then: { $toString: "$$order.DFWorkOrders.numberAlt" }
-                                                                    },
-                                                                    {
-                                                                        case: { $eq: ["$to", "SNOW"] },
-                                                                        then: { $toString: "$$order.SNOWWorkOrders.number" }
-                                                                    },
-                                                                    {
-                                                                        case: { $eq: ["$to", "CYS"] },
-                                                                        then: { $toString: "$$order.CYSWorkOrderId" }
-                                                                    }
-                                                                ],
-                                                                default: "" // handle default case if needed
-                                                            }
-                                                        },
-                                                        regex: searchQuery
-                                                    }
-                                                }
-                                            ] : [])
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    }
-                ] : []),
-                {
-                    $addFields: {
-                        integrationsExceptions: {
                             $filter: {
-                                input: "$integrationsExceptions",
-                                as: "exception",
+                                input: "$destinationWorkOrders",
+                                as: "order",
                                 cond: {
                                     $and: [
+                                        ...(priorityQuery && priorityQuery !== 'all' ? [{ $eq: ["$$order.priority", priorityQuery] }] : []),
                                         ...(fromDateQuery ? [
-                                            { $gte: ["$$exception.createdAt", fromDateQuery] },
-                                            { $lte: ["$$exception.createdAt", toDateQuery] }
+                                            { $gte: ["$$order.createdAt", fromDateQuery] },
+                                            { $lte: ["$$order.createdAt", toDateQuery] }
+                                        ] : []),
+                                        ...(searchQuery ? [
+                                            {
+                                                $regexMatch: {
+                                                    input: {
+                                                        $switch: {
+                                                            branches: [
+                                                                {
+                                                                    case: { $eq: ["$to", "CPD"] },
+                                                                    then: { $toString: "$$order.CPDWorkOrders.WorkOrderNumber" }
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$to", "DF"] },
+                                                                    then: { $toString: "$$order.DFWorkOrders.numberAlt" }
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$to", "SNOW"] },
+                                                                    then: { $toString: "$$order.SNOWWorkOrders.number" }
+                                                                },
+                                                                {
+                                                                    case: { $eq: ["$to", "CYS"] },
+                                                                    then: { $toString: "$$order.CYSWorkOrderId" }
+                                                                }
+                                                            ],
+                                                            default: "" // handle default case if needed
+                                                        }
+                                                    },
+                                                    regex: searchQuery
+                                                }
+                                            }
                                         ] : [])
                                     ]
                                 }
                             }
                         }
                     }
-                },
-                {
-                    $addFields: {
-                        sourceWorkOrdersCount: { $size: "$sourceWorkOrders" },
-                        destinationWorkOrdersCount: { $size: "$destinationWorkOrders" },
-                        integrationsExceptionsCount: { $size: "$integrationsExceptions" }
+                }
+            ] : []),
+            {
+                $addFields: {
+                    integrationsExceptions: {
+                        $filter: {
+                            input: "$integrationsExceptions",
+                            as: "exception",
+                            cond: {
+                                $and: [
+                                    ...(fromDateQuery ? [
+                                        { $gte: ["$$exception.createdAt", fromDateQuery] },
+                                        { $lte: ["$$exception.createdAt", toDateQuery] }
+                                    ] : [])
+                                ]
+                            }
+                        }
                     }
                 }
-            ]);
-        
+            },
+            {
+                $addFields: {
+                    sourceWorkOrdersCount: { $size: "$sourceWorkOrders" },
+                    destinationWorkOrdersCount: { $size: "$destinationWorkOrders" },
+                    integrationsExceptionsCount: { $size: "$integrationsExceptions" }
+                }
+            }
+        ]);
+
 
 
 
@@ -544,7 +531,7 @@ const validPriorities = ['all', 'high', 'medium', 'low'];
             {
                 $match: {
                     accountId: new mongoose.Types.ObjectId(req.params.accountId),
-                    status:"active",
+                    status: "active",
                     ...(integrationsQuery !== 'all-integrations' && {
                         _id: new mongoose.Types.ObjectId(integrationsQuery)
                     })
@@ -697,8 +684,8 @@ const validPriorities = ['all', 'high', 'medium', 'low'];
  * Validate that workOrderId exist.
  */
 
-exports.ValidateAccountAndIntegrationsStatus = asyncWrapper(async (req,res, next) => {
-    const { accountId,integrationsMasterId, workOrderId } = req.query;
+exports.ValidateAccountAndIntegrationsStatus = asyncWrapper(async (req, res, next) => {
+    const { accountId, integrationsMasterId, workOrderId } = req.query;
     const verifyAccountStatus = await integrationsMasterModel.findById(integrationsMasterId).populate('accountId')
     console.log('verifyAccountStatus')
     if (verifyAccountStatus.accountId.status === 'deleted' || verifyAccountStatus.accountId.status === 'in-progress') {
@@ -707,13 +694,13 @@ exports.ValidateAccountAndIntegrationsStatus = asyncWrapper(async (req,res, next
             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
         });
     }
-    if(verifyAccountStatus.status === 'deleted' || verifyAccountStatus.status === 'blocked'){
+    if (verifyAccountStatus.status === 'deleted' || verifyAccountStatus.status === 'blocked') {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
         });
     }
-    if(!workOrderId){
+    if (!workOrderId) {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE_VALIDATION,
@@ -729,13 +716,13 @@ exports.ValidateAccountAndIntegrationsStatus = asyncWrapper(async (req,res, next
 exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
     const { accountId, integrationsMasterId, workOrderId } = req.query;
     const integrationMaster = await integrationsMasterModel.findById(integrationsMasterId);
-    let workOrderLifeCyclSourceAndDestinationeDetails=await getSourceAndDestinationWOLifeCycle(accountId, integrationsMasterId, integrationMaster.from,integrationMaster.to,workOrderId)
+    let workOrderLifeCyclSourceAndDestinationeDetails = await getSourceAndDestinationWOLifeCycle(accountId, integrationsMasterId, integrationMaster.from, integrationMaster.to, workOrderId)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
-        sourceWorkOrderLifeCycleDetails:workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderLifeCycleDetails,
-        destinationWorkOrderLifeCycleDetails:workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderLifeCycleDetails,
-        sourceWorkorders:workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderDetails,
-        destinationWorkOrders:workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderDetails
+        sourceWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderLifeCycleDetails,
+        destinationWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderLifeCycleDetails,
+        sourceWorkorders: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderDetails,
+        destinationWorkOrders: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderDetails
     })
 })
