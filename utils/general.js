@@ -230,7 +230,6 @@ const getStatusFieldMappings = async(integrationMasterId) => {
       "CANCELED": "Rejected",
       "IN-PROGRESS": "Paused"
     }
-    return {requiredKeys, statusFieldMappingKeys}
   } else if (integrationMaster.from === "CPD" && integrationMaster.to === "CYS") {
     requiredKeys = {}
     statusFieldMappingKeys = {
@@ -242,8 +241,20 @@ const getStatusFieldMappings = async(integrationMasterId) => {
       "Pending": "Paused",
       "Closed": "CheckedOut"
     }
-    return {requiredKeys, statusFieldMappingKeys}
   }
+  else if (integrationMaster.from === "CPD" && integrationMaster.to === "SNOW") {
+    requiredKeys = {}
+    statusFieldMappingKeys = {
+      "1":"New",
+      "2":"InProgress",
+      "3":"OnHold",
+      "6":"Resolved",
+      "7":"Closed",
+      "8":"Cancelled"
+    }
+  }
+  
+  return {requiredKeys, statusFieldMappingKeys}
 }
 
 

@@ -494,7 +494,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
           serviceName: "work-order",
           createdBy: req.user._id,
           dataPoints: fromAndTo.dataPoints,
-          requiredKeys: getRequiredKeys.requiredKeys
+          requiredKeys: getRequiredKeys.requiredKeys || {}
         })
       } else {
         // nothing

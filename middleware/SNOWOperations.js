@@ -227,7 +227,7 @@ const getWorkOrderStatusFieldMappingkeysAndPriority = async (integrationFieldMap
     let statusMappingValue = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "2";
 
     integrationFieldMappingkeys.state = statusMappingValue.split('-').length > 1 ? statusMappingValue.split('-').join('_') : statusMappingValue
-    
+
     if (statusMappingValue === "6" || statusMappingValue === "7" || statusMappingValue === "8") {
         integrationFieldMappingkeys.close_notes = "Closed/Resolved by Caller"
         integrationFieldMappingkeys.close_code = "Closed/Resolved by Caller"
@@ -269,7 +269,7 @@ const getNestedValue = (obj, path) => {
 /**
  * Map the CPD values from response to SNOW fieldMapping keys 
  *  @returns property values mapped from nested function "getNestedValue()"
- */ 
+ */
 
 const mapCPDToSNOWFieldMappingKeys = async (response, dataPoints) => {
     const workOrder = response;
@@ -301,7 +301,7 @@ const mapCPDToSNOWFieldMappingKeys = async (response, dataPoints) => {
  * @returns updated fieldmappingkeys
  */
 const CPDSNOWMappings = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials, CPDWorkOrderNumber, SNOWWorkOrderId) => {
- 
+
     let getCPDWorkOrderDetails = await axios.get(`${urlConfigurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderId}`,
         {
             headers: { Authorization: `bearer ${corrigoToken}` }
@@ -313,7 +313,7 @@ const CPDSNOWMappings = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corr
         .catch(async (error) => {
             console.log("ERROR:==", error)
             await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, "")
-        
+
         });
 
     if (getCPDWorkOrderDetails) {
@@ -343,6 +343,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
     if (integrationFieldObject !== undefined) {
         let fieldmappingkeys = {}
         let workOrderPushedCount = 0
+        let SNOWWorkOrderClone
         for (let integrationObject of integrationFieldObject) {
 
             // find initiated count of WO to push to SNOW
@@ -374,14 +375,14 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
 
                     // fieldmappingkeys.statusDate = new Date().toJSON()
-                    console.log('Createfieldmappingkeys:===',fieldmappingkeys)
+                    console.log('Createfieldmappingkeys:===', fieldmappingkeys)
 
                     let SNOWWorkOrderId; let SNOWWorkorderList = {};
 
                     let snowAuthToken = await SNOWAuthToken(decryptConfigCredentials.baseUrl, decryptConfigCredentials.username, decryptConfigCredentials.password, decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, "password")
 
                     if (!snowAuthToken.hasOwnProperty('access_token')) {
-                         await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.data), "snow-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
+                        await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.data), "snow-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
                     }
 
                     let SNOWWorkOrderDetails = await axios.post(
@@ -401,53 +402,50 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                     }).catch(async (err) => {
                         console.log("err", err)
                         await exceptionLogs(integrationObject, err.response.status, err.response.data.Message, err.name, err.config.data, "snow-post-incident", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrderNumber, " ")
-                            return 'error'
+                        return 'error'
                     })
 
-let SNOWWorkOrderClone=SNOWWorkOrderDetails
+                    SNOWWorkOrderClone = SNOWWorkOrderDetails
 
                     if (SNOWWorkOrderDetails !== 'error') {
+                        let updatedSNOWWorkOrderStatus = SNOWWorkOrderClone.state
+                        let snowWorkOrderNumber = SNOWWorkOrderClone.number
 
+                        const listOfSNOWWorkorderDetails = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: snowWorkOrderNumber, }).lean();
+                        console.log("listOfSNOWWorkorderDetails", listOfSNOWWorkorderDetails)
+                        if (listOfSNOWWorkorderDetails) {
+                            await SNOWWorkOrdersModel.findOneAndUpdate({
+                                SNOWWorkOrderId: SNOWWorkOrderDetails.number, integrationsMasterId: integrationObject.integrationsMasterId,
+                                accountId: integrationObject.accountId,
+                            }, { SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus, status: "completed", SNOWWorkOrders: SNOWWorkOrderDetails }, { new: true, runValidators: true }).lean()
+                        }
+                        else {
 
-                        
-                            let updatedSNOWWorkOrderStatus = urlConfigurations.SNOW.SNOWStatusMappings[SNOWWorkOrderClone.state]
-                            let snowWorkOrderNumber= SNOWWorkOrderClone.number
+                            const SNOWWorkOrderDetails = await SNOWWorkOrdersModel.create({
+                                integrationsMasterId: integrationObject.integrationsMasterId,
+                                accountId: integrationObject.accountId,
+                                integrationsCronId: workOrder.integrationsCronId,
+                                SNOWWorkOrderId: snowWorkOrderNumber,
+                                SNOWWorkOrders: SNOWWorkOrderClone,
+                                SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus,
+                                priority: SNOWWorkOrderClone.urgency === "1" ? "high" : "medium",
+                                status: "completed",
+                            });
+                            await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
+                            workOrderPushedCount++
+                            await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
+                            // insert work order life cycle.
+                            await workOrderLifeCycleModel.create({
+                                workOrderId: SNOWWorkOrderClone.sys_id,
+                                WorkOrderNumber: SNOWWorkOrderClone.number,
+                                workOrderStatus: updatedSNOWWorkOrderStatus,
+                                accountId: integrationObject.accountId,
+                                integrationsMasterId: integrationObject.integrationsMasterId,
+                                serviceProvider: "SNOW",
+                                date_created: new Date()
+                            });
+                        }
 
-                            const listOfSNOWWorkorderDetails = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: snowWorkOrderNumber, }).lean();
-                            console.log("listOfSNOWWorkorderDetails", listOfSNOWWorkorderDetails)
-                            if (listOfSNOWWorkorderDetails) {
-                                await SNOWWorkOrdersModel.findOneAndUpdate({
-                                    SNOWWorkOrderId: SNOWWorkOrderDetails.number, integrationsMasterId: integrationObject.integrationsMasterId,
-                                    accountId: integrationObject.accountId,
-                                }, { SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus, status: "completed", SNOWWorkOrders: SNOWWorkOrderDetails }, { new: true, runValidators: true }).lean()
-                            }
-                            else {
-
-                                const SNOWWorkOrderDetails = await SNOWWorkOrdersModel.create({
-                                    integrationsMasterId: integrationObject.integrationsMasterId,
-                                    accountId: integrationObject.accountId,
-                                    integrationsCronId: workOrder.integrationsCronId,
-                                    SNOWWorkOrderId: snowWorkOrderNumber,
-                                    SNOWWorkOrders: SNOWWorkOrderClone,
-                                    SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus,
-                                    priority: SNOWWorkOrderClone.urgency === "1" ? "high" : "medium",
-                                    status: "completed",
-                                });
-                                await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
-                                workOrderPushedCount++
-                                await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
-                                // insert work order life cycle.
-                                await workOrderLifeCycleModel.create({
-                                    workOrderId: SNOWWorkOrderClone.sys_id,
-                                    WorkOrderNumber: SNOWWorkOrderClone.number,
-                                    workOrderStatus: updatedSNOWWorkOrderStatus,
-                                    accountId: integrationObject.accountId,
-                                    integrationsMasterId: integrationObject.integrationsMasterId,
-                                    serviceProvider: "SNOW",
-                                    date_created: new Date()
-                                });
-                            }
-                        
                     }
                 }
             }
@@ -488,9 +486,9 @@ let SNOWWorkOrderClone=SNOWWorkOrderDetails
                     let SNOWWorkorderList = {}
                     let SNOWWorkOrderId
                     console.log("clodesdnotsmandatory", fieldmappingkeys)
-                    let SNOWUpdatedWorkOrderId=await axios.patch(
+                    let SNOWUpdatedWorkOrderId = await axios.patch(
                         `${urlConfigurations.SNOW.updateIncidentById.URL}/${SNOWWorkOrder.SNOWWorkOrders.sys_id}`,
-                        fieldmappingkeys, 
+                        fieldmappingkeys,
                         {
                             headers: {
                                 'Authorization': `Bearer ${snowAuthToken.access_token}`,
@@ -505,39 +503,39 @@ let SNOWWorkOrderClone=SNOWWorkOrderDetails
                     }).catch(async (err) => {
                         console.log("err", err)
                         await exceptionLogs(integrationObject, err.response.status, err.response.data.Message, err.name, err.config.data, "snow-patch-incident", CPDWorkOrderId, CPDWorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
-                                return 'error'
+                        return 'error'
                     })
-console.log("SNOWUpdatedWorkOrderId", SNOWUpdatedWorkOrderId)
-                        if (SNOWUpdatedWorkOrderId !== 'error' ) {
-                            let updatedSNOWWorkOrderStatus = urlConfigurations.SNOW.SNOWStatusMappings[SNOWUpdatedWorkOrderId.state]
-                         let    SNOWWorkOrderNumber = SNOWUpdatedWorkOrderId.number
-                            const listOfSNOWWorkorderDetails = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: SNOWWorkOrderNumber }).lean();
-                            if (listOfSNOWWorkorderDetails) {
+                    console.log("SNOWUpdatedWorkOrderId", SNOWUpdatedWorkOrderId)
+                    if (SNOWUpdatedWorkOrderId !== 'error') {
+                        let updatedSNOWWorkOrderStatus = SNOWUpdatedWorkOrderId.state
+                        let SNOWWorkOrderNumber = SNOWUpdatedWorkOrderId.number
+                        const listOfSNOWWorkorderDetails = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: SNOWWorkOrderNumber }).lean();
+                        if (listOfSNOWWorkorderDetails) {
 
-                                await SNOWWorkOrdersModel.findOneAndUpdate({
-                                    SNOWWorkOrderId: SNOWWorkOrder.SNOWWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
-                                    accountId: integrationObject.accountId,
-                                }, {
-                                    SNOWWorkOrders: SNOWUpdatedWorkOrderId,
-                                    SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus,
-                                    status: "completed"
-                                }, { new: true }).lean()
+                            await SNOWWorkOrdersModel.findOneAndUpdate({
+                                SNOWWorkOrderId: SNOWWorkOrder.SNOWWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
+                                accountId: integrationObject.accountId,
+                            }, {
+                                SNOWWorkOrders: SNOWUpdatedWorkOrderId,
+                                SNOWWorkOrderStatus: updatedSNOWWorkOrderStatus,
+                                status: "completed"
+                            }, { new: true }).lean()
 
-                                // insert work order life cycle.
-                                await workOrderLifeCycleModel.create({
-                                    workOrderId: SNOWUpdatedWorkOrderId.sys_id,
-                                    WorkOrderNumber: SNOWUpdatedWorkOrderId.number,
-                                    workOrderStatus: updatedSNOWWorkOrderStatus,
-                                    accountId: integrationObject.accountId,
-                                    integrationsMasterId: integrationObject.integrationsMasterId,
-                                    serviceProvider: "SNOW",
-                                    date_created: new Date()
-                                });
-                            }
-                            else {
-                                //nothing
-                            }
+                            // insert work order life cycle.
+                            await workOrderLifeCycleModel.create({
+                                workOrderId: SNOWUpdatedWorkOrderId.sys_id,
+                                WorkOrderNumber: SNOWUpdatedWorkOrderId.number,
+                                workOrderStatus: updatedSNOWWorkOrderStatus,
+                                accountId: integrationObject.accountId,
+                                integrationsMasterId: integrationObject.integrationsMasterId,
+                                serviceProvider: "SNOW",
+                                date_created: new Date()
+                            });
                         }
+                        else {
+                            //nothing
+                        }
+                    }
                 }
             }
         }
