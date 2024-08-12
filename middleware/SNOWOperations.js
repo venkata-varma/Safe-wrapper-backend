@@ -220,7 +220,8 @@ exports.getSNOWWorkOrders = async (integrationObject, typeOfCron) => {
  * @param {*} WorkOrderNumber used to assign the value to numberAlt of DF.
  * @param {*} CPDWorkOrderStatus is used to change the status key of DF as per the CPD work order status.
  * @param {*} WorkType 
- * @returns updated fieldmappingkeys
+ * @returns updated fieldmappingkeys with urgency set to "1" if and only if Work order is of High prioity
+
  */
 const getWorkOrderStatusFieldMappingkeysAndPriority = async (integrationFieldMappingkeys, CPDWorkOrderStatus, IntegrationStatusMappingKeys, CPDWorkOrderNumber) => {
     let statusMappingValue = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "2";
@@ -265,6 +266,11 @@ const getNestedValue = (obj, path) => {
     }, obj) || '';
 };
 
+/**
+ * Map the CPD values from response to SNOW fieldMapping keys 
+ *  @returns property values mapped from nested function "getNestedValue()"
+ */ 
+
 const mapCPDToSNOWFieldMappingKeys = async (response, dataPoints) => {
     const workOrder = response;
     const mappedDataPoints = {};
@@ -288,8 +294,14 @@ const mapCPDToSNOWFieldMappingKeys = async (response, dataPoints) => {
 
 
 
+/**
+ * 
+ * This function is used to get detailed work order object from "GET By ID" end-point of CPD
+ * If above task is success, it sends required keys to nested function "mapCPDToSNOWFieldMappingKeys()" to get field mappings keys mapped to respective values
+ * @returns updated fieldmappingkeys
+ */
 const CPDSNOWMappings = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corrigoToken, integrationObject, decryptConfigCredentials, CPDWorkOrderNumber, SNOWWorkOrderId) => {
-  
+ 
     let getCPDWorkOrderDetails = await axios.get(`${urlConfigurations.CPD.getWorkOrder.URL}messageId=${MessageId}&ids=${CPDWorkOrderId}`,
         {
             headers: { Authorization: `bearer ${corrigoToken}` }
@@ -311,6 +323,20 @@ const CPDSNOWMappings = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corr
     }
 
 }
+
+/**
+ * 
+ * @param {*} integrationObject getting the field mapping record object from the scheduler controller.
+ * Find the Work order from the CPDWorkOrderModel using integraton id and account id.
+ * Then map the fieldmapping keys which are matched with the CPD Work orders.
+ * Post the work order to the SNOW.
+ * Get the work order details using the id from the post request.
+ * Save the record which work order pushed to the SNOW.
+ * Then update the status of CPD work order as completed once successfully pushed the code to SNOW. 
+ * If we encountered any error while post or get the work order to the SNOW. We have integrations exceptions log which stores the error log for specific work order.
+ * Also update the SNOW work orders when the status of CPD work order changed.
+ */
+
 
 exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
