@@ -211,6 +211,7 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
       message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
       data: {
         fieldMappingMasterDefaultServices, fieldMappingsMasters, 
+        timeZones,
         // serviceproviderlists, 
         cronSchedulePicker,
         serviceProvidersMappingAndServices, dataPointsAccess
