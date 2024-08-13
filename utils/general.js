@@ -285,6 +285,11 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
           sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
           destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.CYSWorkOrderId });
         }
+        else if(from === 'CPD' && to === 'SNOW'){
+          destinationWorkOrderDetails = await SNOWWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "SNOWWorkOrders.user_input": sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber })
+          sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
+          destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.SNOWWorkOrderId });
+        }
       }
       //Input workOrderId is destination WorkorderID
       else{
@@ -298,6 +303,12 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         else if(from === 'CPD' && to === 'CYS'){
           destinationWorkOrderDetails = await CYSWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, CYSWorkOrderId: workOrderId })
           sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, CPDWorkOrderId: destinationWorkOrderDetails.CYSWorkOrders.estimate.PONumber })
+          sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
+          destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: workOrderId });
+        }
+        else if(from === 'CPD' && to === 'SNOW'){
+          destinationWorkOrderDetails = await SNOWWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, SNOWWorkOrderId: workOrderId })
+          sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "CPDWorkOrders.WorkOrderNumber": destinationWorkOrderDetails.SNOWWorkOrders.user_input })
           sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
           destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: workOrderId });
         }
@@ -317,6 +328,10 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
       else if(from === 'CPD' && to === 'CYS'){
         destinationWorkOrderDetails = await CYSWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "CYSWorkOrders.estimate.PONumber": sourceWorkOrderDetails.CPDWorkOrderId.toString() })
         destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.CYSWorkOrderId });
+      }
+      else if(from === 'CPD' && to === 'SNOW'){
+        destinationWorkOrderDetails = await SNOWWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "SNOWWorkOrders.user_input": sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber })
+        destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.SNOWWorkOrderId });
       }
   }
   return {sourceWorkOrderLifeCycleDetails, destinationWorkOrderLifeCycleDetails, sourceWorkOrderDetails, destinationWorkOrderDetails}
