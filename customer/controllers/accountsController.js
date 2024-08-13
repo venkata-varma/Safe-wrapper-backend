@@ -15,7 +15,7 @@ const integrationCronsModel = require('../../models/integrationsCronsModel');
 const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
-const { getSourceAndDestinationWOLifeCycle } = require('../../utils/general')
+const { getSourceAndDestinationWOLifeCycle,integationOfAccountWorkOrderReports } = require('../../utils/general')
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
@@ -141,87 +141,6 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
 });
 
 /**
- * Function where necessary functionality's code  is written 
- * @param aggregate
- * @returns Four new fields for each integration to distinguish between New work orders and updated ones among source work orders and destination work orders
- * 
- */
-const returnIntegationOfAccount=async(aggregate)=>{
-
-    aggregate.forEach((integration) => {
-        // Initialize group arrays with objects containing status and count
-        integration.sourceWorkOrderGroup = [];
-        integration.destinationWorkOrderGroup = [];
-
-        // Initialize the new fields
-        integration.sourceNewWorkOrdersCount = 0;
-        integration.sourceUpdatedWorkOrders = 0;
-        integration.destinationNewWorkOrdersCount = 0;
-        integration.destinationUpdatedWorkOrders = 0;
-
-    // Helper function to update status counts using reduce
-    function updateStatusGroup(group, orders, matchingField) {
-        return orders.reduce((acc, order) => {
-            const statusField = order.serviceProvider === matchingField ? order.workOrderStatus : null;
-            if (statusField) {
-                let statusObj = acc.find(item => item.status === statusField);
-                if (statusObj) {
-                    statusObj.count += 1;
-                } else {
-                    acc.push({ status: statusField, count: 1 });
-                }
-            }
-            return acc;
-        }, group);
-    }
-
-    // Use map and reduce to populate sourceWorkOrderGroup and destinationWorkOrderGroup
-    integration.sourceWorkOrderGroup = updateStatusGroup(
-        integration.sourceWorkOrderGroup,
-        integration.workorderlifecycles,
-        integration.from
-    );
-
-    integration.destinationWorkOrderGroup = updateStatusGroup(
-        integration.destinationWorkOrderGroup,
-        integration.workorderlifecycles,
-        integration.to
-    );
-
-    // Remove the workorderlifecycles array
-    delete integration.workorderlifecycles;
-        if (integration.statusFieldMappingKeys) {
-            // Get the crucial status from statusFieldMappingKeys
-            const statusMapping = integration.statusFieldMappingKeys;
-            const crucialSourceStatus = Object.values(statusMapping)[0]; // The value of the first key-value pair
-            const crucialDestinationStatus = Object.keys(statusMapping)[0]; // The key of the first key-value pair
-
-            // Calculate sourceNewWorkOrdersCount and sourceUpdatedWorkOrders
-            integration.sourceWorkOrderGroup.forEach(statusObj => {
-                if (statusObj.status === crucialSourceStatus) {
-                    integration.sourceNewWorkOrdersCount = statusObj.count;
-                } else {
-                    integration.sourceUpdatedWorkOrders += statusObj.count;
-                }
-            });
-
-            // Calculate destinationNewWorkOrdersCount and destinationUpdatedWorkOrders
-            integration.destinationWorkOrderGroup.forEach(statusObj => {
-                if (statusObj.status === crucialDestinationStatus) {
-                    integration.destinationNewWorkOrdersCount = statusObj.count;
-                } else {
-                    integration.destinationUpdatedWorkOrders += statusObj.count;
-                }
-            });
-        }
-
-
-
-    })
-return aggregate;
-}
-
-/**
  * Get account information by accountId.
  * Get all work orders count (CPD, DF), integrationsExceptions and integrationsCount.
  */
@@ -270,7 +189,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         }
 
     ]);
-    const returnIntegrationOfAccount=await returnIntegationOfAccount(integrationsOfAccount)
+    const workOrderReports = await integationOfAccountWorkOrderReports(integrationsOfAccount)
 
     const failedCPDWorkOrders = await integrationsMasterModel.aggregate([
         {
@@ -310,10 +229,10 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_INFORMATION,
         data: {
             accountInformation,
-            integrationsOfAccount: returnIntegrationOfAccount,
-             integrationExceptionsCount: integrationExceptions,
-             dataSyncCount: integrationsActivitylogCount,
-             failedCPDWorkOrders,
+             integationOfAccountWorkOrderReports:workOrderReports,
+            integrationExceptionsCount: integrationExceptions,
+            dataSyncCount: integrationsActivitylogCount,
+            failedCPDWorkOrders,
         },
     })
 })

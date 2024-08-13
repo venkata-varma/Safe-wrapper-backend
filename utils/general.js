@@ -339,11 +339,118 @@ const getServiceProviderName = async(serviceProviderName) => {
 }
 
 
+
+
+/**
+ * Function where necessary functionality's code  is written 
+ * @param aggregate
+ * @returns Four new fields for each integration to distinguish between New work orders and updated ones among source work orders and destination work orders
+ * 
+ */
+const integationOfAccountWorkOrderReports = async (workOrderReport) => {
+
+  workOrderReport.forEach((integration) => {
+      // Initialize group arrays with objects containing status and count
+      integration.sourceWorkOrderStatusGroup = [];
+      integration.destinationWorkOrderStatusGroup = [];
+
+      // Initialize the new fields
+      integration.sourceNewWorkOrdersCount = 0;
+      integration.sourceUpdatedWorkOrdersCount = 0;
+      integration.destinationNewWorkOrdersCount = 0;
+      integration.destinationUpdatedWorkOrdersCount = 0;
+
+      // Helper function to update status counts using reduce
+      function updateStatusGroup(workOrderStatusGroup, workOrdersLifeCycle, serviceProvider) {
+          return workOrdersLifeCycle.reduce((statusGroup, order) => {
+              const statusField = order.serviceProvider === serviceProvider ? order.workOrderStatus : null;
+              if (statusField) {
+                  let statusObj = statusGroup.find(item => item.status === statusField);
+                  if (statusObj) {
+                      statusObj.count += 1;
+                  } else {
+                    statusGroup.push({ status: statusField, count: 1 });
+                  }
+              }
+              return statusGroup;
+          }, workOrderStatusGroup);
+      }
+
+      // Use map and reduce to populate sourceWorkOrderGroup and destinationWorkOrderGroup
+      integration.sourceWorkOrderStatusGroup = updateStatusGroup(
+          integration.sourceWorkOrderStatusGroup,
+          integration.workorderlifecycles,
+          integration.from
+      );
+
+      integration.destinationWorkOrderStatusGroup = updateStatusGroup(
+          integration.destinationWorkOrderStatusGroup,
+          integration.workorderlifecycles,
+          integration.to
+      );
+
+      // Remove the workorderlifecycles array
+      delete integration.workorderlifecycles;
+      if (integration.statusFieldMappingKeys) {
+          // Get the crucial status from statusFieldMappingKeys
+          var serviceProviderNewStatus;
+          switch (integration.from) {
+              case 'CPD':
+                  serviceProviderNewStatus = "new";
+                  break;
+              case 'DF':
+                  serviceProviderNewStatus = "reported";
+                  break;
+              case 'SNOW':
+                  serviceProviderNewStatus = "1";
+                  break;
+              case 'CYS':
+                  serviceProviderNewStatus = "requested";
+                  break;
+          }
+
+          var crucialSourceStatus, crucialDestinationStatus;
+          const statusMapping = integration.statusFieldMappingKeys;
+          for (let [key, value] of Object.entries(statusMapping)) {
+              if (value.toLowerCase() === serviceProviderNewStatus) {
+                  crucialSourceStatus = value;
+                  crucialDestinationStatus = key;
+              }
+          }
+
+
+          // Calculate sourceNewWorkOrdersCount and sourceUpdatedWorkOrders
+          integration.sourceWorkOrderStatusGroup.forEach(statusObj => {
+              if (statusObj.status === crucialSourceStatus) {
+                  integration.sourceNewWorkOrdersCount = statusObj.count;
+              } else {
+                  integration.sourceUpdatedWorkOrdersCount += statusObj.count;
+              }
+          });
+
+          // Calculate destinationNewWorkOrdersCount and destinationUpdatedWorkOrders
+          integration.destinationWorkOrderStatusGroup.forEach(statusObj => {
+              if (statusObj.status === crucialDestinationStatus) {
+                  integration.destinationNewWorkOrdersCount = statusObj.count;
+              } else {
+                  integration.destinationUpdatedWorkOrdersCount += statusObj.count;
+              }
+          });
+      }
+  })
+  return workOrderReport;
+}
+
+
+
+
 module.exports = {
   getServiceWorkOrdersAndStatus,
   getStatusOfWorkOrders,
   getStatusFieldMappings,
   getSourceAndDestinationWOLifeCycle,
   getServiceProviderName,
-  defaultSatusMappingKeys
+  defaultSatusMappingKeys,
+  integationOfAccountWorkOrderReports
+
 }
