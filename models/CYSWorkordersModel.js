@@ -21,7 +21,7 @@ const CYSWorkordersModelSchema = mongoose.Schema(
             default : null
         },
         CYSWorkOrderId:{
-            type:Number,
+            type:mongoose.Schema.Types.Mixed,
             default:0
         },
         CYSWorkOrders: {
