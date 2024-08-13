@@ -342,7 +342,6 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
     if (integrationFieldObject !== undefined) {
         let fieldmappingkeys = {}
-        let workOrderPushedCount = 0
         let SNOWWorkOrderClone
         for (let integrationObject of integrationFieldObject) {
 
@@ -353,6 +352,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
+                    let workOrderPushedCount = 0
                     fieldmappingkeys = integrationObject.dataPoints
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
 
@@ -433,7 +433,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                             });
                             await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
                             workOrderPushedCount++
-                            await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
+                            await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { $inc: {pushedCount:workOrderPushedCount} }, { new: true });
                             // insert work order life cycle.
                             await workOrderLifeCycleModel.create({
                                 workOrderId: snowWorkOrderNumber,
