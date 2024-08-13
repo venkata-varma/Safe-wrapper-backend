@@ -245,7 +245,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const integrationsQuery = req.query.integration;
     const accountId = req.params.accountId;
-    let integrationExceptions = []
+ 
     //const integrationsQuery = req.query.integration;
     const priorityQuery = req.query.priority ? req.query.priority.toLowerCase() : null;;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
@@ -266,154 +266,13 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
         }
 
         const integrationsMasters = await integrationsMasterModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId), status: "active", _id: new mongoose.Types.ObjectId(integrationsQuery) });
-        integrationsMasters ? integrationExceptions = await integtationExceptionsModel.find({ integrationsMasterId: integrationsMasters._id }) : []
-      
-        accountReports.push(integrationsMasters)
+        let integrationExceptions = integrationsMasters ? await integtationExceptionsModel.find({ integrationsMasterId: integrationsMasters._id, ...(fromDateQuery && { createdAt: { $gte: fromDateQuery, $lte: toDateQuery } }) }) : [];
+console.log("integrationExceptions.count", integrationExceptions.length)
+        accountReports.push(integrationsMasters )
+//accountReports.push(integrationExceptions.count)
 
-
-
-        // sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
-        //     {
-        //         $match: {
-        //             accountId: new mongoose.Types.ObjectId(req.params.accountId),
-        //             status: "active",
-        //             ...(integrationsQuery !== 'all-integrations' && {
-        //                 _id: new mongoose.Types.ObjectId(integrationsQuery)
-        //             })
-        //         }
-        //     },
-        //     {
-        //         $lookup: {
-        //             from: "cpdworkorders",
-        //             localField: "_id",
-        //             foreignField: "integrationsMasterId",
-        //             as: "CPDWorkOrders"
-        //         }
-        //     },
-        //     {
-        //         $lookup: {
-        //             from: "dfworkorders",
-        //             localField: "_id",
-        //             foreignField: "integrationsMasterId",
-        //             as: "DFWorkOrders"
-        //         }
-        //     },
-        //     {
-        //         $lookup: {
-        //             from: "snowworkorders",
-        //             localField: "_id",
-        //             foreignField: "integrationsMasterId",
-        //             as: "SNOWWorkOrders"
-        //         }
-        //     },
-        //     {
-        //         $lookup: {
-        //             from: "cysworkorders",
-        //             localField: "_id",
-        //             foreignField: "integrationsMasterId",
-        //             as: "CYSWorkOrders"
-        //         }
-        //     },
-        //     {
-        //         $lookup: {
-        //             from: "integrationsexceptions",
-        //             localField: "_id",
-        //             foreignField: "integrationsMasterId",
-        //             as: "integrationExceptions"
-        //         }
-        //     },
-        //     {
-        //         $addFields: {
-        //             sourceWorkOrders: {
-        //                 $switch: {
-        //                     branches: [
-        //                         { case: { $eq: ["$from", "CPD"] }, then: "$CPDWorkOrders" },
-        //                         { case: { $eq: ["$from", "DF"] }, then: "$DFWorkOrders" },
-        //                         { case: { $eq: ["$from", "SNOW"] }, then: "$SNOWWorkOrders" },
-        //                         { case: { $eq: ["$from", "CYS"] }, then: "$CYSWorkOrders" }
-        //                     ],
-        //                     default: [] // handle default case if needed
-        //                 }
-        //             },
-        //             destinationWorkOrders: {
-        //                 $switch: {
-        //                     branches: [
-        //                         { case: { $eq: ["$to", "CPD"] }, then: "$CPDWorkOrders" },
-        //                         { case: { $eq: ["$to", "DF"] }, then: "$DFWorkOrders" },
-        //                         { case: { $eq: ["$to", "SNOW"] }, then: "$SNOWWorkOrders" },
-        //                         { case: { $eq: ["$to", "CYS"] }, then: "$CYSWorkOrders" }
-        //                     ],
-        //                     default: [] // handle default case if needed
-        //                 }
-        //             }
-        //         }
-        //     },
-
-        //     {
-        //         $project: {
-        //             CPDWorkOrders: 0,
-        //             DFWorkOrders: 0,
-        //             SNOWWorkOrders: 0,
-        //             CYSWorkOrders: 0
-        //         }
-        //     },
-        //     {
-        //         $addFields: {
-        //             sixWeekSales: sixWeekSales.map(week => ({
-        //                 fromDate: week.fromDate,
-        //                 toDate: week.toDate,
-        //                 sourceWorkOrdersCount: {
-        //                     $size: {
-        //                         $filter: {
-        //                             input: "$sourceWorkOrders",
-        //                             as: "order",
-        //                             cond: {
-        //                                 $and: [
-        //                                     { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
-        //                                     { $lte: ["$$order.createdAt", new Date(week.toDate)] }
-        //                                 ]
-        //                             }
-        //                         }
-        //                     }
-        //                 },
-        //                 destinationWorkOrdersCount: {
-        //                     $size: {
-        //                         $filter: {
-        //                             input: "$destinationWorkOrders",
-        //                             as: "order",
-        //                             cond: {
-        //                                 $and: [
-        //                                     { $gte: ["$$order.createdAt", new Date(week.fromDate)] },
-        //                                     { $lte: ["$$order.createdAt", new Date(week.toDate)] }
-        //                                 ]
-        //                             }
-        //                         }
-        //                     }
-        //                 },
-        //                 integrationExceptionCount: {
-        //                     $size: {
-        //                         $filter: {
-        //                             input: "$integrationExceptions",
-        //                             as: "exception",
-        //                             cond: {
-        //                                 $and: [
-        //                                     { $gte: ["$$exception.createdAt", new Date(week.fromDate)] },
-        //                                     { $lte: ["$$exception.createdAt", new Date(week.toDate)] }
-        //                                 ]
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }))
-        //         }
-        //     },
-        //     {
-        //         $project: {
-        //             sixWeekSales: 1
-        //         }
-        //     }
-        // ]);
     }
+     
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED,
