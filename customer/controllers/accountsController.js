@@ -247,7 +247,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const integrationsQuery = req.query.integration;
     const accountId = req.params.accountId;
-
+let sourceWorkOrderLifeCycle ,destinationWorkOrderLifeCycle;
     //const integrationsQuery = req.query.integration;
     const priorityQuery = req.query.priority ? req.query.priority.toLowerCase() : null;;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
@@ -303,15 +303,20 @@ accountReports=await integrationsMasterModel.aggregate([
         }
     },
 ])
-let sourceWorkOrderLifeCycle=await sourceWorkOrderLifeCycleDetails(accountReports, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities, accountId)
-let destinationWorkOrderLifeCycle=await destinationWorkOrderLifeCycleDetails(accountReports, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities, accountId)
-    }
+const integrationSource=accountReports[0].from;
+const integrationDestination=accountReports[0].to;
+sourceWorkOrderLifeCycle=await sourceWorkOrderLifeCycleDetails(integrationSource, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities, accountId)
+ destinationWorkOrderLifeCycle=await sourceWorkOrderLifeCycleDetails(integrationDestination, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities, accountId)
+
+}
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED,
         data: {
             accountReports,
+            sourceWorkOrderLifeCycle,
+            destinationWorkOrderLifeCycle
             // sixWeeksSalesGraph
         },
     })
