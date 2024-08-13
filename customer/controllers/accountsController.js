@@ -245,7 +245,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const integrationsQuery = req.query.integration;
     const accountId = req.params.accountId;
- 
+
     //const integrationsQuery = req.query.integration;
     const priorityQuery = req.query.priority ? req.query.priority.toLowerCase() : null;;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
@@ -265,14 +265,16 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             accountReports = []
         }
 
-        const integrationsMasters = await integrationsMasterModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId), status: "active", _id: new mongoose.Types.ObjectId(integrationsQuery) });
-        let integrationExceptions = integrationsMasters ? await integtationExceptionsModel.find({ integrationsMasterId: integrationsMasters._id, ...(fromDateQuery && { createdAt: { $gte: fromDateQuery, $lte: toDateQuery } }) }) : [];
-console.log("integrationExceptions.count", integrationExceptions.length)
-        accountReports.push(integrationsMasters )
-//accountReports.push(integrationExceptions.count)
+        let integrationsMasters = (await integrationsMasterModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId), status: "active", _id: new mongoose.Types.ObjectId(integrationsQuery) }))
+       integrationsMasters=integrationsMasters?integrationsMasters.toObject():{}
+        let integrationExceptions = integrationsMasters ? await integtationExceptionsModel.find({ integrationsMasterId: integrationsMasters._id, ...(fromDateQuery && { createdAt: { $gte: fromDateQuery, $lte: toDateQuery } }) }).sort({ createdAt: 1 }) : [];
+
+        //        integrationsMasters.integrationExceptions = integrationExceptions
+
+        accountReports.push(integrationsMasters)
 
     }
-     
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED,
