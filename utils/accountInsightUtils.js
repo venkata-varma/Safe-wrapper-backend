@@ -16,17 +16,12 @@ exports.sourceWorkOrderLifeCycleDetails = async (SourceOrDestination, integratio
                 integrationsMasterId: new mongoose.Types.ObjectId(integrationsQuery),
                 accountId: new mongoose.Types.ObjectId(accountId),
                 serviceProvider: SourceOrDestination,
-                // ...(fromDateQuery && {
-                //     $and: [
-                //         { createdAt: { $gte: fromDateQuery } },
-                //         { createdAt: { $lte: toDateQuery } }
-                //     ]
-                // })
+            //     ...(fromDateQuery&& { 
+            //         createdAt: { $gte: fromDateQuery, $lte: toDateQuery }
+            //     })
             }
         },
-        {
-            $sort: { createdAt: -1 } // Sort by createdAt in ascending order
-        },
+    
         {
             $group: {
                 _id: "$workOrderId", // Group by workOrderId
@@ -37,26 +32,39 @@ exports.sourceWorkOrderLifeCycleDetails = async (SourceOrDestination, integratio
             $replaceRoot: { newRoot: "$doc" } // Replace the root with the grouped document
         },
 
-
+        {$sort:{createdAt:1}} ,
+        {
+            $match: {
+                ...(fromDateQuery &&  {
+                    createdAt: { $gte: fromDateQuery, $lte: toDateQuery }
+                })
+            }
+        }
+    
     ]);
 
 
     // Step 2: Fetch details from the appropriate model based on serviceProvider
     let workOrderDetailsPromises = sourceWorkOrderRecords.map(async (record) => {
         let workOrderDetail;
+        let priorityFilter = {}; // Empty filter by default
 
+        // Apply priorityQuery if it exists and is not 'all'
+        if (priorityQuery && priorityQuery !== 'all') {
+            priorityFilter.priority = priorityQuery;
+        }
         switch (record.serviceProvider) {
             case 'CPD':
-                workOrderDetail = await CPDWorkordersModel.findOne({ CPDWorkOrderId: record.workOrderId });
+                workOrderDetail = await CPDWorkordersModel.findOne({ CPDWorkOrderId: record.workOrderId ,   ...priorityFilter });
                 break;
             case 'DF':
-                workOrderDetail = await DFWorkOrdersModel.findOne({ DFWorkOrderId: record.workOrderId });
+                workOrderDetail = await DFWorkOrdersModel.findOne({ DFWorkOrderId: record.workOrderId,...priorityFilter  });
                 break;
             case 'SNOW':
-                workOrderDetail = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: record.workOrderId });
+                workOrderDetail = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: record.workOrderId,...priorityFilter });
                 break;
             case 'CYS':
-                workOrderDetail = await CYSWorkordersModel.findOne({ CYSWorkOrderId: record.workOrderId });
+                workOrderDetail = await CYSWorkordersModel.findOne({ CYSWorkOrderId: record.workOrderId ,   ...priorityFilter});
                 break;
             default:
                 // Handle unknown service provider
@@ -70,10 +78,10 @@ exports.sourceWorkOrderLifeCycleDetails = async (SourceOrDestination, integratio
     });
 
     // // Step 3: Await all promises to get the final results
-    // let workOrderDetails = await Promise.all(workOrderDetailsPromises);
+     let workOrderDetails = await Promise.all(workOrderDetailsPromises);
 
-    // return workOrderDetails;
-return sourceWorkOrderRecords
+    return workOrderDetails;
+//return sourceWorkOrderRecords
 
 
 }

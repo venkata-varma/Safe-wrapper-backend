@@ -303,6 +303,8 @@ accountReports=await integrationsMasterModel.aggregate([
         }
     },
 ])
+  console.log("acc", accountReports)
+
 const integrationSource=accountReports[0].from;
 const integrationDestination=accountReports[0].to;
 sourceWorkOrderLifeCycle=await sourceWorkOrderLifeCycleDetails(integrationSource, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities, accountId)
