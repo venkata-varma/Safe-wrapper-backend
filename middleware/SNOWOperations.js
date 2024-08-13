@@ -381,8 +381,8 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
                     let snowAuthToken = await SNOWAuthToken(decryptConfigCredentials.baseUrl, decryptConfigCredentials.username, decryptConfigCredentials.password, decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, "password")
 
-                    if (!snowAuthToken.hasOwnProperty('access_token')) {
-                        await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.data), "snow-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
+                    if (!snowAuthToken.hasOwnProperty('access_token')) {    
+                        await exceptionLogs(integrationObject, snowAuthToken.response.status, snowAuthToken.message, JSON.stringify(snowAuthToken.response.data.messages), JSON.stringify(snowAuthToken.config.data), "snow-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
                     }
 
                     let SNOWWorkOrderDetails = await axios.post(
@@ -436,8 +436,8 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                             await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
                             // insert work order life cycle.
                             await workOrderLifeCycleModel.create({
-                                workOrderId: SNOWWorkOrderClone.sys_id,
-                                WorkOrderNumber: SNOWWorkOrderClone.number,
+                                workOrderId: snowWorkOrderNumber,
+                                WorkOrderNumber: workOrder.CPDWorkOrders.WorkOrderNumber,
                                 workOrderStatus: updatedSNOWWorkOrderStatus,
                                 accountId: integrationObject.accountId,
                                 integrationsMasterId: integrationObject.integrationsMasterId,
@@ -523,8 +523,8 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
                             // insert work order life cycle.
                             await workOrderLifeCycleModel.create({
-                                workOrderId: SNOWUpdatedWorkOrderId.sys_id,
-                                WorkOrderNumber: SNOWUpdatedWorkOrderId.number,
+                                workOrderId: SNOWWorkOrder.SNOWWorkOrderId,
+                                WorkOrderNumber: getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber,
                                 workOrderStatus: updatedSNOWWorkOrderStatus,
                                 accountId: integrationObject.accountId,
                                 integrationsMasterId: integrationObject.integrationsMasterId,
