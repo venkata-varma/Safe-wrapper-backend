@@ -16,6 +16,8 @@ const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports } = require('../../utils/general')
+const {sourceWorkOrderLifeCycleDetails,destinationWorkOrderLifeCycleDetails}=require('../../utils/accountInsightUtils')
+
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
@@ -264,15 +266,45 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
         if (priorityQuery && !validPriorities.includes(priorityQuery)) {
             accountReports = []
         }
-
-        let integrationsMasters = (await integrationsMasterModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId), status: "active", _id: new mongoose.Types.ObjectId(integrationsQuery) }))
-       integrationsMasters=integrationsMasters?integrationsMasters.toObject():{}
-        let integrationExceptions = integrationsMasters ? await integtationExceptionsModel.find({ integrationsMasterId: integrationsMasters._id, ...(fromDateQuery && { createdAt: { $gte: fromDateQuery, $lte: toDateQuery } }) }).sort({ createdAt: 1 }) : [];
-
-        //        integrationsMasters.integrationExceptions = integrationExceptions
-
-        accountReports.push(integrationsMasters)
-
+accountReports=await integrationsMasterModel.aggregate([
+    {
+        $match: {
+            accountId: new mongoose.Types.ObjectId(req.params.accountId),
+            status: "active",
+            ...(integrationsQuery !== 'all-integrations' && {
+                _id: new mongoose.Types.ObjectId(integrationsQuery)
+            })
+        }
+    },
+    {
+        $lookup: {
+            from: "integrationsexceptions",
+            localField: "_id",
+            foreignField: "integrationsMasterId",
+            as: "integrationsExceptions"
+        }
+    },
+    {
+        $addFields: {
+            integrationsExceptions: {
+                $filter: {
+                    input: "$integrationsExceptions",
+                    as: "exception",
+                    cond: {
+                        $and: [
+                            ...(fromDateQuery ? [
+                                { $gte: ["$$exception.createdAt", fromDateQuery] },
+                                { $lte: ["$$exception.createdAt", toDateQuery] }
+                            ] : [])
+                        ]
+                    }
+                }
+            }
+        }
+    },
+])
+let sourceWorkOrderLifeCycle=await sourceWorkOrderLifeCycleDetails(accountReports, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities, accountId)
+let destinationWorkOrderLifeCycle=await destinationWorkOrderLifeCycleDetails(accountReports, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities, accountId)
     }
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
