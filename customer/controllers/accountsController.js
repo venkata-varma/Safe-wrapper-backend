@@ -16,7 +16,7 @@ const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports } = require('../../utils/general')
-const { sourceWorkOrderLifeCycleDetails, destinationWorkOrderLifeCycleDetails } = require('../../utils/accountInsightUtils')
+const { workOrderLifeCycleReports, sixWeeksSalesDetails, mapNewUpdatedCounts,  } = require('../../utils/accountInsightUtils')
 
 /*
 Miidleware function to controller, "createAccount"
@@ -247,8 +247,9 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const integrationsQuery = req.query.integration;
     const accountId = req.params.accountId;
-    var sourceWorkOrderLifeCycle, destinationWorkOrderLifeCycle;
-    
+    var sourceWorkOrderLifeCycleRecords, destinationWorkOrderLifeCycleRecords;
+    var sourceWorkOrderLifeCycleCounts, destinationWorkOrderLifeCycleCounts
+    var workOrderLifeCycleDocs;
     // Retrieve query parameters
     const priorityQuery = req.query.priority ? req.query.priority.toLowerCase() : null;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
@@ -267,15 +268,13 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     } else if (integrationsQuery) {
         if (priorityQuery && !validPriorities.includes(priorityQuery)) {
             accountReports = [];
-        } else if (priorityQuery && validPriorities.includes(priorityQuery)) {
+        } else {
             accountReports = await integrationsMasterModel.aggregate([
                 {
                     $match: {
                         accountId: new mongoose.Types.ObjectId(req.params.accountId),
                         status: "active",
-                        ...(integrationsQuery !== 'all-integrations' && {
-                            _id: new mongoose.Types.ObjectId(integrationsQuery)
-                        })
+                      _id:new mongoose.Types.ObjectId(integrationsQuery)
                     }
                 },
                 {
@@ -312,7 +311,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
         const integrationSource = accountReports[0].from;
         const integrationDestination = accountReports[0].to;
 
-        sourceWorkOrderLifeCycle = await sourceWorkOrderLifeCycleDetails(
+        sourceWorkOrderLifeCycleRecords = await workOrderLifeCycleReports(
             integrationSource, 
             integrationsQuery, 
             priorityQuery, 
@@ -323,7 +322,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             accountId
         );
 
-        destinationWorkOrderLifeCycle = await sourceWorkOrderLifeCycleDetails(
+        destinationWorkOrderLifeCycleRecords = await workOrderLifeCycleReports(
             integrationDestination, 
             integrationsQuery, 
             priorityQuery, 
@@ -337,10 +336,75 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
         // Add the new properties to each item in accountReports
         accountReports = accountReports.map(report => ({
             ...report,
-            sourceWorkOrderLifeCycle,
-            destinationWorkOrderLifeCycle
+            sourceWorkOrderLifeCycleRecords,
+            destinationWorkOrderLifeCycleRecords,
+            sourceWorkOrderLifeCycleRecordsCount:sourceWorkOrderLifeCycleRecords.length,
+            destinationWorkOrderLifeCycleRecordsCount:destinationWorkOrderLifeCycleRecords.length
         }));
     }
+//six weeks sales graph code
+if(integrationsQuery){
+  
+    sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
+        {
+            $match: {
+                accountId: new mongoose.Types.ObjectId(req.params.accountId),
+                status: "active",
+                _id:new mongoose.Types.ObjectId(integrationsQuery)
+            }
+        },
+        {
+            $lookup: {
+                from: "integrationsexceptions",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "integrationExceptions"
+            }
+        },
+        {
+            $lookup: {
+                from: "integrationssettings",
+                localField: "_id",
+                foreignField: "integrationsMasterId",
+                as: "integrationSettings"
+            }
+        },
+        {
+            $unwind: "$integrationSettings"
+        },
+        {
+            $addFields: {
+                statusFieldMappingKeys: "$integrationSettings.statusFieldMappingKeys"
+            }
+        },
+        {
+            $project: {
+                integrationSettings: 0
+            }
+        },
+        
+    ])
+
+if(sixWeeksSalesGraph.length>0){
+    const integrationSource = sixWeeksSalesGraph[0].from;
+    const integrationDestination = sixWeeksSalesGraph[0].to;
+     workOrderLifeCycleDocs=await sixWeeksSalesDetails(integrationSource,integrationDestination, integrationsQuery, accountId, sixWeeksSalesGraph[0].statusFieldMappingKeys ,sixWeeksSalesGraph[0].integrationExceptions) 
+     workOrderLifeCycleDocs=await mapNewUpdatedCounts(workOrderLifeCycleDocs, sixWeeksSalesGraph[0].statusFieldMappingKeys, integrationSource,integrationDestination, )
+
+      //destinationWorkOrderLifeCycleCounts=await sixWeeksSalesDetails(integrationDestination, integrationsQuery, accountId, sixWeeksSalesGraph[0].statusFieldMappingKeys)
+      sixWeeksSalesGraph = sixWeeksSalesGraph.map(report => ({
+        ...report,
+        workOrderLifeCycleDocs,
+
+    }));
+
+}
+
+}
+
+
+
+
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
@@ -348,7 +412,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
         data: {
             accountReports,
 
-            // sixWeeksSalesGraph
+             sixWeeksSalesGraph
         },
     });
 });

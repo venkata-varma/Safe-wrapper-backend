@@ -4,17 +4,17 @@ const CPDWorkordersModel = require("../models/CPDWorkordersModel")
 const DFWorkOrdersModel = require("../models/DFWorkOrdersModel")
 const SNOWWorkOrdersModel = require("../models/SNOWWorkOrdersModel")
 const CYSWorkordersModel = require("../models/CYSWorkordersModel")
+const { sixWeekSales}=require('../utils/sixWeekSalesFunction')
 
-
-exports.sourceWorkOrderLifeCycleDetails = async (SourceOrDestination, integrationsQuery, priorityQuery, fromDateQuery, toDateQuery, searchQuery, validPriorities, accountId) => {
+exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuery, priorityQuery, fromDateQuery, toDateQuery, searchQuery, validPriorities, accountId) => {
     //console.log("accountReports, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities", accountReports, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities)
-    let sourceWorkOrderRecords;
+    let workOrderReports;
     if (priorityQuery && !validPriorities.includes(priorityQuery)) {
-        sourceWorkOrderRecords = []
-        return sourceWorkOrderRecords
+        workOrderReports = []
+        return workOrderReports
     } else {
         console.log("integrationFrom", SourceOrDestination)
-        sourceWorkOrderRecords = await workOrderLifeCycleModel.aggregate([
+        workOrderReports = await workOrderLifeCycleModel.aggregate([
             {
                 $match: {
                     integrationsMasterId: new mongoose.Types.ObjectId(integrationsQuery),
@@ -47,7 +47,7 @@ exports.sourceWorkOrderLifeCycleDetails = async (SourceOrDestination, integratio
 
 
         // Step 2: Fetch details from the appropriate model based on serviceProvider
-        let workOrderDetailsPromises = sourceWorkOrderRecords.map(async (record) => {
+        let workOrderDetailsPromises = workOrderReports.map(async (record) => {
             let workOrderDetail;
             let priorityFilter = {}; // Empty filter by default
             let searchFilter;
@@ -78,26 +78,164 @@ exports.sourceWorkOrderLifeCycleDetails = async (SourceOrDestination, integratio
                     throw new Error(`Unknown service provider: ${record.serviceProvider}`);
             }
 
-if(workOrderDetail!==null) {
-    return {
-        ...record,
-        workOrderDetail
-    }};
-
+            if (workOrderDetail !== null) {
+                return {
+                    ...record,
+                    workOrderDetail
+                };
+            } else {
+                return null; // Explicitly return null for non-matching records
+            }
         });
 
-        // // Step 3: Await all promises to get the final results
+        // Step 3: Await all promises and filter out null values
         let workOrderDetails = await Promise.all(workOrderDetailsPromises);
-        workOrderDetails = workOrderDetails.filter(item => item !== null);
-        
+
+        // Filter out null values
+        workOrderDetails = workOrderDetails.filter(detail => detail !== null);
+
         return workOrderDetails;
-        //return sourceWorkOrderRecords
-
-
     }
 
 }
 
 
+/**
+ * 
+ * 
+ */
+exports.sixWeeksSalesDetails=async(source,destination,integrationsQuery, accountId, statusFieldMappingKeys, integrationExceptions)=>{
+var sixWeekSalesData=sixWeekSales
+console.log("sixWeekSalesData", sixWeekSalesData)
+    const workOrderLifeCycleDetails=await workOrderLifeCycleModel.aggregate([
+        {
+            $match:{
+                integrationsMasterId:new mongoose.Types.ObjectId(integrationsQuery),
+                accountId:new mongoose.Types.ObjectId(accountId),
+                $or:[{serviceProvider:source}, {serviceProvider:destination}]
+            }
+        }
+    ])
+    
+
+    const processSalesData = (source, destination, sixWeeksSalesData, integrationExceptions) => {
+        return sixWeeksSalesData.map(week => {
+            var { fromDate, toDate } = week;
+            var sourceWorkOrderLifeCycleRecords = [];
+            var destinationWorkOrderLifeCycleRecords = [];
+var  integrationExceptionsRecordsPerWeek=[]
+
+    var integrationExceptionsCount=0;
+            workOrderLifeCycleDetails.forEach(record => {
+                const createdAt = new Date(record.createdAt);
+                if (createdAt >= new Date(fromDate) && createdAt <= new Date(toDate)) {
+                    if (record.serviceProvider === source) {
+                        sourceWorkOrderLifeCycleRecords.push(record);
+                    }
+                    if (record.serviceProvider === destination) {
+                        destinationWorkOrderLifeCycleRecords.push(record);
+                    }
+                }
+            });
+
+            integrationExceptions.forEach(exception => {
+                const exceptionCreatedAt = new Date(exception.createdAt);
+                if (exceptionCreatedAt >= new Date(fromDate) && exceptionCreatedAt <= new Date(toDate)) {
+                    integrationExceptionsRecordsPerWeek.push(exception);
+                }
+            });
+    
+            integrationExceptionsCount = integrationExceptionsRecordsPerWeek.length;
+    
 
 
+            
+            return {
+                fromDate,
+                toDate,
+                sourceWorkOrderLifeCycleRecords,
+                destinationWorkOrderLifeCycleRecords, 
+                integrationExceptionsRecordsPerWeek, 
+                integrationExceptionsCount
+            };
+        });
+    };
+    
+    // Example usage
+    const result = processSalesData(source, destination, sixWeekSalesData, integrationExceptions);
+    //console.log(result);
+
+
+
+    return result
+}
+
+
+exports.mapNewUpdatedCounts = async (workOrderLifeCycleDocs, statusFieldMappingKeys, source, destination) => {
+    console.log("statusFieldMappingKeys", statusFieldMappingKeys);
+    
+    var serviceProviderNewStatus;
+    switch (source) {
+        case 'CPD':
+            serviceProviderNewStatus = "new";
+            break;
+        case 'DF':
+            serviceProviderNewStatus = "reported";
+            break;
+        case 'SNOW':
+            serviceProviderNewStatus = "1";
+            break;
+        case 'CYS':
+            serviceProviderNewStatus = "requested";
+            break;
+    }
+
+    var crucialSourceStatus, crucialDestinationStatus;
+    for (let [key, value] of Object.entries(statusFieldMappingKeys)) {
+        if (value.toLowerCase() === serviceProviderNewStatus) {
+            crucialSourceStatus = value;
+            crucialDestinationStatus = key;
+        }
+    }
+
+    console.log("crucialSourceStatus, crucialDestinationStatus", crucialSourceStatus, crucialDestinationStatus);
+
+    // Loop through each week in workOrderLifeCycleDocs
+    workOrderLifeCycleDocs = workOrderLifeCycleDocs.map((week) => {
+        let sourceNewWorkOrdersCount = 0;
+        let sourceUpdatedWorkOrdersCount = 0;
+        let destinationNewWorkOrdersCount = 0;
+        let destinationUpdatedWorkOrdersCount = 0;
+
+        // Count new and updated orders for source
+        week.sourceWorkOrderLifeCycleRecords.forEach(order => {
+            if (order.workOrderStatus.toLowerCase() === crucialSourceStatus.toLowerCase()) {
+                sourceNewWorkOrdersCount++;
+            } else {
+                sourceUpdatedWorkOrdersCount++;
+            }
+        });
+
+        // Count new and updated orders for destination
+        week.destinationWorkOrderLifeCycleRecords.forEach(order => {
+            if (order.workOrderStatus.toLowerCase() === crucialDestinationStatus.toLowerCase()) {
+                destinationNewWorkOrdersCount++;
+            } else {
+                destinationUpdatedWorkOrdersCount++;
+            }
+        });
+delete week.sourceWorkOrderLifeCycleRecords;
+delete week.destinationWorkOrderLifeCycleRecords;
+
+        // Add the new fields to each week
+        return {
+            ...week,
+            sourceNewWorkOrdersCount,
+            sourceUpdatedWorkOrdersCount,
+            destinationNewWorkOrdersCount,
+            destinationUpdatedWorkOrdersCount
+        };
+    });
+
+    return workOrderLifeCycleDocs;
+}
