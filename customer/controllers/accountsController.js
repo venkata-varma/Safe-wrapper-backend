@@ -342,7 +342,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             destinationWorkOrderLifeCycleRecordsCount:destinationWorkOrderLifeCycleRecords.length
         }));
     }
-//six weeks sales graph code
+//six weeks sales graph code-----------------------------------------------------------------------------------------------------------
 if(integrationsQuery){
   
     sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
