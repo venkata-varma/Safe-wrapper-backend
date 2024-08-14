@@ -5,6 +5,7 @@ const integrationsMasterControllers = require('../controllers/integrationsMaster
 const auth = require('../../middleware/authentication');
 
 router.get('/get-images', integrationsMasterControllers.getImages)
+router.get('/get-cpd-df-building-matched-details',integrationsMasterControllers.getCPDToDFMatchedBuildingDetails)
 
 router.use(auth)
 

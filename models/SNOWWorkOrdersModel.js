@@ -21,15 +21,15 @@ const SNOWWorkordersModelSchema = mongoose.Schema(
             default : null
         },
         SNOWWorkOrderId:{
-            type:String,
-            default:""
+            type:mongoose.Schema.Types.Mixed,
+            default:0
         },
         SNOWWorkOrders: {
             type: mongoose.Schema.Types.Mixed,
             default: null
         },
         SNOWWorkOrderStatus:{
-            type : String,
+            type : mongoose.Schema.Types.Mixed,
             default : ""
         },
         status: {

@@ -84,7 +84,8 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             role: 'super-admin',
         });
         await accountSettingsModel.create({
-            accountId: accountData._id
+            accountId: accountData._id,
+            timeZone : req.body.timeZone || "IST"
         })
         //To delete Password from Response while displaying it.
         delete accountData._doc.password;
