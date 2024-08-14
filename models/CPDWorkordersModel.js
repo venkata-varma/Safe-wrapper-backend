@@ -21,7 +21,7 @@ const CPDWorkordersModelSchema = mongoose.Schema(
             default : null
         },
         CPDWorkOrderId:{
-            type : Number,
+            type : mongoose.Schema.Types.Mixed,
             default : 0
         },
         CPDBranchId :{

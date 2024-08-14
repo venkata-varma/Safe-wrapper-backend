@@ -30,7 +30,9 @@ const { dateAsset } = require('../../utils/utilsFunctions');
 const { getServiceWorkOrdersAndStatus, getStatusFieldMappings, defaultSatusMappingKeys } = require("../../utils/general");
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../../utils/serviceProvidersAuthentication');
 const SNOWWorkOrdersModel = require("../../models/SNOWWorkOrdersModel");
-
+const { default: axios } = require("axios");
+const DFConfigurations = require('../../config/integrationsConfiguration');
+const { getAllDFBuldingsData, searchDFBuildingsByStateAndCountry, searchDFBuildingByNameAndStreet } = require("../../middleware/findDFBuildingOperation");
 
 /**
  * Get the static images.
@@ -139,6 +141,38 @@ exports.getImages = asyncWrapper(async (req, res) => {
     });
 });
 
+/**
+ * Get the serviceProvider Credentials to authenticate the dataforma.
+ * Get all DataForms buildingDetails from getAllDFBuldingsData.
+ * Search the buildings by country and state from searchDFBuildingByNameAndStreet.
+ * Search the matched building by CPD SpaceName and Street with the DF buildingName name and street from the getFilteredDFBuildings.
+ * @returns matchedDFBuildingData and partialBuildingsMatchedData.
+ */
+exports.getCPDToDFMatchedBuildingDetails = asyncWrapper(async (req, res) => {
+  const { ServiceLocation } = req.body
+
+  // Find list of DF credentails (encrypted) & then decrypt. 
+  let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: new mongoose.Types.ObjectId('66699103a176298d9f79dfdd'), serviceProvider: "DF" });
+  let credentailsObj = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
+  let decryptConfigCredentials = JSON.parse(await decryptData(credentailsObj, process.env.CRYPTO_KEY))
+
+  const getDFBuildingDetails = await getAllDFBuldingsData(decryptConfigCredentials)
+  const serviceLocationCountry = ServiceLocation.Address.Country === "US" ? "USA" : "USA"
+  const getFilteredDFBuildings = await searchDFBuildingsByStateAndCountry(serviceLocationCountry, ServiceLocation.Address.State, getDFBuildingDetails)
+  const getMatchedDFBuilding = await searchDFBuildingByNameAndStreet(ServiceLocation, getFilteredDFBuildings)
+
+  
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: "DF Building Details.",
+      data: {
+        matchedDFBuildingData:getMatchedDFBuilding.matchedDFBuildingData,
+        partialBuildingsMatchedData: getMatchedDFBuilding.partialBuildingsMatchedData
+      },
+    });
+})
 
 
 /**
@@ -151,8 +185,9 @@ exports.getImages = asyncWrapper(async (req, res) => {
 exports.getGlobalConstants = asyncWrapper(async (req, res) => {
   const fieldMappingMasterDefaultServices = await fieldMappingMasterDefaultServicesModel.find({});
   const fieldMappingsMasters = await fieldMappingsMasterModel.find({});
-  const serviceproviderlists = await serviceProviderListModel.find({});
+  // const serviceproviderlists = await serviceProviderListModel.find({});
   const serviceProvidersMappingAndServices = await serviceProvidersMappingAndServicesModel.find({});
+  const timeZones = ["GMT", "UTC", "IST", "CST", "PST", "PDT", "CAT", "ECT", "PDT"]
 
   const cronSchedulePicker = {
     eachSecond: 'each second',
@@ -175,7 +210,10 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
       data: {
-        fieldMappingMasterDefaultServices, fieldMappingsMasters, serviceproviderlists, cronSchedulePicker,
+        fieldMappingMasterDefaultServices, fieldMappingsMasters, 
+        timeZones,
+        // serviceproviderlists, 
+        cronSchedulePicker,
         serviceProvidersMappingAndServices, dataPointsAccess
       },
     });
@@ -460,7 +498,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
           serviceName: "work-order",
           createdBy: req.user._id,
           dataPoints: fromAndTo.dataPoints,
-          requiredKeys: getRequiredKeys.requiredKeys
+          requiredKeys: getRequiredKeys.requiredKeys || {}
         })
       } else {
         // nothing
@@ -1060,6 +1098,9 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
             // console.log('CYS Credentials:', toCredentials);
             // console.log('integrationsMasterDetails:===', integrationsMasterDetails)
             await CYSOperations.CYSCreateWorkorders(toCredentials, "manual");
+          } else if (integrationsMasterDetails.to === 'SNOW') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "SNOW" }).lean();
+            await SNOWOperations.SNOWCreateIncidents(toCredentials, "manual");
           }
           break;
 

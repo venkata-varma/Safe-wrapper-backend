@@ -13,6 +13,7 @@ const workOrderLifeCycleModel = require('../models/workOrderLifeCycleModel');
 const CPDtoDFBuildingMasterModel = require('../models/CPDtoDFBuildingMasterModel');
 const integrationsSettingsModel = require('../models/integrationsSettingsModel');
 const { exceptionLogs } = require('./exceptionOperation');
+const { searchDFBuildingsByStateAndCountry, getAllDFBuldingsData, searchDFBuildingByNameAndStreet } = require('./findDFBuildingOperation');
 
 /**
  * 
@@ -63,72 +64,49 @@ const getDFTypeListIdFromSearchAPI = async (fieldmappingkeys, decryptConfigCrede
 }
 
 /**
+ * Get all DataForms buildingDetails from getAllDFBuldingsData.
+ * Search the buildings by country and state from searchDFBuildingByNameAndStreet.
+ * Search the matched building by CPD SpaceName and Street with the DF buildingName name and street from the getFilteredDFBuildings.
  * Check wheather we have the required buildingId and salespersonId by spaceName from CPDWorkOrders.
  * If not, From the CPDWorkOrders get location name.
- * From Serach buildings API get all building data of DF and then compare the location names from CPD and DF.
- * When the location name matches assign the buildingId and salesPersonId values in fieldMappingkeys object.
- * Else assign the buildingId and salesPersonId default values.
+ * Assign the BuildingId and salesPersionId to the fieldMappingkeys object and then Insert a record into the CPDtoDFBuildingMasterModel.
+ * Else assign the buildingId and salesPersonId default values from CPDtoDFBuildingMasterModel.
+ * If no building in the dataForma matches the spaceName and street, assign the buildingId and salesPersonId values from the CPDWorkOrders response.
  * @returns fieldmappingKeys.
  */
 
-const getDFBuildingId = async(CPDWorkOrders,fieldmappingkeys, decryptConfigCredentials, integrationObject, CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId) => {
-    const getBuildingDetails = await CPDtoDFBuildingMasterModel.find({CPDBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase(), DFBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase()})
-    if(getBuildingDetails.length <= 0){
-        let getBuildingConfig = {
-            method: 'get',
-            maxBodyLength: Infinity,
-            url: `${DFConfigurations.DF.searchbuildings.URL}`,
-            headers: {
-                'df-auth': decryptConfigCredentials.df_auth,
-                'df-servicecode': decryptConfigCredentials.df_servicecode,
-                'Content-Type': 'application/json',
-            }
-        }
-        const getDFBuildingData = await axios.request(getBuildingConfig)
-        .then((response) => {
-            // console.log("getDFBuildingData:===", JSON.stringify(response.data));
-            return response.data
-        })
-        .catch(async (error) => {
-            console.log("getDFBuildingIdERROR:==", error);
-            await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.url +" /n data: No building data available."), "df-search-buildings", CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
-        });
-        if(getDFBuildingData !== undefined){
-            let buildingIdDetails = getDFBuildingData.find((item) => {
-                return item.name.toLowerCase() === CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase();
-            });
-            console.log("buildingIdDetails:==",buildingIdDetails)
-    
-            if(buildingIdDetails){
-                fieldmappingkeys.buildingId = buildingIdDetails.id;
-                fieldmappingkeys.salespersonId = buildingIdDetails.defaultSalesPersonId
-    
+const getDFBuildingId = async (CPDWorkOrders, fieldmappingkeys, decryptConfigCredentials, integrationObject, CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId) => {
+   const getDFBuildingData = await getAllDFBuldingsData(decryptConfigCredentials, integrationObject, CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
+        if (getDFBuildingData !== undefined) {
+            const serviceLocationCountry = CPDWorkOrders.ServiceLocation.Address.Country === "US" ? "USA" : "USA"
+            const getFilteredDFBuildings = await searchDFBuildingsByStateAndCountry(serviceLocationCountry, CPDWorkOrders.ServiceLocation.Address.State, getDFBuildingData)
+            const getMatchedDFBuilding = await searchDFBuildingByNameAndStreet(CPDWorkOrders.ServiceLocation, getFilteredDFBuildings)
+            const searchBuildingData = await CPDtoDFBuildingMasterModel.find({ CPDBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase(), DFBuildingName: getMatchedDFBuilding.matchedDFBuildingData.name.toLowerCase() })
+
+            if(searchBuildingData.length <= 0){  
+                fieldmappingkeys.buildingId = getMatchedDFBuilding.matchedDFBuildingData.id;
+                fieldmappingkeys.salespersonId = getMatchedDFBuilding.matchedDFBuildingData.defaultSalesPersonId         
                 await CPDtoDFBuildingMasterModel.create({
-                    DFBuildingId : buildingIdDetails.id,
-                    DFSalesPersonId : buildingIdDetails.defaultSalesPersonId,
-                    DFInvoiceRootId : buildingIdDetails.defaultInvoiceToRootId,
-                    DFBuildingName : buildingIdDetails.name.toLowerCase(),
-                    DFBuildingObject : buildingIdDetails,
-                    CPDBuildingName : CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase(),
-                    CPDOccupantId : CPDWorkOrders.ServiceLocation.OccupantID,
-                    CPDOccupantSpaceId : CPDWorkOrders.ServiceLocation.SpaceId,
-                    CPDBuildingObject : CPDWorkOrders.ServiceLocation
-                })
+                    DFBuildingId: getMatchedDFBuilding.matchedDFBuildingData.id,
+                    DFSalesPersonId: getMatchedDFBuilding.matchedDFBuildingData.defaultSalesPersonId,
+                    DFInvoiceRootId: getMatchedDFBuilding.matchedDFBuildingData.defaultInvoiceToRootId,
+                    DFBuildingName: getMatchedDFBuilding.matchedDFBuildingData.name.toLowerCase(),
+                    DFBuildingObject: getMatchedDFBuilding.matchedDFBuildingData,
+                    CPDBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase(),
+                    CPDOccupantId: CPDWorkOrders.ServiceLocation.OccupantID,
+                    CPDOccupantSpaceId: CPDWorkOrders.ServiceLocation.SpaceId,
+                    CPDBuildingObject: CPDWorkOrders.ServiceLocation
+                })                
             }
-            else{
-                // nothing
-            }
-        }
-        else{
-            fieldmappingkeys.buildingId = CPDWorkOrders.ServiceLocation.OccupantID 
+            else {
+                fieldmappingkeys.buildingId = searchBuildingData[0].DFBuildingId
+                fieldmappingkeys.salespersonId = searchBuildingData[0].DFSalesPersonId
+            }            
+        } else {
+            fieldmappingkeys.buildingId = CPDWorkOrders.ServiceLocation.OccupantID
             fieldmappingkeys.salespersonId = ""
-        }
-        }
-        else{
-            fieldmappingkeys.buildingId    = getBuildingDetails[0].DFBuildingId || CPDWorkOrders.ServiceLocation.OccupantID
-            fieldmappingkeys.salespersonId = getBuildingDetails[0].DFSalesPersonId || ""
-        }   
-        
+        }  
+   
     return fieldmappingkeys;
 }
 
@@ -256,13 +234,13 @@ const getWorkOrderStatusFieldMappingkeys = async (integrationFieldMappingkeys, C
 exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
     if (integrationFieldObject !== undefined) {
         let fieldmappingkeys = {}
-        let workOrderPushedCount = 0
         for (let integrationObject of integrationFieldObject) {
+            let workOrderPushedCount = 0
             // find initiated count of WO to push to DF. 
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
             
             if (integrationObject.serviceMethod === "create") {
-
+               
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
                     fieldmappingkeys = integrationObject.dataPoints
@@ -353,7 +331,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 });
                                 await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
                                 workOrderPushedCount++
-                                await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
+                                await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { $inc:{pushedCount: workOrderPushedCount} }, { new: true });
                                 // insert work order life cycle.
                                 await workOrderLifeCycleModel.create({
                                     workOrderId: DFWorkOrderId,
