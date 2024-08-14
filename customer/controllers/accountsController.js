@@ -16,7 +16,7 @@ const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports } = require('../../utils/general')
-const {sourceWorkOrderLifeCycleDetails,destinationWorkOrderLifeCycleDetails}=require('../../utils/accountInsightUtils')
+const { sourceWorkOrderLifeCycleDetails, destinationWorkOrderLifeCycleDetails } = require('../../utils/accountInsightUtils')
 
 /*
 Miidleware function to controller, "createAccount"
@@ -247,81 +247,110 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const integrationsQuery = req.query.integration;
     const accountId = req.params.accountId;
-let sourceWorkOrderLifeCycle ,destinationWorkOrderLifeCycle;
-    //const integrationsQuery = req.query.integration;
-    const priorityQuery = req.query.priority ? req.query.priority.toLowerCase() : null;;
+    var sourceWorkOrderLifeCycle, destinationWorkOrderLifeCycle;
+    
+    // Retrieve query parameters
+    const priorityQuery = req.query.priority ? req.query.priority.toLowerCase() : null;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
     const toDateQuery = req.query.toDate ? new Date(new Date(req.query.toDate).setDate(new Date(req.query.toDate).getDate() + 1)) : (fromDateQuery ? new Date() : null);
     const searchQuery = req.query.search ? new RegExp(`${(req.query.search).toString()}`, 'i') : null;
 
     // Define valid priority values
     const validPriorities = ['all', 'high', 'medium', 'low'];
+    
     var accountReports = [];
     var sixWeeksSalesGraph = [];
-    if (integrationsQuery === 'null' || !integrationsQuery) {
 
-        accountReports = []
+    if (integrationsQuery === 'null' || !integrationsQuery) {
+        accountReports = [];
         sixWeeksSalesGraph = [];
     } else if (integrationsQuery) {
         if (priorityQuery && !validPriorities.includes(priorityQuery)) {
-            accountReports = []
-        }
-accountReports=await integrationsMasterModel.aggregate([
-    {
-        $match: {
-            accountId: new mongoose.Types.ObjectId(req.params.accountId),
-            status: "active",
-            ...(integrationsQuery !== 'all-integrations' && {
-                _id: new mongoose.Types.ObjectId(integrationsQuery)
-            })
-        }
-    },
-    {
-        $lookup: {
-            from: "integrationsexceptions",
-            localField: "_id",
-            foreignField: "integrationsMasterId",
-            as: "integrationsExceptions"
-        }
-    },
-    {
-        $addFields: {
-            integrationsExceptions: {
-                $filter: {
-                    input: "$integrationsExceptions",
-                    as: "exception",
-                    cond: {
-                        $and: [
-                            ...(fromDateQuery ? [
-                                { $gte: ["$$exception.createdAt", fromDateQuery] },
-                                { $lte: ["$$exception.createdAt", toDateQuery] }
-                            ] : [])
-                        ]
+            accountReports = [];
+        } else if (priorityQuery && validPriorities.includes(priorityQuery)) {
+            accountReports = await integrationsMasterModel.aggregate([
+                {
+                    $match: {
+                        accountId: new mongoose.Types.ObjectId(req.params.accountId),
+                        status: "active",
+                        ...(integrationsQuery !== 'all-integrations' && {
+                            _id: new mongoose.Types.ObjectId(integrationsQuery)
+                        })
                     }
-                }
-            }
+                },
+                {
+                    $lookup: {
+                        from: "integrationsexceptions",
+                        localField: "_id",
+                        foreignField: "integrationsMasterId",
+                        as: "integrationsExceptions"
+                    }
+                },
+                {
+                    $addFields: {
+                        integrationsExceptions: {
+                            $filter: {
+                                input: "$integrationsExceptions",
+                                as: "exception",
+                                cond: {
+                                    $and: [
+                                        ...(fromDateQuery ? [
+                                            { $gte: ["$$exception.createdAt", fromDateQuery] },
+                                            { $lte: ["$$exception.createdAt", toDateQuery] }
+                                        ] : [])
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+            ]);
         }
-    },
-])
-  console.log("acc", accountReports)
+    }
 
-const integrationSource=accountReports[0].from;
-const integrationDestination=accountReports[0].to;
-sourceWorkOrderLifeCycle=await sourceWorkOrderLifeCycleDetails(integrationSource, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities, accountId)
- destinationWorkOrderLifeCycle=await sourceWorkOrderLifeCycleDetails(integrationDestination, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities, accountId)
+    if (accountReports.length > 0) {
+        const integrationSource = accountReports[0].from;
+        const integrationDestination = accountReports[0].to;
 
-}
+        sourceWorkOrderLifeCycle = await sourceWorkOrderLifeCycleDetails(
+            integrationSource, 
+            integrationsQuery, 
+            priorityQuery, 
+            fromDateQuery, 
+            toDateQuery, 
+            searchQuery, 
+            validPriorities, 
+            accountId
+        );
+
+        destinationWorkOrderLifeCycle = await sourceWorkOrderLifeCycleDetails(
+            integrationDestination, 
+            integrationsQuery, 
+            priorityQuery, 
+            fromDateQuery, 
+            toDateQuery, 
+            searchQuery, 
+            validPriorities, 
+            accountId
+        );
+
+        // Add the new properties to each item in accountReports
+        accountReports = accountReports.map(report => ({
+            ...report,
+            sourceWorkOrderLifeCycle,
+            destinationWorkOrderLifeCycle
+        }));
+    }
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED,
         data: {
             accountReports,
-            sourceWorkOrderLifeCycle,
-            destinationWorkOrderLifeCycle
+
             // sixWeeksSalesGraph
         },
-    })
+    });
 });
 
 /**
