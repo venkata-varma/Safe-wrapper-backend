@@ -224,8 +224,8 @@ exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKey
                 destinationUpdatedWorkOrdersCount++;
             }
         });
-delete week.sourceWorkOrderLifeCycleRecords;
-delete week.destinationWorkOrderLifeCycleRecords;
+//delete week.sourceWorkOrderLifeCycleRecords;
+//delete week.destinationWorkOrderLifeCycleRecords;
 
         // Add the new fields to each week
         return {
