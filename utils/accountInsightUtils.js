@@ -106,7 +106,7 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
  */
 exports.sixWeeksSalesDetails=async(source,destination,integrationsQuery, accountId, statusFieldMappingKeys, integrationExceptions)=>{
 var sixWeekSalesData=sixWeekSales
-console.log("sixWeekSalesData", sixWeekSalesData)
+// console.log("sixWeekSalesData", sixWeekSalesData)
     const workOrderLifeCycleDetails=await workOrderLifeCycleModel.aggregate([
         {
             $match:{
@@ -172,7 +172,7 @@ var  integrationExceptionsRecordsPerWeek=[]
 
 
 exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKeys, source, destination) => {
-    console.log("statusFieldMappingKeys", statusFieldMappingKeys);
+    // console.log("statusFieldMappingKeys", statusFieldMappingKeys);
     
     var serviceProviderNewStatus;
     switch (source) {
@@ -198,7 +198,7 @@ exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKey
         }
     }
 
-    console.log("crucialSourceStatus, crucialDestinationStatus", crucialSourceStatus, crucialDestinationStatus);
+    // console.log("crucialSourceStatus, crucialDestinationStatus", crucialSourceStatus, crucialDestinationStatus);
 
     // Loop through each week in workOrderLifeCycleDocs
     sixWeekLifeCycleDocs = sixWeekLifeCycleDocs.map((week) => {
@@ -224,8 +224,10 @@ exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKey
                 destinationUpdatedWorkOrdersCount++;
             }
         });
-//delete week.sourceWorkOrderLifeCycleRecords;
-//delete week.destinationWorkOrderLifeCycleRecords;
+delete week.sourceWorkOrderLifeCycleRecords;
+delete week.destinationWorkOrderLifeCycleRecords;
+delete week.integrationExceptionsRecordsPerWeek;
+
 
         // Add the new fields to each week
         return {

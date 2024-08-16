@@ -411,7 +411,7 @@ if(sixWeeksSalesGraph.length>0){
         data: {
             accountReports,
 
-             sixWeeksSalesGraph
+            sixWeeksSalesGraph: sixWeeksSalesGraph[0].sixWeekLifeCycleDocs
         },
     });
 });
