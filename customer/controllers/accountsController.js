@@ -169,7 +169,10 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
             }
         },
         {
-            $unwind: "$integrationSettings"
+            $unwind: {
+                path: "$integrationSettings",
+                preserveNullAndEmptyArrays: true // This will keep documents without matching integrationSettings
+            }
         },
         {
             $addFields: {
@@ -189,10 +192,9 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
                 as: "workorderlifecycles"
             }
         }
-
     ]);
-    const workOrderReports = await integationOfAccountWorkOrderReports(integrationsOfAccount)
 
+    const workOrderReports = await integationOfAccountWorkOrderReports(integrationsOfAccount)
     const failedCPDWorkOrders = await integrationsMasterModel.aggregate([
         {
             $match: {
