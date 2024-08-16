@@ -249,7 +249,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     const accountId = req.params.accountId;
     var sourceWorkOrderLifeCycleRecords, destinationWorkOrderLifeCycleRecords;
     var sourceWorkOrderLifeCycleCounts, destinationWorkOrderLifeCycleCounts
-    var workOrderLifeCycleDocs;
+    var sixWeekLifeCycleDocs;
     // Retrieve query parameters
     const priorityQuery = req.query.priority ? req.query.priority.toLowerCase() : null;
     const fromDateQuery = req.query.fromDate ? new Date(req.query.fromDate) : null;
@@ -261,8 +261,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     
     var accountReports = [];
     var sixWeeksSalesGraph = [];
-
-    if (integrationsQuery === 'null' || !integrationsQuery) {
+   if (integrationsQuery === 'null' || !integrationsQuery) {
         accountReports = [];
         sixWeeksSalesGraph = [];
     } else if (integrationsQuery) {
@@ -388,13 +387,13 @@ if(integrationsQuery){
 if(sixWeeksSalesGraph.length>0){
     const integrationSource = sixWeeksSalesGraph[0].from;
     const integrationDestination = sixWeeksSalesGraph[0].to;
-     workOrderLifeCycleDocs=await sixWeeksSalesDetails(integrationSource,integrationDestination, integrationsQuery, accountId, sixWeeksSalesGraph[0].statusFieldMappingKeys ,sixWeeksSalesGraph[0].integrationExceptions) 
-     workOrderLifeCycleDocs=await mapNewUpdatedCounts(workOrderLifeCycleDocs, sixWeeksSalesGraph[0].statusFieldMappingKeys, integrationSource,integrationDestination, )
+    sixWeekLifeCycleDocs=await sixWeeksSalesDetails(integrationSource,integrationDestination, integrationsQuery, accountId, sixWeeksSalesGraph[0].statusFieldMappingKeys ,sixWeeksSalesGraph[0].integrationExceptions) 
+    sixWeekLifeCycleDocs=await mapNewUpdatedCounts(sixWeekLifeCycleDocs, sixWeeksSalesGraph[0].statusFieldMappingKeys, integrationSource,integrationDestination, )
 
       //destinationWorkOrderLifeCycleCounts=await sixWeeksSalesDetails(integrationDestination, integrationsQuery, accountId, sixWeeksSalesGraph[0].statusFieldMappingKeys)
       sixWeeksSalesGraph = sixWeeksSalesGraph.map(report => ({
         ...report,
-        workOrderLifeCycleDocs,
+        sixWeekLifeCycleDocs,
 
     }));
 

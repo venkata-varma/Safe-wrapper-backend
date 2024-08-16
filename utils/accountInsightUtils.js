@@ -171,7 +171,7 @@ var  integrationExceptionsRecordsPerWeek=[]
 }
 
 
-exports.mapNewUpdatedCounts = async (workOrderLifeCycleDocs, statusFieldMappingKeys, source, destination) => {
+exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKeys, source, destination) => {
     console.log("statusFieldMappingKeys", statusFieldMappingKeys);
     
     var serviceProviderNewStatus;
@@ -201,7 +201,7 @@ exports.mapNewUpdatedCounts = async (workOrderLifeCycleDocs, statusFieldMappingK
     console.log("crucialSourceStatus, crucialDestinationStatus", crucialSourceStatus, crucialDestinationStatus);
 
     // Loop through each week in workOrderLifeCycleDocs
-    workOrderLifeCycleDocs = workOrderLifeCycleDocs.map((week) => {
+    sixWeekLifeCycleDocs = sixWeekLifeCycleDocs.map((week) => {
         let sourceNewWorkOrdersCount = 0;
         let sourceUpdatedWorkOrdersCount = 0;
         let destinationNewWorkOrdersCount = 0;
@@ -237,5 +237,5 @@ delete week.destinationWorkOrderLifeCycleRecords;
         };
     });
 
-    return workOrderLifeCycleDocs;
+    return sixWeekLifeCycleDocs;
 }
