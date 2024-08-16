@@ -231,7 +231,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_INFORMATION,
         data: {
             accountInformation,
-            integationOfAccountWorkOrderReports: workOrderReports,
+            integrationsOfAccount: workOrderReports,
             integrationExceptionsCount: integrationExceptions,
             dataSyncCount: integrationsActivitylogCount,
             failedCPDWorkOrders,
