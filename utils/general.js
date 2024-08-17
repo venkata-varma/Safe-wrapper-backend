@@ -266,77 +266,143 @@ const getStatusFieldMappings = async(integrationMasterId) => {
  * If v length is less than 0 moves to else and then search for the input workOrderId have source and destination work orders.
  */
 const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterId, from, to, workOrderId) => {
-  let sourceWorkOrderDetails, destinationWorkOrderDetails
-  let  sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: workOrderId });
-  let  destinationWorkOrderLifeCycleDetails
-  console.log('sourceWorkOrderLifeCycleDetails:==',sourceWorkOrderLifeCycleDetails)
-  if(sourceWorkOrderLifeCycleDetails.length > 0){
-      sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, CPDWorkOrderId: workOrderId })
-      //Input workOrderId is source WorkOrderId
-      if(sourceWorkOrderDetails){
-        console.log('source workOrderId')
-        if(from === 'CPD' && to === 'DF'){
-          destinationWorkOrderDetails = await DFWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "DFWorkOrders.numberAlt": sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber })
-          sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
-          destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.DFWorkOrderId });
-        }
-        else if(from === 'CPD' && to === 'CYS'){
-          destinationWorkOrderDetails = await CYSWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "CYSWorkOrders.estimate.PONumber": workOrderId })
-          sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
-          destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.CYSWorkOrderId });
-        }
-        else if(from === 'CPD' && to === 'SNOW'){
-          destinationWorkOrderDetails = await SNOWWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "SNOWWorkOrders.user_input": sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber })
-          sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
-          destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.SNOWWorkOrderId });
-        }
-      }
-      //Input workOrderId is destination WorkorderID
-      else{
-        console.log('destination WorkorderID')
-        if(from === 'CPD' && to === 'DF'){
-          destinationWorkOrderDetails = await DFWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, DFWorkOrderId:workOrderId })
-          sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "CPDWorkOrders.WorkOrderNumber": destinationWorkOrderDetails.DFWorkOrders.numberAlt })
-          sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
-          destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: workOrderId });
-        }
-        else if(from === 'CPD' && to === 'CYS'){
-          destinationWorkOrderDetails = await CYSWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, CYSWorkOrderId: workOrderId })
-          sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, CPDWorkOrderId: destinationWorkOrderDetails.CYSWorkOrders.estimate.PONumber })
-          sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
-          destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: workOrderId });
-        }
-        else if(from === 'CPD' && to === 'SNOW'){
-          destinationWorkOrderDetails = await SNOWWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, SNOWWorkOrderId: workOrderId })
-          sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "CPDWorkOrders.WorkOrderNumber": destinationWorkOrderDetails.SNOWWorkOrders.user_input })
-          sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId})
-          destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: workOrderId });
-        }
-      }
-    
-  }
-  //Input workOrderId is source WorkOrderNumber
-  else{
-    console.log('source WorkOrderNumber')
+  let sourceWorkOrderDetails, destinationWorkOrderDetails;
+  let sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({
+    accountId,
+    integrationsMasterId,
+    workOrderId,
+  });
+  let destinationWorkOrderLifeCycleDetails;
+  let errorMessage = '';
 
-    sourceWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "CPDWorkOrders.WorkOrderNumber": workOrderId })
-    sourceWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: sourceWorkOrderDetails.CPDWorkOrderId });
-      if(from === 'CPD' && to === 'DF'){
-        destinationWorkOrderDetails = await DFWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "DFWorkOrders.numberAlt": workOrderId })
-        destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.DFWorkOrderId });
+
+
+  const fetchSourceWorkOrderDetails = async (model, query) => {
+    return await model.findOne(query);
+  };
+
+  const fetchWorkOrderLifeCycleDetails = async (workOrderId) => {
+    return await workOrderLifeCycleModel.find({
+      accountId,
+      integrationsMasterId,
+      workOrderId,
+    });
+  };
+
+  const handleError = (message) => {
+    errorMessage = message;
+    return errorMessage;
+  };
+//If Input work order Id is Number type and of from source side
+  if (sourceWorkOrderLifeCycleDetails.length > 0) {
+    sourceWorkOrderDetails = await fetchSourceWorkOrderDetails(CPDWorkordersModel, {
+      accountId,
+      integrationsMasterId,
+      CPDWorkOrderId: parseInt(workOrderId),
+    });
+
+    if (sourceWorkOrderDetails) {
+      console.log('source workOrderId');
+      if (from === 'CPD' && to === 'DF') {
+        destinationWorkOrderDetails = await fetchSourceWorkOrderDetails(DFWorkOrdersModel, {
+          accountId,
+          integrationsMasterId,
+          'DFWorkOrders.numberAlt': sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber,
+        });
+      } else if (from === 'CPD' && to === 'CYS') {
+        destinationWorkOrderDetails = await fetchSourceWorkOrderDetails(CYSWorkordersModel, {
+          accountId,
+          integrationsMasterId,
+          'CYSWorkOrders.estimate.PONumber': workOrderId,
+        });
       }
-      else if(from === 'CPD' && to === 'CYS'){
-        destinationWorkOrderDetails = await CYSWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "CYSWorkOrders.estimate.PONumber": sourceWorkOrderDetails.CPDWorkOrderId.toString() })
-        destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.CYSWorkOrderId });
+
+      sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
+      destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.DFWorkOrderId || destinationWorkOrderDetails?.CYSWorkOrderId);
+    } else {
+      //If Input work order Id is Number type and of from Destination side
+      console.log('destination WorkorderID');
+      if (from === 'CPD' && to === 'DF') {
+        destinationWorkOrderDetails = await fetchSourceWorkOrderDetails(DFWorkOrdersModel, {
+          accountId,
+          integrationsMasterId,
+          DFWorkOrderId: parseInt(workOrderId),
+        });
+
+        if (!destinationWorkOrderDetails) {
+          return handleError('Invalid workorder id');
+        }
+
+        sourceWorkOrderDetails = await fetchSourceWorkOrderDetails(CPDWorkordersModel, {
+          accountId,
+          integrationsMasterId,
+          'CPDWorkOrders.WorkOrderNumber': destinationWorkOrderDetails.DFWorkOrders.numberAlt,
+        });
+
+        sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
+        destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(workOrderId);
+      } else if (from === 'CPD' && to === 'CYS') {
+        destinationWorkOrderDetails = await fetchSourceWorkOrderDetails(CYSWorkordersModel, {
+          accountId,
+          integrationsMasterId,
+          CYSWorkOrderId: parseInt(workOrderId),
+        });
+
+        if (!destinationWorkOrderDetails) {
+          return handleError('Invalid workorder id');
+        }
+
+        sourceWorkOrderDetails = await fetchSourceWorkOrderDetails(CPDWorkordersModel, {
+          accountId,
+          integrationsMasterId,
+          CPDWorkOrderId: parseInt(destinationWorkOrderDetails.CYSWorkOrders.estimate.PONumber),
+        });
+
+        sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
+        destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(workOrderId);
       }
-      else if(from === 'CPD' && to === 'SNOW'){
-        destinationWorkOrderDetails = await SNOWWorkOrdersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, "SNOWWorkOrders.user_input": sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber })
-        destinationWorkOrderLifeCycleDetails = await workOrderLifeCycleModel.find({ accountId: accountId, integrationsMasterId: integrationsMasterId, workOrderId: destinationWorkOrderDetails.SNOWWorkOrderId });
-      }
+    }
+  } else {
+    console.log('source WorkOrderNumber');
+    sourceWorkOrderDetails = await fetchSourceWorkOrderDetails(CPDWorkordersModel, {
+      accountId,
+      integrationsMasterId,
+      'CPDWorkOrders.WorkOrderNumber': workOrderId,
+    });
+
+    if (!sourceWorkOrderDetails) {
+      return handleError('Invalid workorder id');
+    }
+
+    sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
+
+    if (from === 'CPD' && to === 'DF') {
+      destinationWorkOrderDetails = await fetchSourceWorkOrderDetails(DFWorkOrdersModel, {
+        accountId,
+        integrationsMasterId,
+        'DFWorkOrders.numberAlt': workOrderId,
+      });
+
+      destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.DFWorkOrderId);
+    } else if (from === 'CPD' && to === 'CYS') {
+      destinationWorkOrderDetails = await fetchSourceWorkOrderDetails(CYSWorkordersModel, {
+        accountId,
+        integrationsMasterId,
+        'CYSWorkOrders.estimate.PONumber': sourceWorkOrderDetails.CPDWorkOrderId.toString(),
+      });
+
+      destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.CYSWorkOrderId);
+    }
   }
-  return {sourceWorkOrderLifeCycleDetails, destinationWorkOrderLifeCycleDetails, sourceWorkOrderDetails, destinationWorkOrderDetails}
-  
-}
+
+  if (errorMessage) {
+    return errorMessage;
+  } else {
+    return { sourceWorkOrderLifeCycleDetails, destinationWorkOrderLifeCycleDetails, sourceWorkOrderDetails, destinationWorkOrderDetails };
+  }
+};
+
+
 
 const getServiceProviderName = async(serviceProviderName) => {
   if(serviceProviderName === 'CPD'){
