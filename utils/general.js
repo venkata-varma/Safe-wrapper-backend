@@ -305,7 +305,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
     sourceWorkOrderDetails = await fetchWorkOrderDetails(CPDWorkordersModel, {
       accountId,
       integrationsMasterId,
-      CPDWorkOrderId: parseInt(workOrderId),
+      $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },workOrderId]}
     });
 
     if (sourceWorkOrderDetails) {
@@ -340,7 +340,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         destinationWorkOrderDetails = await fetchWorkOrderDetails(DFWorkOrdersModel, {
           accountId,
           integrationsMasterId,
-          DFWorkOrderId: parseInt(workOrderId),
+          $expr: { $eq: [{ $toString: "$DFWorkOrderId" },workOrderId]}  ,
         });
 
         if (!destinationWorkOrderDetails) {
@@ -359,7 +359,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         destinationWorkOrderDetails = await fetchWorkOrderDetails(CYSWorkordersModel, {
           accountId,
           integrationsMasterId,
-          CYSWorkOrderId: parseInt(workOrderId),
+          $expr: { $eq: [{ $toString: "$CYSWorkOrderId" },workOrderId]}  ,
         });
 
         if (!destinationWorkOrderDetails) {
@@ -369,7 +369,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         sourceWorkOrderDetails = await fetchWorkOrderDetails(CPDWorkordersModel, {
           accountId,
           integrationsMasterId,
-          CPDWorkOrderId: parseInt(destinationWorkOrderDetails.CYSWorkOrders.estimate.PONumber),
+          $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },destinationWorkOrderDetails.CYSWorkOrders.estimate.PONumber]} 
         });
 
         sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
@@ -388,7 +388,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         sourceWorkOrderDetails = await fetchWorkOrderDetails(CPDWorkordersModel, {
           accountId,
           integrationsMasterId,
-          CPDWorkOrderId: parseInt(destinationWorkOrderDetails.SNOWWorkOrders.order),
+          $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },destinationWorkOrderDetails.SNOWWorkOrders.order]} 
         });
 
         sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
