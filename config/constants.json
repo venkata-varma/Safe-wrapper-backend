@@ -90,7 +90,7 @@
     "MESSAGE_INTEGRATION_ID_NOT_ACTIVE": "Respective integration is not in active state. Please contact admin.",
     "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials.",
     "MESSAGE_ONLY_CUSTOMER_ENTRY":"No access. Access restricted for this site.",
-    "MESSAGE_WORKORDER_ID_INVALID":"Invalid input params- WorkorderId."
+    "MESSAGE_WORKORDER_ID_INVALID":"Invalid WorkorderId / Integration ."
   },
   "statusCodes": {
     "FORBIDDEN": 403,
