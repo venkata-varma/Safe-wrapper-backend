@@ -16,7 +16,7 @@ const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports } = require('../../utils/general')
-const { workOrderLifeCycleReports, sixWeeksSalesDetails, mapNewUpdatedCounts,  } = require('../../utils/accountInsightUtils')
+const { workOrderLifeCycleReports, sixWeeksSalesDetails, mapNewUpdatedCounts,  mapNewUpdatedWorkOrdersCounts} = require('../../utils/accountInsightUtils')
 
 /*
 Miidleware function to controller, "createAccount"
@@ -287,6 +287,27 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                     }
                 },
                 {
+                    $lookup: {
+                        from: "integrationssettings",
+                        localField: "_id",
+                        foreignField: "integrationsMasterId",
+                        as: "integrationSettings"
+                    }
+                },
+                {
+                    $unwind: "$integrationSettings"
+                },
+                {
+                    $addFields: {
+                        statusFieldMappingKeys: "$integrationSettings.statusFieldMappingKeys"
+                    }
+                },
+                {
+                    $project: {
+                        integrationSettings: 0
+                    }
+                },
+                {
                     $addFields: {
                         integrationsExceptions: {
                             $filter: {
@@ -311,7 +332,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
     if (accountReports.length > 0) {
         const integrationSource = accountReports[0].from;
         const integrationDestination = accountReports[0].to;
-
+        const newAndUpdatedWorkOrdersCount =await mapNewUpdatedWorkOrdersCounts(accountReports[0].statusFieldMappingKeys, integrationSource, integrationDestination, fromDateQuery, toDateQuery, integrationsQuery, accountId)
         sourceWorkOrderLifeCycleRecords = await workOrderLifeCycleReports(
             integrationSource, 
             integrationsQuery, 
@@ -339,8 +360,8 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             ...report,
             sourceWorkOrderLifeCycleRecords,
             destinationWorkOrderLifeCycleRecords,
-            sourceWorkOrderLifeCycleRecordsCount:sourceWorkOrderLifeCycleRecords.length,
-            destinationWorkOrderLifeCycleRecordsCount:destinationWorkOrderLifeCycleRecords.length
+            
+            ...newAndUpdatedWorkOrdersCount
         }));
     }
 //six weeks sales graph code-----------------------------------------------------------------------------------------------------------
