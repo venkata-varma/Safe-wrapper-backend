@@ -6,6 +6,20 @@ const SNOWWorkOrdersModel = require("../models/SNOWWorkOrdersModel")
 const CYSWorkordersModel = require("../models/CYSWorkordersModel")
 const { sixWeekSales } = require('../utils/sixWeekSalesFunction')
 
+/**
+ * 
+ * @param {*} SourceOrDestination 
+ * @param {*} integrationsQuery 
+ * @param {*} priorityQuery 
+ * @param {*} fromDateQuery 
+ * @param {*} toDateQuery 
+ * @param {*} searchQuery 
+ * @param {*} validPriorities 
+ * @param {*} accountId 
+ * @returns After applying given filters - 1. Search query, 2. Priority query 3.FromDate query 4. ToDate query  , Gives work order details populated in respetive source and destination work order life cycle records  
+ */
+
+ 
 exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuery, priorityQuery, fromDateQuery, toDateQuery, searchQuery, validPriorities, accountId) => {
 
     let workOrderReports;
@@ -98,10 +112,15 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
 
 }
 
-
 /**
  * 
- * 
+ * @param {*} source 
+ * @param {*} destination 
+ * @param {*} integrationsQuery 
+ * @param {*} accountId 
+ * @param {*} statusFieldMappingKeys 
+ * @param {*} integrationExceptions 
+ * @returns Source & Destination work order life cycle records, Integration exception records per each week for last six weeks and their respective count.
  */
 exports.sixWeeksSalesDetails = async (source, destination, integrationsQuery, accountId, statusFieldMappingKeys, integrationExceptions) => {
     var sixWeekSalesData = sixWeekSales
@@ -170,6 +189,15 @@ exports.sixWeeksSalesDetails = async (source, destination, integrationsQuery, ac
 }
 
 
+/**
+ * 
+ * @param {*} sixWeekLifeCycleDocs 
+ * @param {*} statusFieldMappingKeys 
+ * @param {*} source 
+ * @param {*} destination 
+ * @returns Above sixWeekLifeCycleDocs contans Source & Destination work order life cycle records, Integration exception records per each week for last six weeks and their respective count,  this function loops over 
+ * souce and destination records and creates new variables for every week 
+ */
 exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKeys, source, destination) => {
     // console.log("statusFieldMappingKeys", statusFieldMappingKeys);
 

@@ -6,7 +6,7 @@ const DFOperations = require('./DFOperations');
 const CYSOperations = require('./CYSOperations');
 const { EmailDateAsset } = require("../utils/utilsFunctions");
 const integrationsExceptionsModel = require("../models/integrationsExceptionsModel");
-const { getServiceWorkOrdersAndStatus, getServiceProviderName } = require("../utils/general");
+const { getServiceWorkOrdersAndStatus, getServiceProviderName, getAllStatusFromWorkOrderLifeCycleForEmailNotifications } = require("../utils/general");
 const integrationsCronsModel = require("../models/integrationsCronsModel");
 const integrationsMasterModel = require("../models/integrationsMasterModel");
 const CPDWorkordersModel = require("../models/CPDWorkordersModel");
@@ -14,6 +14,7 @@ const { oneWeekWorkOrderEmailNotifcation } = require("../emailNotifications/work
 const fs = require('fs');
 const accountsModel = require('../models/accountsModel');
 const { sendWorkOrderEmail } = require('../emailNotifications/sendWorkOrderEmails');
+const integrationsSettingsModel = require('../models/integrationsSettingsModel');
 
 const schedulerIntegrationCronJobs = async (integrationObject) => {
     try {
@@ -69,15 +70,20 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime, accoun
     let allIntegrationDetailsHtml = '';
     let workOrdersToDate
     let workOrdersFromDate
+    let formattedFromDate = moment(currentDateAndTime).subtract(6, 'days').startOf('day');
+    let formattedToDate  = moment(currentDateAndTime).endOf('day')
+
     for (let integration of integrationDetails) {
       let integrationsMasterId = integration.integrationsMasterId;
       console.log("integrationsMasterId:==", integrationsMasterId);
       let arr = []
       let integrationSourceAndDestinationStatus = {};
       let presentWeekData = EmailDateAsset(currentDateAndTime);
-      workOrdersToDate = moment(new Date(presentWeekData[0].fromDate)).format('dddd, MMM DD YYYY')
-      workOrdersFromDate = moment(new Date(presentWeekData[presentWeekData.length-1].toDate)).format('dddd, MMM DD YYYY')
       
+      workOrdersFromDate = moment(formattedFromDate).format('dddd, MMM DD YYYY')
+      workOrdersToDate = moment(formattedToDate).format('dddd, MMM DD YYYY')
+      
+      let integrationsStatusFromSettings = await integrationsSettingsModel.findOne({integrationsMasterId:integrationsMasterId})
       // Integration exception count for last 7 days
       const integrationsExceptionsCount = await integrationsExceptionsModel.find({ integrationsMasterId: integrationsMasterId }).countDocuments();
      for (let week of presentWeekData) {
@@ -91,33 +97,31 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime, accoun
         week.integrationsActivityLogCount = presentWeekIntegrationActivityLog.length > 0 ? presentWeekIntegrationActivityLog.length : 0;
       }
   
-      let sourceWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integration.from, presentWeekData);
-      let destinationWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integration.to, presentWeekData);
+      let sourceWorkOrdersAndStatus = await getAllStatusFromWorkOrderLifeCycleForEmailNotifications(integration.accountId, integrationsMasterId, integration.from, formattedFromDate, formattedToDate);
+      let destinationWorkOrdersAndStatus = await getAllStatusFromWorkOrderLifeCycleForEmailNotifications(integration.accountId, integrationsMasterId, integration.to, formattedFromDate, formattedToDate);
       
       integrationSourceAndDestinationStatus = {
-        sourceStatus: [...sourceWorkOrdersAndStatus.statuses],
-        destinationStatus: [...destinationWorkOrdersAndStatus.statuses]
+        sourceStatus: [...sourceWorkOrdersAndStatus],
+        destinationStatus: [...destinationWorkOrdersAndStatus]
       };
-      let sourceStatusTotalCount = sourceWorkOrdersAndStatus.statuses.reduce((currentValue,statusCount)=>{
+      let sourceStatusTotalCount = sourceWorkOrdersAndStatus.reduce((currentValue,statusCount)=>{
         return currentValue + statusCount.count
       },0);
-      let destinationStatusTotalCount = destinationWorkOrdersAndStatus.statuses.reduce((currentValue,statusCount)=>{
+      let destinationStatusTotalCount = destinationWorkOrdersAndStatus.reduce((currentValue,statusCount)=>{
         return currentValue + statusCount.count
       },0)
       let sourceServiceProviderName = await getServiceProviderName(integration.from)
       let destinationServiceProviderName = await getServiceProviderName(integration.to)
     //   console.log('integrationSourceAndDestinationStatus:==', integrationSourceAndDestinationStatus);
       console.log("arr:==",arr)
-      const failedCPDWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId: integrationsMasterId, status: "initiated" }).countDocuments();
-    //   console.log('failedCPDWorkOrders:===', failedCPDWorkOrders);
-    //   console.log('integrationsExceptionsCount:===', integrationsExceptionsCount);
-  
+      const failedCPDWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId: integrationsMasterId, status: "initiated", createdAt:{$gte:new Date(formattedFromDate), $lte:new Date(formattedToDate)}}).countDocuments();
+      
       const emailNotificationContent = `${await oneWeekWorkOrderEmailNotifcation(integration.from, integration.to, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount, sourceStatusTotalCount, destinationStatusTotalCount, workOrdersFromDate, workOrdersToDate
-                                        ,sourceServiceProviderName, destinationServiceProviderName, integration.title)}`
+                                        ,sourceServiceProviderName, destinationServiceProviderName, integration.title, integrationsStatusFromSettings.statusFieldMappingKeys)}`
       
       allIntegrationDetailsHtml += emailNotificationContent;
     }
-    console.log('accountLogo:==',accountLogo)
+    console.log('accountLogo:==',accountLogo) 
     const finalHtml = `
     <!DOCTYPE html>
     <html lang="en">
