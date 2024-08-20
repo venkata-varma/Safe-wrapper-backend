@@ -312,7 +312,7 @@ const CPDSNOWMappings = async (CPDWorkOrderId, MessageId, fieldmappingkeys, corr
         })
         .catch(async (error) => {
             console.log("ERROR:==", error)
-            await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, "")
+            await exceptionLogs(integrationObject, error?.response?.status, error?.response?.data?.Message, error?.name, error?.config?.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, "")
 
         });
 
@@ -342,7 +342,6 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
     if (integrationFieldObject !== undefined) {
         let fieldmappingkeys = {}
-        let workOrderPushedCount = 0
         let SNOWWorkOrderClone
         for (let integrationObject of integrationFieldObject) {
 
@@ -353,6 +352,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
+                    let workOrderPushedCount = 0
                     fieldmappingkeys = integrationObject.dataPoints
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
 
@@ -380,9 +380,9 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                     let SNOWWorkOrderId; let SNOWWorkorderList = {};
 
                     let snowAuthToken = await SNOWAuthToken(decryptConfigCredentials.baseUrl, decryptConfigCredentials.username, decryptConfigCredentials.password, decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, "password")
-
-                    if (!snowAuthToken.hasOwnProperty('access_token')) {
-                        await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data.messages), JSON.stringify(error.config.data), "snow-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
+                    
+                    if (!snowAuthToken.hasOwnProperty('access_token')) {    
+                        await exceptionLogs(integrationObject, snowAuthToken?.response?.status || 401, snowAuthToken?.message, JSON.stringify(snowAuthToken?.response?.data?.messages), JSON.stringify(snowAuthToken?.config?.data), "snow-auth-failed", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
                     }
 
                     let SNOWWorkOrderDetails = await axios.post(
@@ -400,8 +400,8 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                         console.log("snowowkrirdrId", res.data.result.number)
                         return res.data.result
                     }).catch(async (err) => {
-                        console.log("err", err)
-                        await exceptionLogs(integrationObject, err.response.status, err.response.data.Message, err.name, err.config.data, "snow-post-incident", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrderNumber, " ")
+                        console.log("SNOW Create ERROR:==", err.name)
+                        await exceptionLogs(integrationObject, err?.response?.status, JSON.stringify(err?.response?.data), err?.name, err?.config?.data, "snow-create-incident", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrderNumber, " ")
                         return 'error'
                     })
 
@@ -433,11 +433,11 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                             });
                             await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
                             workOrderPushedCount++
-                            await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { pushedCount: workOrderPushedCount }, { new: true });
+                            await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { $inc: {pushedCount:workOrderPushedCount} }, { new: true });
                             // insert work order life cycle.
                             await workOrderLifeCycleModel.create({
-                                workOrderId: SNOWWorkOrderClone.sys_id,
-                                WorkOrderNumber: SNOWWorkOrderClone.number,
+                                workOrderId: snowWorkOrderNumber,
+                                WorkOrderNumber: workOrder.CPDWorkOrders.WorkOrderNumber,
                                 workOrderStatus: updatedSNOWWorkOrderStatus,
                                 accountId: integrationObject.accountId,
                                 integrationsMasterId: integrationObject.integrationsMasterId,
@@ -480,7 +480,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                     let snowAuthToken = await SNOWAuthToken(decryptConfigCredentials.baseUrl, decryptConfigCredentials.username, decryptConfigCredentials.password, decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, "password")
 
                     if (!snowAuthToken.hasOwnProperty('access_token')) {
-                        await exceptionLogs(integrationObject, snowAuthToken.response.status, snowAuthToken.message, JSON.stringify(snowAuthToken.response.data.messages), JSON.stringify(snowAuthToken.config.data), "snow-create-workorder", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
+                        await exceptionLogs(integrationObject, snowAuthToken?.response?.status || 401, snowAuthToken?.message, JSON.stringify(snowAuthToken?.response?.data?.messages), JSON.stringify(snowAuthToken?.config?.data), "snow-auth-failed", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
                     }
                     //     console.log('Updatefieldmappingkeys:===', fieldmappingkeys);
                     let SNOWWorkorderList = {}
@@ -501,8 +501,8 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
                         return res.data.result
                     }).catch(async (err) => {
-                        console.log("err", err)
-                        await exceptionLogs(integrationObject, err.response.status, err.response.data.Message, err.name, err.config.data, "snow-patch-incident", CPDWorkOrderId, CPDWorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
+                        console.log(" err.response.data",  err)
+                        await exceptionLogs(integrationObject, err?.response?.status, JSON.stringify(err?.response?.data), err?.name, err?.config?.data, "snow-update-incident", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.CPDWorkOrderNumber, SNOWWorkOrder.SNOWWorkOrderId)
                         return 'error'
                     })
                     console.log("SNOWUpdatedWorkOrderId", SNOWUpdatedWorkOrderId)
@@ -523,8 +523,8 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
 
                             // insert work order life cycle.
                             await workOrderLifeCycleModel.create({
-                                workOrderId: SNOWUpdatedWorkOrderId.sys_id,
-                                WorkOrderNumber: SNOWUpdatedWorkOrderId.number,
+                                workOrderId: SNOWWorkOrder.SNOWWorkOrderId,
+                                WorkOrderNumber: getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber,
                                 workOrderStatus: updatedSNOWWorkOrderStatus,
                                 accountId: integrationObject.accountId,
                                 integrationsMasterId: integrationObject.integrationsMasterId,

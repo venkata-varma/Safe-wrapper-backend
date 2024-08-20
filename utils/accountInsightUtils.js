@@ -4,16 +4,16 @@ const CPDWorkordersModel = require("../models/CPDWorkordersModel")
 const DFWorkOrdersModel = require("../models/DFWorkOrdersModel")
 const SNOWWorkOrdersModel = require("../models/SNOWWorkOrdersModel")
 const CYSWorkordersModel = require("../models/CYSWorkordersModel")
-const { sixWeekSales}=require('../utils/sixWeekSalesFunction')
+const { sixWeekSales } = require('../utils/sixWeekSalesFunction')
 
 exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuery, priorityQuery, fromDateQuery, toDateQuery, searchQuery, validPriorities, accountId) => {
-    //console.log("accountReports, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities", accountReports, integrationsQuery, priorityQuery,fromDateQuery,toDateQuery,searchQuery, validPriorities)
+
     let workOrderReports;
     if (priorityQuery && !validPriorities.includes(priorityQuery)) {
         workOrderReports = []
         return workOrderReports
     } else {
-        console.log("integrationFrom", SourceOrDestination)
+
         workOrderReports = await workOrderLifeCycleModel.aggregate([
             {
                 $match: {
@@ -34,7 +34,7 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                 $replaceRoot: { newRoot: "$doc" } // Replace the root with the grouped document
             },
 
-            { $sort: { createdAt: 1 } },
+            { $sort: { createdAt: -1 } },
             {
                 $match: {
                     ...(fromDateQuery && {
@@ -45,9 +45,9 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
 
         ]);
 
-
         // Step 2: Fetch details from the appropriate model based on serviceProvider
         let workOrderDetailsPromises = workOrderReports.map(async (record) => {
+
             let workOrderDetail;
             let priorityFilter = {}; // Empty filter by default
             let searchFilter;
@@ -59,25 +59,24 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                 case 'CPD':
                     // Define search query filter
                     searchFilter = searchQuery ? { $or: [{ "CPDWorkOrders.WorkOrderNumber": searchQuery },{ "CPDWorkOrders.WorkOrderId":searchQuery } ] } : {};
-                    workOrderDetail = await CPDWorkordersModel.findOne({ CPDWorkOrderId: record.workOrderId, ...priorityFilter, ...searchFilter });
+                    workOrderDetail = await CPDWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
                     break;
                 case 'DF':
                     searchFilter = searchQuery ? { $or: [{ "DFWorkOrders.id":searchQuery }, { "DFWorkOrders.numberAlt":searchQuery }] } : {};
-                    workOrderDetail = await DFWorkOrdersModel.findOne({ DFWorkOrderId: record.workOrderId, ...priorityFilter, ...searchFilter });
+                    workOrderDetail = await DFWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$DFWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
                     break;
                 case 'SNOW':
                     searchFilter = searchQuery ? { "SNOWWorkOrders.number": searchQuery } : {};
-                    workOrderDetail = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: record.workOrderId, ...priorityFilter ,   ...searchFilter,});
+                    workOrderDetail = await SNOWWorkOrdersModel.findOne({  $expr: { $eq: [{ $toString: "$SNOWWorkOrderId" }, record.workOrderId] }, ...priorityFilter ,   ...searchFilter,});
                     break;
                 case 'CYS':
                     searchFilter = searchQuery ? { CYSWorkOrderId: searchQuery  } : {};
-                    workOrderDetail = await CYSWorkordersModel.findOne({ CYSWorkOrderId: record.workOrderId, ...priorityFilter,  ...searchFilter });
+                    workOrderDetail = await CYSWorkordersModel.findOne({  $expr: { $eq: [{ $toString: "$CYSWorkOrderId" }, record.workOrderId] }, ...priorityFilter,  ...searchFilter });
                     break;
                 default:
                     // Handle unknown service provider
                     throw new Error(`Unknown service provider: ${record.serviceProvider}`);
             }
-
             if (workOrderDetail !== null) {
                 return {
                     ...record,
@@ -90,7 +89,7 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
 
         // Step 3: Await all promises and filter out null values
         let workOrderDetails = await Promise.all(workOrderDetailsPromises);
-
+    
         // Filter out null values
         workOrderDetails = workOrderDetails.filter(detail => detail !== null);
 
@@ -104,28 +103,28 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
  * 
  * 
  */
-exports.sixWeeksSalesDetails=async(source,destination,integrationsQuery, accountId, statusFieldMappingKeys, integrationExceptions)=>{
-var sixWeekSalesData=sixWeekSales
-// console.log("sixWeekSalesData", sixWeekSalesData)
-    const workOrderLifeCycleDetails=await workOrderLifeCycleModel.aggregate([
+exports.sixWeeksSalesDetails = async (source, destination, integrationsQuery, accountId, statusFieldMappingKeys, integrationExceptions) => {
+    var sixWeekSalesData = sixWeekSales
+    // console.log("sixWeekSalesData", sixWeekSalesData)
+    const workOrderLifeCycleDetails = await workOrderLifeCycleModel.aggregate([
         {
-            $match:{
-                integrationsMasterId:new mongoose.Types.ObjectId(integrationsQuery),
-                accountId:new mongoose.Types.ObjectId(accountId),
-                $or:[{serviceProvider:source}, {serviceProvider:destination}]
+            $match: {
+                integrationsMasterId: new mongoose.Types.ObjectId(integrationsQuery),
+                accountId: new mongoose.Types.ObjectId(accountId),
+                $or: [{ serviceProvider: source }, { serviceProvider: destination }]
             }
         }
     ])
-    
+
 
     const processSalesData = (source, destination, sixWeeksSalesData, integrationExceptions) => {
         return sixWeeksSalesData.map(week => {
             var { fromDate, toDate } = week;
             var sourceWorkOrderLifeCycleRecords = [];
             var destinationWorkOrderLifeCycleRecords = [];
-var  integrationExceptionsRecordsPerWeek=[]
+            var integrationExceptionsRecordsPerWeek = []
 
-    var integrationExceptionsCount=0;
+            var integrationExceptionsCount = 0;
             workOrderLifeCycleDetails.forEach(record => {
                 const createdAt = new Date(record.createdAt);
                 if (createdAt >= new Date(fromDate) && createdAt <= new Date(toDate)) {
@@ -144,23 +143,23 @@ var  integrationExceptionsRecordsPerWeek=[]
                     integrationExceptionsRecordsPerWeek.push(exception);
                 }
             });
-    
+
             integrationExceptionsCount = integrationExceptionsRecordsPerWeek.length;
-    
 
 
-            
+
+
             return {
                 fromDate,
                 toDate,
                 sourceWorkOrderLifeCycleRecords,
-                destinationWorkOrderLifeCycleRecords, 
-                integrationExceptionsRecordsPerWeek, 
+                destinationWorkOrderLifeCycleRecords,
+                integrationExceptionsRecordsPerWeek,
                 integrationExceptionsCount
             };
         });
     };
-    
+
     // Example usage
     const result = processSalesData(source, destination, sixWeekSalesData, integrationExceptions);
     //console.log(result);
@@ -173,7 +172,7 @@ var  integrationExceptionsRecordsPerWeek=[]
 
 exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKeys, source, destination) => {
     // console.log("statusFieldMappingKeys", statusFieldMappingKeys);
-    
+
     var serviceProviderNewStatus;
     switch (source) {
         case 'CPD':
@@ -224,9 +223,9 @@ exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKey
                 destinationUpdatedWorkOrdersCount++;
             }
         });
-delete week.sourceWorkOrderLifeCycleRecords;
-delete week.destinationWorkOrderLifeCycleRecords;
-delete week.integrationExceptionsRecordsPerWeek;
+        delete week.sourceWorkOrderLifeCycleRecords;
+        delete week.destinationWorkOrderLifeCycleRecords;
+        delete week.integrationExceptionsRecordsPerWeek;
 
 
         // Add the new fields to each week
@@ -240,4 +239,103 @@ delete week.integrationExceptionsRecordsPerWeek;
     });
 
     return sixWeekLifeCycleDocs;
+}
+
+
+/**
+ * 
+ * 
+ */
+exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, destination, fromDateQuery, toDateQuery, integrationsQuery, accountId) => {
+
+    let sourceNewWorkOrdersCount = 0;
+    let sourceUpdatedWorkOrdersCount = 0;
+    let destinationNewWorkOrdersCount = 0;
+    let destinationUpdatedWorkOrdersCount = 0;
+
+    let workOrderReports = await workOrderLifeCycleModel.aggregate([
+        {
+            $match: {
+                integrationsMasterId: new mongoose.Types.ObjectId(integrationsQuery),
+                accountId: new mongoose.Types.ObjectId(accountId),
+                $or: [{ serviceProvider: source }, { serviceProvider: destination }]
+
+            }
+        },
+
+
+
+        { $sort: { createdAt: 1 } },
+        {
+            $match: {
+                ...(fromDateQuery && {
+                    createdAt: { $gte: fromDateQuery, $lte: toDateQuery }
+                })
+            }
+        }
+
+    ]);
+
+    async function returnCounts(serviceProvider, workOrderReports) {
+
+        var serviceProviderNewStatus;
+        switch (serviceProvider) {
+            case 'CPD':
+                serviceProviderNewStatus = "new";
+                break;
+            case 'DF':
+                serviceProviderNewStatus = "reported";
+                break;
+            case 'SNOW':
+                serviceProviderNewStatus = "1";
+                break;
+            case 'CYS':
+                serviceProviderNewStatus = "requested";
+                break;
+        }
+
+        var crucialSourceStatus, crucialDestinationStatus;
+        for (let [key, value] of Object.entries(statusFieldMappingKeys)) {
+
+            if (value.toLowerCase() === serviceProviderNewStatus) {
+                console.log("value, ", value)
+                crucialSourceStatus = value;
+                crucialDestinationStatus = key;
+            }
+        }
+        //  console.log("crucialSourceStatus, crucialDestinationStatus;", crucialSourceStatus, crucialDestinationStatus)
+        workOrderReports.forEach((record) => {
+            if (record.serviceProvider === source) {
+                // console.log("button, source", record.workOrderStatus.toLowerCase())
+                if (record.workOrderStatus.toLowerCase() === crucialSourceStatus.toLowerCase()) {
+                    sourceNewWorkOrdersCount++;
+                } else {
+                    sourceUpdatedWorkOrdersCount++
+                }
+            } else if (record.serviceProvider === destination) {
+                // console.log("button,destination", record.workOrderStatus)
+                if (record.workOrderStatus.toLowerCase() === crucialDestinationStatus.toLowerCase()) {
+                    destinationNewWorkOrdersCount++;
+                } else {
+                    destinationUpdatedWorkOrdersCount++
+                }
+            }
+
+
+        })
+
+        return {
+            sourceNewWorkOrdersCount,
+            sourceUpdatedWorkOrdersCount,
+            destinationNewWorkOrdersCount,
+            destinationUpdatedWorkOrdersCount
+
+        }
+    }
+    const newUpdatedCounts = await returnCounts(source, workOrderReports)
+ //   console.log("sourceWorkOrderCounts", newUpdatedCounts)
+    return newUpdatedCounts
+
+
+
 }

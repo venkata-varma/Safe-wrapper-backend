@@ -21,7 +21,7 @@ const DFWorkordersModelSchema = mongoose.Schema(
             default : null
         },
         DFWorkOrderId:{
-            type:Number,
+            type:mongoose.Schema.Types.Mixed,
             default:0
         },
         DFWorkOrders: {
