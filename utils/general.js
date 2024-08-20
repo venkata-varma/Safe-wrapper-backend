@@ -416,7 +416,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         integrationsMasterId,
         'DFWorkOrders.numberAlt': workOrderId,
       });
-console.log("77777777777777777777", destinationWorkOrderDetails)
+
       destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.DFWorkOrderId);
     } else if (from === 'CPD' && to === 'CYS') {
       destinationWorkOrderDetails = await fetchWorkOrderDetails(CYSWorkordersModel, {
