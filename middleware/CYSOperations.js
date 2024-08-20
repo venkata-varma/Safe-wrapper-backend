@@ -270,6 +270,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 // insert work order life cycle.
                                 await workOrderLifeCycleModel.create({
                                     workOrderId: CYSWorkorderListId,
+                                    WorkOrderNumber:workOrder.CPDWorkOrders.WorkOrderNumber,
                                     workOrderStatus: getCYSWorkOrderList.estimate.StatusText,
                                     accountId: integrationObject.accountId,
                                     integrationsMasterId: integrationObject.integrationsMasterId,
