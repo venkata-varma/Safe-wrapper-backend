@@ -288,19 +288,12 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
       workOrderId,
     });
   };
-  // const fetchWorkOrderLifeCycleDetails = async (workOrderId) => {
-  //   return await workOrderLifeCycleModel.find({
-  //     accountId,
-  //     integrationsMasterId,
-  //     $or:[{workOrderId:workOrderId},{WorkOrderNumber:workOrderId}] 
-  //   });
-  // };
-
   const handleError = (message) => {
     errorMessage = message;
     return errorMessage;
   };
-//If Input work order Id is Number type and of from source side
+
+  //If Input work order Id is Number type and of from source side
   if (sourceWorkOrderLifeCycleDetails.length > 0) {
     sourceWorkOrderDetails = await fetchWorkOrderDetails(CPDWorkordersModel, {
       accountId,
@@ -563,7 +556,32 @@ const integationOfAccountWorkOrderReports = async (workOrderReport) => {
   return workOrderReport;
 }
 
-
+const getAllStatusFromWorkOrderLifeCycleForEmailNotifications = async(accountId,integrationsMasterId,serviceProvider,fromDate,toDate)=>{
+  let workOrderStatusForEmail = await workOrderLifeCycleModel.aggregate([
+    {
+      $match:{
+        accountId:accountId,
+        integrationsMasterId: integrationsMasterId,
+        serviceProvider:serviceProvider,
+        createdAt:{$gte:new Date(fromDate), $lte:new Date(toDate)}
+      }
+    },
+    {
+      $group:{
+        _id:"$workOrderStatus",
+        count: { $sum: 1 } 
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        status: "$_id",
+        count: 1
+      }
+    }
+  ]);
+  return workOrderStatusForEmail
+}
 
 
 module.exports = {
@@ -573,6 +591,7 @@ module.exports = {
   getSourceAndDestinationWOLifeCycle,
   getServiceProviderName,
   defaultSatusMappingKeys,
-  integationOfAccountWorkOrderReports
+  integationOfAccountWorkOrderReports,
+  getAllStatusFromWorkOrderLifeCycleForEmailNotifications
 
 }
