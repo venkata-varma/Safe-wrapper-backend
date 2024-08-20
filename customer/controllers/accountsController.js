@@ -475,14 +475,26 @@ exports.ValidateAccountAndIntegrationsStatus = asyncWrapper(async (req, res, nex
 
 exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
     const { accountId, integrationsMasterId, workOrderId } = req.query;
-    const integrationMaster = await integrationsMasterModel.findById(integrationsMasterId);
+    let integrationMaster = await integrationsMasterModel.findById(integrationsMasterId);
+
     let workOrderLifeCyclSourceAndDestinationeDetails = await getSourceAndDestinationWOLifeCycle(accountId, integrationsMasterId, integrationMaster.from, integrationMaster.to, workOrderId)
-    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
-        sourceWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderLifeCycleDetails,
-        destinationWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderLifeCycleDetails,
-        sourceWorkorders: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderDetails,
-        destinationWorkOrders: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderDetails
-    })
+    if (workOrderLifeCyclSourceAndDestinationeDetails === "Invalid workorder id") {
+        
+    
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message:customConstants.messages.MESSAGE_WORKORDER_ID_INVALID,
+
+        })
+    }
+
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
+            sourceWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderLifeCycleDetails,
+            destinationWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderLifeCycleDetails,
+            sourceWorkorders: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderDetails,
+            destinationWorkOrders: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderDetails
+        })
+    
 })

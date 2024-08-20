@@ -33,7 +33,7 @@ const SNOWWorkOrdersModel = require("../../models/SNOWWorkOrdersModel");
 const { default: axios } = require("axios");
 const DFConfigurations = require('../../config/integrationsConfiguration');
 const { getAllDFBuldingsData, searchDFBuildingsByStateAndCountry, searchDFBuildingByNameAndStreet } = require("../../middleware/findDFBuildingOperation");
-
+const accountSettingsModel=require('../../models/accountSettingsModel')
 /**
  * Get the static images.
  */
@@ -276,7 +276,7 @@ exports.getIntegrationCryptoService = asyncWrapper(async (req, res) => {
 exports.validateCreateIntegrationsCount = asyncWrapper(async (req, res, next) => {
   const integrationsCount = await integrationsMasterModel.find({ accountId: req.user.accountId });
 
-  const respectiveAccount = await accountsModel.findById(req.user.accountId);
+  const respectiveAccount = await accountSettingsModel.findOne({accountId: req.user.accountId});
   if (integrationsCount.length >= respectiveAccount.noOfIntegrations) {
     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
       status: customConstants.messages.MESSAGE_WARNING,
