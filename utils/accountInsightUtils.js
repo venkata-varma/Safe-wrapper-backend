@@ -19,7 +19,7 @@ const { sixWeekSales } = require('../utils/sixWeekSalesFunction')
  * @returns After applying given filters - 1. Search query, 2. Priority query 3.FromDate query 4. ToDate query  , Gives work order details populated in respetive source and destination work order life cycle records  
  */
 
- 
+
 exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuery, priorityQuery, fromDateQuery, toDateQuery, searchQuery, validPriorities, accountId) => {
 
     let workOrderReports;
@@ -72,20 +72,20 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
             switch (record.serviceProvider) {
                 case 'CPD':
                     // Define search query filter
-                    searchFilter = searchQuery ? { $or: [{ "CPDWorkOrders.WorkOrderNumber": searchQuery },{ "CPDWorkOrders.WorkOrderId":searchQuery } ] } : {};
+                    searchFilter = searchQuery ? { $or: [{ "CPDWorkOrders.WorkOrderNumber": searchQuery }, { "CPDWorkOrders.WorkOrderId": searchQuery }] } : {};
                     workOrderDetail = await CPDWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
                     break;
                 case 'DF':
-                    searchFilter = searchQuery ? { $or: [{ "DFWorkOrders.id":searchQuery }, { "DFWorkOrders.numberAlt":searchQuery }] } : {};
+                    searchFilter = searchQuery ? { $or: [{ "DFWorkOrders.id": searchQuery }, { "DFWorkOrders.numberAlt": searchQuery }] } : {};
                     workOrderDetail = await DFWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$DFWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
                     break;
                 case 'SNOW':
                     searchFilter = searchQuery ? { "SNOWWorkOrders.number": searchQuery } : {};
-                    workOrderDetail = await SNOWWorkOrdersModel.findOne({  $expr: { $eq: [{ $toString: "$SNOWWorkOrderId" }, record.workOrderId] }, ...priorityFilter ,   ...searchFilter,});
+                    workOrderDetail = await SNOWWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$SNOWWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter, });
                     break;
                 case 'CYS':
-                    searchFilter = searchQuery ? { CYSWorkOrderId: searchQuery  } : {};
-                    workOrderDetail = await CYSWorkordersModel.findOne({  $expr: { $eq: [{ $toString: "$CYSWorkOrderId" }, record.workOrderId] }, ...priorityFilter,  ...searchFilter });
+                    searchFilter = searchQuery ? { CYSWorkOrderId: searchQuery } : {};
+                    workOrderDetail = await CYSWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CYSWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
                     break;
                 default:
                     // Handle unknown service provider
@@ -103,7 +103,7 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
 
         // Step 3: Await all promises and filter out null values
         let workOrderDetails = await Promise.all(workOrderDetailsPromises);
-    
+
         // Filter out null values
         workOrderDetails = workOrderDetails.filter(detail => detail !== null);
 
@@ -274,7 +274,7 @@ exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKey
  * 
  * 
  */
-exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, destination, fromDateQuery, toDateQuery, integrationsQuery, accountId) => {
+exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, destination, fromDateQuery, toDateQuery, integrationsQuery, accountId, sourceWorkOrderLifeCycleRecordsCount, destinationWorkOrderLifeCycleRecordsCount) => {
 
     let sourceNewWorkOrdersCount = 0;
     let sourceUpdatedWorkOrdersCount = 0;
@@ -351,6 +351,30 @@ exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, d
 
 
         })
+//Sending New & updated counts based on results obtained from its above filters
+        if (sourceWorkOrderLifeCycleRecordsCount === 0 && destinationWorkOrderLifeCycleRecordsCount === 0) {
+            sourceNewWorkOrdersCount = 0,
+                sourceUpdatedWorkOrdersCount = 0,
+                destinationNewWorkOrdersCount = 0,
+                destinationUpdatedWorkOrdersCount = 0
+        } else if (sourceWorkOrderLifeCycleRecordsCount !== 0 && destinationWorkOrderLifeCycleRecordsCount === 0) {
+            sourceNewWorkOrdersCount,
+                sourceUpdatedWorkOrdersCount,
+                destinationNewWorkOrdersCount = 0,
+                destinationUpdatedWorkOrdersCount = 0
+        } else if (sourceWorkOrderLifeCycleRecordsCount === 0 && destinationWorkOrderLifeCycleRecordsCount !== 0) {
+            sourceNewWorkOrdersCount = 0,
+                sourceUpdatedWorkOrdersCount = 0,
+                destinationNewWorkOrdersCount,
+                destinationUpdatedWorkOrdersCount
+        } else if (sourceWorkOrderLifeCycleRecordsCount !== 0 && destinationWorkOrderLifeCycleRecordsCount !== 0) {
+            sourceNewWorkOrdersCount,
+                sourceUpdatedWorkOrdersCount,
+                destinationNewWorkOrdersCount,
+                destinationUpdatedWorkOrdersCount
+        }
+
+
 
         return {
             sourceNewWorkOrdersCount,
@@ -361,9 +385,9 @@ exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, d
         }
     }
     const newUpdatedCounts = await returnCounts(source, workOrderReports)
- //   console.log("sourceWorkOrderCounts", newUpdatedCounts)
+    //   console.log("sourceWorkOrderCounts", newUpdatedCounts)
     return newUpdatedCounts
 
-
+    
 
 }
