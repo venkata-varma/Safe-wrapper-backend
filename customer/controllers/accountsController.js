@@ -176,12 +176,31 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         },
         {
             $addFields: {
+                sortOrder: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$status", "active"] }, then: 1 },
+                            { case: { $eq: ["$status", "offline"] }, then: 2 },
+                        ],
+                        default: 3
+                    }
+                }
+            }
+        },
+        {
+            $sort: {
+                sortOrder: 1
+            }
+        },
+        {
+            $addFields: {
                 statusFieldMappingKeys: "$integrationSettings.statusFieldMappingKeys"
             }
         },
         {
             $project: {
-                integrationSettings: 0
+                integrationSettings: 0,
+                sortOrder: 0
             }
         },
         {
@@ -355,7 +374,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             accountId
         );
         
-        const newAndUpdatedWorkOrdersCount =await mapNewUpdatedWorkOrdersCounts(accountReports[0].statusFieldMappingKeys, integrationSource, integrationDestination, fromDateQuery, toDateQuery, integrationsQuery, accountId, sourceWorkOrderLifeCycleRecords.length,destinationWorkOrderLifeCycleRecords.length)
+        const newAndUpdatedWorkOrdersCount =await mapNewUpdatedWorkOrdersCounts(accountReports[0].statusFieldMappingKeys, integrationSource, integrationDestination, fromDateQuery, toDateQuery, integrationsQuery, accountId, sourceWorkOrderLifeCycleRecords.length,destinationWorkOrderLifeCycleRecords.length,searchQuery)
         // Add the new properties to each item in accountReports
         accountReports = accountReports.map(report => ({
             ...report,
