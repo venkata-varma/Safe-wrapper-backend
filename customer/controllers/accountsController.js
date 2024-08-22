@@ -176,12 +176,31 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         },
         {
             $addFields: {
+                sortOrder: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$status", "active"] }, then: 1 },
+                            { case: { $eq: ["$status", "offline"] }, then: 2 },
+                        ],
+                        default: 3
+                    }
+                }
+            }
+        },
+        {
+            $sort: {
+                sortOrder: 1
+            }
+        },
+        {
+            $addFields: {
                 statusFieldMappingKeys: "$integrationSettings.statusFieldMappingKeys"
             }
         },
         {
             $project: {
-                integrationSettings: 0
+                integrationSettings: 0,
+                sortOrder: 0
             }
         },
         {
