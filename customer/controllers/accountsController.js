@@ -181,8 +181,11 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
                         branches: [
                             { case: { $eq: ["$status", "active"] }, then: 1 },
                             { case: { $eq: ["$status", "offline"] }, then: 2 },
+                            { case: { $eq: ["$status", "new"] }, then: 3 },
+                            { case: { $eq: ["$status", "blocked"] }, then: 4 },
+                            { case: { $eq: ["$status", "deleted"] }, then: 5 },
                         ],
-                        default: 3
+                        default: 6
                     }
                 }
             }
