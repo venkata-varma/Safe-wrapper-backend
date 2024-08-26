@@ -21,7 +21,7 @@ const integrationsMasterServiceProvidersModel = require('../../models/integratio
 const integrationsMasterFieldMappingsModel = require('../../models/integrationsFieldMappingModel')
 const integrationsExceptionsModel = require('../../models/integrationsExceptionsModel')
 const integrationsCronsModel = require('../../models/integrationsCronsModel')
-const {models}=require('../../utils/helpers')
+
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
