@@ -55,9 +55,8 @@ for (let i = 0; i < 12; i++) {
 }
 
 
-
 module.exports = {
     hashPwd, 
     comparePassword,
-    twelveWeeksSales
+    twelveWeeksSales   
 }

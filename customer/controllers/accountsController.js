@@ -103,6 +103,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
 
 
 /**
+ * API end-point not used . On permission, this API end-point to be removed or to be optimised
   *Function to delete account -Actually to Deactivate account by Admin
 */
 exports.deleteAccount = asyncWrapper(async (req, res) => {
