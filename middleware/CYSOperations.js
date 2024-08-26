@@ -194,7 +194,8 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CYS" });
                     let credentailsObj = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
                     let decryptConfigCredentials = JSON.parse(await decryptData(credentailsObj, process.env.CRYPTO_KEY))
-
+                    // console.log('decryptConfigCredentials:==',decryptConfigCredentials)
+                    
                     // Find integration credentails and then decrypt and pull CPD calls.
                     let CPDAuthCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CPD" })
                     let encryptedDetails = { iv: process.env.CRYPTO_IV, encryptedData: CPDAuthCredentials.credentials };
@@ -211,7 +212,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     let CYSWorkorderListId = '';
                     let createWorkOrderConfig = {
                         method: 'post',
-                        url: `${configurations.CYS.createWorkOrder.URL}`,
+                        url: `${decryptConfigCredentials.baseUrl}/create-estimate`,
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -232,7 +233,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     if (CYSWorkorderListId !== undefined) {
                         let getWorkOrderConfig = {
                             method: 'get',
-                            url: `${configurations.CYS.getWorkOrder.URL}/${CYSWorkorderListId}`,
+                            url: `${decryptConfigCredentials.baseUrl}/get-estimate/${CYSWorkorderListId}`,
                             headers: {
                                 'Content-Type': 'application/json',
                             },
@@ -290,13 +291,18 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                 
                 for (let CYSWorkOrder of updateRequestCYSWorkorders) {
                     fieldmappingkeys = integrationObject.dataPoints
-                    const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, CPDWorkOrderId: CYSWorkOrder.CYSWorkOrders.estimate.PONumber })
+                    const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, 
+                        $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },CYSWorkOrder.CYSWorkOrders.estimate.PONumber]},
+                        // CPDWorkOrderId: parseInt(CYSWorkOrder.CYSWorkOrders.estimate.PONumber) 
+                        })
+                    // console.log('getCPDWorkOrderStatus:==',getCPDWorkOrderStatus)
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
 
                     // Find list of CYS credentails (encrypted) & then decrypt. 
                     let serviceProviderCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CYS" });
                     let credentailsObj = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderCredentials.credentials };
                     let decryptConfigCredentials = JSON.parse(await decryptData(credentailsObj, process.env.CRYPTO_KEY))
+                    // console.log('decryptConfigCredentials:==',decryptConfigCredentials)
 
                     // Find integration credentails and then decrypt and pull CPD calls.
                     let CPDAuthCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: "CPD" })
@@ -312,7 +318,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     
                     let updateWorkOrderConfig = {
                         method: 'Patch',
-                        url: `${configurations.CYS.updateWorkOrder.URL}/${CYSWorkOrder.CYSWorkOrderId}`,
+                        url: `${decryptConfigCredentials.baseUrl}/update-estimate/${CYSWorkOrder.CYSWorkOrderId}`,
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -330,7 +336,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                         console.log('CYSUpdatedWorkOrderId:==',CYSUpdatedWorkOrderId)
                     let getWorkOrderConfig = {
                         method: 'get',                        
-                        url: `${configurations.CYS.getWorkOrder.URL}/${CYSUpdatedWorkOrderId}`,
+                        url: `${decryptConfigCredentials.baseUrl}/get-estimate/${CYSUpdatedWorkOrderId}`,
                         headers: {
                             'Content-Type': 'application/json',
                         }                       
