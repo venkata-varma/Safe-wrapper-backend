@@ -235,7 +235,6 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
     if (integrationFieldObject !== undefined) {
         let fieldmappingkeys = {}
         for (let integrationObject of integrationFieldObject) {
-            let workOrderPushedCount = 0
             // find initiated count of WO to push to DF. 
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
             
@@ -330,8 +329,8 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                     status: "completed",
                                 });
                                 await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
-                                workOrderPushedCount++
-                                await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { $inc:{pushedCount: workOrderPushedCount} }, { new: true });
+                                // workOrderPushedCount++
+                                await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { $inc:{pushedCount: 1} }, { new: true });
                                 // insert work order life cycle.
                                 await workOrderLifeCycleModel.create({
                                     workOrderId: DFWorkOrderId,
