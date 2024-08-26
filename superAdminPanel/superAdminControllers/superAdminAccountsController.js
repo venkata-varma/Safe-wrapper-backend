@@ -10,6 +10,7 @@ const accountSettingsModel = require('../../models/accountSettingsModel');
 const serviceProvidersListModel = require('../../models/serviceProviderList')
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../../utils/serviceProvidersAuthentication')
 const {encryptData,decryptData}=require('../../utils/encryptionAlgorithms')
+
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
@@ -123,16 +124,43 @@ exports.getAllAccounts = asyncWrapper(async (req, res) => {
  * Returns Updated account record
  */
 exports.updateAccountStatus = asyncWrapper(async (req, res) => {
-    const updateAccountStatus = await accountsModel.findOneAndUpdate({ _id: req.params.accountId }, { $set: { status: req.body.status } }, { new: true, runValidators: true })
 
+    const collections = await mongoose.connection.db.collections();
 
-    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_ACCOUNT_STATUS_UPDATED,
-        data: {
-            updateAccountStatus
+    if(req.body.status==='deleted'){
+
+        // Loop through all collections and delete records with the matching accountId, except the 'accounts' collection
+        for (let collection of collections) {
+            if (collection.collectionName !== 'accounts') {
+                await collection.deleteMany({ accountId:new  mongoose.Types.ObjectId(req.params.accountId) });
+            }
         }
-    })
+
+        // Finally, delete the account from the 'accounts' collection
+        await mongoose.connection.db.collection('accounts').deleteOne({ _id:  new mongoose.Types.ObjectId(req.params.accountId) });
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_ACCOUNT_PERMENANT_DELETED,
+           
+        })
+    
+
+
+
+    }else if(req.body.status!=='deleted'){
+        const updateAccountStatus = await accountsModel.findOneAndUpdate({ _id: req.params.accountId }, { $set: { status: req.body.status } }, { new: true, runValidators: true })
+
+let responseMessage=`Success. Account is ${updateAccountStatus.status}.`
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: responseMessage,
+            data: {
+                updateAccountStatus
+            }
+        })
+    
+    }
+    
 
 })
 

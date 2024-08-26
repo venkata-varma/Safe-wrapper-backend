@@ -29,7 +29,8 @@
       "MESSAGE_GET_SERVICE_PROVIDERS":"Get all active service providers.",
       "MESSAGE_UPDATE_SERVICE_PROVIDER_LIST":"Update service provider list.",
       "MESSAGE_DELETE_SERVICE_PROVIDER_LIST":"Delete service provider list.",
-      "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials."
+      "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials.",
+      "MESSAGE_ACCOUNT_PERMENANT_DELETED":"Account and its respective data is deleted."
     },
     "statusCodes": {
       "FORBIDDEN": 403,
