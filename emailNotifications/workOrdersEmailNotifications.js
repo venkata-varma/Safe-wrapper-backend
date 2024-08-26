@@ -1,4 +1,4 @@
-exports.oneWeekWorkOrderEmailNotifcation = async(source, destination, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount, sourceStatusTotalCount, destinationStatusTotalCount, workOrdersFromDate, workOrdersToDate, sourceServiceProviderName, destinationServiceProviderName,integrationTitle) => {
+exports.oneWeekWorkOrderEmailNotifcation = async(source, destination, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount, sourceStatusTotalCount, destinationStatusTotalCount, workOrdersFromDate, workOrdersToDate, sourceServiceProviderName, destinationServiceProviderName,integrationTitle,IntegrationStatusMappingKeys) => {
   const html =  `
      <h3 class="text-left">Integration: <span class="text-gray fs-6"> ${integrationTitle} </span></h3>
         <div class="stats">
@@ -8,7 +8,7 @@ exports.oneWeekWorkOrderEmailNotifcation = async(source, destination, integratio
             <div class="stat exceptions">Exceptions<br><strong>${integrationsExceptionsCount}</strong></div>
         </div>
         <table>
-            ${await oneWeekWorkOrderDetails(source, destination, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount)}
+            ${await oneWeekWorkOrderDetails(source, destination, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount,IntegrationStatusMappingKeys)}
             <tfoot>
                 <tr>
                     <td colspan="1">Total</td>
@@ -21,7 +21,7 @@ exports.oneWeekWorkOrderEmailNotifcation = async(source, destination, integratio
   return html;
 };
 
-const oneWeekWorkOrderDetails = async(source, destination, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount) => {
+const oneWeekWorkOrderDetails = async(source, destination, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount,IntegrationStatusMappingKeys) => {
   let tableContent = `
     <thead>
         <tr>
@@ -39,22 +39,30 @@ const oneWeekWorkOrderDetails = async(source, destination, integrationSourceAndD
     integrationSourceAndDestinationStatus.destinationStatus.length
   );
 
-  for (let i = 0; i < maxLength; i++) {
-    const sourceItem = integrationSourceAndDestinationStatus.sourceStatus[i] || { status: '', count: 0 };
-    const destinationItem = integrationSourceAndDestinationStatus.destinationStatus[i] || { status: '', count: 0 };
-
-    const percentage = sourceItem.count === 0 ? 0 : (destinationItem.count / sourceItem.count) * 100;
-
-    tableContent += `
-      <tr>
-          <td>${sourceItem.status}</td>
-          <td>${sourceItem.count}</td>
-          <td>${destinationItem.count}</td>
-          <td>${percentage.toFixed(2)}%</td>
-      </tr>
-    `;
+  // Assign missing statuses from IntegrationStatusMappingKeys to integrationSourceAndDestinationStatus
+  for (const [key, value] of Object.entries(IntegrationStatusMappingKeys)) {
+    if (!integrationSourceAndDestinationStatus.sourceStatus.find(item => item.status === value)) {
+      integrationSourceAndDestinationStatus.sourceStatus.push({ status: value, count: 0 });
+    }
   }
-
+  // Calculate percentages
+  for (let i = 0; i < integrationSourceAndDestinationStatus.sourceStatus.length; i++) {
+    const sourceItem = integrationSourceAndDestinationStatus.sourceStatus[i];
+    
+    let statusMappingValue = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === sourceItem.status);
+    const destinationItem = integrationSourceAndDestinationStatus.destinationStatus.find(item => item.status === statusMappingValue) || { status: '', count: 0 };
+    
+    const percentage = sourceItem.count === 0 ? 0 : (destinationItem.count / sourceItem.count) * 100;
+    
+    tableContent += `
+        <tr>
+            <td>${sourceItem.status}</td>
+            <td>${sourceItem.count}</td>
+            <td>${destinationItem.count}</td>
+            <td>${percentage.toFixed(2)}%</td>
+        </tr>
+      `;
+  }
   tableContent += '</tbody>';
   return tableContent;
 };

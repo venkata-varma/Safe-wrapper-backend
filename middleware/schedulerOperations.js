@@ -6,7 +6,7 @@ const DFOperations = require('./DFOperations');
 const CYSOperations = require('./CYSOperations');
 const { EmailDateAsset } = require("../utils/utilsFunctions");
 const integrationsExceptionsModel = require("../models/integrationsExceptionsModel");
-const { getServiceWorkOrdersAndStatus, getServiceProviderName } = require("../utils/general");
+const { getServiceWorkOrdersAndStatus, getServiceProviderName, getAllStatusFromWorkOrderLifeCycleForEmailNotifications } = require("../utils/general");
 const integrationsCronsModel = require("../models/integrationsCronsModel");
 const integrationsMasterModel = require("../models/integrationsMasterModel");
 const CPDWorkordersModel = require("../models/CPDWorkordersModel");
@@ -14,6 +14,7 @@ const { oneWeekWorkOrderEmailNotifcation } = require("../emailNotifications/work
 const fs = require('fs');
 const accountsModel = require('../models/accountsModel');
 const { sendWorkOrderEmail } = require('../emailNotifications/sendWorkOrderEmails');
+const integrationsSettingsModel = require('../models/integrationsSettingsModel');
 
 const schedulerIntegrationCronJobs = async (integrationObject) => {
     try {
@@ -66,234 +67,237 @@ const schedulerIntegrationCronJobs = async (integrationObject) => {
 
 
 const schedulerEmailJobs = async (integrationDetails, currentDateAndTime, accountLogo) => {
-    let allIntegrationDetailsHtml = '';
-    let workOrdersToDate
-    let workOrdersFromDate
-    for (let integration of integrationDetails) {
-      let integrationsMasterId = integration.integrationsMasterId;
-      console.log("integrationsMasterId:==", integrationsMasterId);
-      let arr = []
-      let integrationSourceAndDestinationStatus = {};
-      let presentWeekData = EmailDateAsset(currentDateAndTime);
-      workOrdersToDate = moment(new Date(presentWeekData[0].fromDate)).format('dddd, MMM DD YYYY')
-      workOrdersFromDate = moment(new Date(presentWeekData[presentWeekData.length-1].toDate)).format('dddd, MMM DD YYYY')
+  let allIntegrationDetailsHtml = '';
+  let workOrdersToDate
+  let workOrdersFromDate
+  let formattedFromDate = moment(currentDateAndTime).subtract(6, 'days').startOf('day');
+  let formattedToDate  = moment(currentDateAndTime).endOf('day')
+
+  for (let integration of integrationDetails) {
+    let integrationsMasterId = integration.integrationsMasterId;
+    console.log("integrationsMasterId:==", integrationsMasterId);
+    let arr = []
+    let integrationSourceAndDestinationStatus = {};
+    let presentWeekData = EmailDateAsset(currentDateAndTime);
+    
+    workOrdersFromDate = moment(formattedFromDate).format('dddd, MMM DD YYYY')
+    workOrdersToDate = moment(formattedToDate).format('dddd, MMM DD YYYY')
+    
+    let integrationsWOStatusFromSettings = await integrationsSettingsModel.findOne({integrationsMasterId:integrationsMasterId})
+    // Integration exception count for last 7 days
+    const integrationsExceptionsCount = await integrationsExceptionsModel.find({ integrationsMasterId: integrationsMasterId }).countDocuments();
+   for (let week of presentWeekData) {
+      let fromDate = new Date(week.fromDate);
+      let toDate = new Date(week.toDate);
       
-      // Integration exception count for last 7 days
-      const integrationsExceptionsCount = await integrationsExceptionsModel.find({ integrationsMasterId: integrationsMasterId }).countDocuments();
-     for (let week of presentWeekData) {
-        let fromDate = new Date(week.fromDate);
-        let toDate = new Date(week.toDate);
-        
-        let presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } });
-        let presentWeekIntegrationActivityLog = await integrationsCronsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } });
-  
-        week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length > 0 ? presentWeekIntegrationExceptions.length : 0;
-        week.integrationsActivityLogCount = presentWeekIntegrationActivityLog.length > 0 ? presentWeekIntegrationActivityLog.length : 0;
-      }
-  
-      let sourceWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integration.from, presentWeekData);
-      let destinationWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integration.to, presentWeekData);
-      
-      integrationSourceAndDestinationStatus = {
-        sourceStatus: [...sourceWorkOrdersAndStatus.statuses],
-        destinationStatus: [...destinationWorkOrdersAndStatus.statuses]
-      };
-      let sourceStatusTotalCount = sourceWorkOrdersAndStatus.statuses.reduce((currentValue,statusCount)=>{
-        return currentValue + statusCount.count
-      },0);
-      let destinationStatusTotalCount = destinationWorkOrdersAndStatus.statuses.reduce((currentValue,statusCount)=>{
-        return currentValue + statusCount.count
-      },0)
-      let sourceServiceProviderName = await getServiceProviderName(integration.from)
-      let destinationServiceProviderName = await getServiceProviderName(integration.to)
-    //   console.log('integrationSourceAndDestinationStatus:==', integrationSourceAndDestinationStatus);
-      console.log("arr:==",arr)
-      const failedCPDWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId: integrationsMasterId, status: "initiated" }).countDocuments();
-    //   console.log('failedCPDWorkOrders:===', failedCPDWorkOrders);
-    //   console.log('integrationsExceptionsCount:===', integrationsExceptionsCount);
-  
-      const emailNotificationContent = `${await oneWeekWorkOrderEmailNotifcation(integration.from, integration.to, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount, sourceStatusTotalCount, destinationStatusTotalCount, workOrdersFromDate, workOrdersToDate
-                                        ,sourceServiceProviderName, destinationServiceProviderName, integration.title)}`
-      
-      allIntegrationDetailsHtml += emailNotificationContent;
+      let presentWeekIntegrationExceptions = await integrationsExceptionsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } });
+      let presentWeekIntegrationActivityLog = await integrationsCronsModel.find({ integrationsMasterId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } });
+
+      week.integrationsExceptionsCount = presentWeekIntegrationExceptions.length > 0 ? presentWeekIntegrationExceptions.length : 0;
+      week.integrationsActivityLogCount = presentWeekIntegrationActivityLog.length > 0 ? presentWeekIntegrationActivityLog.length : 0;
     }
-    console.log('accountLogo:==',accountLogo)
-    const finalHtml = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>MDS Builders Inc Work Orders Report</title>
-     <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        margin: 0;
-        padding: 0;
-        -webkit-text-size-adjust: none;
-        width: 100% !important;
-        -ms-text-size-adjust: none;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-      }
 
-      .container {
-        background-color: #ffffff;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        text-align: center;
-        max-width: 600px;
-        width: 100%;
-        display: inline;
-      }
+    let sourceWorkOrdersAndStatus = await getAllStatusFromWorkOrderLifeCycleForEmailNotifications(integration.accountId, integrationsMasterId, integration.from, formattedFromDate, formattedToDate);
+    let destinationWorkOrdersAndStatus = await getAllStatusFromWorkOrderLifeCycleForEmailNotifications(integration.accountId, integrationsMasterId, integration.to, formattedFromDate, formattedToDate);
+    
+    integrationSourceAndDestinationStatus = {
+      sourceStatus: [...sourceWorkOrdersAndStatus],
+      destinationStatus: [...destinationWorkOrdersAndStatus]
+    };
+    let sourceStatusTotalCount = sourceWorkOrdersAndStatus.reduce((currentValue,statusCount)=>{
+      return currentValue + statusCount.count
+    },0);
+    let destinationStatusTotalCount = destinationWorkOrdersAndStatus.reduce((currentValue,statusCount)=>{
+      return currentValue + statusCount.count
+    },0)
+    let sourceServiceProviderName = await getServiceProviderName(integration.from)
+    let destinationServiceProviderName = await getServiceProviderName(integration.to)
+  //   console.log('integrationSourceAndDestinationStatus:==', integrationSourceAndDestinationStatus);
+    console.log("arr:==",arr)
+    const failedCPDWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId: integrationsMasterId, status: "initiated", createdAt:{$gte:new Date(formattedFromDate), $lte:new Date(formattedToDate)}}).countDocuments();
+    
+    const emailNotificationContent = `${await oneWeekWorkOrderEmailNotifcation(integration.from, integration.to, integrationSourceAndDestinationStatus, failedCPDWorkOrders, integrationsExceptionsCount, sourceStatusTotalCount, destinationStatusTotalCount, workOrdersFromDate, workOrdersToDate
+                                      ,sourceServiceProviderName, destinationServiceProviderName, integration.title, integrationsWOStatusFromSettings.statusFieldMappingKeys)}`
+    
+    allIntegrationDetailsHtml += emailNotificationContent;
+  }
+  console.log('accountLogo:==',accountLogo) 
+  const finalHtml = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>MDS Builders Inc Work Orders Report</title>
+   <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      -webkit-text-size-adjust: none;
+      width: 100% !important;
+      -ms-text-size-adjust: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-      .logo {
-        width: 100px;
-        margin: 0 auto 20px;
-      }
+    .container {
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+      display: inline;
+    }
 
-      .title {
-        font-size: 24px;
-        margin-bottom: 10px;
-      }
+    .logo {
+      width: 100px;
+      margin: 0 auto 20px;
+    }
 
-      .subtitle {
-        color: #888888;
-        margin-bottom: 30px;
-        font-size: 20px;
-      }
+    .title {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
 
-      .subtitlee {
-        font-size: 18px;
-        margin-bottom: 20px;
-      }
+    .subtitle {
+      color: #888888;
+      margin-bottom: 30px;
+      font-size: 20px;
+    }
 
-      .int {
-        text-align: left;
-        font-size: 16px;
-        margin-bottom: 20px;
-      }
+    .subtitlee {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
 
+    .int {
+      text-align: left;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      margin-bottom: 30px;
+    }
+
+    .stat {
+      background-color: #ffe0b2;
+      border-radius: 5px;
+      padding: 10px 20px;
+      flex: 1 1 calc(33.33% - 20px);
+      margin: 10px;
+      max-width: calc(33.33% - 20px);
+      box-sizing: border-box;
+    }
+
+    .stat.mds {
+      background-color: #96bbe2;
+    }
+
+    .stat.failed {
+      background-color: #ffcdd2;
+    }
+
+    .stat.exceptions {
+      background-color: #ffebee;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      padding-left: 10px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border: 1px solid #dddddd;
+      text-align: center;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    th {
+      background-color: #f4f4f4;
+    }
+
+    .button {
+      display: inline-block;
+      background-color: #007bff;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+
+    .footer {
+      color: #888888;
+      font-size: 12px;
+    }
+
+    @media (max-width: 600px) {
       .stats {
+        flex-direction: column;
+        align-items: center;
         display: flex;
-        flex-wrap: wrap;
         justify-content: space-around;
-        margin-bottom: 30px;
       }
 
       .stat {
-        background-color: #ffe0b2;
-        border-radius: 5px;
-        padding: 10px 20px;
-        flex: 1 1 calc(33.33% - 20px);
-        margin: 10px;
-        max-width: calc(33.33% - 20px);
-        box-sizing: border-box;
+        flex: 1 1 100%;
+        max-width: 100%;
+        display: inline;
+        min-width: 275px;
       }
 
-      .stat.mds {
-        background-color: #96bbe2;
+      .title,
+      .subtitle,
+      .subtitlee {
+        font-size: 18px;
       }
 
-      .stat.failed {
-        background-color: #ffcdd2;
+      .int {
+        font-size: 14px;
       }
+    }
+  </style>
+  </head>
+  <body>
+      <div class="container">
+          <div style="width:90%; margin:auto; padding-bottom:20px"><img style="width:30%; margin:auto" src="${accountLogo}" alt="Company Logo" class="logo"></div>
+          <div class="title">Thank you for choosing our services!</div>
+          <div class="subtitle">Last week work orders report<br>${workOrdersFromDate} to ${workOrdersToDate}</div>
+          ${allIntegrationDetailsHtml}
+          <div style = "margin:auto"><a href="${process.env.WEB_DOMAIN_NAME}" class="button ">View My Account</a></div>
+          
+          <div class="footer">Thanks for being a great customer.<br>&copy; Copyright 2024 DevRabbit IT Solutions, Inc. All Rights Reserved.</div>
+      </div>
+  </body>
+  </html>
+  `;
 
-      .stat.exceptions {
-        background-color: #ffebee;
-      }
+  // Write the combined HTML content to a file
+  const fileName = 'example.html';
+  fs.writeFile(fileName, finalHtml, (err) => {
+    if (err) {
+      console.error('Error writing to file:', err);
+    } else {
+      console.log('File has been created and content written!');
+    }
+  });
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 30px;
-        padding-left: 10px;
-      }
-
-      th,
-      td {
-        padding: 10px;
-        border: 1px solid #dddddd;
-        text-align: center;
-        white-space: normal;
-        word-break: break-word;
-      }
-
-      th {
-        background-color: #f4f4f4;
-      }
-
-      .button {
-        display: inline-block;
-        background-color: #007bff;
-        color: #ffffff;
-        padding: 10px 20px;
-        border-radius: 5px;
-        text-decoration: none;
-        margin-bottom: 20px;
-      }
-
-      .footer {
-        color: #888888;
-        font-size: 12px;
-      }
-
-      @media (max-width: 600px) {
-        .stats {
-          flex-direction: column;
-          align-items: center;
-          display: flex;
-          justify-content: space-around;
-        }
-
-        .stat {
-          flex: 1 1 100%;
-          max-width: 100%;
-          display: inline;
-          min-width: 275px;
-        }
-
-        .title,
-        .subtitle,
-        .subtitlee {
-          font-size: 18px;
-        }
-
-        .int {
-          font-size: 14px;
-        }
-      }
-    </style>
-    </head>
-    <body>
-        <div class="container">
-            <div style="width:60%; margin:auto"><img style="width:30%; margin:auto" src="${accountLogo}" alt="Company Logo" class="logo"></div>
-            <div class="title">Thank you for choosing our services!</div>
-            <div class="subtitle">Last week work orders report<br>${workOrdersFromDate} to ${workOrdersToDate}</div>
-            ${allIntegrationDetailsHtml}
-            <div style = "margin:auto"><a href="${process.env.WEB_DOMAIN_NAME}" class="button ">View My Account</a></div>
-            
-            <div class="footer">Thanks for being a great customer.<br>&copy; Copyright 2024 DevRabbit IT Solutions, Inc. All Rights Reserved.</div>
-        </div>
-    </body>
-    </html>
-    `;
-  
-    // Write the combined HTML content to a file
-    const fileName = 'example.html';
-    fs.writeFile(fileName, finalHtml, (err) => {
-      if (err) {
-        console.error('Error writing to file:', err);
-      } else {
-        console.log('File has been created and content written!');
-      }
-    });
-
-    await sendWorkOrderEmail(finalHtml)
+  await sendWorkOrderEmail(finalHtml)
 
 }
 
