@@ -9,7 +9,19 @@ const integrationsMasterModel = require('../../models/integrationsMasterModel');
 const accountSettingsModel = require('../../models/accountSettingsModel');
 const serviceProvidersListModel = require('../../models/serviceProviderList')
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../../utils/serviceProvidersAuthentication')
-const {encryptData,decryptData}=require('../../utils/encryptionAlgorithms')
+const { encryptData, decryptData } = require('../../utils/encryptionAlgorithms');
+const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
+const CPDWorkordersModel = require('../../models/CPDWorkordersModel')
+const DFWorkOrdersModel = require('../../models/DFWorkOrdersModel')
+const SNOWWorkOrdersModel = require('../../models/SNOWWorkOrdersModel')
+const CYSWorkOrdersModel = require('../../models/CYSWorkordersModel')
+const sessionsModel = require('../../models/sessionsModel')
+const integrationsMasterSettingsModel = require('../../models/integrationsSettingsModel');
+const integrationsMasterServiceProvidersModel = require('../../models/integrationsMasterServiceProvidersModel')
+const integrationsMasterFieldMappingsModel = require('../../models/integrationsFieldMappingModel')
+const integrationsExceptionsModel = require('../../models/integrationsExceptionsModel')
+const integrationsCronsModel = require('../../models/integrationsCronsModel')
+
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
@@ -105,7 +117,7 @@ exports.superAdminAccountRegister = asyncWrapper(async (req, res) => {
  * 
  */
 exports.getAllAccounts = asyncWrapper(async (req, res) => {
-    const allAccounts = await accountsModel.find({}, { password: 0 }).sort({_id:-1});
+    const allAccounts = await accountsModel.find({}, { password: 0 }).sort({ _id: -1 });
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
@@ -123,16 +135,51 @@ exports.getAllAccounts = asyncWrapper(async (req, res) => {
  * Returns Updated account record
  */
 exports.updateAccountStatus = asyncWrapper(async (req, res) => {
-    const updateAccountStatus = await accountsModel.findOneAndUpdate({ _id: req.params.accountId }, { $set: { status: req.body.status } }, { new: true, runValidators: true })
+    let accountId = req.params.accountId
 
-
-    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_ACCOUNT_STATUS_UPDATED,
-        data: {
-            updateAccountStatus
+    const models = [
+        workOrderLifeCycleModel,
+        CPDWorkordersModel,
+        DFWorkOrdersModel,
+        SNOWWorkOrdersModel,
+        CYSWorkOrdersModel,
+        integrationsCronsModel,
+        integrationsExceptionsModel,
+        integrationsMasterSettingsModel,
+        integrationsMasterFieldMappingsModel,
+        integrationsMasterServiceProvidersModel,
+         integrationsMasterModel,
+         sessionsModel,
+         usersModel,
+         accountSettingsModel,
+         accountsModel
+    ];
+    if (req.body.status === 'deleted') {
+ 
+        for (const model of models) {
+            await model.deleteMany({ accountId });
         }
-    })
+       
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_ACCOUNT_PERMENANT_DELETED,
+
+        })
+
+    } else if (req.body.status !== 'deleted') {
+        const updateAccountStatus = await accountsModel.findOneAndUpdate({ _id: req.params.accountId }, { $set: { status: req.body.status } }, { new: true, runValidators: true })
+
+        let responseMessage = `Success. Account is ${updateAccountStatus.status}.`
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: responseMessage,
+            data: {
+                updateAccountStatus
+            }
+        })
+
+    }
+
 
 })
 
@@ -203,59 +250,59 @@ exports.updateAccountSettings = asyncWrapper(async (req, res) => {
  * 
  */
 exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
-      const serviceProviderList=await serviceProvidersListModel.findOne({_id:req.params.serviceProviderListId})
-  
+    const serviceProviderList = await serviceProvidersListModel.findOne({ _id: req.params.serviceProviderListId })
 
-  
+
+
     if (serviceProviderList.serviceProviders === 'CPD') {
-      const checkCPDCredentials = await CPDAuthentication(req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type, req.body.credentials.baseUrl)
-  
-      if (checkCPDCredentials === 'error' || checkCPDCredentials === undefined) {
-        console.log("CPD-------------------Middleware failed")
-        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-          status: customConstants.messages.MESSAGE_FAIL,
-          message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
-        });
-      }
+        const checkCPDCredentials = await CPDAuthentication(req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type, req.body.credentials.baseUrl)
+
+        if (checkCPDCredentials === 'error' || checkCPDCredentials === undefined) {
+            console.log("CPD-------------------Middleware failed")
+            return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+                status: customConstants.messages.MESSAGE_FAIL,
+                message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+            });
+        }
     }
     if (serviceProviderList.serviceProviders === 'DF') {
-      const checkDFCredentials = await DFAuthentication(req.body.credentials.df_auth, req.body.credentials.df_servicecode, req.body.credentials.baseUrl)
-  
-      if (checkDFCredentials !== 200) {
-        console.log("DF-------------------Middleware failed")
-        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-          status: customConstants.messages.MESSAGE_FAIL,
-          message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
-        });
-      }
+        const checkDFCredentials = await DFAuthentication(req.body.credentials.df_auth, req.body.credentials.df_servicecode, req.body.credentials.baseUrl)
+
+        if (checkDFCredentials !== 200) {
+            console.log("DF-------------------Middleware failed")
+            return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+                status: customConstants.messages.MESSAGE_FAIL,
+                message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+            });
+        }
     }
     if (serviceProviderList.serviceProviders === 'SNOW') {
-      const checkDFCredentials = await SNOWAuthentication(req.body.credentials.baseUrl, req.body.credentials.username, req.body.credentials.password, req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type)
-  
-      if (checkDFCredentials !== 200) {
-        console.log("SNOW-------------------Middleware failed")
-        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-          status: customConstants.messages.MESSAGE_FAIL,
-          message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
-        });
-      }
+        const checkDFCredentials = await SNOWAuthentication(req.body.credentials.baseUrl, req.body.credentials.username, req.body.credentials.password, req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type)
+
+        if (checkDFCredentials !== 200) {
+            console.log("SNOW-------------------Middleware failed")
+            return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+                status: customConstants.messages.MESSAGE_FAIL,
+                message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+            });
+        }
     }
     if (serviceProviderList.serviceProviders === 'CYS') {
-      const checkDFCredentials = await CYSAuthentication(req.body.credentials.baseUrl, req.body.credentials.grant_type, req.body.credentials.cys_auth)
-  
-      if (checkDFCredentials !== 200) {
-        console.log("CYS-------------------Middleware failed")
-        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-          status: customConstants.messages.MESSAGE_FAIL,
-          message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
-        });
-      }
+        const checkDFCredentials = await CYSAuthentication(req.body.credentials.baseUrl, req.body.credentials.grant_type, req.body.credentials.cys_auth)
+
+        if (checkDFCredentials !== 200) {
+            console.log("CYS-------------------Middleware failed")
+            return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+                status: customConstants.messages.MESSAGE_FAIL,
+                message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
+            });
+        }
     }
     console.log("0-------------------Middleware passed")
     next()
-  })
-  
-  
+})
+
+
 
 
 
@@ -283,16 +330,16 @@ exports.getAllServiceProvidersList = asyncWrapper(async (req, res) => {
 
 exports.updateServiceProviderList = asyncWrapper(async (req, res) => {
 
-const encryptCode=await encryptData(req.body.credentials)
+    const encryptCode = await encryptData(req.body.credentials)
 
-const updateServiceProviderList = await serviceProvidersListModel.findOneAndUpdate({ _id: req.params.serviceProviderListId }, {$set:{testCredentials:encryptCode}},{new:true, runValidators:true} )
-return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER_LIST,
-    data: {
-        updateServiceProviderList
-    }
-})
+    const updateServiceProviderList = await serviceProvidersListModel.findOneAndUpdate({ _id: req.params.serviceProviderListId }, { $set: { testCredentials: encryptCode } }, { new: true, runValidators: true })
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER_LIST,
+        data: {
+            updateServiceProviderList
+        }
+    })
 })
 
 /**
@@ -300,8 +347,8 @@ return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json(
  *  @params {*} serviceProviderListId
  * If success, returns newly updated service provider list record 
  */
-exports.deleteServiceProviderList=asyncWrapper(async(req,res)=>{
-    const deleteServiceProviderList=await serviceProvidersListModel.findOneAndUpdate({_id:req.params.serviceProviderListId}, {$set:{status:req.body.status}}, {new:true, runValidators:true})
+exports.deleteServiceProviderList = asyncWrapper(async (req, res) => {
+    const deleteServiceProviderList = await serviceProvidersListModel.findOneAndUpdate({ _id: req.params.serviceProviderListId }, { $set: { status: req.body.status } }, { new: true, runValidators: true })
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_DELETE_SERVICE_PROVIDER_LIST,

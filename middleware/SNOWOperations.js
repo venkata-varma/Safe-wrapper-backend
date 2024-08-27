@@ -433,7 +433,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                             });
                             await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
                             workOrderPushedCount++
-                            await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { $inc: {pushedCount:workOrderPushedCount} }, { new: true });
+                            await integrationsCronsModel.findByIdAndUpdate(workOrder.integrationsCronId, { $inc: {pushedCount:1} }, { new: true });
                             // insert work order life cycle.
                             await workOrderLifeCycleModel.create({
                                 workOrderId: snowWorkOrderNumber,
