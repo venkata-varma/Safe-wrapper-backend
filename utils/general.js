@@ -314,7 +314,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         destinationWorkOrderDetails = await fetchWorkOrderDetails(CYSWorkordersModel, {
           accountId,
           integrationsMasterId,
-          'CYSWorkOrders.estimate.PONumber': workOrderId,
+          'CYSWorkOrders.estimate.CustomerPONumber': sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber,
         });
       }else if(from === 'CPD' && to === 'SNOW'){
         destinationWorkOrderDetails = await fetchWorkOrderDetails(SNOWWorkOrdersModel, {
@@ -362,7 +362,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         sourceWorkOrderDetails = await fetchWorkOrderDetails(CPDWorkordersModel, {
           accountId,
           integrationsMasterId,
-          $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },destinationWorkOrderDetails.CYSWorkOrders.estimate.PONumber]} 
+          "CPDWorkOrders.WorkOrderNumber": destinationWorkOrderDetails.CYSWorkOrders.estimate.CustomerPONumber
         });
 
         sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
@@ -415,7 +415,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
       destinationWorkOrderDetails = await fetchWorkOrderDetails(CYSWorkordersModel, {
         accountId,
         integrationsMasterId,
-        'CYSWorkOrders.estimate.PONumber': sourceWorkOrderDetails.CPDWorkOrderId.toString(),
+        'CYSWorkOrders.estimate.CustomerPONumber': workOrderId,
       });
 
       destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.CYSWorkOrderId);
