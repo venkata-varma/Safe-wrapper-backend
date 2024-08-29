@@ -157,7 +157,7 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
  */
 
 const getWorkOrderStatusFieldMappingkeys = async (integrationFieldMappingkeys, CPDWorkOrderStatus, IntegrationStatusMappingKeys) => {
-    integrationFieldMappingkeys.estimate.StatusText = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "Open";
+    integrationFieldMappingkeys.estimate.Station = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "Open";
     return integrationFieldMappingkeys;
 }
 
