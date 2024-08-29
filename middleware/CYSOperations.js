@@ -83,7 +83,7 @@ const getCPDFieldMappingkeys = async (CPDWorkOrderId, MessageId, fieldmappingkey
     if (getCPDWorkOrderDetails) {
         fieldmappingkeys = await mapCPDValuestoCYSFieldMappingKeys(getCPDWorkOrderDetails, fieldmappingkeys)
         fieldmappingkeys['estimate.CompanyName'] = getCPDWorkOrderDetails.Customer.Name + " - " + getCPDWorkOrderDetails.ServiceLocation.Address.Street1 || ""
-        fieldmappingkeys['estimate.description'] = CPDWorkOrderId + " - " + getCPDWorkOrderDetails.ServiceLocation.Address.Street1 || "DevRabbit Testing WorkOrders (Ignore)."
+        fieldmappingkeys['estimate.description'] = getCPDWorkOrderDetails.WorkOrderNumber + " - " + getCPDWorkOrderDetails.ServiceLocation.Address.Street1 || "DevRabbit Testing WorkOrders (Ignore)."
     }
     return fieldmappingkeys
 }
@@ -291,8 +291,8 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                 for (let CYSWorkOrder of updateRequestCYSWorkorders) {
                     fieldmappingkeys = integrationObject.dataPoints
                     const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, 
-                        $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },CYSWorkOrder.CYSWorkOrders.estimate.PONumber]},
-                        // CPDWorkOrderId: parseInt(CYSWorkOrder.CYSWorkOrders.estimate.PONumber) 
+                        // $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },CYSWorkOrder.CYSWorkOrders.estimate.CustomerPONumber]},
+                        "CPDWorkOrders.WorkOrderNumber": CYSWorkOrder.CYSWorkOrders.estimate.CustomerPONumber
                         })
                     // console.log('getCPDWorkOrderStatus:==',getCPDWorkOrderStatus)
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
