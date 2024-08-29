@@ -252,7 +252,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 await CYSWorkordersModel.findOneAndUpdate({
                                     CYSWorkOrderId: CYSWorkorderListId, integrationsMasterId: integrationObject.integrationsMasterId,
                                     accountId: integrationObject.accountId,
-                                }, { CYSWorkOrderStatus: getCYSWorkOrderList.estimate.StatusText, status: "completed", CYSWorkOrders: getCYSWorkOrderList }, { new: true }).lean()
+                                }, { CYSWorkOrderStatus: getCYSWorkOrderList.estimate.Station, status: "completed", CYSWorkOrders: getCYSWorkOrderList }, { new: true }).lean()
                             }
                             else {
                                 const CYSWorkOrderDetails = await CYSWorkordersModel.create({
@@ -261,7 +261,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                     integrationsCronId: workOrder.integrationsCronId,
                                     CYSWorkOrderId: CYSWorkorderListId,
                                     CYSWorkOrders: getCYSWorkOrderList,
-                                    CYSWorkOrderStatus: getCYSWorkOrderList.estimate.StatusText,
+                                    CYSWorkOrderStatus: getCYSWorkOrderList.estimate.Station,
                                     status: "completed",
                                 });
                                 await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
@@ -271,7 +271,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 await workOrderLifeCycleModel.create({
                                     workOrderId: CYSWorkorderListId,
                                     WorkOrderNumber:workOrder.CPDWorkOrders.WorkOrderNumber,
-                                    workOrderStatus: getCYSWorkOrderList.estimate.StatusText,
+                                    workOrderStatus: getCYSWorkOrderList.estimate.Station,
                                     accountId: integrationObject.accountId,
                                     integrationsMasterId: integrationObject.integrationsMasterId,
                                     serviceProvider: "CYS",
@@ -357,7 +357,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 accountId: integrationObject.accountId,
                             }, {
                                 CYSWorkOrders: getCYSWorkOrderList.data,
-                                CYSWorkOrderStatus: getCYSWorkOrderList.data.estimate.StatusText,
+                                CYSWorkOrderStatus: getCYSWorkOrderList.data.estimate.Station,
                                 status: "completed"
                             }, { new: true }).lean()
 
@@ -365,7 +365,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             await workOrderLifeCycleModel.create({
                                 workOrderId: CYSWorkOrder.CYSWorkOrderId,
                                 WorkOrderNumber:getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber,
-                                workOrderStatus: getCYSWorkOrderList.data.estimate.StatusText,
+                                workOrderStatus: getCYSWorkOrderList.data.estimate.Station,
                                 accountId: integrationObject.accountId,
                                 integrationsMasterId: integrationObject.integrationsMasterId,
                                 serviceProvider: "CYS",
