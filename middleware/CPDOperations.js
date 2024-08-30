@@ -108,7 +108,7 @@ const validateNewAndUpdatedWO = async (CPDWorkOrderResponse, cronJobDetails, acc
                 await DFWorkOrdersModel.findOneAndUpdate({ "DFWorkOrders.numberAlt": work.WorkOrderNumber, accountId: accountId, integrationsMasterId: integrationsMasterId }, {
                     status: "update-request"
                 }, { new: true })
-                await CYSWorkordersModel.findOneAndUpdate({ "CYSWorkOrders.estimate.PONumber" : `${work.WorkOrderId}`, accountId: accountId, integrationsMasterId: integrationsMasterId},{
+                await CYSWorkordersModel.findOneAndUpdate({ "CYSWorkOrders.estimate.CustomerPONumber" : `${work.WorkOrderNumber}`, accountId: accountId, integrationsMasterId: integrationsMasterId},{
                     status: "update-request"
                 },{new: true});
                 await SNOWWorkOrdersModel.findOneAndUpdate({ "SNOWWorkOrders.user_input": `${work.WorkOrderNumber}` ,  accountId: accountId, integrationsMasterId: integrationsMasterId}, {
