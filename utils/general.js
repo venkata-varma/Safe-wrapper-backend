@@ -238,7 +238,7 @@ const getStatusFieldMappings = async(integrationMasterId) => {
       "Rejected": "Rejected",
       "Backordered": "Recalled",
       "Work-On": "CheckedIn",      
-      "Complete": "CheckedOut",
+      "Closed": "CheckedOut",
       "Service-In-Progress": "Paused",
       "Service-to-be-Scheduled" : "OnHold",
       "Ready-to-Invoice":"Verified",
