@@ -409,13 +409,14 @@ exports.getActivityLogs = asyncWrapper(async (req, res) => {
    
     const accountId = req.params.accountId;
     const integrationsMasterId = req.query.integrationsMasterId;
-    let fromDateQuery =returnIndianDate(  new Date(req.query.fromDate ));
+    let fromDateQuery =new Date(req.query.fromDate );
+    console.log("fromDateQuery",  fromDateQuery)
     let toDateQuery =new Date(req.query.toDate );
     toDateQuery.setHours(23, 59,59,999)
     toDateQuery.setHours(toDateQuery.getHours()+5)
     toDateQuery.setMinutes(toDateQuery.getMinutes()+30)
     
-    
+     console.log("toDate", toDateQuery)
     const activityLogs = await integrationsCronsModel.aggregate([
         {
             $match: {
