@@ -348,9 +348,9 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             console.log("CYS Update Get ERROR:==", error.response.data);
                             await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.url+" \n data: No data available"), "cys-get-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, CYSWorkOrder.CYSWorkOrderId)
                         });
-                        // console.log('getCYSWorkOrderList:==',getCYSWorkOrderList)
-                    if (getCYSWorkOrderList !== undefined) {
-                        const listOfDFWorkorderDetails = await CYSWorkordersModel.findOne({ CYSWorkOrderId: CYSUpdatedWorkOrderId }).lean();
+                        // console.log('getCYSWorkOrderList:==',getCYSWorkOrderList.data.estimate.Station)
+                    if (getCYSWorkOrderList !== undefined) {                        
+                        const listOfDFWorkorderDetails = await CYSWorkordersModel.findOne({$expr:{$eq:[{$toString:"$CYSWorkOrderId"},CYSUpdatedWorkOrderId]}}).lean();
                         if (listOfDFWorkorderDetails) {
                             await CYSWorkordersModel.findOneAndUpdate({
                                 CYSWorkOrderId: CYSWorkOrder.CYSWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
