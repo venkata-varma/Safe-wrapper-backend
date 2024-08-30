@@ -21,6 +21,7 @@ const integrationsMasterServiceProvidersModel = require('../../models/integratio
 const integrationsMasterFieldMappingsModel = require('../../models/integrationsFieldMappingModel')
 const integrationsExceptionsModel = require('../../models/integrationsExceptionsModel')
 const integrationsCronsModel = require('../../models/integrationsCronsModel')
+const moment=require('moment')
 
 /*
 Miidleware function to controller, "createAccount"
@@ -148,18 +149,18 @@ exports.updateAccountStatus = asyncWrapper(async (req, res) => {
         integrationsMasterSettingsModel,
         integrationsMasterFieldMappingsModel,
         integrationsMasterServiceProvidersModel,
-         integrationsMasterModel,
-         sessionsModel,
-         usersModel,
-         accountSettingsModel,
-         accountsModel
+        integrationsMasterModel,
+        sessionsModel,
+        usersModel,
+        accountSettingsModel,
+        accountsModel
     ];
     if (req.body.status === 'deleted') {
- 
+
         for (const model of models) {
             await model.deleteMany({ accountId });
         }
-       
+
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_ACCOUNT_PERMENANT_DELETED,
@@ -356,4 +357,84 @@ exports.deleteServiceProviderList = asyncWrapper(async (req, res) => {
             deleteServiceProviderList
         }
     })
+})
+
+exports.validationForGetActivityLogs = asyncWrapper(async (req, res, next) => {
+    const accountId = req.params.accountId;
+    const integrationsMasterId = req.query.integrationsMasterId;
+    let fromDateQuery = req.query.fromDate;
+    let toDateQuery = req.query.toDate;
+    console.log("fromDateQuery,toDateQuery",fromDateQuery,toDateQuery )
+    if (!accountId) {
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_ACCOUNTID_NOT_FOUND,
+        })
+    }
+    if (!integrationsMasterId) {
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_ID_NOT_FOUND,
+        })
+    }
+    if (!fromDateQuery || !toDateQuery) {
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_DATE_QUERIES_NOT_FOUND,
+        })
+    }
+    next()
+})
+
+const getDates=async(fromDate, toDate)=>{
+    let fromDateQuery=new Date(fromDate)
+    let toDateQuery=new Date(toDate)
+
+    fromDateQuery.setHours(0, 0, 0, 0);
+    toDateQuery.setHours(23, 59, 59, 999);
+   
+    console.log(".....",fromDateQuery, toDateQuery )
+    return {
+        fromDateQuery, toDateQuery
+    }
+}
+
+
+/**
+ * 
+ * 
+ */
+exports.getActivityLogs = asyncWrapper(async (req, res) => {
+   
+    const accountId = req.params.accountId;
+    const integrationsMasterId = req.query.integrationsMasterId;
+ const fromDateQuery=new Date(req.query.fromDate)
+ const toDateQuery=new Date(req.query.toDate)
+ fromDateQuery.setHours(0,0,0,0)
+ toDateQuery.setHours(23,59,59,999)
+ 
+    console.log("datres", fromDateQuery, toDateQuery)
+
+    const activityLogs = await integrationsCronsModel.aggregate([
+        {
+            $match: {
+                accountId: new mongoose.Types.ObjectId(accountId),
+                integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+            //    createdAt: { $gte: new Date(fromDateQuery), $lte: new Date(toDateQuery) }
+            createdAt: { $gte: fromDateQuery, $lte: toDateQuery }
+
+
+            },
+
+        },
+        {$sort:{ createdAt:-1}}
+
+
+    ])
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_ACTIVITY_LOGS,
+        activityLogs:activityLogs
+    })
+
 })

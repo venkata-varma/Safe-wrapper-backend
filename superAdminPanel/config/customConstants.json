@@ -30,7 +30,12 @@
       "MESSAGE_UPDATE_SERVICE_PROVIDER_LIST":"Update service provider list.",
       "MESSAGE_DELETE_SERVICE_PROVIDER_LIST":"Delete service provider list.",
       "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials.",
-      "MESSAGE_ACCOUNT_PERMENANT_DELETED":"The respective account and all associated data have been successfully deleted."
+      "MESSAGE_ACCOUNT_PERMENANT_DELETED":"The respective account and all associated data have been successfully deleted.",
+      "MESSAGE_ACCOUNTID_NOT_FOUND":"Account Id not found!",
+      "MESSAGE_INTEGRATION_MASTER_ID_NOT_FOUND":"Integjyfjyfcjfjhfdhtration master Id not found!",
+      "MESSAGE_DATE_QUERIES_NOT_FOUND":"From date / To date not found!",
+      "MESSAGE_GET_ACTIVITY_LOGS":"Activity logs with given inputs."
+      
     },
     "statusCodes": {
       "FORBIDDEN": 403,
