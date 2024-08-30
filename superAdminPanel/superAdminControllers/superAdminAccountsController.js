@@ -22,6 +22,7 @@ const integrationsMasterFieldMappingsModel = require('../../models/integrationsF
 const integrationsExceptionsModel = require('../../models/integrationsExceptionsModel')
 const integrationsCronsModel = require('../../models/integrationsCronsModel')
 const moment=require('moment')
+const {returnIndianDate}=require('../../utils/utilsFunctions')
 
 /*
 Miidleware function to controller, "createAccount"
@@ -408,19 +409,19 @@ exports.getActivityLogs = asyncWrapper(async (req, res) => {
    
     const accountId = req.params.accountId;
     const integrationsMasterId = req.query.integrationsMasterId;
- const fromDateQuery=new Date(req.query.fromDate)
- const toDateQuery=new Date(req.query.toDate)
- fromDateQuery.setHours(0,0,0,0)
- toDateQuery.setHours(23,59,59,999)
- 
-    console.log("datres", fromDateQuery, toDateQuery)
-
+    let fromDateQuery =returnIndianDate(  new Date(req.query.fromDate ));
+    let toDateQuery =new Date(req.query.toDate );
+    toDateQuery.setHours(23, 59,59,999)
+    toDateQuery.setHours(toDateQuery.getHours()+5)
+    toDateQuery.setMinutes(toDateQuery.getMinutes()+30)
+    
+    
     const activityLogs = await integrationsCronsModel.aggregate([
         {
             $match: {
                 accountId: new mongoose.Types.ObjectId(accountId),
                 integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
-            //    createdAt: { $gte: new Date(fromDateQuery), $lte: new Date(toDateQuery) }
+
             createdAt: { $gte: fromDateQuery, $lte: toDateQuery }
 
 
