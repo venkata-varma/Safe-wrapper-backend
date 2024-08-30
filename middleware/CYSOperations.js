@@ -356,7 +356,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     if (getCYSWorkOrderList !== undefined) {                        
                         const listOfDFWorkorderDetails = await CYSWorkordersModel.findOne({$expr:{$eq:[{$toString:"$CYSWorkOrderId"},CYSUpdatedWorkOrderId]}}).lean();
                         if (listOfDFWorkorderDetails) {
-                            let updatedDFWorkOrderStatus = getCYSWorkOrderList.estimate.Station.split(' ').length > 1 ? getCYSWorkOrderList.estimate.Station.split(' ').join('-') : getCYSWorkOrderList.estimate.Station
+                            let updatedDFWorkOrderStatus = getCYSWorkOrderList.data.estimate.Station.split(' ').length > 1 ? getCYSWorkOrderList.data.estimate.Station.split(' ').join('-') : getCYSWorkOrderList.data.estimate.Station
                             await CYSWorkordersModel.findOneAndUpdate({
                                 CYSWorkOrderId: CYSWorkOrder.CYSWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
                                 accountId: integrationObject.accountId,
