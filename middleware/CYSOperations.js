@@ -157,7 +157,10 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
  */
 
 const getWorkOrderStatusFieldMappingkeys = async (integrationFieldMappingkeys, CPDWorkOrderStatus, IntegrationStatusMappingKeys) => {
-    integrationFieldMappingkeys.estimate.Station = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "Open";
+    let statusMappingValue = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "General";
+    integrationFieldMappingkeys.estimate.Station = statusMappingValue.split('-').length > 1 ? statusMappingValue.split('-'): statusMappingValue
+      
+    // integrationFieldMappingkeys.estimate.Station = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "Open";
     return integrationFieldMappingkeys;
 }
 
@@ -255,13 +258,14 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 }, { CYSWorkOrderStatus: getCYSWorkOrderList.estimate.Station, status: "completed", CYSWorkOrders: getCYSWorkOrderList }, { new: true }).lean()
                             }
                             else {
+                                let updatedDFWorkOrderStatus = getCYSWorkOrderList.estimate.Station.split(' ').length > 1 ? getCYSWorkOrderList.estimate.Station.split(' ').join('-') : getCYSWorkOrderList.estimate.Station
                                 const CYSWorkOrderDetails = await CYSWorkordersModel.create({
                                     integrationsMasterId: integrationObject.integrationsMasterId,
                                     accountId: integrationObject.accountId,
                                     integrationsCronId: workOrder.integrationsCronId,
                                     CYSWorkOrderId: CYSWorkorderListId,
                                     CYSWorkOrders: getCYSWorkOrderList,
-                                    CYSWorkOrderStatus: getCYSWorkOrderList.estimate.Station,
+                                    CYSWorkOrderStatus: updatedDFWorkOrderStatus,
                                     status: "completed",
                                 });
                                 await CPDWorkordersModel.findOneAndUpdate({ CPDWorkOrderId: workOrder.CPDWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId }, { status: "completed" }, { new: true })
@@ -271,7 +275,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 await workOrderLifeCycleModel.create({
                                     workOrderId: CYSWorkorderListId,
                                     WorkOrderNumber:workOrder.CPDWorkOrders.WorkOrderNumber,
-                                    workOrderStatus: getCYSWorkOrderList.estimate.Station,
+                                    workOrderStatus: updatedDFWorkOrderStatus,
                                     accountId: integrationObject.accountId,
                                     integrationsMasterId: integrationObject.integrationsMasterId,
                                     serviceProvider: "CYS",
@@ -352,12 +356,13 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     if (getCYSWorkOrderList !== undefined) {                        
                         const listOfDFWorkorderDetails = await CYSWorkordersModel.findOne({$expr:{$eq:[{$toString:"$CYSWorkOrderId"},CYSUpdatedWorkOrderId]}}).lean();
                         if (listOfDFWorkorderDetails) {
+                            let updatedDFWorkOrderStatus = getCYSWorkOrderList.estimate.Station.split(' ').length > 1 ? getCYSWorkOrderList.estimate.Station.split(' ').join('-') : getCYSWorkOrderList.estimate.Station
                             await CYSWorkordersModel.findOneAndUpdate({
                                 CYSWorkOrderId: CYSWorkOrder.CYSWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
                                 accountId: integrationObject.accountId,
                             }, {
                                 CYSWorkOrders: getCYSWorkOrderList.data,
-                                CYSWorkOrderStatus: getCYSWorkOrderList.data.estimate.Station,
+                                CYSWorkOrderStatus: updatedDFWorkOrderStatus,
                                 status: "completed"
                             }, { new: true }).lean()
 
@@ -365,7 +370,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             await workOrderLifeCycleModel.create({
                                 workOrderId: CYSWorkOrder.CYSWorkOrderId,
                                 WorkOrderNumber:getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber,
-                                workOrderStatus: getCYSWorkOrderList.data.estimate.Station,
+                                workOrderStatus: updatedDFWorkOrderStatus,
                                 accountId: integrationObject.accountId,
                                 integrationsMasterId: integrationObject.integrationsMasterId,
                                 serviceProvider: "CYS",
