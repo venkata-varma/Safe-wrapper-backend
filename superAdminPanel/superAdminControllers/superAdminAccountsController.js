@@ -360,6 +360,12 @@ exports.deleteServiceProviderList = asyncWrapper(async (req, res) => {
     })
 })
 
+/**
+ * Middleware for the endpoint '/get-activity-logs/:accountId' 
+ * Checks for the existence of : 1.  @params {*} accountId   2. @query {*} integrationsMasterId  3. @query {*} fromDate  3. @query {*} toDate
+ * If all validations are passed, this middleware function call to "getActivityLogs" to return Activity logs based on given filters from customer.
+ */
+
 exports.validationForGetActivityLogs = asyncWrapper(async (req, res, next) => {
     const accountId = req.params.accountId;
     const integrationsMasterId = req.query.integrationsMasterId;
@@ -387,22 +393,14 @@ exports.validationForGetActivityLogs = asyncWrapper(async (req, res, next) => {
     next()
 })
 
-const getDates=async(fromDate, toDate)=>{
-    let fromDateQuery=new Date(fromDate)
-    let toDateQuery=new Date(toDate)
-
-    fromDateQuery.setHours(0, 0, 0, 0);
-    toDateQuery.setHours(23, 59, 59, 999);
-   
-    console.log(".....",fromDateQuery, toDateQuery )
-    return {
-        fromDateQuery, toDateQuery
-    }
-}
 
 
 /**
- * 
+ * After passin thorugh the middleware "validationForGetActivityLogs", this End-point is to give Activity logs based on below given filters.
+ * @params {*} accountId
+ * @Filters :  1. Select Integration master Id   
+ *             2. From date
+ *             3. To date
  * 
  */
 exports.getActivityLogs = asyncWrapper(async (req, res) => {
