@@ -332,6 +332,12 @@ exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) =>
       message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
+  else if(!integrationMasterDetails.to){
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_DESTINATION_SERVICEPROVIDER_NOT_FOUND,
+    });
+  }
   else {
     next()
   }
@@ -352,6 +358,12 @@ exports.validateintegrationsMasterExistForFieldMapping = asyncWrapper(async (req
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
+    });
+  }
+  else if(!integrationMasterDetails.to){
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_DESTINATION_SERVICEPROVIDER_NOT_FOUND,
     });
   }
   else {
@@ -762,7 +774,38 @@ exports.validateIntegrationsMaster = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_INTEGRATION_NOT_FOUND,
     });
   }
+  else if (integrationMasterDetails.status === 'deleted' || integrationMasterDetails.status === 'blocked') {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
+    });
+  }
+  else {
+    next()
+  }
+})
 
+/**
+ * Validate integration master exist for edit fieldMappings and settings.
+ * validate integration master status. 
+*/
+
+exports.validateIntegrationsMasterForEdit = asyncWrapper(async (req, res, next) => {
+
+  const integrationMasterId = req.params.integrationsMasterId;
+  const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
+  if (!integrationMasterDetails) {
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_NOT_FOUND,
+    });
+  }
+  else if(!integrationMasterDetails.to){
+    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INTEGRATION_DESTINATION_SERVICEPROVIDER_NOT_FOUND,
+    });
+  }
   else if (integrationMasterDetails.status === 'deleted' || integrationMasterDetails.status === 'blocked') {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
