@@ -21,8 +21,8 @@ router.patch('/edit-integrationmaster/:integrationsMasterId',integrationsMasterC
 router.patch('/edit-integrationmaster-service-provider/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster,
     integrationsMasterControllers.credentialsValidationsMiddleware, 
     integrationsMasterControllers.editIntegrationMasterServiceProviderCredentials)
-router.patch('/edit-integrationmaster-field-mappings/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.editIntegrationMasterFieldMappings)
-router.patch('/edit-integrationmaster-settings/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.editIntegrationMasterSettings)
+router.patch('/edit-integrationmaster-field-mappings/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMasterForEdit, integrationsMasterControllers.editIntegrationMasterFieldMappings)
+router.patch('/edit-integrationmaster-settings/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMasterForEdit, integrationsMasterControllers.editIntegrationMasterSettings)
 router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.deactivateInteragtionMasterCrons)
 router.patch('/update-field-mappings-by-service',integrationsMasterControllers.middlewareForIntegrationExist, integrationsMasterControllers.updateIntegrationFieldMappingsByServiceType)
 router.patch('/update-integration-settings-data-sync/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateAutoDataSync);
