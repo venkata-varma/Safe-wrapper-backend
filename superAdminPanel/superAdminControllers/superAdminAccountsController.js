@@ -363,7 +363,7 @@ exports.deleteServiceProviderList = asyncWrapper(async (req, res) => {
 /**
  * Middleware for the endpoint '/get-activity-logs/:accountId' 
  * Checks for the existence of : 1.  @params {*} accountId   2. @query {*} integrationsMasterId  3. @query {*} fromDate  3. @query {*} toDate
- * If all validations are passed, this middl
+ * If all validations are passed, this middleware function call to "getActivityLogs" to return Activity logs based on given filters from customer.
  */
 
 exports.validationForGetActivityLogs = asyncWrapper(async (req, res, next) => {
