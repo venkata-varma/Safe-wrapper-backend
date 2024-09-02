@@ -20,4 +20,5 @@ router.patch('/update-account-status/:accountId',superAdminAccountsController.up
 router.patch('/update-account-settings/:accountId', superAdminAccountsController.updateAccountSettings)
 router.patch('/update-service-provider/:serviceProviderListId',superAdminAccountsController.serviceProviderListCredentialsValidation, superAdminAccountsController.updateServiceProviderList )
 router.patch('/delete-service-provider-list/:serviceProviderListId',superAdminAccountsController.deleteServiceProviderList)
+router.get('/get-activity-logs/:accountId', superAdminAccountsController.validationForGetActivityLogs, superAdminAccountsController.getActivityLogs)
 module.exports=router
