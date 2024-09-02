@@ -34,7 +34,7 @@
       "MESSAGE_ACCOUNTID_NOT_FOUND":"Account Id not found!",
       "MESSAGE_INTEGRATION_MASTER_ID_NOT_FOUND":"Integjyfjyfcjfjhfdhtration master Id not found!",
       "MESSAGE_DATE_QUERIES_NOT_FOUND":"From date / To date not found!",
-      "MESSAGE_GET_ACTIVITY_LOGS":"Activity logs with given inputs."
+      "MESSAGE_GET_ACTIVITY_LOGS":"Activity logs."
       
     },
     "statusCodes": {
