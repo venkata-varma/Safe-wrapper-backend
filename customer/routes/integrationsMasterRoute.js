@@ -15,8 +15,8 @@ router.post('/create-integrationmaster-service-provider', integrationsMasterCont
     integrationsMasterControllers.createIntegrationMasterServiceProviderCredentials)
 router.post('/get-integration-decrypt-result', integrationsMasterControllers.getIntegrationCryptoService);
  
-router.patch('/update-integrationmaster-field-mapping',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterFieldMappings)
-router.patch('/update-integrationmaster-settings',integrationsMasterControllers.validateintegrationsMasterExist, integrationsMasterControllers.updateIntegrationMasterSettings)
+router.patch('/update-integrationmaster-field-mapping',integrationsMasterControllers.validateIntegrationsMasterForEdit, integrationsMasterControllers.updateIntegrationMasterFieldMappings)
+router.patch('/update-integrationmaster-settings',integrationsMasterControllers.validateIntegrationsMasterForEdit, integrationsMasterControllers.updateIntegrationMasterSettings)
 router.patch('/edit-integrationmaster/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.editIntegrationMaster);
 router.patch('/edit-integrationmaster-service-provider/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster,
     integrationsMasterControllers.credentialsValidationsMiddleware, 
