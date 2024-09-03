@@ -35,11 +35,11 @@ const accountSettingsSchema = mongoose.Schema({
     },
     sourceServiceProviders:{
         type: Array,
-        default:[]
+        default:["CPD"]
     },
     destinationServiceProviders:{
         type: Array,
-        default:[]
+        default:["SNOW", "DF","CYS"]
     },
     dataPoints: {
         type: Array,
