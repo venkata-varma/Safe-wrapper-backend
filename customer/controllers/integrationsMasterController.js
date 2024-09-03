@@ -332,12 +332,6 @@ exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) =>
       message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
-  else if(!integrationMasterDetails.to){
-    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_INTEGRATION_DESTINATION_SERVICEPROVIDER_NOT_FOUND,
-    });
-  }
   else {
     next()
   }
@@ -792,7 +786,7 @@ exports.validateIntegrationsMaster = asyncWrapper(async (req, res, next) => {
 
 exports.validateIntegrationsMasterForEdit = asyncWrapper(async (req, res, next) => {
 
-  const integrationMasterId = req.params.integrationsMasterId;
+  const integrationMasterId = req.params.integrationsMasterId || req.body.integrationsMasterId;
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
   if (!integrationMasterDetails) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
