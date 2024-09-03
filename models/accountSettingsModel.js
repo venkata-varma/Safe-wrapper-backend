@@ -29,10 +29,10 @@ const accountSettingsSchema = mongoose.Schema({
             "createIntegrations": true
         }
     },
-    serviceProviders: {
-        type: Array,
-        default: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
-    },
+    // serviceProviders: {
+    //     type: Array,
+    //     default: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
+    // },
     sourceServiceProviders:{
         type: Array,
         default:["CPD"]
