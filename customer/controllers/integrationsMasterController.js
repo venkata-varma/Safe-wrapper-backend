@@ -1051,7 +1051,24 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   }
 
   let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { dataPoints: dataPoints,from:from, to:to, serviceMethod:serviceMethod  } }, { new: true });
-
+  await integrationsMasterModel.findByIdAndUpdate(
+    { _id: req.params.integrationsMasterId, stepcount: { $lt: 5 } },
+    [
+      {
+        $set: {
+          stepcount: { $add: ["$stepcount", 1] },
+          status: {
+            $cond: {
+              if: { $eq: [{ $add: ["$stepcount", 1] }, 5] }, // Check if stepcount becomes 5
+              then: "active",
+              else: "$status", // Keep current status if stepcount is not 5
+            },
+          },
+        },
+      },
+    ],
+    { new: true }
+  );
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED,
