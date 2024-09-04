@@ -44,7 +44,7 @@ const accountSettingsSchema = mongoose.Schema({
     dataPoints: {
         type: Array,
         default:[{
-            "interationDetails": {
+            "integrationDetails": {
                 "source": true,
                 "destination": true,
                 "activityLog": true,
