@@ -794,7 +794,7 @@ exports.validateIntegrationsMasterForEdit = asyncWrapper(async (req, res, next) 
       message: customConstants.messages.MESSAGE_INTEGRATION_NOT_FOUND,
     });
   }
-  else if(!integrationMasterDetails.to){
+  else if(!integrationMasterDetails.from || !integrationMasterDetails.to){
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_DESTINATION_SERVICEPROVIDER_NOT_FOUND,
@@ -1051,7 +1051,24 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   }
 
   let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { dataPoints: dataPoints,from:from, to:to, serviceMethod:serviceMethod  } }, { new: true });
-
+  await integrationsMasterModel.findByIdAndUpdate(
+    { _id: req.params.integrationsMasterId, stepCount: { $lt: 5 } },
+    [
+      {
+        $set: {
+          stepCount: { $add: ["$stepCount", 1] },
+          status: {
+            $cond: {
+              if: { $eq: [{ $add: ["$stepCount", 1] }, 5] }, // Check if stepcount becomes 5
+              then: "active",
+              else: "$status", // Keep current status if stepcount is not 5
+            },
+          },
+        },
+      },
+    ],
+    { new: true }
+  );
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED,
