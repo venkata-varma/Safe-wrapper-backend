@@ -154,7 +154,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
     const accountInformation = await accountsModel.findById(accountId);
     const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId }).countDocuments();
     const integrationsActivitylogCount = await integrationCronsModel.find({ accountId: accountId }).countDocuments();
-
+    const accountSettings = await accountSettingsModel.findOne({accountId:accountId})
     let integrationsOfAccount = await integrationsMasterModel.aggregate([
         {
             $match: {
@@ -256,6 +256,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_INFORMATION,
         data: {
             accountInformation,
+            accountSettings,
             integrationsOfAccount: workOrderReports,
             integrationExceptionsCount: integrationExceptions,
             dataSyncCount: integrationsActivitylogCount,

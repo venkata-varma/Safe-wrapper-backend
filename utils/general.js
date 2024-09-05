@@ -235,11 +235,14 @@ const getStatusFieldMappings = async(integrationMasterId) => {
     statusFieldMappingKeys = {
       "Requested": "New",
       "Approved": "Accepted",
-      "Cancelled": "Rejected",
-      "Open": "Recalled",
-      "Built": "CheckedIn",
-      "Pending": "Paused",
-      "Closed": "CheckedOut"
+      "Rejected": "Rejected",
+      "Backordered": "Recalled",
+      "Work-On": "CheckedIn",      
+      "Closed": "CheckedOut",
+      "Service-In-Progress": "Paused",
+      "Service-to-be-Scheduled" : "OnHold",
+      "Ready-to-Invoice":"Verified",
+      "Pending-Info":"NeedsCompletionDetails"
     }
   }
   else if (integrationMaster.from === "CPD" && integrationMaster.to === "SNOW") {
@@ -314,7 +317,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         destinationWorkOrderDetails = await fetchWorkOrderDetails(CYSWorkordersModel, {
           accountId,
           integrationsMasterId,
-          'CYSWorkOrders.estimate.PONumber': workOrderId,
+          'CYSWorkOrders.estimate.CustomerPONumber': sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber,
         });
       }else if(from === 'CPD' && to === 'SNOW'){
         destinationWorkOrderDetails = await fetchWorkOrderDetails(SNOWWorkOrdersModel, {
@@ -362,7 +365,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         sourceWorkOrderDetails = await fetchWorkOrderDetails(CPDWorkordersModel, {
           accountId,
           integrationsMasterId,
-          $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },destinationWorkOrderDetails.CYSWorkOrders.estimate.PONumber]} 
+          "CPDWorkOrders.WorkOrderNumber": destinationWorkOrderDetails.CYSWorkOrders.estimate.CustomerPONumber
         });
 
         sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
@@ -415,7 +418,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
       destinationWorkOrderDetails = await fetchWorkOrderDetails(CYSWorkordersModel, {
         accountId,
         integrationsMasterId,
-        'CYSWorkOrders.estimate.PONumber': sourceWorkOrderDetails.CPDWorkOrderId.toString(),
+        'CYSWorkOrders.estimate.CustomerPONumber': workOrderId,
       });
 
       destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.CYSWorkOrderId);

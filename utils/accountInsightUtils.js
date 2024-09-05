@@ -38,15 +38,15 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                 }
             },
 
-            {
-                $group: {
-                    _id: "$workOrderId", // Group by workOrderId
-                    doc: { $first: "$$ROOT" } // Select the first document for each workOrderId
-                }
-            },
-            {
-                $replaceRoot: { newRoot: "$doc" } // Replace the root with the grouped document
-            },
+            // {
+            //     $group: {
+            //         _id: "$workOrderId", // Group by workOrderId
+            //          doc: { $first: "$$ROOT" } // Select the first document for each workOrderId
+            //     }
+            // },
+            // {
+            //     $replaceRoot: { newRoot: "$doc" } // Replace the root with the grouped document
+            // },
 
             { $sort: { createdAt: -1 } },
             {

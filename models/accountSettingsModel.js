@@ -29,14 +29,22 @@ const accountSettingsSchema = mongoose.Schema({
             "createIntegrations": true
         }
     },
-    serviceProviders: {
+    // serviceProviders: {
+    //     type: Array,
+    //     default: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
+    // },
+    sourceServiceProviders:{
         type: Array,
-        default: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
+        default:["CPD"]
+    },
+    destinationServiceProviders:{
+        type: Array,
+        default:["SNOW", "DF","CYS"]
     },
     dataPoints: {
         type: Array,
         default:[{
-            "interationDetails": {
+            "integrationDetails": {
                 "source": true,
                 "destination": true,
                 "activityLog": true,
