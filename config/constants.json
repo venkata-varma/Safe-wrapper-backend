@@ -43,7 +43,7 @@
     "MESSAGE_LOGO_MANDATORY": "Logo field is  Mandatory.",
     "MESSAGE_WRONG_PASSWORD": "Invalid Password.",
     "MESSAGE_WRONG_CURRENT_PASSWORD":"Please enter the current password correctly.",
-    "MESSAGE_ACCOUNT_ALREADY_DELETED": "Unauthorised request as the account does'nt exist / is already deleted.",
+    "MESSAGE_ACCOUNT_ALREADY_DELETED": "Unauthorised request as the account doesn't exist / inactive.",
     "MESSAGE_USER_ALREADY_DELETED": "Unauthorised request as the user does'nt exist / is already deleted.",
     "MESSAGE_INTEGRATION_COUNT_REACHED": "You have reached the maximum number of integrations allowed. To request an increase, please reach out to our support team. Thank you.",
     "MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED": "Account is deleted. Please contact admin department.Thank you.",

@@ -120,7 +120,7 @@ exports.superAdminAccountRegister = asyncWrapper(async (req, res) => {
  * 
  */
 exports.getAllAccounts = asyncWrapper(async (req, res) => {
-    const allAccounts = await accountsModel.find({}, { password: 0 }).sort({ _id: -1 });
+    const allAccounts = await accountsModel.find({accountType:"customer"}, { password: 0 }).sort({ _id: -1 });
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
