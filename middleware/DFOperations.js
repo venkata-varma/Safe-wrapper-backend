@@ -81,12 +81,15 @@ const getDFBuildingId = async (CPDWorkOrders, fieldmappingkeys, decryptConfigCre
             const serviceLocationCountry = CPDWorkOrders.ServiceLocation.Address.Country === "US" ? "USA" : "USA"
             const getFilteredDFBuildings = await searchDFBuildingsByStateAndCountry(serviceLocationCountry, CPDWorkOrders.ServiceLocation.Address.State, getDFBuildingData)
             const getMatchedDFBuilding = await searchDFBuildingByNameAndStreet(CPDWorkOrders.ServiceLocation, getFilteredDFBuildings)
-            const searchBuildingData = await CPDtoDFBuildingMasterModel.find({ CPDBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase(), DFBuildingName: getMatchedDFBuilding.matchedDFBuildingData.name.toLowerCase() })
+            const searchBuildingData = await CPDtoDFBuildingMasterModel.find({integrationsMasterId: integrationObject.integrationsMasterId,
+                accountId: integrationObject.accountId, CPDBuildingName: CPDWorkOrders.ServiceLocation.SpaceName.toLowerCase(), DFBuildingName: getMatchedDFBuilding.matchedDFBuildingData.name.toLowerCase() })
 
             if(searchBuildingData.length <= 0){  
                 fieldmappingkeys.buildingId = getMatchedDFBuilding.matchedDFBuildingData.id;
                 fieldmappingkeys.salespersonId = getMatchedDFBuilding.matchedDFBuildingData.defaultSalesPersonId         
                 await CPDtoDFBuildingMasterModel.create({
+                    integrationsMasterId: integrationObject.integrationsMasterId,
+                    accountId: integrationObject.accountId,
                     DFBuildingId: getMatchedDFBuilding.matchedDFBuildingData.id,
                     DFSalesPersonId: getMatchedDFBuilding.matchedDFBuildingData.defaultSalesPersonId,
                     DFInvoiceRootId: getMatchedDFBuilding.matchedDFBuildingData.defaultInvoiceToRootId,
