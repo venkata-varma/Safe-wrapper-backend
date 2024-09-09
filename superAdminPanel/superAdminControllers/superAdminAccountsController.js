@@ -22,7 +22,8 @@ const integrationsMasterFieldMappingsModel = require('../../models/integrationsF
 const integrationsExceptionsModel = require('../../models/integrationsExceptionsModel')
 const integrationsCronsModel = require('../../models/integrationsCronsModel')
 const moment=require('moment')
-const {returnIndianDate}=require('../../utils/utilsFunctions')
+const {returnIndianDate}=require('../../utils/utilsFunctions');
+const CPDtoDFBuildingMasterModel = require('../../models/CPDtoDFBuildingMasterModel');
 
 /*
 Miidleware function to controller, "createAccount"
@@ -437,4 +438,18 @@ exports.getActivityLogs = asyncWrapper(async (req, res) => {
         activityLogs:activityLogs
     })
 
+})
+
+/**
+ * Get all Building details of an integration by accountId and integrationsMasterId.
+ */
+exports.getIntegrationBuildingDetails = asyncWrapper(async(req,res)=>{
+    const {accountId, integrationsMasterId} = req.query
+    const getIntegrationBuildingDetails = await CPDtoDFBuildingMasterModel.find({integrationsMasterId:new mongoose.Types.ObjectId(integrationsMasterId),accountId:new mongoose.Types.ObjectId(accountId)})
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_INTEGRATION_BUILDING_DETAILS,
+        data: getIntegrationBuildingDetails
+    })
 })
