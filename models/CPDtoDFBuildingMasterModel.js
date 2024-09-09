@@ -1,6 +1,18 @@
 const mongoose = require('mongoose')
 
 const CPDtoDFBuildingMasterSchema = mongoose.Schema({
+    accountId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "accounts",
+        index : true,
+        default: null,
+      },
+      integrationsMasterId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "integrationsMaster",
+        index : true,
+        default: null,
+      },
     CPDtoDFBuildingId: {
         type: mongoose.Schema.Types.ObjectId,
         default: null
