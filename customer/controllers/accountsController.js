@@ -132,7 +132,7 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
     const verifyAccountStatus = await accountsModel.findById(accountId)
     console.log('verifyAccountStatus')
-    if (verifyAccountStatus.status === 'deleted') {
+    if (verifyAccountStatus.status !== 'active') {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
@@ -151,7 +151,7 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
 
 exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
     const { accountId } = req.params
-    const accountInformation = await accountsModel.findById(accountId);
+    const accountInformation = await accountsModel.findById(accountId,{password:0});
     const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId }).countDocuments();
     const integrationsActivitylogCount = await integrationCronsModel.find({ accountId: accountId }).countDocuments();
     const accountSettings = await accountSettingsModel.findOne({accountId:accountId})
