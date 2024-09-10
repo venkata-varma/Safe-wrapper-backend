@@ -262,7 +262,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_ONLY_CUSTOMER_ENTRY,
     });
   }
-  if (user.accountId.status === 'in-progress') {
+  if (['in-progress','blocked'].includes(user.accountId.status)) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_IN_PROGRESS,
