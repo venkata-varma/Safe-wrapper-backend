@@ -131,8 +131,9 @@ exports.deleteAccount = asyncWrapper(async (req, res) => {
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
     const verifyAccountStatus = await accountsModel.findById(accountId)
-    console.log('verifyAccountStatus')
-    if (verifyAccountStatus.status !== 'active') {
+    const reqAccountType = req.user.accountId.accountType
+    // console.log('verifyAccountStatus:===',req.user)
+    if (verifyAccountStatus.status !== 'active' && reqAccountType === 'customer') {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
@@ -448,11 +449,6 @@ if(sixWeeksSalesGraph.length>0){
 }
 
 }
-
-
-
-
-
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED,
