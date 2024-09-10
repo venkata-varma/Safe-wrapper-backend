@@ -445,8 +445,78 @@ exports.getActivityLogs = asyncWrapper(async (req, res) => {
  */
 exports.getIntegrationBuildingDetails = asyncWrapper(async(req,res)=>{
     const {accountId, integrationsMasterId} = req.query
-    const getIntegrationBuildingDetails = await CPDtoDFBuildingMasterModel.find({integrationsMasterId:new mongoose.Types.ObjectId(integrationsMasterId),accountId:new mongoose.Types.ObjectId(accountId)})
-
+    const getIntegrationBuildingDetails = await CPDtoDFBuildingMasterModel.aggregate([
+        {
+            $match: {
+                integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+                accountId: new mongoose.Types.ObjectId(accountId)
+            }
+        },
+        {
+            $lookup: {
+                "from": "integrationsmasters",
+                "localField": "integrationsMasterId",
+                "foreignField": "_id",
+                "as": "integrationDetails"
+              }
+        },
+        {
+            $unwind: "$integrationDetails"
+        },
+        {
+          $addFields: {
+            fromIsCPD: { $eq: ["$integrationDetails.from", "CPD"] },
+            toIsDF: { $eq: ["$integrationDetails.to", "DF"] }
+          }
+        },
+        {
+          $addFields: {
+            sourceBuildingName: {
+              $cond: { if: "$fromIsCPD", then: "$CPDBuildingName", else: "null" }
+            },
+            sourceOccupantSpaceId: {
+              $cond: { if: "$fromIsCPD", then: "$CPDOccupantSpaceId", else: "null" }
+            },
+            sourceOccupantId: {
+              $cond: { if: "$fromIsCPD", then: "$CPDOccupantId", else: "null" }
+            },
+            sourceBuildingObject: {
+              $cond: { if: "$fromIsCPD", then: "$CPDBuildingObject", else: "null" }
+            },
+            destinationBuildingName: {
+              $cond: { if: "$toIsDF", then: "$DFBuildingName", else: "null" }
+            },
+            destinationBuildingId: {
+              $cond: { if: "$toIsDF", then: "$DFBuildingObject.id", else: "null" }
+            },
+            destinationSalesPersonId: {
+              $cond: { if: "$toIsDF", then: "$DFSalesPersonId", else: "null" }
+            },
+            destinationInvoiceRootId: {
+              $cond: { if: "$toIsDF", then: "$DFInvoiceRootId", else: "null" }
+            },
+            destinationBuildingObject: {
+              $cond: { if: "$toIsDF", then: "$DFBuildingObject", else: "null" }
+            }
+          }
+        },
+        {
+          $project: {
+            CPDBuildingName: 0,
+            CPDBuildingObject: 0,
+            CPDOccupantId: 0,
+            DFBuildingName: 0,
+            DFBuildingObject: 0,
+            DFSalesPersonId: 0,
+            DFInvoiceRootId: 0,
+            CPDOccupantSpaceId:0,
+            DFBuildingId:0,
+            fromIsCPD: 0,
+            toIsDF: 0
+          }
+        }
+    ])
+      
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_INTEGRATION_BUILDING_DETAILS,
