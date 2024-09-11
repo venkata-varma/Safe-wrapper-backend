@@ -9,7 +9,7 @@ const CPDtoDFBuildingMasterSchema = mongoose.Schema({
       },
       integrationsMasterId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "integrationsMaster",
+        ref: "integrationsmasters",
         index : true,
         default: null,
       },

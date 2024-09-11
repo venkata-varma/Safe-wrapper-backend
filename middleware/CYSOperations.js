@@ -158,9 +158,7 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
 
 const getWorkOrderStatusFieldMappingkeys = async (integrationFieldMappingkeys, CPDWorkOrderStatus, IntegrationStatusMappingKeys) => {
     let statusMappingValue = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "General";
-    integrationFieldMappingkeys.estimate.Station = statusMappingValue.split('-').length > 1 ? statusMappingValue.split('-').join(' '): statusMappingValue
-      
-    // integrationFieldMappingkeys.estimate.Station = Object.keys(IntegrationStatusMappingKeys).find(key => IntegrationStatusMappingKeys[key] === CPDWorkOrderStatus) || "Open";
+    integrationFieldMappingkeys.estimate.StatusText = statusMappingValue.split('-').length > 1 ? statusMappingValue.split('-').join(' '): statusMappingValue
     return integrationFieldMappingkeys;
 }
 
@@ -255,10 +253,11 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 await CYSWorkordersModel.findOneAndUpdate({
                                     CYSWorkOrderId: CYSWorkorderListId, integrationsMasterId: integrationObject.integrationsMasterId,
                                     accountId: integrationObject.accountId,
-                                }, { CYSWorkOrderStatus: getCYSWorkOrderList.estimate.Station, status: "completed", CYSWorkOrders: getCYSWorkOrderList }, { new: true }).lean()
+                                }, { CYSWorkOrderStatus: getCYSWorkOrderList.estimate.StatusText, status: "completed", CYSWorkOrders: getCYSWorkOrderList }, { new: true }).lean()
                             }
                             else {
-                                let updatedDFWorkOrderStatus = getCYSWorkOrderList.estimate.Station.split(' ').length > 1 ? getCYSWorkOrderList.estimate.Station.split(' ').join('-') : getCYSWorkOrderList.estimate.Station
+                                console.log('getCYSWorkOrderList:==',getCYSWorkOrderList)
+                                let updatedDFWorkOrderStatus = getCYSWorkOrderList.estimate.StatusText.split(' ').length > 1 ? getCYSWorkOrderList.estimate.StatusText.split(' ').join('-') : getCYSWorkOrderList.estimate.StatusText
                                 const CYSWorkOrderDetails = await CYSWorkordersModel.create({
                                     integrationsMasterId: integrationObject.integrationsMasterId,
                                     accountId: integrationObject.accountId,
@@ -294,9 +293,8 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                 
                 for (let CYSWorkOrder of updateRequestCYSWorkorders) {
                     fieldmappingkeys = integrationObject.dataPoints
-                    const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, 
-                        // $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },CYSWorkOrder.CYSWorkOrders.estimate.CustomerPONumber]},
-                        "CPDWorkOrders.WorkOrderNumber": CYSWorkOrder.CYSWorkOrders.estimate.CustomerPONumber
+                    const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId,
+                        "CPDWorkOrders.WorkOrderNumber": CYSWorkOrder.CYSWorkOrders.estimate.PONumber
                         })
                     // console.log('getCPDWorkOrderStatus:==',getCPDWorkOrderStatus)
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
@@ -352,11 +350,10 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                             console.log("CYS Update Get ERROR:==", error.response.data);
                             await exceptionLogs(integrationObject, error.response.status, error.message, JSON.stringify(error.response.data), JSON.stringify(error.config.url+" \n data: No data available"), "cys-get-workorder", getCPDWorkOrderStatus.CPDWorkOrderId, getCPDWorkOrderStatus.CPDWorkOrders.WorkOrderNumber, CYSWorkOrder.CYSWorkOrderId)
                         });
-                        // console.log('getCYSWorkOrderList:==',getCYSWorkOrderList.data.estimate.Station)
                     if (getCYSWorkOrderList !== undefined) {                        
                         const listOfDFWorkorderDetails = await CYSWorkordersModel.findOne({$expr:{$eq:[{$toString:"$CYSWorkOrderId"},CYSUpdatedWorkOrderId]}}).lean();
                         if (listOfDFWorkorderDetails) {
-                            let updatedDFWorkOrderStatus = getCYSWorkOrderList.data.estimate.Station.split(' ').length > 1 ? getCYSWorkOrderList.data.estimate.Station.split(' ').join('-') : getCYSWorkOrderList.data.estimate.Station
+                            let updatedDFWorkOrderStatus = getCYSWorkOrderList.data.estimate.StatusText.split(' ').length > 1 ? getCYSWorkOrderList.data.estimate.StatusText.split(' ').join('-') : getCYSWorkOrderList.data.estimate.StatusText
                             await CYSWorkordersModel.findOneAndUpdate({
                                 CYSWorkOrderId: CYSWorkOrder.CYSWorkOrderId, integrationsMasterId: integrationObject.integrationsMasterId,
                                 accountId: integrationObject.accountId,
