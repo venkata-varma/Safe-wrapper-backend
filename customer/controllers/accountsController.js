@@ -145,7 +145,7 @@ exports.updateAccount = asyncWrapper(async(req,res)=>{
         ...req.body,
     },{new : true});const updateUserDetails = await usersModel.findOneAndUpdate({accountId:new mongoose.Types.ObjectId(accountId),phone:phone},{
         $set:{name: accountName}},{new : true})
-    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_UPDATED,
         data: accountDetails
