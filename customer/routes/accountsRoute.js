@@ -8,6 +8,7 @@ const {upload}=require('../../utils/fileUpload')
 router.post('/create-account',upload.single('logo'), accountsControllers.validateAccountRegistration, accountsControllers.createAccount)
 router.use(auth)
 router.patch('/delete-account/:accountId', accountsControllers.deleteAccount)
+router.patch('/update-account/:accountId',upload.single('logo'), accountsControllers.validateAccountForUpdate, accountsControllers.updateAccount)
 
 
 router.get('/get-account-integrations-information/:accountId', accountsControllers.validateAccountStatus, accountsControllers.getAccountIntegrationsInformation);
