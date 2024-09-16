@@ -24,7 +24,7 @@
       "MESSAGE_ACCOUNT_EXIST": "Account already exist. Please login.",
       "MESSAGE_ACCOUNT_STATUS_UPDATED":"Account status updated.",
       "MESSAGE_ALL_INTEGRATIONS_OF_ACCOUNT":"All Integrations of account.",
-      "MESSAGE_UPDATE_ACCOUNT_SETTINGS":"Update account settings.",
+      "MESSAGE_UPDATE_ACCOUNT_SETTINGS":"Account settings updated.",
       "MESSAGE_GET_ACCOUNT_SETTINGS":"Get account settings.",
       "MESSAGE_GET_SERVICE_PROVIDERS":"Get all active service providers.",
       "MESSAGE_UPDATE_SERVICE_PROVIDER_LIST":"Update service provider list.",
