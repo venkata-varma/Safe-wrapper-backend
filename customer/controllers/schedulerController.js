@@ -85,7 +85,7 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
       }
     }
   })
-  schedule.scheduleJob(job_each_minute, async ()=> {
+  schedule.scheduleJob(job_each_day, async ()=> {
     const currentDateAndTime = new Date()
     console.log('Job executed at', currentDateAndTime);
     console.log('Job executed at', currentDateAndTime.getDay());
