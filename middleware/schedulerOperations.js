@@ -66,7 +66,7 @@ const schedulerIntegrationCronJobs = async (integrationObject) => {
 };
 
 
-const schedulerEmailJobs = async (integrationDetails, currentDateAndTime, accountLogo) => {
+const schedulerEmailJobs = async (integrationDetails, currentDateAndTime, accountLogo, usersEmails, companyNameOfAccount) => {
   let allIntegrationDetailsHtml = '';
   let workOrdersToDate
   let workOrdersFromDate
@@ -297,7 +297,7 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime, accoun
     }
   });
 
-  await sendWorkOrderEmail(finalHtml)
+  await sendWorkOrderEmail(finalHtml, usersEmails, companyNameOfAccount)
 
 }
 
