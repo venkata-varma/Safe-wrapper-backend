@@ -7,7 +7,7 @@ exports.sendWorkOrderEmail = (finalHtml, usersEmails, companyNameOfAccount) => {
         console.log("===================== Email Start OBJET ================");
 
         // const { mobileEmail } = data
-        let SENDGRID_API_KEY = process.env.SENDGRID_KEY_PROD
+        let SENDGRID_API_KEY = process.env.SENDGRID_KEY_DEV
         
         sgMail.setApiKey(SENDGRID_API_KEY);
         const msg = {
