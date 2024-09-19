@@ -234,15 +234,15 @@ const getStatusFieldMappings = async(integrationMasterId) => {
     requiredKeys = {}
     statusFieldMappingKeys = {
       "Hot": "New",
-      "Work-On": "Accepted",
-      "Project-Cancelled": "Rejected",
-      "Work-On": "Recalled",
-      "Work-On": "CheckedIn",      
+      "Approved": "Accepted",
+      "Rejected": "Rejected",
+      "Backordered": "Recalled",
+      "Work-On": "CheckedIn",
       "Cold": "CheckedOut",
-      "Work-On": "Paused",
-      "Work-On" : "OnHold",
-      "Work-On":"Verified",
-      "Work-On":"NeedsCompletionDetails"
+      "Service-In-Progress": "Paused",
+      "Service-to-be-Scheduled": "OnHold",
+      "Ready-to-Invoice": "Verified",
+      "Pending-Info": "NeedsCompletionDetails"
     }
   }
   else if (integrationMaster.from === "CPD" && integrationMaster.to === "SNOW") {
