@@ -101,6 +101,57 @@ exports.createAccount = asyncWrapper(async (req, res) => {
     }
 });
 
+/*
+* Verify the status of account and phone number..
+* If status is active pass the middleware.
+*/
+exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
+    const { accountId } = req.params
+    const verifyAccountStatus = await accountsModel.findById(accountId)
+    const reqAccountType = req.user.accountId.accountType
+    if (!verifyAccountStatus) {
+        return res.status(409).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS
+        })
+    }
+    if(!req.body.phone){
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ENTER_MOBILENUMBER,
+        });
+    }
+    if (verifyAccountStatus.status !== 'active' && reqAccountType === 'customer') {
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+        });
+    }
+    else {
+        next()
+    }
+});
+/**
+ * Update account details.
+ */
+
+exports.updateAccount = asyncWrapper(async(req,res)=>{
+    const baseUrl = process.env.DOMAIN_NAME;
+    const {accountId} = req.params
+    const { accountName, companyName, phone, } = req.body
+    req.body.logo = req.file ?  `${baseUrl}/accountLogos/${req.file.filename}` : (await accountsModel.findById(accountId,{logo:1})).logo
+    
+    const accountDetails = await accountsModel.findByIdAndUpdate(accountId,{
+        ...req.body,
+    },{new : true});const updateUserDetails = await usersModel.findOneAndUpdate({accountId:new mongoose.Types.ObjectId(accountId),phone:phone},{
+        $set:{name: accountName}},{new : true})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_ACCOUNT_UPDATED,
+        data: accountDetails
+    })
+    
+})
 
 /**
  * API end-point not used . On permission, this API end-point to be removed or to be optimised
