@@ -221,7 +221,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
 
                     CYSWorkorderListId = await axios.request(createWorkOrderConfig)
                         .then((response) => {
-                            console.log("created CYSWO ID:===", response.data);
+                            console.log("created CYSWO ID:===");
                             return response.data.data.id
                         })
                         .catch(async (error) => {

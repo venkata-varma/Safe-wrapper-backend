@@ -16,6 +16,7 @@ const workOrderLifeCycleModel = require("../models/workOrderLifeCycleModel");
 const { exceptionLogs } = require("./exceptionOperation");
 const CYSWorkordersModel = require("../models/CYSWorkordersModel");
 const SNOWWorkOrdersModel = require("../models/SNOWWorkOrdersModel");
+const { WOSearchByStatuses } = require("./getCPDWorkOrdersConditional");
 
 
 /**
@@ -193,6 +194,10 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
 
     console.log('From:==', fromDate)
     console.log('To:==', toDate)
+
+    //Get statuses to search the WO.
+    const getStatusesToSearchWO = await WOSearchByStatuses(await integrationsMasterModel.findById(integrationObject.integrationsMasterId))
+    
     // Get work orders from the CPD - API calls.
     const CPDWorkOrderResponse = await axios.post(CPDConfigurations.CPD.workOrderSearch.URL,
         // CPDConfigurations.CPD.workOrderSearch.body,
@@ -204,9 +209,10 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
                     "From": fromDate,
                     "To": toDate
                     // "To": "2024-02-14T24:00:00.000Z"
-                }
+                },
+                
                 /*Search by work order status -> New,Accepted,Recalled,Rejected,CheckedIn,Paused,CheckedOut,OnHold,Verified,NeedsCompletionDetails*/
-                //"Statuses": [ "Accepted","CheckedIn","Rejected","CheckedOut","Verified" ],
+                "Statuses":getStatusesToSearchWO
                 //,"CustomerId" :"90256"
             },
             "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
