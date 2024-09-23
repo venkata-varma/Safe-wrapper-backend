@@ -85,7 +85,7 @@ const schedulerEmailJobs = async (integrationDetails, currentDateAndTime, accoun
     
     let integrationsWOStatusFromSettings = await integrationsSettingsModel.findOne({integrationsMasterId:integrationsMasterId})
     // Integration exception count for last 7 days
-    const integrationsExceptionsCount = await integrationsExceptionsModel.find({ integrationsMasterId: integrationsMasterId }).countDocuments();
+    const integrationsExceptionsCount = await integrationsExceptionsModel.find({ integrationsMasterId: integrationsMasterId, createdAt: { $gte: new Date(formattedFromDate), $lte: new Date(formattedToDate) }}).countDocuments();
    for (let week of presentWeekData) {
       let fromDate = new Date(week.fromDate);
       let toDate = new Date(week.toDate);
