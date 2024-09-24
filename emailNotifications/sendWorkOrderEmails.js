@@ -13,8 +13,8 @@ exports.sendWorkOrderEmail = (finalHtml, usersEmails, companyNameOfAccount) => {
         const msg = {
             to : usersEmails,
             from: "info@isyncrabbit.com",
-            subject: `${companyNameOfAccount} - Weekly Work Order Report.`,
-            text: `${companyNameOfAccount} - Weekly Work Order Report.`,
+            subject: `Weekly Work Order Report for ${companyNameOfAccount} - DR Integration.`,
+            text: `Weekly Work Order Report for ${companyNameOfAccount} - DR Integration.`,
             html: finalHtml,
         };
         sgMail.send(msg)
