@@ -68,7 +68,7 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
             // Apply priorityQuery if it exists and is not 'all'
             if (priorityQuery && priorityQuery !== 'all') {
                 priorityFilter.priority = priorityQuery;
-            }
+            }            
             switch (record.serviceProvider) {
                 case 'CPD':
                     // Define search query filter
@@ -85,7 +85,13 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                     break;
                 case 'CYS':
                     searchFilter = searchQuery ? { CYSWorkOrderId: searchQuery } : {};
-                    workOrderDetail = await CYSWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CYSWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
+                    workOrderDetail = await CYSWorkordersModel.findOne({ $expr: { $eq: [{ 
+                        $convert: { 
+                          input: "$CYSWorkOrderId", 
+                          to: "string", 
+                          onError: ""
+                        }
+                      }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
                     break;
                 default:
                     // Handle unknown service provider
@@ -318,7 +324,7 @@ exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, d
                 serviceProviderNewStatus = "1";
                 break;
             case 'CYS':
-                serviceProviderNewStatus = "requested";
+                serviceProviderNewStatus = "Hot";
                 break;
         }
 
