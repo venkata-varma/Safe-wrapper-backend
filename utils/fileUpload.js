@@ -8,25 +8,27 @@ const fs = require('fs');
  * If successful, images are stored in the "accountLogos" folder after passing validation.
  */
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-      const dir = path.resolve(__dirname, 'accountLogos/');
+    destination: function (req, file, cb) {
+        // Use path.resolve to ensure the directory is absolute and points to the root `accountLogos` folder.
+        const dir = path.resolve(__dirname, '../accountLogos'); 
       console.log("Saving to directory:", dir); // Log the directory path
-      if (!fs.existsSync(dir)) {
+        if (!fs.existsSync(dir)) {
           console.log("Directory does not exist, creating...");
-          fs.mkdirSync(dir, { recursive: true });
-      }
-      cb(null, dir);
-  },
-  filename: function (req, file, cb) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
+    },
+    filename: function (req, file, cb) {
+        // Generate a unique filename to avoid conflicts
       console.log("Saving file:", file.originalname); // Log the file name
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
 });
 
 const upload = multer({
     storage: storage,
-    // limits: {
+     // limits: {
     //     fileSize: 2000000 // Uncomment to set file size limit (in bytes)
     // },
     fileFilter: (req, file, cb) => {
