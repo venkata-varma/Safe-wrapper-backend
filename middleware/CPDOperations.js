@@ -208,8 +208,8 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
                 "Created": {
                     // "From": fromDate,
                     // "To": toDate
-                    "From": "2024-07-17T00:00:00",
-                    "To": "2024-08-15T23:59:59"
+                    "From": "2024-07-01T00:00:00",
+                    "To": "2024-07-29T23:59:59"
                     // "To": "2024-02-14T24:00:00.000Z"
                 },
                 
