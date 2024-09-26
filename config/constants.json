@@ -10,6 +10,7 @@
     "MESSAGE_REQUEST_BODY_ERROR": "Payload validation error.",
     "MESSAGE_SESSION_EXPIRED": "Your session has expired or token no longer available. This incident wil record.",
     "MESSAGE_ACCOUNT_CREATED": "Your account has been created successfully.",
+    "MESSAGE_ACCOUNT_UPDATED":"Account information updated successfully.",
     "MESSAGE_ACCOUNT_EXIST": "Account already exist. Please login.",
     "MESSAGE_ACCOUNT_LOGIN": "Account verified successfully.",
     "MESSAGE_PASSWORD_UPDATED":"Password has been updated successfully.",
@@ -39,6 +40,7 @@
     "MESSAGE_SETTINGS_DETAILS_UPDATE": "Settings updated successfully.",
     "MESSAGE_FIELDS_MANDATORY": "Mobile-Email and Password fields are mandatory.",
     "MESSAGE_MANDATORY_FIELDS": "Fields marked with * are Mandatory.",
+    "MESSAGE_ENTER_MOBILENUMBER":"Please enter mobile number.",
     "MESSAGE_PHONE_NUMBER_VALIDATE":"Phone number must be 10 digits.",
     "MESSAGE_LOGO_MANDATORY": "Logo field is  Mandatory.",
     "MESSAGE_WRONG_PASSWORD": "Invalid Password.",
@@ -91,7 +93,9 @@
     "MESSAGE_INTEGRATION_ID_NOT_ACTIVE": "Respective integration is not in active state. Please contact admin.",
     "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials.",
     "MESSAGE_ONLY_CUSTOMER_ENTRY":"No access. Access restricted for this site.",
-    "MESSAGE_WORKORDER_ID_INVALID":"Invalid WorkorderId / Integration ."
+    "MESSAGE_WORKORDER_ID_INVALID":"Invalid WorkorderId / Integration .",
+    "MESSAGE_USER_TAKEN": "User email address already taken by some one."
+
   },
   "statusCodes": {
     "FORBIDDEN": 403,

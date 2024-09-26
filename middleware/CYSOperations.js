@@ -132,7 +132,7 @@ const getDefaultFieldMappingKeys = async (fieldmappingkeys) => {
             } else if (fieldName === "WO Corrigo Web Link") {
                 fieldmappingkeys.userDefinedFields["[WO Corrigo Web Link]"] = "www.google.com";
             } else if (fieldName === "1 QSP Job Type") {
-                fieldmappingkeys.userDefinedFields["[1 QSP Job Type]"] = "Corrigo-JLL-Admin";
+                fieldmappingkeys.userDefinedFields["[1 QSP Job Type]"] = "Corrigo";
             } else {
                 fieldmappingkeys.userDefinedFields[`[${fieldName}]`] = fieldmappingkeys[property];
             }
@@ -183,7 +183,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
             
             if (integrationObject.serviceMethod === "create") {
-                
+
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
                     fieldmappingkeys = integrationObject.dataPoints
@@ -221,7 +221,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
 
                     CYSWorkorderListId = await axios.request(createWorkOrderConfig)
                         .then((response) => {
-                            console.log("created CYSWO ID:===", response.data);
+                            console.log("created CYSWO ID:===");
                             return response.data.data.id
                         })
                         .catch(async (error) => {
@@ -256,7 +256,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                                 }, { CYSWorkOrderStatus: getCYSWorkOrderList.estimate.StatusText, status: "completed", CYSWorkOrders: getCYSWorkOrderList }, { new: true }).lean()
                             }
                             else {
-                                console.log('getCYSWorkOrderList:==',getCYSWorkOrderList)
+                                console.log('getCYSWorkOrderList:==',)
                                 let updatedDFWorkOrderStatus = getCYSWorkOrderList.estimate.StatusText.split(' ').length > 1 ? getCYSWorkOrderList.estimate.StatusText.split(' ').join('-') : getCYSWorkOrderList.estimate.StatusText
                                 const CYSWorkOrderDetails = await CYSWorkordersModel.create({
                                     integrationsMasterId: integrationObject.integrationsMasterId,

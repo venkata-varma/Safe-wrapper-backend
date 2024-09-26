@@ -1,20 +1,20 @@
 const sgMail = require('@sendgrid/mail');
 require('dotenv').config()
 
-exports.sendWorkOrderEmail = (finalHtml) => {
+exports.sendWorkOrderEmail = (finalHtml, usersEmails, companyNameOfAccount) => {
     
     return new Promise(async (resolve, reject) => {
         console.log("===================== Email Start OBJET ================");
 
         // const { mobileEmail } = data
-        let SENDGRID_API_KEY = process.env.SENDGRID_KEY_DEV
-        console.log('SENDGRID_API_KEY:==',SENDGRID_API_KEY)
+        let SENDGRID_API_KEY = process.env.SENDGRID_KEY_DEV || process.env.SENDGRID_KEY_PROD
+        console.log("SENDGRID_API_KEY:===",SENDGRID_API_KEY)
         sgMail.setApiKey(SENDGRID_API_KEY);
         const msg = {
-            to: ['chandusai.pendyala@devrabbit.com','chandubr2255@gmail.com','sandeep.raj.ambekar@gmail.com', 'sandeep.ambekar@devrabbit.com', 'akram.shaik@devrabbit.com'],
+            to : usersEmails,
             from: "info@isyncrabbit.com",
-            subject: 'Weekly Work Order Report.',
-            text: "Weekly Work Order Report.",
+            subject: `Weekly Work Order Report for ${companyNameOfAccount} - DR Integration.`,
+            text: `Weekly Work Order Report for ${companyNameOfAccount} - DR Integration.`,
             html: finalHtml,
         };
         sgMail.send(msg)

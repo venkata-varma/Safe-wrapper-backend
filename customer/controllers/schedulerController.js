@@ -15,6 +15,7 @@ const DFOperations = require('../../middleware/DFOperations');
 const integrationsFieldMappingModel = require('../../models/integrationsFieldMappingModel');
 const { schedulerIntegrationCronJobs, schedulerEmailJobs } = require('../../middleware/schedulerOperations');
 const accountsModel = require('../../models/accountsModel');
+const usersModel = require('../../models/usersModel')
 const mongoose = require('mongoose')
 
 
@@ -92,7 +93,9 @@ exports.integrationsScheduleCronJobsForEachMinute = asyncWrapper( async ()=> {
     if(currentDateAndTime.getDay() === 0){
       const getAllActiveAccounts = await accountsModel.find({status:"active"})
       for(let account of getAllActiveAccounts){
-        await schedulerEmailJobs(await integrationsMasterModel.find({accountId:account._id, status:"active"}), currentDateAndTime, accountLogo = account?.logo)
+        const getAllUserEmailsOfAccount = await usersModel.find({accountId:account._id},{email:1}) //Find Emails of users for the account
+        const usersEmails = getAllUserEmailsOfAccount.map(userEmail => userEmail.email)
+        await schedulerEmailJobs(await integrationsMasterModel.find({accountId:account._id, status:"active"}), currentDateAndTime, accountLogo = account?.logo, usersEmails, companyNameOfAccount = account?.companyName)
       }
     }
   });
