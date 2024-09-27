@@ -5,6 +5,7 @@ const DFWorkOrdersModel = require("../models/DFWorkOrdersModel")
 const SNOWWorkOrdersModel = require("../models/SNOWWorkOrdersModel")
 const CYSWorkordersModel = require("../models/CYSWorkordersModel")
 const { sixWeekSales } = require('../utils/sixWeekSalesFunction')
+const { getCPDFullWorkOrderDetails } = require("./general")
 
 /**
  * 
@@ -62,9 +63,10 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
         // Step 2: Fetch details from the appropriate model based on serviceProvider
         let workOrderDetailsPromises = workOrderReports.map(async (record) => {
 
-            let workOrderDetail;
+            let workOrder = {};
             let priorityFilter = {}; // Empty filter by default
             let searchFilter;
+            let getWorkOrderDetails
             // Apply priorityQuery if it exists and is not 'all'
             if (priorityQuery && priorityQuery !== 'all') {
                 priorityFilter.priority = priorityQuery;
@@ -73,34 +75,48 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                 case 'CPD':
                     // Define search query filter
                     searchFilter = searchQuery ? { $or: [{ "CPDWorkOrders.WorkOrderNumber": searchQuery }, { "CPDWorkOrders.WorkOrderId": searchQuery }] } : {};
-                    workOrderDetail = await CPDWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
+                    const workOrderDetails = await CPDWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
+                    getWorkOrderDetails = await getCPDFullWorkOrderDetails(integrationsQuery, workOrderDetails)
+                    
+                    workOrder.workOrderDetails = getWorkOrderDetails
+                    workOrder.type = getWorkOrderDetails.Type
+                    workOrder.category = getWorkOrderDetails.WorkType.Name
+                    workOrder.priority = workOrderDetails.priority
+
                     break;
                 case 'DF':
                     searchFilter = searchQuery ? { $or: [{ "DFWorkOrders.id": searchQuery }, { "DFWorkOrders.numberAlt": searchQuery }] } : {};
-                    workOrderDetail = await DFWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$DFWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
+                    getWorkOrderDetails = await DFWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$DFWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
+                    workOrder.workOrderDetails = getWorkOrderDetails === null ? {} : getWorkOrderDetails.DFWorkOrders
+                    workOrder.priority = getWorkOrderDetails === null ? "medium" : getWorkOrderDetails.priority
                     break;
                 case 'SNOW':
                     searchFilter = searchQuery ? { "SNOWWorkOrders.number": searchQuery } : {};
-                    workOrderDetail = await SNOWWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$SNOWWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter, });
+                    getWorkOrderDetails = await SNOWWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$SNOWWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter, }).lean();
+                    workOrder.workOrderDetails = getWorkOrderDetails === null ? {} : getWorkOrderDetails.SNOWWorkOrders
+                    workOrder.priority = getWorkOrderDetails.priority
                     break;
                 case 'CYS':
                     searchFilter = searchQuery ? { CYSWorkOrderId: searchQuery } : {};
-                    workOrderDetail = await CYSWorkordersModel.findOne({ $expr: { $eq: [{ 
+                    getWorkOrderDetails = await CYSWorkordersModel.findOne({ $expr: { $eq: [{ 
                         $convert: { 
                           input: "$CYSWorkOrderId", 
                           to: "string", 
                           onError: ""
                         }
-                      }, record.workOrderId] }, ...priorityFilter, ...searchFilter });
+                      }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
+                    
+                    workOrder.workOrderDetails = getWorkOrderDetails !== null ? getWorkOrderDetails.CYSWorkOrders : {}
+                    workOrder.priority = getWorkOrderDetails === null ? "medium" : getWorkOrderDetails.priority
                     break;
                 default:
                     // Handle unknown service provider
                     throw new Error(`Unknown service provider: ${record.serviceProvider}`);
             }
-            if (workOrderDetail !== null) {
+            if (workOrder !== null) {
                 return {
                     ...record,
-                    workOrderDetail
+                    workOrder
                 };
             } else {
                 return null; // Explicitly return null for non-matching records
