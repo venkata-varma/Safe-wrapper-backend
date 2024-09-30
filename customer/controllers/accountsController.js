@@ -69,7 +69,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            logo: req.file ? `${baseUrl}/accountLogos/${req.file.filename}` : ""
+            logo: req.file ? `${baseUrl}static/${req.file.filename}` : "" 
         })
         const customId = new mongoose.Types.ObjectId();
 
@@ -139,7 +139,7 @@ exports.updateAccount = asyncWrapper(async(req,res)=>{
     const baseUrl = process.env.DOMAIN_NAME;
     const {accountId} = req.params
     const { accountName, companyName, phone, } = req.body
-    req.body.logo = req.file ?  `${baseUrl}/accountLogos/${req.file.filename}` : (await accountsModel.findById(accountId,{logo:1})).logo
+    req.body.logo = req.file ?  `${baseUrl}static/${req.file.filename}` : (await accountsModel.findById(accountId,{logo:1})).logo
     
     const accountDetails = await accountsModel.findByIdAndUpdate(accountId,{
         ...req.body,
