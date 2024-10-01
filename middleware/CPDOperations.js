@@ -186,27 +186,31 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     const getIntegrationsSettingsDetails = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId });
     const getDateRange = getIntegrationsSettingsDetails.dataDumpRange
     let getIntegrationDetails = await integrationsMasterModel.findById(integrationObject.integrationsMasterId)
+    let payload
     if(getIntegrationDetails.to === "CYS"){
-        fromDate = "2024-07-01T00:00:00";
-        toDate = "2024-07-29T23:59:59";
+        // fromDate = "2024-06-30T00:00:00";
+        // toDate =    "2024-07-28T23:59:59";
+        payload = {
+            "Parameters": {
+                "WorkOrderNumber":"141189MG06000175", /*Search by work order number*/
+                /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
+                "Created": {
+                    "From": "2024-07-01T00:00:00Z",
+                    "To": "2024-07-19T00:00:00Z"
+                }
+                // "Statuses": ["Verified"]
+         
+            },
+            "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
+        }
+
     }else{
         let currentDate = moment();
         let formattedFromDate = moment(currentDate).subtract(getDateRange, 'days').startOf('day');
         let formattedToDate  = moment().endOf('day');
         fromDate = formattedFromDate.format('YYYY-MM-DDTHH:mm:ss');
         toDate   = formattedToDate.format('YYYY-MM-DDTHH:mm:ss');
-    }
-    
-    console.log('From:==', fromDate)
-    console.log('To:==', toDate)
-
-    //Get statuses to search the WO.
-    const getStatusesToSearchWO = await WOSearchByStatuses(await integrationsMasterModel.findById(integrationObject.integrationsMasterId))
-    
-    // Get work orders from the CPD - API calls.
-    const CPDWorkOrderResponse = await axios.post(CPDConfigurations.CPD.workOrderSearch.URL,
-        // CPDConfigurations.CPD.workOrderSearch.body,
-        {
+        payload = {
             "Parameters": {
                 //"WorkOrderNumber":"POS4L20001", /*Search by work order number
                 /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
@@ -221,7 +225,35 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
                 //,"CustomerId" :"90256"
             },
             "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
-        },
+        }
+    }
+    
+    console.log('From:==', fromDate)
+    console.log('To:==', toDate)
+
+    //Get statuses to search the WO.
+    const getStatusesToSearchWO = await WOSearchByStatuses(await integrationsMasterModel.findById(integrationObject.integrationsMasterId))
+    
+    // Get work orders from the CPD - API calls.
+    const CPDWorkOrderResponse = await axios.post(CPDConfigurations.CPD.workOrderSearch.URL,
+        // CPDConfigurations.CPD.workOrderSearch.body,
+        // {
+        //     "Parameters": {
+        //         //"WorkOrderNumber":"POS4L20001", /*Search by work order number
+        //         /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
+        //         "Created": {
+        //             "From": fromDate,
+        //             "To": toDate
+        //             // "To": "2024-02-14T24:00:00.000Z"
+        //         },
+                
+        //         /*Search by work order status -> New,Accepted,Recalled,Rejected,CheckedIn,Paused,CheckedOut,OnHold,Verified,NeedsCompletionDetails*/
+        //         "Statuses":getStatusesToSearchWO
+        //         //,"CustomerId" :"90256"
+        //     },
+        //     "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
+        // },
+        payload,
         {
             headers: { Authorization: `bearer ${corrigoToken.access_token}` }
         })
