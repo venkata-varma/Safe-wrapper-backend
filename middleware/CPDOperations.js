@@ -188,8 +188,8 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     let getIntegrationDetails = await integrationsMasterModel.findById(integrationObject.integrationsMasterId)
     let payload
     if(getIntegrationDetails.to === "CYS"){
-        // fromDate = "2024-06-30T00:00:00";
-        // toDate =    "2024-07-28T23:59:59";
+        fromDate = "2024-06-30T00:00:00";
+        toDate =    "2024-07-28T23:59:59";
         payload = {
             "Parameters": {
                 "WorkOrderNumber":"141189MG06000175", /*Search by work order number*/
