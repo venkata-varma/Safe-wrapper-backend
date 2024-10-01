@@ -185,13 +185,18 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     console.log('IDSSSSS:==', integrationObject.integrationsMasterId, integrationObject.accountId)
     const getIntegrationsSettingsDetails = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId });
     const getDateRange = getIntegrationsSettingsDetails.dataDumpRange
-   
-    let currentDate = moment();
-    let formattedFromDate = moment(currentDate).subtract(getDateRange, 'days').startOf('day');
-    let formattedToDate  = moment().endOf('day');
-    fromDate = formattedFromDate.format('YYYY-MM-DDTHH:mm:ss');
-    toDate   = formattedToDate.format('YYYY-MM-DDTHH:mm:ss');
-
+    let getIntegrationDetails = await integrationsMasterModel.findById(integrationObject.integrationsMasterId)
+    if(getIntegrationDetails.to === "CYS"){
+        fromDate = "2024-07-01T00:00:00";
+        toDate = "2024-07-29T23:59:59";
+    }else{
+        let currentDate = moment();
+        let formattedFromDate = moment(currentDate).subtract(getDateRange, 'days').startOf('day');
+        let formattedToDate  = moment().endOf('day');
+        fromDate = formattedFromDate.format('YYYY-MM-DDTHH:mm:ss');
+        toDate   = formattedToDate.format('YYYY-MM-DDTHH:mm:ss');
+    }
+    
     console.log('From:==', fromDate)
     console.log('To:==', toDate)
 
