@@ -73,7 +73,7 @@ const conditionalOperations = async(integrationsMasterId, accountId, conditions)
                 console.log('serviceType:===',conditon.serviceType)
                 const getServiceDates = await getServiceDateRanges()
                 const getWO =  await getWOFromCPD(getServiceDates.fromDate, getServiceDates.toDate, conditon.serviceLogic, getCPDAuthToken)
-                workOrdersData.push(getWO)
+                workOrdersData.push(...getWO)
             }
         }
         else if(conditon.serviceCondition === "between"){
@@ -82,7 +82,7 @@ const conditionalOperations = async(integrationsMasterId, accountId, conditions)
                 console.log('serviceType:===',conditon.serviceType)
                 // const getServiceDates = await getServiceDateRanges()
                 const getWO = await getWOFromCPD(conditon.serviceLogic[0], conditon.serviceLogic[1], conditon.serviceLogic = [], getCPDAuthToken)
-                workOrdersData.push(getWO)
+                workOrdersData.push(...getWO)
             }
         }
     }
