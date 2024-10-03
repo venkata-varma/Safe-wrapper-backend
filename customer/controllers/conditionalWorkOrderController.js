@@ -75,7 +75,4 @@ exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
         message: customConstants.messages.MESSAGE_GET_WORKORDERS,
         data: getConditionalBasedWO
     });
-    // return res.status(200).json({
-    //     data: getConditionalBasedWO
-    // })
 });
