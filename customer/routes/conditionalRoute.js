@@ -4,6 +4,6 @@ const conditionalWorkOrderController = require('../controllers/conditionalWorkOr
 router.use(auth)
 
 router.post('/search-work-order',conditionalWorkOrderController.searchWOsByConditions)
-
+router.post('/get-work-orders-based-on-conditons',conditionalWorkOrderController.getWorkOrdersBasedOnConditions)
 
 module.exports = router
