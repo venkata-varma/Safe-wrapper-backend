@@ -27,7 +27,7 @@ const conditionalOperationsSchema = mongoose.Schema({
             type:String,
             default:""
         },
-        serviceLogic:{
+        serviceLogicValues:{
             type: Array,
             default: []
         }
