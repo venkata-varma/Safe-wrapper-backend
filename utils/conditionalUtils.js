@@ -11,7 +11,7 @@ const getAuthTokenForCPD = async(integrationsMasterId, accountId) => {
     const encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials };
     const decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
     const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl, integrationObject);
-    return corrigoToken
+    return {corrigoToken, MessageId:decryptConfigCredentials.MessageId}
 }
 
 const getServiceDateRanges = async() => {
@@ -23,7 +23,7 @@ const getServiceDateRanges = async() => {
     return {fromDate, toDate}
 }
 
-const getWOFromCPD = async(fromDate, toDate, serviceLogic, corrigoToken) => {
+const getWOFromCPD = async(fromDate, toDate, serviceLogic, corrigoToken, MessageId) => {
     console.log('serviceLogic:===',serviceLogic)
 
     const CPDWorkOrderResponse = await axios.post(integrationServiceAPIConfig.CPD.workOrderSearch.URL,
@@ -44,7 +44,7 @@ const getWOFromCPD = async(fromDate, toDate, serviceLogic, corrigoToken) => {
                 "Statuses": serviceLogic
                 //,"CustomerId" :"90256"
             },
-            "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
+            "MessageId": MessageId
         },
         {
             headers: { Authorization: `bearer ${corrigoToken}` }
@@ -72,7 +72,7 @@ const conditionalOperations = async(integrationsMasterId, accountId, conditions)
             if(conditon.serviceType === "status"){
                 console.log('serviceType:===',conditon.serviceType)
                 const getServiceDates = await getServiceDateRanges()
-                const getWO =  await getWOFromCPD(getServiceDates.fromDate, getServiceDates.toDate, conditon.serviceLogic, getCPDAuthToken)
+                const getWO =  await getWOFromCPD(getServiceDates.fromDate, getServiceDates.toDate, conditon.serviceLogic, getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId )
                 workOrdersData.push(...getWO)
             }
         }
@@ -81,7 +81,7 @@ const conditionalOperations = async(integrationsMasterId, accountId, conditions)
             if(conditon.serviceType === "dateRange"){
                 console.log('serviceType:===',conditon.serviceType)
                 // const getServiceDates = await getServiceDateRanges()
-                const getWO = await getWOFromCPD(conditon.serviceLogic[0], conditon.serviceLogic[1], conditon.serviceLogic = [], getCPDAuthToken)
+                const getWO = await getWOFromCPD(conditon.serviceLogic[0], conditon.serviceLogic[1], conditon.serviceLogic = [], getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId)
                 workOrdersData.push(...getWO)
             }
         }
