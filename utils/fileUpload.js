@@ -9,7 +9,10 @@ const fs = require('fs');
  */
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Use path.resolve to ensure the directory is absolute and points to the root `accountLogos` folder.
+
+        // Use path.resolve to ensure the directory is absolute and points to the root `isync_api_images` folder.
+        //Folder outside the code directories
+
         const dir = path.resolve(__dirname, '../../isync_api_images'); 
       console.log("Saving to directory:", dir); // Log the directory path
         if (!fs.existsSync(dir)) {
