@@ -15,7 +15,7 @@ const integrationCronsModel = require('../../models/integrationsCronsModel');
 const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
-const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports } = require('../../utils/general')
+const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports, getCPDFullWorkOrderDetails } = require('../../utils/general')
 const { workOrderLifeCycleReports, sixWeeksSalesDetails, mapNewUpdatedCounts,  mapNewUpdatedWorkOrdersCounts} = require('../../utils/accountInsightUtils')
 const path=require('path')
 /*
@@ -185,8 +185,8 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
     const verifyAccountStatus = await accountsModel.findById(accountId)
     const reqAccountType = req.user.accountId.accountType
-    // console.log('verifyAccountStatus:===',req.user)
-    if (verifyAccountStatus.status !== 'active' && reqAccountType === 'customer') {
+    // console.log('verifyAccountStatus:===',verifyAccountStatus)
+    if (!verifyAccountStatus || verifyAccountStatus.status !== 'active' && reqAccountType === 'customer') {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
@@ -571,4 +571,19 @@ exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
             destinationWorkOrders: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderDetails
         })
     
+});
+/**
+ * Get the individual CPD work order details.
+ * getCPDFullWorkOrderDetails function retrives the work order detais from get CPD work order API.
+ */
+
+exports.getIndividualWorkOrderDetails = asyncWrapper(async(req,res)=>{
+    const {accountId,integrationsMasterId, workOrderId} = req.query
+    const getCPDWorkOrderDetails = await CPDWorkordersModel.findOne({accountId:accountId, integrationsMasterId:integrationsMasterId,'CPDWorkOrders.WorkOrderNumber':workOrderId})
+    const getWorkOrderDetails = await getCPDFullWorkOrderDetails(integrationsMasterId, getCPDWorkOrderDetails)
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_WORKORDERS,
+        data:getWorkOrderDetails
+    })
 })

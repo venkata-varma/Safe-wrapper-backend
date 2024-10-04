@@ -9,8 +9,10 @@ const fs = require('fs');
  */
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
+
         // Use path.resolve to ensure the directory is absolute and points to the root `accountLogos` folder.
         const dir = path.resolve(__dirname, '../../devapps/Integration-assets'); 
+
       console.log("Saving to directory:", dir); // Log the directory path
         if (!fs.existsSync(dir)) {
           console.log("Directory does not exist, creating...");
