@@ -69,7 +69,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            logo: req.file ? `${baseUrl}static/${req.file.filename}` : "" 
+            logo: req.file ? `${baseUrl}/static/${req.file.filename}` : "" 
         })
         const customId = new mongoose.Types.ObjectId();
 
