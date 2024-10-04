@@ -12,6 +12,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
 app.use('/static', express.static(path.join(__dirname,'..' , 'isync_api_images')));
 // Database Connection
 mongooseConnect.DbConnect();
