@@ -5,7 +5,7 @@ const { CPDAuthentication } = require("../../utils/serviceProvidersAuthenticatio
 const CPDConfigurations = require('../../config/integrationsConfiguration');
 const customConstants = require('../../config/constants.json')
 const integrationsMasterServiceProvidersModel = require("../../models/integrationsMasterServiceProvidersModel");
-const { conditionalOperations } = require("../../utils/conditionalUtils");
+const { ApplyConditions } = require("../../utils/conditionalUtils");
 
 
 exports.searchWOsByConditions = asyncWrapper(async (req, res) => {
@@ -69,7 +69,10 @@ exports.searchWOsByConditions = asyncWrapper(async (req, res) => {
 exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
     const {integrationsMasterId, accountId, conditions} = req.body
     console.log('integrationsMasterId:===',integrationsMasterId)
-    const getConditionalBasedWO = await conditionalOperations(integrationsMasterId, accountId, conditions);
+    let getConditionalBasedWO
+    for(let condition of conditions){
+        getConditionalBasedWO = await ApplyConditions(condition.serviceType, integrationsMasterId, accountId, condition);
+    }
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_WORKORDERS,

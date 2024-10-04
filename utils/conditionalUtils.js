@@ -4,6 +4,13 @@ const integrationServiceAPIConfig = require('../config/integrationsConfiguration
 const { CPDAuthentication } = require('./serviceProvidersAuthentication')
 const integrationsMasterServiceProvidersModel = require('../models/integrationsMasterServiceProvidersModel')
 const { decryptData } = require('./encryptionAlgorithms')
+const serviceProviderListModel = require('../models/serviceProviderList')
+
+
+let getCPDWorkOrderStatuses = async () => {
+    const serviceProvider = await serviceProviderListModel.findOne({ serviceProviders: "CPD" });
+    return serviceProvider ? serviceProvider.workOrderStatus : null;
+};
 
 const getAuthTokenForCPD = async(integrationsMasterId, accountId) => {
     const integrationObject = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterId, accountId: accountId, serviceProvider: "CPD" })
@@ -23,8 +30,23 @@ const getServiceDateRanges = async() => {
     return {fromDate, toDate}
 }
 
-const getWOFromCPD = async(fromDate, toDate, serviceLogic, corrigoToken, MessageId) => {
-    console.log('serviceLogic:===',serviceLogic)
+var CPDstatus = [];
+
+const ApplyConditions = async(serviceType, integrationsMasterId, accountId, condition)=>  {
+    let {fromDate, toDate} = await getServiceDateRanges()
+
+    if(serviceType === "status")
+        CPDstatus = await statusBasedConditions(condition);
+
+    else if(serviceType === "dateRange"){
+        [fromDate, toDate] = await dateRangeBasedConditions(condition);
+    }
+    const getCPDAuthToken = await getAuthTokenForCPD(integrationsMasterId, accountId)
+    const getWO = await getWOFromCPD(fromDate, toDate, CPDstatus, getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId)
+    return getWO
+}
+const getWOFromCPD = async(fromDate, toDate, requiredStatus, corrigoToken, MessageId) => {
+    // console.log('serviceLogic:===',requiredStatus)
 
     const CPDWorkOrderResponse = await axios.post(integrationServiceAPIConfig.CPD.workOrderSearch.URL,
         // CPDConfigurations.CPD.workOrderSearch.body,
@@ -32,16 +54,16 @@ const getWOFromCPD = async(fromDate, toDate, serviceLogic, corrigoToken, Message
             "Parameters": {
                 //"WorkOrderNumber":"POS4L20001", /*Search by work order number
                 /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
+                
                 "Created": {
-                    // "From": fromDate,
-                    // "To": toDate
-                    "From": "2024-07-01T00:00:00",
-                    "To":    "2024-07-28T23:59:59"
-                    // "To": "2024-02-14T24:00:00.000Z"
+                    "From": fromDate,
+                    "To": toDate
+                    // "From": "2024-07-01T00:00:00",
+                    // "To":    "2024-07-28T23:59:59"
                 },
 
                 /*Search by work order status -> New,Accepted,Recalled,Rejected,CheckedIn,Paused,CheckedOut,OnHold,Verified,NeedsCompletionDetails*/
-                "Statuses": serviceLogic
+                "Statuses": requiredStatus
                 //,"CustomerId" :"90256"
             },
             "MessageId": MessageId
@@ -62,34 +84,37 @@ const getWOFromCPD = async(fromDate, toDate, serviceLogic, corrigoToken, Message
         return CPDWorkOrderResponse.data.WorkOrders
 }
 
-const conditionalOperations = async(integrationsMasterId, accountId, conditions) => {
-    const getCPDAuthToken = await getAuthTokenForCPD(integrationsMasterId, accountId)
-    let workOrdersData = []
-    console.log('getCPDAuthToken:===',getCPDAuthToken)
-    for(let conditon of conditions){
-        if(conditon.serviceCondition === "equalsTo"){
-            console.log('serviceCondition:===',conditon.serviceCondition)
-            if(conditon.serviceType === "status"){
-                console.log('serviceType:===',conditon.serviceType)
-                const getServiceDates = await getServiceDateRanges()
-                const getWO =  await getWOFromCPD(getServiceDates.fromDate, getServiceDates.toDate, conditon.serviceLogic, getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId )
-                workOrdersData.push(...getWO)
-            }
+const statusBasedConditions = async(condition) => {
+
+        if(condition.serviceCondition === "equalsTo"){
+            return condition.serviceLogic
         }
-        else if(conditon.serviceCondition === "between"){
-            console.log('serviceCondition:===',conditon.serviceCondition)
-            if(conditon.serviceType === "dateRange"){
-                console.log('serviceType:===',conditon.serviceType)
-                // const getServiceDates = await getServiceDateRanges()
-                const getWO = await getWOFromCPD(conditon.serviceLogic[0], conditon.serviceLogic[1], conditon.serviceLogic = [], getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId)
-                workOrdersData.push(...getWO)
-            }
+        else if(condition.serviceCondition === "notEqualsTo"){
+            let getWorkOrderStatuses = await getCPDWorkOrderStatuses()
+            const filteredServiceLogicValues = getWorkOrderStatuses.filter((item)=> {return !condition.serviceLogic.includes(item)})
+            return filteredServiceLogicValues
         }
-    }
-    return workOrdersData
+    
 }
 
+const dateRangeBasedConditions = async(condition) => {
+        if(condition.serviceCondition === "between"){
+            console.log('serviceCondition:===',condition.serviceLogic)
+            return condition.serviceLogic
+        }
+        else if(condition.serviceCondition === "notBetween"){
+            let [startDate, endDate] = condition.serviceLogic
+            let getDays = new Date(endDate).getDate() - new Date(startDate).getDate()
+            let currentDate = moment(startDate);
+            let formattedFromDate = moment(currentDate).subtract((30-getDays), 'days').startOf('day');
+            let formattedToDate  = moment(startDate).endOf('day');
+            fromDate = formattedFromDate.format('YYYY-MM-DDTHH:mm:ss');
+            toDate   = formattedToDate.format('YYYY-MM-DDTHH:mm:ss');
+            console.log('Dates:====',fromDate, toDate)
+            return [fromDate, toDate]
+        }
+}
 
 module.exports = {
-    conditionalOperations
+    ApplyConditions
 }
