@@ -17,6 +17,7 @@ app.use('/static', express.static(path.join(__dirname,'..' , 'isync_api_images')
 // Database Connection
 mongooseConnect.DbConnect();
 
+
 // Routes  
 const accountsRoute = require('./customer/routes/accountsRoute');
 const usersRoute = require('./customer/routes/usersRoute');
