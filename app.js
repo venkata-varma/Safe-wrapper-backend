@@ -13,10 +13,10 @@ app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use('/static', express.static(path.join(__dirname,'..' , 'isync_api_images')));
+app.use('/devapps/Integration-assets', express.static(path.join(__dirname,'..' , 'isync_api_images')));
 // Database Connection
 mongooseConnect.DbConnect();
-
+ 
 
 // Routes  
 const accountsRoute = require('./customer/routes/accountsRoute');
