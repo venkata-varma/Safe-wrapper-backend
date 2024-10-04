@@ -9,7 +9,7 @@ const serviceProviderListModel = require('../models/serviceProviderList')
 
 let getCPDWorkOrderStatuses = async () => {
     const serviceProvider = await serviceProviderListModel.findOne({ serviceProviders: "CPD" });
-    return serviceProvider ? serviceProvider.workOrderStatus : null;
+    return serviceProvider ? serviceProvider.workOrderStatus : [];
 };
 
 const getAuthTokenForCPD = async(integrationsMasterId, accountId) => {
@@ -30,20 +30,23 @@ const getServiceDateRanges = async() => {
     return {fromDate, toDate}
 }
 
-var CPDstatus = [];
 
-const ApplyConditions = async(serviceType, integrationsMasterId, accountId, condition)=>  {
+const ApplyConditions = async(serviceType, integrationsMasterId, accountId, condition, previousStatusCPDstatus = [])=>  {
     let {fromDate, toDate} = await getServiceDateRanges()
+    let CPDstatus = previousStatusCPDstatus;
 
     if(serviceType === "status")
         CPDstatus = await statusBasedConditions(condition);
-
-    else if(serviceType === "dateRange"){
+    if(serviceType === "dateRange"){
         [fromDate, toDate] = await dateRangeBasedConditions(condition);
+        // If no previous "status" condition was applied, reset CPDstatus
+        if (CPDstatus.length === 0) {
+            CPDstatus = [];  // Reset CPDstatus for dateRange only
+        }
     }
     const getCPDAuthToken = await getAuthTokenForCPD(integrationsMasterId, accountId)
     const getWO = await getWOFromCPD(fromDate, toDate, CPDstatus, getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId)
-    return getWO
+    return {getWO, updatedCPDstatus: CPDstatus }
 }
 const getWOFromCPD = async(fromDate, toDate, requiredStatus, corrigoToken, MessageId) => {
     // console.log('serviceLogic:===',requiredStatus)
@@ -87,11 +90,11 @@ const getWOFromCPD = async(fromDate, toDate, requiredStatus, corrigoToken, Messa
 const statusBasedConditions = async(condition) => {
 
         if(condition.serviceCondition === "equalsTo"){
-            return condition.serviceLogic
+            return condition.serviceLogicValues
         }
         else if(condition.serviceCondition === "notEqualsTo"){
             let getWorkOrderStatuses = await getCPDWorkOrderStatuses()
-            const filteredServiceLogicValues = getWorkOrderStatuses.filter((item)=> {return !condition.serviceLogic.includes(item)})
+            const filteredServiceLogicValues = getWorkOrderStatuses.filter((item)=> {return !condition.serviceLogicValues.includes(item)})
             return filteredServiceLogicValues
         }
     
@@ -99,11 +102,11 @@ const statusBasedConditions = async(condition) => {
 
 const dateRangeBasedConditions = async(condition) => {
         if(condition.serviceCondition === "between"){
-            console.log('serviceCondition:===',condition.serviceLogic)
-            return condition.serviceLogic
+            console.log('serviceCondition:===',condition.serviceLogicValues)
+            return condition.serviceLogicValues
         }
         else if(condition.serviceCondition === "notBetween"){
-            let [startDate, endDate] = condition.serviceLogic
+            let [startDate, endDate] = condition.serviceLogicValues
             let getDays = new Date(endDate).getDate() - new Date(startDate).getDate()
             let currentDate = moment(startDate);
             let formattedFromDate = moment(currentDate).subtract((30-getDays), 'days').startOf('day');
