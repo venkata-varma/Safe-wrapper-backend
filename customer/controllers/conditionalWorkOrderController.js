@@ -5,7 +5,7 @@ const { CPDAuthentication } = require("../../utils/serviceProvidersAuthenticatio
 const CPDConfigurations = require('../../config/integrationsConfiguration');
 const customConstants = require('../../config/constants.json')
 const integrationsMasterServiceProvidersModel = require("../../models/integrationsMasterServiceProvidersModel");
-const { conditionalOperations } = require("../../utils/conditionalUtils");
+const { ApplyConditions } = require("../../utils/conditionalUtils");
 
 
 exports.searchWOsByConditions = asyncWrapper(async (req, res) => {
@@ -69,10 +69,18 @@ exports.searchWOsByConditions = asyncWrapper(async (req, res) => {
 exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
     const {integrationsMasterId, accountId, conditions} = req.body
     console.log('integrationsMasterId:===',integrationsMasterId)
-    const getConditionalBasedWO = await conditionalOperations(integrationsMasterId, accountId, conditions);
+    let getConditionalBasedWO
+    let CPDstatus = [];
+    for(let condition of conditions){
+        getConditionalBasedWO = await ApplyConditions(condition.serviceType, integrationsMasterId, accountId, condition, CPDstatus);
+         // If the serviceType is "status", store the CPDstatus for subsequent use
+         if (condition.serviceType === "status") {
+            CPDstatus = getConditionalBasedWO.updatedCPDstatus;  // Preserve CPDstatus from the "status" condition
+        }
+    }
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_WORKORDERS,
-        data: getConditionalBasedWO
+        data: getConditionalBasedWO.getWO
     });
 });

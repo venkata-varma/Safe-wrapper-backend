@@ -15,9 +15,9 @@ const integrationCronsModel = require('../../models/integrationsCronsModel');
 const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
-const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports } = require('../../utils/general')
+const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports, getCPDFullWorkOrderDetails } = require('../../utils/general')
 const { workOrderLifeCycleReports, sixWeeksSalesDetails, mapNewUpdatedCounts,  mapNewUpdatedWorkOrdersCounts} = require('../../utils/accountInsightUtils')
-
+const path=require('path')
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
@@ -56,6 +56,8 @@ If middleware returns true, this function is to create a New Account along with 
 Returns newly created Account with one associated user.
 */
 exports.createAccount = asyncWrapper(async (req, res) => {
+    // console.log(path.join(__dirname, '..',  'devapps', 'Integration-assets'));
+
     const baseUrl = process.env.DOMAIN_NAME;
     const { accountName, companyName, email, phone, password, status } = req.body
     const accountDetails = await accountsModel.findOne({ $or: [{ email }, { phone }] })
@@ -69,7 +71,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            logo: req.file ? `${baseUrl}static/${req.file.filename}` : "" 
+            logo: req.file ? `${baseUrl}/devapps/Integration-assets/${req.file.filename}` : "" 
         })
         const customId = new mongoose.Types.ObjectId();
 
@@ -183,8 +185,8 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
     const verifyAccountStatus = await accountsModel.findById(accountId)
     const reqAccountType = req.user.accountId.accountType
-    // console.log('verifyAccountStatus:===',req.user)
-    if (verifyAccountStatus.status !== 'active' && reqAccountType === 'customer') {
+    // console.log('verifyAccountStatus:===',verifyAccountStatus)
+    if (!verifyAccountStatus || verifyAccountStatus.status !== 'active' && reqAccountType === 'customer') {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
@@ -569,4 +571,19 @@ exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
             destinationWorkOrders: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderDetails
         })
     
+});
+/**
+ * Get the individual CPD work order details.
+ * getCPDFullWorkOrderDetails function retrives the work order detais from get CPD work order API.
+ */
+
+exports.getIndividualWorkOrderDetails = asyncWrapper(async(req,res)=>{
+    const {accountId,integrationsMasterId, workOrderId} = req.query
+    const getCPDWorkOrderDetails = await CPDWorkordersModel.findOne({accountId:accountId, integrationsMasterId:integrationsMasterId,'CPDWorkOrders.WorkOrderNumber':workOrderId})
+    const getWorkOrderDetails = await getCPDFullWorkOrderDetails(integrationsMasterId, getCPDWorkOrderDetails)
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_WORKORDERS,
+        data:getWorkOrderDetails
+    })
 })
