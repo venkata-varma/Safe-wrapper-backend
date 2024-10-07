@@ -218,10 +218,10 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
                 //"WorkOrderNumber":"POS4L20001", /*Search by work order number
                 /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
                 "Created": {
-                    // "From": fromDate,
-                    // "To": toDate
-                    "From":"2024-07-01T00:00:00",
-                    "To":"2024-07-28T23:59:59"
+                    "From": fromDate,
+                    "To": toDate
+                    // "From":"2024-07-01T00:00:00",
+                    // "To":"2024-07-28T23:59:59"
                     // "To": "2024-02-14T24:00:00.000Z"
                 },
 
