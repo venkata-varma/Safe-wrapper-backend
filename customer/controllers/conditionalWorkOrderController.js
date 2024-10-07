@@ -101,3 +101,22 @@ exports.createConditions = asyncWrapper(async(req,res)=>{
         message: customConstants.messages.MESSAGE_ADD_CONDITION
     });
 })
+
+exports.getAllConditionsByIntegrationsMasterId = asyncWrapper(async(req,res)=>{
+    const getAllConditions = await conditionalModel.find({integrationsMasterId: req.params.integrationsMasterId})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_ALL_CONDITIONS,
+        data: getAllConditions
+    });
+});
+
+exports.updateConditionStatus = asyncWrapper(async(req,res)=>{
+    const conditionId = req.params.conditionId
+    const {status} = req.body
+    await conditionalModel.findByIdAndUpdate(conditionId,{status:status},{new: true})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_UPDATE_CONDITION_STATUS
+    });
+})

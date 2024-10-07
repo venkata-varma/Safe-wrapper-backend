@@ -7,4 +7,8 @@ router.post('/search-work-order',conditionalWorkOrderController.searchWOsByCondi
 router.post('/get-work-orders-based-on-conditons',conditionalWorkOrderController.getWorkOrdersBasedOnConditions)
 router.post('/create-condition',conditionalWorkOrderController.createConditions)
 
+router.patch('/update-condition-status/:conditionId',conditionalWorkOrderController.updateConditionStatus)
+
+router.get('/get-all-conditions/:integrationsMasterId', conditionalWorkOrderController.getAllConditionsByIntegrationsMasterId)
+
 module.exports = router

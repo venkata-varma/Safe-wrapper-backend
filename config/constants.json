@@ -97,7 +97,9 @@
     "MESSAGE_USER_TAKEN": "User email address already taken by some one.",
     "MESSAGE_GET_WORKORDERS":"Work order details.",
     "MESSAGE_GET_WORKORDERS_FAILED":"Failed to fetch the work orders.",
-    "MESSAGE_ADD_CONDITION":"Condition for pull request added succesfully."
+    "MESSAGE_ADD_CONDITION":"Condition for pull request added succesfully.",
+    "MESSAGE_GET_ALL_CONDITIONS":"All condtions.",
+    "MESSAGE_UPDATE_CONDITION_STATUS":"Condition status updated successfully."
 
   },
   "statusCodes": {
