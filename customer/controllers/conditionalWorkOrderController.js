@@ -6,6 +6,7 @@ const CPDConfigurations = require('../../config/integrationsConfiguration');
 const customConstants = require('../../config/constants.json')
 const integrationsMasterServiceProvidersModel = require("../../models/integrationsMasterServiceProvidersModel");
 const { ApplyConditions } = require("../../utils/conditionalUtils");
+const conditionalModel = require('../../models/conditionalModel')
 
 
 exports.searchWOsByConditions = asyncWrapper(async (req, res) => {
@@ -84,3 +85,19 @@ exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
         data: getConditionalBasedWO.getWO
     });
 });
+
+exports.createConditions = asyncWrapper(async(req,res)=>{
+    const {accountId, integrationsMasterId, serviceProvider, conditions} = req.body;
+    const findConditionIsAvailable = await conditionalModel.find({accountId:accountId, integrationsMasterId: integrationsMasterId, serviceProvider: serviceProvider})
+    
+    if(findConditionIsAvailable.length > 0){
+        await conditionalModel.findOneAndDelete({accountId:accountId, integrationsMasterId: integrationsMasterId})
+        await conditionalModel.create(req.body)
+    }else{
+        await conditionalModel.create(req.body)
+    }
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_ADD_CONDITION
+    });
+})

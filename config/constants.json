@@ -96,7 +96,8 @@
     "MESSAGE_WORKORDER_ID_INVALID":"Invalid WorkorderId / Integration .",
     "MESSAGE_USER_TAKEN": "User email address already taken by some one.",
     "MESSAGE_GET_WORKORDERS":"Work order details.",
-    "MESSAGE_GET_WORKORDERS_FAILED":"Failed to fetch the work orders."
+    "MESSAGE_GET_WORKORDERS_FAILED":"Failed to fetch the work orders.",
+    "MESSAGE_ADD_CONDITION":"Condition for pull request added succesfully."
 
   },
   "statusCodes": {

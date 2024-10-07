@@ -5,5 +5,6 @@ router.use(auth)
 
 router.post('/search-work-order',conditionalWorkOrderController.searchWOsByConditions)
 router.post('/get-work-orders-based-on-conditons',conditionalWorkOrderController.getWorkOrdersBasedOnConditions)
+router.post('/create-condition',conditionalWorkOrderController.createConditions)
 
 module.exports = router

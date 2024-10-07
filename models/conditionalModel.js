@@ -18,6 +18,10 @@ const conditionalOperationsSchema = mongoose.Schema({
         index : true,
         default: null,
     },
+    serviceProvider:{
+        type: String,
+        default:""
+    },
     conditions: [{
         serviceType: {
             type: String,
