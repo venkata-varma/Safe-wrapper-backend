@@ -82,7 +82,7 @@ exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_WORKORDERS,
-        data: getConditionalBasedWO.getWO
+        data: getConditionalBasedWO.getWO.workOrders
     });
 });
 

@@ -46,6 +46,7 @@ const ApplyConditions = async(serviceType, integrationsMasterId, accountId, cond
     }
     const getCPDAuthToken = await getAuthTokenForCPD(integrationsMasterId, accountId)
     const getWO = await getWOFromCPD(fromDate, toDate, CPDstatus, getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId)
+    // console.log('getWO:===',getWO)
     return {getWO, updatedCPDstatus: CPDstatus }
 }
 const getWOFromCPD = async(fromDate, toDate, requiredStatus, corrigoToken, MessageId) => {
@@ -84,7 +85,7 @@ const getWOFromCPD = async(fromDate, toDate, requiredStatus, corrigoToken, Messa
             // await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, 'cpd-search-workorder', CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
         });
         // console.log('CPDWorkOrderResponse:====',CPDWorkOrderResponse)
-        return CPDWorkOrderResponse.data.WorkOrders
+        return CPDWorkOrderResponse.data
 }
 
 const statusBasedConditions = async(condition) => {

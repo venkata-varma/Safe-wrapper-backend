@@ -77,7 +77,7 @@ const validateNewAndUpdatedWO = async (CPDWorkOrderResponse, cronJobDetails, acc
         CPDNewWorkOrdersPulledCount: 0
     }
 
-    for (const work of CPDWorkOrderResponse) {
+    for (const work of CPDWorkOrderResponse.WorkOrders) {
 
         workDetails.CPDWorkOrders = work;
         workDetails.MessageId = CPDWorkOrderResponse.MessageId;
@@ -220,8 +220,8 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
                 "Created": {
                     "From": fromDate,
                     "To": toDate
-                    // "From":"2024-07-01T00:00:00",
-                    // "To":"2024-07-28T23:59:59"
+                    // "From":"2024-07-12T00:00:00",
+                    // "To":"2024-07-19T23:59:59"
                     // "To": "2024-02-14T24:00:00.000Z"
                 },
 
@@ -302,17 +302,17 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
         })
         .then(res => {
             console.log('response:==')
-            return res.data.WorkOrders
+            return res.data
         })
         .catch(async (error) => {
             console.log("ERROR:==", error)
             await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, 'cpd-search-workorder', CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
         });
     }
-
+    // console.log('CPDWorkOrderResponse:===',CPDWorkOrderResponse)
     // If you have atlease one work workorder from CPD then process.
     if (CPDWorkOrderResponse !== undefined) {
-        if (CPDWorkOrderResponse.length > 0) {
+        if (CPDWorkOrderResponse.WorkOrders.length > 0) {
             getCPDWorkOrderdetails = await validateNewAndUpdatedWO(CPDWorkOrderResponse, cronJobDetails, integrationObject.accountId, integrationObject.integrationsMasterId)
         }
     }
