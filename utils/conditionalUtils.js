@@ -5,6 +5,7 @@ const { CPDAuthentication } = require('./serviceProvidersAuthentication')
 const integrationsMasterServiceProvidersModel = require('../models/integrationsMasterServiceProvidersModel')
 const { decryptData } = require('./encryptionAlgorithms')
 const serviceProviderListModel = require('../models/serviceProviderList')
+const { exceptionLogs } = require('../middleware/exceptionOperation')
 
 
 let getCPDWorkOrderStatuses = async () => {
@@ -30,6 +31,17 @@ const getServiceDateRanges = async() => {
     return {fromDate, toDate}
 }
 
+/**
+ * 
+ * @param {*} serviceType navigate and get the appropriate work orders by the type.
+ * @param {*} integrationsMasterId and @param {*} accountId  used to get the encrypted Corrigo-pro customer credentials.
+ * @param {*} condition it contains the service condtion and service logic values.
+ * @param {*} previousStatusCPDstatus it holds the statuses of the CPD wheather the service type validates the status.
+ * getServiceDateRanges function is used to set the default from and to dates.
+ * getAuthTokenForCPD used to get the Corrigo-pro auth token of customer.
+ * Get the Work Orders from getWOFromCPD with the specified conditons.
+ * @returns Corrigo-pro Work orderes.
+ */
 
 const ApplyConditions = async(serviceType, integrationsMasterId, accountId, condition, previousStatusCPDstatus = [])=>  {
     let {fromDate, toDate} = await getServiceDateRanges()
@@ -45,11 +57,21 @@ const ApplyConditions = async(serviceType, integrationsMasterId, accountId, cond
         }
     }
     const getCPDAuthToken = await getAuthTokenForCPD(integrationsMasterId, accountId)
-    const getWO = await getWOFromCPD(fromDate, toDate, CPDstatus, getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId)
+    const getWO = await getWOFromCPD(fromDate, toDate, CPDstatus, getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId, integrationObject = {integrationsMasterId, accountId})
     // console.log('getWO:===',getWO)
     return {getWO, updatedCPDstatus: CPDstatus }
 }
-const getWOFromCPD = async(fromDate, toDate, requiredStatus, corrigoToken, MessageId) => {
+
+/**
+ * 
+ * @param {*} fromDate 
+ * @param {*} toDate 
+ * @param {*} requiredStatus 
+ * @param {*} corrigoToken 
+ * @param {*} MessageId 
+ * @returns By the above parameters we can fetch the WorkOrders from the Corrigo-Pro.
+ */
+const getWOFromCPD = async(fromDate, toDate, requiredStatus, corrigoToken, MessageId, integrationObject) => {
     // console.log('serviceLogic:===',requiredStatus)
 
     const CPDWorkOrderResponse = await axios.post(integrationServiceAPIConfig.CPD.workOrderSearch.URL,
@@ -81,13 +103,20 @@ const getWOFromCPD = async(fromDate, toDate, requiredStatus, corrigoToken, Messa
         })
         .catch(async (error) => {
             console.log("ERROR:==",)
+            await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, 'cpd-search-workorder', CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
             return error
-            // await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, 'cpd-search-workorder', CPDWorkOrderId = "", CPDWorkOrderNumber = "", runnigWorkOrderId = "")
         });
         // console.log('CPDWorkOrderResponse:====',CPDWorkOrderResponse)
         return CPDWorkOrderResponse.data
 }
 
+/**
+ * 
+ * @param {*} condition contians the required conditions.
+ * If constion is equalsTo return the statuses set by the customer.
+ * If condition is notEqualsTo it filters the statuses which are not required for the customer and then returns the required statuses .
+ * @returns statuses based on the conditon.
+ */
 const statusBasedConditions = async(condition) => {
 
         if(condition.serviceCondition === "equalsTo"){
@@ -101,6 +130,14 @@ const statusBasedConditions = async(condition) => {
     
 }
 
+/**
+ * 
+ * @param {*} condition contians the required conditions.
+ * If dateRange condtions is equals to between return the serviceLogicValues.
+ * If condtion is notBetween get the number of days by substracting end date and start date.
+ * Then subsratct those days with 30 days and use the value as from date and to is the start date from the conditon.
+ * @returns dates based on the conditon.
+ */
 const dateRangeBasedConditions = async(condition) => {
         if(condition.serviceCondition === "between"){
             console.log('serviceCondition:===',condition.serviceLogicValues)

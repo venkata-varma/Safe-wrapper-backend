@@ -8,6 +8,14 @@ const integrationsMasterServiceProvidersModel = require("../../models/integratio
 const { ApplyConditions } = require("../../utils/conditionalUtils");
 const conditionalModel = require('../../models/conditionalModel')
 
+/**
+ * Get Corrigo pro WorkOrders by conditions using Search WO API.
+ * IntegrationsMasterId and accountId used to get the Auth token of CorrigoPro of required customer from integrationsMasterServiceProvider record.
+ * Get the encrypted credentials and then decrypt.
+ * Get the decrypted credentials from decryptData and then get Auth token from CPDAuthentication function.
+ * Use Search work order API of Corrigo-pro to get the requires work orders.
+ * @returns CPD Work Orders.
+ */
 
 exports.searchWOsByConditions = asyncWrapper(async (req, res) => {
     const { integrationsMasterId, accountId } = req.query
@@ -67,6 +75,11 @@ exports.searchWOsByConditions = asyncWrapper(async (req, res) => {
 
 });
 
+/**
+ * Get the required Corrigo-pro work orders from CPD by the condtions.
+ * @returns Corrifo-pro work orders.
+ */
+
 exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
     const {integrationsMasterId, accountId, conditions} = req.body
     console.log('integrationsMasterId:===',integrationsMasterId)
@@ -86,6 +99,12 @@ exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
     });
 });
 
+/**
+ * This function is used to save the condtions requied by the customer.
+ * If the condition already exist, delete the old record and insert new one.
+ * Else save the condtion.
+ */
+
 exports.createConditions = asyncWrapper(async(req,res)=>{
     const {accountId, integrationsMasterId, serviceProvider, conditions} = req.body;
     const findConditionIsAvailable = await conditionalModel.find({accountId:accountId, integrationsMasterId: integrationsMasterId, serviceProvider: serviceProvider})
@@ -102,6 +121,10 @@ exports.createConditions = asyncWrapper(async(req,res)=>{
     });
 })
 
+/**
+ * This function is used to returns the all condtions by integrstionsMasterId.
+ * @returns all conditions.
+ */
 exports.getAllConditionsByIntegrationsMasterId = asyncWrapper(async(req,res)=>{
     const getAllConditions = await conditionalModel.find({integrationsMasterId: req.params.integrationsMasterId})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -110,6 +133,10 @@ exports.getAllConditionsByIntegrationsMasterId = asyncWrapper(async(req,res)=>{
         data: getAllConditions
     });
 });
+
+/**
+ * This function is used to update the status of condtion.
+ */
 
 exports.updateConditionStatus = asyncWrapper(async(req,res)=>{
     const conditionId = req.params.conditionId
