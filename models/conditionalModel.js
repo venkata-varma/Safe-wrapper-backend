@@ -24,7 +24,7 @@ const conditionalOperationsSchema = mongoose.Schema({
     },
     status:{
         type: String,
-        enum: ['active','deleted'],
+        enum: ['active','inactive'],
         default: "active"
     },
     conditions: [{
