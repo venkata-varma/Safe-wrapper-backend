@@ -178,3 +178,13 @@ exports.editCondition = asyncWrapper(async(req,res)=>{
         message: customConstants.messages.MESSAGE_UPDATE_CONDITION
     });
 })
+
+exports.getIndividualConditionDetails = asyncWrapper(async(req,res)=>{
+    const{conditionId} = req.params
+    const getConditionDetails = await conditionalModel.findById(conditionId).populate('integrationsMasterId')
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_SINGLE_CONDITION,
+        data:getConditionDetails
+    });
+})

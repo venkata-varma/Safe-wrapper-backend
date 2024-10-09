@@ -11,5 +11,5 @@ router.patch('/edit-condition/:conditionId',conditionalWorkOrderController.valid
 router.patch('/update-condition-status/:conditionId',conditionalWorkOrderController.updateConditionStatus)
 
 router.get('/get-all-conditions/:accountId', conditionalWorkOrderController.getAllConditionsByIntegrationsMasterId)
-
+router.get('/get-individual-condition-details/:conditionId',conditionalWorkOrderController.getIndividualConditionDetails)
 module.exports = router
