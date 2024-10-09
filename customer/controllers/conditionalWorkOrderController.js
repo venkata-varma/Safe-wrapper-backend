@@ -99,6 +99,19 @@ exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
     });
 });
 
+exports.validateConditionAlreadyExist = asyncWrapper(async(req,res,next)=>{
+    const {accountId, integrationsMasterId, serviceProvider, conditions} = req.body;
+    const findConditionIsAvailable = await conditionalModel.find({accountId:accountId, integrationsMasterId: integrationsMasterId, serviceProvider: serviceProvider})
+    if(findConditionIsAvailable.length > 0){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_FAIL_TO_ADD_CONDITION
+        });
+    }else{
+        next()
+    }
+})
+
 /**
  * This function is used to save the condtions requied by the customer.
  * If the condition already exist, delete the old record and insert new one.
@@ -107,14 +120,8 @@ exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
 
 exports.createConditions = asyncWrapper(async(req,res)=>{
     const {accountId, integrationsMasterId, serviceProvider, conditions} = req.body;
-    const findConditionIsAvailable = await conditionalModel.find({accountId:accountId, integrationsMasterId: integrationsMasterId, serviceProvider: serviceProvider})
     
-    if(findConditionIsAvailable.length > 0){
-        await conditionalModel.findOneAndDelete({accountId:accountId, integrationsMasterId: integrationsMasterId})
-        await conditionalModel.create(req.body)
-    }else{
-        await conditionalModel.create(req.body)
-    }
+    await conditionalModel.create(req.body)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ADD_CONDITION
@@ -126,7 +133,7 @@ exports.createConditions = asyncWrapper(async(req,res)=>{
  * @returns all conditions.
  */
 exports.getAllConditionsByIntegrationsMasterId = asyncWrapper(async(req,res)=>{
-    const getAllConditions = await conditionalModel.find({accountId: req.params.accountId})
+    const getAllConditions = await conditionalModel.find({accountId: req.params.accountId}).populate('integrationsMasterId')
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_ALL_CONDITIONS,
@@ -145,5 +152,29 @@ exports.updateConditionStatus = asyncWrapper(async(req,res)=>{
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_CONDITION_STATUS
+    });
+})
+
+exports.validateConditionExist = asyncWrapper(async(req,res,next)=>{
+    const {conditionId} = req.params
+    const getConditionDetails = await conditionalModel.findById(conditionId).populate('integrationsMasterId')
+    if(!getConditionDetails || getConditionDetails.status !== 'active' || getConditionDetails.integrationsMasterId.status !== 'active'){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_FAIL_TO_EDIT_CONDITION
+        });
+    }
+    else{
+        next()
+    }
+});
+
+exports.editCondition = asyncWrapper(async(req,res)=>{
+    const {conditionId} = req.params
+    
+    await conditionalModel.findByIdAndUpdate(conditionId,{...req.body},{new: true})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_UPDATE_CONDITION
     });
 })

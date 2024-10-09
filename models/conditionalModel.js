@@ -14,13 +14,17 @@ const conditionalOperationsSchema = mongoose.Schema({
     },
     integrationsMasterId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "integrationsmasters",
+        ref: "integrationsMaster",
         index : true,
         default: null,
     },
     serviceProvider:{
         type: String,
         default:""
+    },
+    conditionName:{
+        type: String,
+        default: ""
     },
     status:{
         type: String,
