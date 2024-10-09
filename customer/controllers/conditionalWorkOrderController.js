@@ -126,7 +126,7 @@ exports.createConditions = asyncWrapper(async(req,res)=>{
  * @returns all conditions.
  */
 exports.getAllConditionsByIntegrationsMasterId = asyncWrapper(async(req,res)=>{
-    const getAllConditions = await conditionalModel.find({integrationsMasterId: req.params.integrationsMasterId})
+    const getAllConditions = await conditionalModel.find({accountId: req.params.accountId})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_ALL_CONDITIONS,

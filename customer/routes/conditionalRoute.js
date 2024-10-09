@@ -9,6 +9,6 @@ router.post('/create-condition',conditionalWorkOrderController.createConditions)
 
 router.patch('/update-condition-status/:conditionId',conditionalWorkOrderController.updateConditionStatus)
 
-router.get('/get-all-conditions/:integrationsMasterId', conditionalWorkOrderController.getAllConditionsByIntegrationsMasterId)
+router.get('/get-all-conditions/:accountId', conditionalWorkOrderController.getAllConditionsByIntegrationsMasterId)
 
 module.exports = router
