@@ -411,7 +411,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                         let updatedSNOWWorkOrderStatus = SNOWWorkOrderClone.state
                         let snowWorkOrderNumber = SNOWWorkOrderClone.number
 
-                        const listOfSNOWWorkorderDetails = await SNOWWorkOrdersModel.findOne({ SNOWWorkOrderId: snowWorkOrderNumber, }).lean();
+                        const listOfSNOWWorkorderDetails = await SNOWWorkOrdersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId,  SNOWWorkOrderId: snowWorkOrderNumber, }).lean();
                         console.log("listOfSNOWWorkorderDetails", listOfSNOWWorkorderDetails)
                         if (listOfSNOWWorkorderDetails) {
                             await SNOWWorkOrdersModel.findOneAndUpdate({

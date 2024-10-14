@@ -6,7 +6,16 @@ const CPDConfigurations = require('../../config/integrationsConfiguration');
 const customConstants = require('../../config/constants.json')
 const integrationsMasterServiceProvidersModel = require("../../models/integrationsMasterServiceProvidersModel");
 const { ApplyConditions } = require("../../utils/conditionalUtils");
+const conditionalModel = require('../../models/conditionalModel')
 
+/**
+ * Get Corrigo pro WorkOrders by conditions using Search WO API.
+ * IntegrationsMasterId and accountId used to get the Auth token of CorrigoPro of required customer from integrationsMasterServiceProvider record.
+ * Get the encrypted credentials and then decrypt.
+ * Get the decrypted credentials from decryptData and then get Auth token from CPDAuthentication function.
+ * Use Search work order API of Corrigo-pro to get the requires work orders.
+ * @returns CPD Work Orders.
+ */
 
 exports.searchWOsByConditions = asyncWrapper(async (req, res) => {
     const { integrationsMasterId, accountId } = req.query
@@ -66,6 +75,11 @@ exports.searchWOsByConditions = asyncWrapper(async (req, res) => {
 
 });
 
+/**
+ * Get the required Corrigo-pro work orders from CPD by the condtions.
+ * @returns Corrifo-pro work orders.
+ */
+
 exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
     const {integrationsMasterId, accountId, conditions} = req.body
     console.log('integrationsMasterId:===',integrationsMasterId)
@@ -81,6 +95,96 @@ exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_WORKORDERS,
-        data: getConditionalBasedWO.getWO
+        data: getConditionalBasedWO.getWO.WorkOrders
     });
 });
+
+exports.validateConditionAlreadyExist = asyncWrapper(async(req,res,next)=>{
+    const {accountId, integrationsMasterId, serviceProvider, conditions} = req.body;
+    const findConditionIsAvailable = await conditionalModel.find({accountId:accountId, integrationsMasterId: integrationsMasterId, serviceProvider: serviceProvider})
+    if(findConditionIsAvailable.length > 0){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_FAIL_TO_ADD_CONDITION
+        });
+    }else{
+        next()
+    }
+})
+
+/**
+ * This function is used to save the condtions requied by the customer.
+ * If the condition already exist, delete the old record and insert new one.
+ * Else save the condtion.
+ */
+
+exports.createConditions = asyncWrapper(async(req,res)=>{
+    const {accountId, integrationsMasterId, serviceProvider, conditions} = req.body;
+    
+    await conditionalModel.create(req.body)
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_ADD_CONDITION
+    });
+})
+
+/**
+ * This function is used to returns the all condtions by integrstionsMasterId.
+ * @returns all conditions.
+ */
+exports.getAllConditionsByIntegrationsMasterId = asyncWrapper(async(req,res)=>{
+    const getAllConditions = await conditionalModel.find({accountId: req.params.accountId}).populate('integrationsMasterId')
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_ALL_CONDITIONS,
+        data: getAllConditions
+    });
+});
+
+/**
+ * This function is used to update the status of condtion.
+ */
+
+exports.updateConditionStatus = asyncWrapper(async(req,res)=>{
+    const conditionId = req.params.conditionId
+    const {status} = req.body
+    await conditionalModel.findByIdAndUpdate(conditionId,{status:status},{new: true})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_UPDATE_CONDITION_STATUS
+    });
+})
+
+exports.validateConditionExist = asyncWrapper(async(req,res,next)=>{
+    const {conditionId} = req.params
+    const getConditionDetails = await conditionalModel.findById(conditionId).populate('integrationsMasterId')
+    if(!getConditionDetails || getConditionDetails.status !== 'active' || getConditionDetails.integrationsMasterId.status !== 'active'){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_FAIL_TO_EDIT_CONDITION
+        });
+    }
+    else{
+        next()
+    }
+});
+
+exports.editCondition = asyncWrapper(async(req,res)=>{
+    const {conditionId} = req.params
+    
+    await conditionalModel.findByIdAndUpdate(conditionId,{...req.body},{new: true})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_UPDATE_CONDITION
+    });
+})
+
+exports.getIndividualConditionDetails = asyncWrapper(async(req,res)=>{
+    const{conditionId} = req.params
+    const getConditionDetails = await conditionalModel.findById(conditionId).populate('integrationsMasterId')
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_SINGLE_CONDITION,
+        data:getConditionDetails
+    });
+})
