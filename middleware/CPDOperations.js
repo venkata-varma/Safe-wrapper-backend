@@ -213,10 +213,9 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
         "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
     }
    
-    let getAllConditionsByIntegrationId = await conditionalModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, serviceProvider: integrationObject.serviceProvider })
+    let getAllConditionsByIntegrationId = await conditionalModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, status: "active" })
     let CPDWorkOrderResponse;
-    if (getAllConditionsByIntegrationId.length > 0 && getAllConditionsByIntegrationId[0].status === "active") {
-
+    if (getAllConditionsByIntegrationId.length > 0) {
         let CPDstatus = [];
         for (let condition of getAllConditionsByIntegrationId[0].conditions) {
 
