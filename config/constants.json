@@ -100,7 +100,7 @@
     "MESSAGE_ADD_CONDITION":"Condition for pull request added succesfully.",
     "MESSAGE_GET_ALL_CONDITIONS":"All condtions.",
     "MESSAGE_UPDATE_CONDITION_STATUS":"Condition status updated successfully.",
-    "MESSAGE_FAIL_TO_EDIT_CONDITION":"As the integration and condition are not active, it was not possible to update the condition.",
+    "MESSAGE_FAIL_TO_EDIT_CONDITION":"As the integration or condition are not active, it was not possible to update the condition.",
     "MESSAGE_UPDATE_CONDITION":"Conditons updated successfully.",
     "MESSAGE_FAIL_TO_ADD_CONDITION":"This integration already has a condition, you are unable to add another.",
     "MESSAGE_GET_SINGLE_CONDITION":"Condition Details."
