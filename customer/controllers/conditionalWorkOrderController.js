@@ -101,7 +101,7 @@ exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
 
 exports.validateConditionAlreadyExist = asyncWrapper(async(req,res,next)=>{
     const {accountId, integrationsMasterId, serviceProvider, conditions} = req.body;
-    const findConditionIsAvailable = await conditionalModel.find({accountId:accountId, integrationsMasterId: integrationsMasterId})
+    const findConditionIsAvailable = await conditionalModel.find({accountId:accountId, integrationsMasterId: integrationsMasterId, status:"active"})
     if(findConditionIsAvailable.length > 0){
         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -134,7 +134,7 @@ exports.createConditions = asyncWrapper(async(req,res)=>{
  * @returns all conditions.
  */
 exports.getAllConditionsByIntegrationsMasterId = asyncWrapper(async(req,res)=>{
-    const getAllConditions = await conditionalModel.find({accountId: req.params.accountId}).populate('integrationsMasterId')
+    const getAllConditions = await conditionalModel.find({accountId: req.params.accountId, status: "active"}).populate('integrationsMasterId').sort({_id:-1})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_ALL_CONDITIONS,
