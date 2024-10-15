@@ -44,7 +44,7 @@ exports.getImages = asyncWrapper(async (req, res) => {
   const imageUrls = [
     {
       name: "TT",
-      url: baseUrl + '/static/TurboTax_logo.png'
+      url: baseUrl + 'static/TurboTax_logo.png'
     },
     {
       name: "AM",
