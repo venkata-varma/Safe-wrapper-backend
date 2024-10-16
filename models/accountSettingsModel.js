@@ -24,7 +24,6 @@ const accountSettingsSchema = mongoose.Schema({
             "fieldsmapping": true,
             "insights": true,
             "exceptions": true,
-            "users": true,
             "settings": true,
             "createintegrations": true,
             "wolifecycle":true,

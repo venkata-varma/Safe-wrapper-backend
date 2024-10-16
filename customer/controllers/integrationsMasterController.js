@@ -210,7 +210,6 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
         "fieldsmapping": true,
         "insights": true,
         "exceptions": true,
-        "users": true,
         "settings": true,
         "createintegrations": true,
         "wolifecycle":true,
