@@ -26,7 +26,9 @@ const accountSettingsSchema = mongoose.Schema({
             "exceptions": true,
             "users": true,
             "settings": true,
-            "createIntegrations": true
+            "createintegrations": true,
+            "wolifecycle":true,
+            "conditions":true
         }
     },
     // serviceProviders: {

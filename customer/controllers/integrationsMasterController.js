@@ -204,6 +204,18 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
     "fieldMappings": true,
     "exceptions": true
   }
+  const menus = {
+        "dashboard": true,
+        "integrations": true,
+        "fieldsmapping": true,
+        "insights": true,
+        "exceptions": true,
+        "users": true,
+        "settings": true,
+        "createintegrations": true,
+        "wolifecycle":true,
+        "conditions":true
+  }
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
@@ -214,7 +226,7 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
         timeZones,
         // serviceproviderlists, 
         cronSchedulePicker,
-        serviceProvidersMappingAndServices, dataPointsAccess
+        serviceProvidersMappingAndServices, dataPointsAccess, menus
       },
     });
 
