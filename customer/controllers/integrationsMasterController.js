@@ -44,87 +44,87 @@ exports.getImages = asyncWrapper(async (req, res) => {
   const imageUrls = [
     {
       name: "TT",
-      url: baseUrl + 'static/TurboTax_logo.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/TurboTax_logo.png'
     },
     {
       name: "AM",
-      url: baseUrl + 'static/Acumatica_logo.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/Acumatica_logo.png'
     },
     {
       name: "CPD",
-      url: baseUrl + 'static/CorrigoPro_logo.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/CorrigoPro_logo.png'
     },
     {
       name: "DF",
-      url: baseUrl + 'static/Dataforma_logo.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/Dataforma_logo.png'
     },
     {
       name: "QB",
-      url: baseUrl + 'static/Quickbooks_logo.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/Quickbooks_logo.png'
     },
     {
       name: "SC",
-      url: baseUrl + 'static/ServiceChannel_logo.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/ServiceChannel_logo.png'
     },
     {
       name: "SNOW",
-      url: baseUrl + 'static/servicenow_logo.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/servicenow_logo.png'
     },
     {
       name: "MDS",
-      url: baseUrl + 'static/MDS_logo2.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/MDS_logo2.png'
     },
     {
       name: "QSP",
-      url: baseUrl + 'static/Qsp_logo2.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/Qsp_logo2.png'
     },
     {
       name: "CYS",
-      url: baseUrl + 'static/cyrious_log.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/cyrious_log.png'
     },
     {
       name: "NO-INTEGRATION",
-      url: baseUrl + 'static/no_integration_screen.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/no_integration_screen.png'
     },
     {
       name: "NO-SERVICE-PROVIDER",
-      url: baseUrl + 'static/no_service_provider.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/no_service_provider.png'
     },
     {
       name: "INTEGRATION-CONNECTION",
-      url: baseUrl + 'static/integration_connection.gif'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/integration_connection.gif'
     },
     {
       name: "CROSS",
-      url: baseUrl + 'static/cross_icon.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/cross_icon.png'
     },
     {
       name: "CURRENT-FREQUENCY",
-      url: baseUrl + 'static/frequency_icon.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/frequency_icon.png'
     },
     {
       name: "AUTO-DATA-SYNC",
-      url: baseUrl + 'static/data_sync_icon.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/data_sync_icon.png'
     },
     {
       name: "UPDATE-FREQUENCY",
-      url: baseUrl + 'static/update_frequency_icon.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/update_frequency_icon.png'
     },
     {
       name: "DATA-DUMP-RANGE",
-      url: baseUrl + 'static/data_range_icon.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/data_range_icon.png'
     },
     {
       name : "Super-Admin-Logo",
-      url : baseUrl + 'static/Super_Admin_Logo.png'
+      url : 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/Super_Admin_Logo.png'
     },
     {
       name : "TEST-ACCOUNT-IMAGE",
-      url : baseUrl + 'static/QSP_Test.png'
+      url : 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/QSP_Test.png'
     },
     {
       name : "DEVRABBIT-IMAGE",
-      url : baseUrl + 'static/devRabbit_logo.png'
+      url : 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/devRabbit_logo.png'
     }
   ]
 
