@@ -43,23 +43,25 @@ const getServiceDateRanges = async() => {
  * @returns Corrigo-pro Work orderes.
  */
 
-const ApplyConditions = async(serviceType, integrationsMasterId, accountId, condition, previousStatusCPDstatus = [])=>  {
+const ApplyConditions = async(serviceType, integrationsMasterId, accountId, condition, previousStatusCPDstatus = [], previousCPDDateRanges)=>  {
     let {fromDate, toDate} = await getServiceDateRanges()
     let CPDstatus = previousStatusCPDstatus;
-
+    console.log('fromDate, toDate:==',fromDate, toDate)
+    let getCPDDateRanges = previousCPDDateRanges.length > 0 ? previousCPDDateRanges :[fromDate, toDate]
     if(serviceType === "status")
         CPDstatus = await statusBasedConditions(condition);
     if(serviceType === "dateRange"){
         [fromDate, toDate] = await dateRangeBasedConditions(condition);
+        getCPDDateRanges = [fromDate, toDate]
         // If no previous "status" condition was applied, reset CPDstatus
         if (CPDstatus.length === 0) {
             CPDstatus = [];  // Reset CPDstatus for dateRange only
         }
     }
     const getCPDAuthToken = await getAuthTokenForCPD(integrationsMasterId, accountId)
-    const getWO = await getWOFromCPD(fromDate, toDate, CPDstatus, getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId, integrationObject = {integrationsMasterId, accountId})
+    const getWO = await getWOFromCPD(getCPDDateRanges[0], getCPDDateRanges[1], CPDstatus, getCPDAuthToken.corrigoToken, getCPDAuthToken.MessageId, integrationObject = {integrationsMasterId, accountId})
     // console.log('getWO:===',getWO)
-    return {getWO, updatedCPDstatus: CPDstatus }
+    return {getWO, updatedCPDstatus: CPDstatus, CPDDateRanges: getCPDDateRanges}
 }
 
 /**
@@ -72,7 +74,7 @@ const ApplyConditions = async(serviceType, integrationsMasterId, accountId, cond
  * @returns By the above parameters we can fetch the WorkOrders from the Corrigo-Pro.
  */
 const getWOFromCPD = async(fromDate, toDate, requiredStatus, corrigoToken, MessageId, integrationObject) => {
-    // console.log('serviceLogic:===',requiredStatus)
+    console.log('serviceLogic:===',requiredStatus, fromDate, toDate)
 
     const CPDWorkOrderResponse = await axios.post(integrationServiceAPIConfig.CPD.workOrderSearch.URL,
         // CPDConfigurations.CPD.workOrderSearch.body,
