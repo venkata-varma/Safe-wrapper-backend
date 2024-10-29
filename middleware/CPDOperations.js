@@ -217,14 +217,18 @@ exports.getCPDWorkOrders = async (integrationObject, typeOfCron) => {
     let CPDWorkOrderResponse;
     if (getAllConditionsByIntegrationId.length > 0) {
         let CPDstatus = [];
+        let CPDDateRanges = [];
         for (let condition of getAllConditionsByIntegrationId[0].conditions) {
-
+            if(condition.serviceType === "dateRange"){
+                CPDDateRanges = [condition.serviceLogicValues[0], condition.serviceLogicValues[1]]
+            }
             const getCPDWorkOrdersByConditions = await ApplyConditions(
                 condition.serviceType,
                 integrationObject.integrationsMasterId,
                 integrationObject.accountId,
                 condition,
-                CPDstatus
+                CPDstatus,
+                CPDDateRanges
             );
             CPDWorkOrderResponse = getCPDWorkOrdersByConditions.getWO
             // If the serviceType is "status", store the CPDstatus for subsequent use
