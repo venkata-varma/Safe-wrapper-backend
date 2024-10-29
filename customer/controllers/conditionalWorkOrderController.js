@@ -85,10 +85,14 @@ exports.getWorkOrdersBasedOnConditions = asyncWrapper(async(req,res)=>{
     console.log('integrationsMasterId:===',integrationsMasterId)
     let getConditionalBasedWO
     let CPDstatus = [];
+    let CPDDateRanges = []
     for(let condition of conditions){
-        getConditionalBasedWO = await ApplyConditions(condition.serviceType, integrationsMasterId, accountId, condition, CPDstatus);
+        if(condition.serviceType === "dateRange"){
+            CPDDateRanges = [condition.serviceLogicValues[0], condition.serviceLogicValues[1]]
+        }
+        getConditionalBasedWO = await ApplyConditions(condition.serviceType, integrationsMasterId, accountId, condition, CPDstatus, CPDDateRanges);
          // If the serviceType is "status", store the CPDstatus for subsequent use
-         if (condition.serviceType === "status") {
+        if (condition.serviceType === "status") {
             CPDstatus = getConditionalBasedWO.updatedCPDstatus;  // Preserve CPDstatus from the "status" condition
         }
     }
