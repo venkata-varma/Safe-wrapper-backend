@@ -29,16 +29,16 @@ const configurations = {
 
     SNOW : {
       getAllIncidents :{
-        URL : 'https://dev249675.service-now.com/api/now/table/incident',
+        URL : 'https://dev201053.service-now.com/api/now/table/incident',
       },
       getIncidentById:{
-        URL:'https://dev249675.service-now.com/api/now/table/incident'
+        URL:'https://dev201053.service-now.com/api/now/table/incident'
       },
       updateIncidentById:{
-        URL:'https://dev249675.service-now.com/api/now/table/incident'
+        URL:'https://dev201053.service-now.com/api/now/table/incident'
       },
       postIncident:{
-        URL:'https://dev249675.service-now.com/api/now/table/incident'
+        URL:'https://dev201053.service-now.com/api/now/table/incident'
       }
     },
 

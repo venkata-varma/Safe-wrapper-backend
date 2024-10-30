@@ -15,6 +15,7 @@ router.get('/get-all-integrations/:accountId', superAdminAccountsController.getA
 router.get('/get-account-settings/:accountId', superAdminAccountsController.getAccountSettings)
 router.get('/get_all_service_providers_lists', superAdminAccountsController.getAllServiceProvidersList)
 router.get('/get-integration-buildings-details',superAdminAccountsController.getIntegrationBuildingDetails)
+router.get('/get-integration-buildings-details-by-condition',superAdminAccountsController.getIntegrationBuildingDetailsByCondition)
 
 
 router.patch('/update-account-status/:accountId',superAdminAccountsController.updateAccountStatus)

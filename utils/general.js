@@ -8,6 +8,11 @@ const CYSWorkordersModel = require("../models/CYSWorkordersModel");
 const workOrderLifeCycleModel = require("../models/workOrderLifeCycleModel");
 const integrationsMasterModel = require("../models/integrationsMasterModel");
 const fieldMappingsMasterModel = require("../models/fieldMappingsMasterModel");
+const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
+const serviceProviderCongiguration = require('../config/integrationsConfiguration');
+const { CPDAuthentication } = require("./serviceProvidersAuthentication");
+const { decryptData } = require("./encryptionAlgorithms");
+const { default: axios } = require("axios");
 
 var presentWeekSourceData = [];
 
@@ -586,6 +591,28 @@ const getAllStatusFromWorkOrderLifeCycleForEmailNotifications = async(accountId,
   return workOrderStatusForEmail
 }
 
+const getCPDFullWorkOrderDetails = async(integrationsMasterId, workOrderDetails) => {
+
+  const integrationObject = await integrationsMasterServiceProvidersModel.findOne({integrationsMasterId:integrationsMasterId, serviceProvider:"CPD"})
+  // Find integration credentails and then decrypt and pull CPD calls.
+  encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials };
+  decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
+  const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl, integrationObject);
+
+  let getCPDWorkOrderDetails = await axios.get(`${serviceProviderCongiguration.CPD.getWorkOrder.URL}messageId=${workOrderDetails.MessageId}&ids=${workOrderDetails.CPDWorkOrderId}`,
+    {
+        headers: { Authorization: `bearer ${corrigoToken}` }
+    })
+    .then(res => {
+        // console.log('response:==',res.data)
+        return res.data.WorkOrders[0]
+    })
+    .catch(async (error) => {
+        console.log("ERROR:==", error)
+        // await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
+    });
+    return getCPDWorkOrderDetails
+}
 
 module.exports = {
   getServiceWorkOrdersAndStatus,
@@ -595,6 +622,7 @@ module.exports = {
   getServiceProviderName,
   defaultSatusMappingKeys,
   integationOfAccountWorkOrderReports,
-  getAllStatusFromWorkOrderLifeCycleForEmailNotifications
+  getAllStatusFromWorkOrderLifeCycleForEmailNotifications,
+  getCPDFullWorkOrderDetails
 
 }

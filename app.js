@@ -12,14 +12,18 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use('/accountLogos', express.static(path.join(__dirname, 'accountLogos')));
+app.use('/devapps/Integration-assets', express.static(path.join(__dirname, '..', 'devapps', 'Integration-assets')));
+
+
 // Database Connection
 mongooseConnect.DbConnect();
+ 
 
 // Routes  
 const accountsRoute = require('./customer/routes/accountsRoute');
 const usersRoute = require('./customer/routes/usersRoute');
 const integrationsRoute = require('./customer/routes/integrationsMasterRoute');
+const conditionalRoute = require('./customer/routes/conditionalRoute')
 const errorcontroller = require('./customer/controllers/errorcontroller');
 //super-admin-routes
 const superAdminAccountRoute = require('./superAdminPanel/superAdminRoutes/superAdminAccountsRoute')
@@ -31,10 +35,11 @@ app.use('/static', express.static(path.join(__dirname, 'assets')));
 app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/integrations', integrationsRoute);
-app.use('/api/super-admin/accounts', superAdminAccountRoute)
-app.use('/api/super-admin/users', superAdminUsersRoute)
+app.use('/api/conditions', conditionalRoute);
+app.use('/api/super-admin/accounts', superAdminAccountRoute);
+app.use('/api/super-admin/users', superAdminUsersRoute);
 const integrationsSchedules = require('./customer/controllers/schedulerController');
-const DFintegrations = require('./middleware/DFOperations')
+const DFintegrations = require('./middleware/DFOperations');
 
 integrationsSchedules.integrationsScheduleCronJobsForEachMinute()
 DFintegrations.DFCreateWorkorders()
