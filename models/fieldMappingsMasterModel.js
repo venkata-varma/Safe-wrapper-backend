@@ -8,7 +8,7 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
     serviceProvider: {
         type: String,
         required: [true, "Service provider is required"],
-        enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"],
+        // enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"],
         default: ""
     },  
     serviceMethod:{
@@ -28,8 +28,8 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
     },
     dataPoints: {
         type: Array,
-        required: [true, "Elements are required"],
-        default: ""
+        // required: [true, "Elements are required"],
+        default: []
     },
     dataPointPriority: {
         type: String,
@@ -47,5 +47,10 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
     timestamps: true
 })
 
+
+fieldMappingsMasterSchema.pre('save',function(next){
+    this.fieldMappingMasterId = this._id;
+    next()
+})
 const fieldMappingsMasterModel = mongoose.model('fieldMappingsMaster', fieldMappingsMasterSchema)
 module.exports = fieldMappingsMasterModel

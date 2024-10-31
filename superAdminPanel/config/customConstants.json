@@ -35,8 +35,18 @@
       "MESSAGE_INTEGRATION_MASTER_ID_NOT_FOUND":"Integration master Id not found!",
       "MESSAGE_DATE_QUERIES_NOT_FOUND":"From date / To date not found!",
       "MESSAGE_GET_ACTIVITY_LOGS":"Activity logs.",
-      "MESSAGE_GET_INTEGRATION_BUILDING_DETAILS":"Integration building details."
-      
+      "MESSAGE_GET_INTEGRATION_BUILDING_DETAILS":"Integration building details.",
+      "MESSAGE_SERVICE_PROVIDER_EXIST":"Service provider already exist.",
+      "MESSAGE_ADD_SERVICE_PROVIDER":"Service provider added successfully.",
+      "MESSAGE_INVALID_SERVICE_PROVIDER":"Invalid service provider.",
+      "MESSAGE_UPDATE_SERVICE_PROVIDER":"Service provider details updated successfully.",
+      "MESSAGE_ADD_FIELD_MAPPINGS":"Field mappings added successfully.",
+      "MESSAGE_UPDATE_FIELD_MAPPINGS":"Field mappings updated successfully.",
+      "MESSAGE_FIELD_MAPPING_NOT_EXIST":"Respected field mapping details not exist/invalid.",
+      "MESSAGE_FIELD_MAPPING_DETAILS":"Field mapping details.",
+      "MESSAGE_UPDATE_FIELD_MAPPINGS_STATUS_DELETE":"Field mappings deleted successfully.",
+      "MESSAGE_UPDATE_FIELD_MAPPINGS_STATUS_ACTIVE":"Field mappings activated successfully."
+
     },
     "statusCodes": {
       "FORBIDDEN": 403,

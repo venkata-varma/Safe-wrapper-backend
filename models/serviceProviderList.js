@@ -18,18 +18,19 @@ const serviceProviderListSchema = new mongoose.Schema({
 
     serviceProviders: {
         type: String,
-        enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
+        // enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
+        required: [true, "Service Provider is mandatory"],
         default : ""
     },
     testCredentials: {
         type: mongoose.Schema.Types.Mixed,
-        required: [true, "Credentials are mandatory"],
-        default:{}
+        // required: [true, "Credentials are mandatory"],
+        default:null
     },
     defaultScheduler: {
         type: String,
-        enum: ['hourly', 'daily', 'weekly', 'monthly'],
-        default: ""
+        // enum: ['hourly', 'daily', 'weekly', 'monthly'],
+        default: "0"
     },
     workOrderStatus:{
         type : Array,
@@ -44,7 +45,7 @@ const serviceProviderListSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-serviceProviderListSchema.pre('save',(next)=>{
+serviceProviderListSchema.pre('save',function(next){
     this.serviceProviderListId=this._id
     next()
 })
