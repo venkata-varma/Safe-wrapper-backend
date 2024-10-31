@@ -28,7 +28,8 @@ const errorcontroller = require('./customer/controllers/errorcontroller');
 //super-admin-routes
 const superAdminAccountRoute = require('./superAdminPanel/superAdminRoutes/superAdminAccountsRoute')
 const superAdminUsersRoute = require('./superAdminPanel/superAdminRoutes/superAdminUsersRoute')
-
+const serviceProvidersRoute = require('./superAdminPanel/superAdminRoutes/serviceProvidersOperations')
+const fieldMappingsRoute = require('./superAdminPanel/superAdminRoutes/fieldMappingsRoute')
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
 
@@ -38,6 +39,9 @@ app.use('/api/integrations', integrationsRoute);
 app.use('/api/conditions', conditionalRoute);
 app.use('/api/super-admin/accounts', superAdminAccountRoute);
 app.use('/api/super-admin/users', superAdminUsersRoute);
+app.use('/api/super-admin/service-provider',serviceProvidersRoute)
+app.use('/api/super-admin/field-mappings',fieldMappingsRoute)
+
 const integrationsSchedules = require('./customer/controllers/schedulerController');
 const DFintegrations = require('./middleware/DFOperations');
 
