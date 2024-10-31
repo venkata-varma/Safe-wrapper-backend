@@ -1,4 +1,5 @@
 const asyncWrapper = require("../../middleware/asyncWrapper");
+const fieldMappingsMasterModel = require("../../models/fieldMappingsMasterModel");
 const serviceProvisersListModel = require('../../models/serviceProviderList')
 const customConstants = require('../config/customConstants.json')
 
@@ -52,12 +53,13 @@ exports.updateServiceProviderDetails = asyncWrapper(async(req,res)=>{
 })
 
 
-exports.getIndividualServiceProviderDetails = asyncWrapper(async(req,res)=>{
+exports.getIndividualServiceProviderServiceDetails = asyncWrapper(async(req,res)=>{
     const {serviceProviderId} = req.params
-    const serviceProviderDetails = await serviceProvisersListModel.findById(serviceProviderId)
+    const serviceProviderDetails = await serviceProvisersListModel.findById(serviceProviderId).lean()
+    const serviceProviderServices = await fieldMappingsMasterModel.find({serviceProvider:serviceProviderDetails.serviceProviders})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER,
-        data:serviceProviderDetails
+        data:serviceProviderServices
     }) 
 })
