@@ -150,7 +150,7 @@ exports.getIndividualServiceProviderServiceDetails = asyncWrapper(async(req,res)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER,
-        data:serviceProviderServices
+        data:{serviceProviderDetails,serviceProviderServices}
     }) 
 })
 

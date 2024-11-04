@@ -11,6 +11,10 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
         // enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"],
         default: ""
     },  
+    serviceTitle: {
+        type: String,
+        default:""
+    },
     serviceProviderListId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "serviceProviderList",
@@ -47,7 +51,10 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
         default: "active"
 
     },
-
+    requestObject:{
+        type:mongoose.Schema.Types.Mixed,
+        default:{}
+    }
 }, {
     timestamps: true
 })
