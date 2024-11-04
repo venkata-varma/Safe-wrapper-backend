@@ -27,11 +27,6 @@ const serviceProviderListSchema = new mongoose.Schema({
         // required: [true, "Credentials are mandatory"],
         default:null
     },
-    defaultScheduler: {
-        type: String,
-        // enum: ['hourly', 'daily', 'weekly', 'monthly'],
-        default: "0"
-    },
     workOrderStatus:{
         type : Array,
         default : []
