@@ -11,6 +11,11 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
         // enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"],
         default: ""
     },  
+    serviceProviderListId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "serviceProviderList",
+        default:null
+    },
     serviceMethod:{
         type:String,
         enum:["create","update","get","delete"],
