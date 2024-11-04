@@ -17,6 +17,10 @@ const fieldMappingMasterDefaultServices = new mongoose.Schema({
         enum:["create","update","get","delete"],
       // default: ""
     },
+    serviceType:{
+        type: String,
+        default:"work-order"
+    },
     dataPointURL: {
         type: String,
         required: [true, "Data point url is required"]

@@ -46,7 +46,12 @@
       "MESSAGE_FIELD_MAPPING_NOT_EXIST":"Respected field mapping details not exist/invalid.",
       "MESSAGE_FIELD_MAPPING_DETAILS":"Field mapping details.",
       "MESSAGE_UPDATE_FIELD_MAPPINGS_STATUS_DELETE":"Field mappings deleted successfully.",
-      "MESSAGE_UPDATE_FIELD_MAPPINGS_STATUS_ACTIVE":"Field mappings activated successfully."
+      "MESSAGE_UPDATE_FIELD_MAPPINGS_STATUS_ACTIVE":"Field mappings activated successfully.",
+      "MESSAGE_DEFAULT_FIELD_MAPPINGS_SERVICE":"Default field mapping services.",
+      "MESSAGE_DEFAULT_FIELD_MAPPINGS_SERVICE_EXIST":"Respective field mapping service already exist.",
+      "MESSAGE_ADD_DEFAULT_FIELD_MAPPINGS_SERVICE":"Default field mapping service created successfully.",
+      "MESSAGE_UPDATE_DEFAULT_FIELD_MAPPINGS_SERVICE":"Default field mapping service updated successfully."
+
 
     },
     "statusCodes": {
