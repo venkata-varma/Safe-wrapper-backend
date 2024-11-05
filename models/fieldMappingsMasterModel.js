@@ -22,7 +22,7 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
     },
     serviceMethod:{
         type:String,
-        enum:["post","patch","put","get","delete"],
+        enum:["post","patch","put","get","delete","head","options"],
         default:""
     },
     serviceType: {
