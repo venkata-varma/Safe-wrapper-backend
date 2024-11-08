@@ -44,7 +44,7 @@
       "MESSAGE_ADD_FIELD_MAPPINGS":"Field mappings added successfully.",
       "MESSAGE_UPDATE_FIELD_MAPPINGS":"Field mappings updated successfully.",
       "MESSAGE_FIELD_MAPPING_NOT_EXIST":"Respected field mapping details not exist/invalid.",
-      "MESSAGE_FIELD_MAPPING_CHECK_STATUS":"Respective service is deleted unable to update.",
+      "MESSAGE_FIELD_MAPPING_CHECK_STATUS":"Respective service was deleted unable to update.",
       "MESSAGE_FIELD_MAPPING_DETAILS":"Field mapping details.",
       "MESSAGE_UPDATE_FIELD_MAPPINGS_STATUS_DELETE":"Field mappings deleted successfully.",
       "MESSAGE_UPDATE_FIELD_MAPPINGS_STATUS_ACTIVE":"Field mappings activated successfully.",
