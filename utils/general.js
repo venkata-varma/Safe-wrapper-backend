@@ -206,6 +206,10 @@ const defaultSatusMappingKeys = async (from, serviceMethod) => {
   return statusMappingDetails
 }
 
+const getDefaultDestinationStatusMappingkeys = async(to, serviceMethod) =>{
+  let defaultDestinationStatusMappingkeys = await fieldMappingsMasterModel.find({serviceProvider:to, serviceMethod:serviceMethod, serviceType:{$in:["work-orders"]}})
+  return defaultDestinationStatusMappingkeys
+}
 
 /**
  * Function to return Status field mapping keys based on "from" & "to"
@@ -623,6 +627,6 @@ module.exports = {
   defaultSatusMappingKeys,
   integationOfAccountWorkOrderReports,
   getAllStatusFromWorkOrderLifeCycleForEmailNotifications,
-  getCPDFullWorkOrderDetails
-
+  getCPDFullWorkOrderDetails,
+  getDefaultDestinationStatusMappingkeys
 }
