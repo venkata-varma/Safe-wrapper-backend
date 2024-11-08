@@ -15,7 +15,7 @@ exports.createFieldMappings = asyncWrapper(async(req,res)=>{
     })
 })
 
-exports.validateFieldMappingExist = asyncWrapper(async(req,res,next)=>{
+exports.validateFieldMappingStatus = asyncWrapper(async(req,res,next)=>{
     const {fieldMappingId} = req.params
     const fieldMappingDetails = await fieldMappingsMasterModel.findById(fieldMappingId)
     if(!fieldMappingDetails){
@@ -28,6 +28,19 @@ exports.validateFieldMappingExist = asyncWrapper(async(req,res,next)=>{
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_FIELD_MAPPING_CHECK_STATUS,
+        })
+    }
+    else{
+        next()
+    }
+})
+exports.validateFieldMappingExist = asyncWrapper(async(req,res,next)=>{
+    const {fieldMappingId} = req.params
+    const fieldMappingDetails = await fieldMappingsMasterModel.findById(fieldMappingId)
+    if(!fieldMappingDetails){
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_FIELD_MAPPING_NOT_EXIST,
         })
     }
     else{
