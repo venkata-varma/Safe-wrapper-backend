@@ -24,6 +24,12 @@ exports.validateFieldMappingExist = asyncWrapper(async(req,res,next)=>{
             message: customConstants.messages.MESSAGE_FIELD_MAPPING_NOT_EXIST,
         })
     }
+    if(fieldMappingDetails.status === "deleted"){
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_FIELD_MAPPING_CHECK_STATUS,
+        })
+    }
     else{
         next()
     }
