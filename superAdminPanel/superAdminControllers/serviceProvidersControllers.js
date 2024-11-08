@@ -178,12 +178,14 @@ exports.getAllServiceProvidersList = asyncWrapper(async (req, res) => {
     },
     {
         $sort:{
-            sortOrder:1
+            sortOrder:1,
+            createdAt:1
         }
     },
     {$project:{
         sortOrder:0,
-        // status:1
+        // status:1,
+        // createdAt:1
     }}
     ])
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
