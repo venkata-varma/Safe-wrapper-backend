@@ -160,7 +160,32 @@ exports.getIndividualServiceProviderServiceDetails = asyncWrapper(async(req,res)
  * 
  */
 exports.getAllServiceProvidersList = asyncWrapper(async (req, res) => {
-    const allServiceProviders = await serviceProvisersListModel.find({});
+    // const allServiceProviders = await serviceProvisersListModel.find({});
+    //Sort the service providers with "active" first, followed by the remaining statuses.
+    const allServiceProviders = await serviceProvisersListModel.aggregate([
+       { 
+        $addFields:{
+            sortOrder:{
+                $switch:{
+                    branches:[
+                        {case:{$eq:["$status","active"]},then:1},
+                        {case:{$eq:["$status","delete"]},then:2}
+                    ],
+                    default:3
+                }
+            }
+        }
+    },
+    {
+        $sort:{
+            sortOrder:1
+        }
+    },
+    {$project:{
+        sortOrder:0,
+        // status:1
+    }}
+    ])
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_SERVICE_PROVIDERS,

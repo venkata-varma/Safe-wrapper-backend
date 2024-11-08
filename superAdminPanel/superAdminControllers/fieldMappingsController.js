@@ -1,7 +1,7 @@
 const asyncWrapper = require("../../middleware/asyncWrapper");
 const fieldMappingMasterDefaultServicesModel = require("../../models/fieldMappingMasterDefaultServicesModel");
 const fieldMappingsMasterModel = require("../../models/fieldMappingsMasterModel");
-const { defaultSatusMappingKeys } = require("../../utils/general");
+const { defaultSatusMappingKeys, getDefaultDestinationStatusMappingkeys } = require("../../utils/general");
 const customConstants = require('../config/customConstants.json')
 
 
@@ -110,11 +110,11 @@ exports.updateDefaultFieldMappingService = asyncWrapper(async(req,res)=>{
 exports.getIndividualDefaultFieldMappingService = asyncWrapper(async(req,res)=>{
     const {fieldMappingId} = req.params
     const defaultFieldMappingServiceDetails = await fieldMappingMasterDefaultServicesModel.findById(fieldMappingId)
-    let defaultMappingKeys = await defaultSatusMappingKeys(defaultFieldMappingServiceDetails.from, 'get')
-
+    let defaultSourceFieldMappingKeys = await defaultSatusMappingKeys(defaultFieldMappingServiceDetails.from, 'get')
+    let defaultDestinationFieldMappingkeys = await getDefaultDestinationStatusMappingkeys(defaultFieldMappingServiceDetails.to, defaultFieldMappingServiceDetails.serviceMethod)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_DEFAULT_FIELD_MAPPINGS_SERVICE,
-        data:{defaultFieldMappingServiceDetails,defaultMappingKeys}
+        data:{defaultFieldMappingServiceDetails,defaultSourceFieldMappingKeys, defaultDestinationFieldMappingkeys}
     })
 })
