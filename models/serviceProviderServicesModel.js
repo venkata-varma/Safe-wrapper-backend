@@ -64,5 +64,5 @@ serviceProviderServices.pre('save',function(next){
     this.serviceProviderServiceId = this._id;
     next()
 })
-const fieldMappingsMasterModel = mongoose.model('serviceproviderservices', serviceProviderServices)
-module.exports = fieldMappingsMasterModel
+const serviceProviderServicesModel = mongoose.model('serviceproviderservices', serviceProviderServices)
+module.exports = serviceProviderServicesModel
