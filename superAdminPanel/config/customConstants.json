@@ -51,8 +51,9 @@
       "MESSAGE_DEFAULT_FIELD_MAPPINGS_SERVICE":"Default field mapping services.",
       "MESSAGE_DEFAULT_FIELD_MAPPINGS_SERVICE_EXIST":"Respective field mapping service already exist.",
       "MESSAGE_ADD_DEFAULT_FIELD_MAPPINGS_SERVICE":"Default field mapping service created successfully.",
-      "MESSAGE_UPDATE_DEFAULT_FIELD_MAPPINGS_SERVICE":"Default field mapping service updated successfully."
-
+      "MESSAGE_UPDATE_DEFAULT_FIELD_MAPPINGS_SERVICE":"Default field mapping service updated successfully.",
+      "MESSAGE_GET_ALL_SERVICE_PROVIDER_INTEGRATIONS_DETAILS":"Service providers integrations details.",
+      "MESSAGE_GET_INDIVIDUAL_SERVICE_PROVIDER_INTEGRATIONS_SERVICES_DETAILS":"Service providers integrations services details."
 
     },
     "statusCodes": {

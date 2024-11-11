@@ -1,8 +1,14 @@
 const mongoose = require("mongoose");
 
-const fieldMappingMasterDefaultServices = new mongoose.Schema({
-    fieldMappingMasterDefaultServicesId: {
+const serviceProvidersIntegrationWithServices = new mongoose.Schema({
+    serviceprovidersintegrationServiceId:{
+        type:mongoose.Schema.Types.ObjectId,
+        default:null
+    },
+    serviceProviderIntegrationId: {
         type: mongoose.Schema.Types.ObjectId,
+        ref:"serviceproviderIntegrations",
+        default:null
     },
     from:{
         type:String,
@@ -42,10 +48,10 @@ const fieldMappingMasterDefaultServices = new mongoose.Schema({
 
 }, {timestamps: true});
 
-fieldMappingMasterDefaultServices.pre('save',function(next){
-    this.fieldMappingMasterDefaultServicesId = this._id;
+serviceProvidersIntegrationWithServices.pre('save',function(next){
+    this.serviceprovidersintegrationServiceId = this._id;
     next();
 })
 
 
-module.exports = mongoose.model('fieldMappingMasterDefaultServices', fieldMappingMasterDefaultServices);
+module.exports = mongoose.model('serviceprovidersintegrationwithservices', serviceProvidersIntegrationWithServices);

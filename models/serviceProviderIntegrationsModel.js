@@ -1,6 +1,10 @@
 const mongoose = require('mongoose')
 
-const serviceProvidersMappingAndServicesSchema = mongoose.Schema({
+const serviceProviderIntegrations = mongoose.Schema({
+    serviceProviderIntegrationId:{
+        type:mongoose.Schema.Types.ObjectId,
+        default:null
+    },
     from :{
         type : String,
         default : ""
@@ -23,4 +27,8 @@ const serviceProvidersMappingAndServicesSchema = mongoose.Schema({
     }
 },{timestamps:true});
 
-module.exports = mongoose.model('serviceProvidersMappingAndServicesSchema',serviceProvidersMappingAndServicesSchema);
+serviceProviderIntegrations.pre('save',function(next){
+    this.serviceProviderIntegrationId = this._id
+})
+
+module.exports = mongoose.model('serviceproviderIntegrations',serviceProviderIntegrations);

@@ -1,5 +1,5 @@
 const asyncWrapper = require("../../middleware/asyncWrapper");
-const fieldMappingsMasterModel = require("../../models/fieldMappingsMasterModel");
+const serviceProviderServices = require("../../models/serviceProviderServicesModel");
 const serviceProvisersListModel = require('../../models/serviceProviderList');
 const { encryptData } = require("../../utils/encryptionAlgorithms");
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require("../../utils/serviceProvidersAuthentication");
@@ -146,7 +146,7 @@ exports.updateServiceProviderList = asyncWrapper(async (req, res) => {
 exports.getIndividualServiceProviderServiceDetails = asyncWrapper(async(req,res)=>{
     const {serviceProviderId} = req.params
     const serviceProviderDetails = await serviceProvisersListModel.findById(serviceProviderId).lean()
-    const serviceProviderServices = await fieldMappingsMasterModel.find({serviceProvider:serviceProviderDetails.serviceProviders})
+    const serviceProviderServices = await serviceProviderServices.find({serviceProvider:serviceProviderDetails.serviceProviders})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER,

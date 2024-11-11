@@ -1,23 +1,24 @@
 const asyncWrapper = require("../../middleware/asyncWrapper");
-const fieldMappingMasterDefaultServicesModel = require("../../models/fieldMappingMasterDefaultServicesModel");
-const fieldMappingsMasterModel = require("../../models/fieldMappingsMasterModel");
+const serviceProvidersIntegrationWithServicesModel = require("../../models/serviceProvidersIntegrationWithServicesModel");
+const serviceProviderServicesModel = require("../../models/serviceProviderServicesModel");
+const serviceProviderIntegrationsModel = require('../../models/serviceProviderIntegrationsModel')
 const { defaultSatusMappingKeys, getDefaultDestinationStatusMappingkeys } = require("../../utils/general");
 const customConstants = require('../config/customConstants.json')
 
 
 
 
-exports.createFieldMappings = asyncWrapper(async(req,res)=>{
-    const addFiledMappings = await fieldMappingsMasterModel.create({...req.body,status:"active"})
+exports.createServiceProviderServices = asyncWrapper(async(req,res)=>{
+    const addServiceProviderService = await serviceProviderServicesModel.create({...req.body,status:"active"})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ADD_FIELD_MAPPINGS,
     })
 })
 
-exports.validateFieldMappingStatus = asyncWrapper(async(req,res,next)=>{
-    const {fieldMappingId} = req.params
-    const fieldMappingDetails = await fieldMappingsMasterModel.findById(fieldMappingId)
+exports.validateServiceProviderStatus = asyncWrapper(async(req,res,next)=>{
+    const {serviceProviderServiceId} = req.params
+    const fieldMappingDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId)
     if(!fieldMappingDetails){
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -34,9 +35,9 @@ exports.validateFieldMappingStatus = asyncWrapper(async(req,res,next)=>{
         next()
     }
 })
-exports.validateFieldMappingExist = asyncWrapper(async(req,res,next)=>{
-    const {fieldMappingId} = req.params
-    const fieldMappingDetails = await fieldMappingsMasterModel.findById(fieldMappingId)
+exports.validateServiceProviderServiceExist = asyncWrapper(async(req,res,next)=>{
+    const {serviceProviderServiceId} = req.params
+    const fieldMappingDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId)
     if(!fieldMappingDetails){
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -48,35 +49,35 @@ exports.validateFieldMappingExist = asyncWrapper(async(req,res,next)=>{
     }
 })
 
-exports.updateFieldMappings = asyncWrapper(async(req,res)=>{
-    const {fieldMappingId} = req.params
-    const updatedFieldMappingDetails = await fieldMappingsMasterModel.findByIdAndUpdate(fieldMappingId,{...req.body},{new:true})
+exports.updateServiceProviderServices = asyncWrapper(async(req,res)=>{
+    const {serviceProviderServiceId} = req.params
+    const updateServiceProviderServices = await serviceProviderServicesModel.findByIdAndUpdate(serviceProviderServiceId,{...req.body},{new:true})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_FIELD_MAPPINGS,
     })
 })
 
-exports.getIndividualFieldMappingDetails= asyncWrapper(async(req,res)=>{
-    const fieldMappingDetails = await fieldMappingsMasterModel.findById(req.params.fieldMappingId)
+exports.getIndividualServiceProviderServiceDetails= asyncWrapper(async(req,res)=>{
+    const serviceProviderServiceDetails = await serviceProviderServicesModel.findById(req.params.serviceProviderServiceId)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_FIELD_MAPPING_DETAILS,
-        data:fieldMappingDetails
+        data:serviceProviderServiceDetails
     })
 })
 
-exports.deleteFieldMappings = asyncWrapper(async(req,res)=>{
+exports.deleteServiceProviderService = asyncWrapper(async(req,res)=>{
     const {status} = req.body
     if(status === 'delete'){
-        const fieldMappingDetails = await fieldMappingsMasterModel.findByIdAndUpdate(req.params.fieldMappingId,{status:"deleted"},{new:true})
+        const fieldMappingDetails = await serviceProviderServicesModel.findByIdAndUpdate(req.params.serviceProviderServiceId,{status:"deleted"},{new:true})
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_UPDATE_FIELD_MAPPINGS_STATUS_DELETE,
         })
     }
     else if(status === 'active'){
-        const fieldMappingDetails = await fieldMappingsMasterModel.findByIdAndUpdate(req.params.fieldMappingId,{status:"active"},{new:true})
+        const fieldMappingDetails = await serviceProviderServicesModel.findByIdAndUpdate(req.params.serviceProviderServiceId,{status:"active"},{new:true})
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_UPDATE_FIELD_MAPPINGS_STATUS_ACTIVE,
@@ -85,8 +86,8 @@ exports.deleteFieldMappings = asyncWrapper(async(req,res)=>{
     
 })
 
-exports.getAllFieldMappingDefaultServices = asyncWrapper(async(req,res)=>{
-    const fieldMappingDefaultServices = await fieldMappingMasterDefaultServicesModel.find({})
+exports.getAllServiceProversIntegrationDefaultFiledMappingServices = asyncWrapper(async(req,res)=>{
+    const fieldMappingDefaultServices = await serviceProvidersIntegrationWithServicesModel.find({})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_DEFAULT_FIELD_MAPPINGS_SERVICE,
@@ -94,9 +95,9 @@ exports.getAllFieldMappingDefaultServices = asyncWrapper(async(req,res)=>{
     })
 })
 
-exports.validateDefaultFieldMappingService = asyncWrapper(async(req,res,next)=>{
+exports.validateServiceProvidersIntegrationService = asyncWrapper(async(req,res,next)=>{
     const {from, to, dataPoints, dataPointURL, serviceMethod, dataPointPriority, serviceType} = req.body
-    const validateFieldMappingDefaultServices = await fieldMappingMasterDefaultServicesModel.find({from:from, to:to, serviceMethod:serviceMethod, serviceType: serviceType})
+    const validateFieldMappingDefaultServices = await serviceProvidersIntegrationWithServicesModel.find({from:from, to:to, serviceMethod:serviceMethod, serviceType: serviceType})
     if(validateFieldMappingDefaultServices.length > 0){
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -108,32 +109,52 @@ exports.validateDefaultFieldMappingService = asyncWrapper(async(req,res,next)=>{
     }
 })
 
-exports.createDefaultFieldMappingSeervice = asyncWrapper(async(req,res)=>{
-    const {from, to, dataPoints, dataPointURL, serviceMethod, dataPointPriority} = req.body
-    await fieldMappingMasterDefaultServicesModel.create({...req.body})
+exports.createServiceProvidersIntegrationService = asyncWrapper(async(req,res)=>{
+    const {from, to, dataPoints, dataPointURL, serviceMethod, dataPointPriority, serviceProviderIntegrationId} = req.body
+    await serviceProvidersIntegrationWithServicesModel.create({...req.body})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ADD_DEFAULT_FIELD_MAPPINGS_SERVICE,
     })
 })
 
-exports.updateDefaultFieldMappingService = asyncWrapper(async(req,res)=>{
-    const {fieldMappingId} = req.params
-    await fieldMappingMasterDefaultServicesModel.findByIdAndUpdate(fieldMappingId,{...req.body},{new:true})
+exports.updatecreateServiceProvidersIntegrationService = asyncWrapper(async(req,res)=>{
+    const {serviceProviderIntegrationServiceId} = req.params
+    await serviceProvidersIntegrationWithServicesModel.findByIdAndUpdate(serviceProviderIntegrationServiceId,{...req.body},{new:true})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_DEFAULT_FIELD_MAPPINGS_SERVICE,
     })
 })
 
-exports.getIndividualDefaultFieldMappingService = asyncWrapper(async(req,res)=>{
-    const {fieldMappingId} = req.params
-    const defaultFieldMappingServiceDetails = await fieldMappingMasterDefaultServicesModel.findById(fieldMappingId)
+exports.getIndividualupdatecreateServiceProvidersIntegrationService = asyncWrapper(async(req,res)=>{
+    const {serviceProviderIntegrationServiceId} = req.params
+    const defaultFieldMappingServiceDetails = await serviceProvidersIntegrationWithServicesModel.findById(serviceProviderIntegrationServiceId)
     let defaultSourceFieldMappingKeys = await defaultSatusMappingKeys(defaultFieldMappingServiceDetails.from, 'get')
     let defaultDestinationFieldMappingkeys = await getDefaultDestinationStatusMappingkeys(defaultFieldMappingServiceDetails.to, defaultFieldMappingServiceDetails.serviceMethod)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_DEFAULT_FIELD_MAPPINGS_SERVICE,
         data:{defaultFieldMappingServiceDetails,defaultSourceFieldMappingKeys, defaultDestinationFieldMappingkeys}
+    })
+})
+
+
+exports.getAllServiceProviderIntegrations = asyncWrapper(async(req,res)=>{
+    let serviceProviderIntegrationsDetails = await serviceProviderIntegrationsModel.find({})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_ALL_SERVICE_PROVIDER_INTEGRATIONS_DETAILS,
+        data:serviceProviderIntegrationsDetails
+    })
+})
+
+exports.getIndividualServiceProviderIntegrationsDetails = asyncWrapper(async(req,res)=>{
+    const {serviceProviderIntegrationId} = req.params
+    const individualServiceProviderIntegrationsDetails = await serviceProvidersIntegrationWithServicesModel.find({serviceProviderIntegrationId:serviceProviderIntegrationId})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_SERVICE_PROVIDER_INTEGRATIONS_SERVICES_DETAILS,
+        data:individualServiceProviderIntegrationsDetails
     })
 })

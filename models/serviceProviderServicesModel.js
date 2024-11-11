@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
-const fieldMappingsMasterSchema = new mongoose.Schema({
-    fieldMappingMasterId: {
+const serviceProviderServices = new mongoose.Schema({
+    serviceProviderServiceId: {
         type: mongoose.Schema.Types.ObjectId,
         default: null
     },
@@ -60,9 +60,9 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
 })
 
 
-fieldMappingsMasterSchema.pre('save',function(next){
-    this.fieldMappingMasterId = this._id;
+serviceProviderServices.pre('save',function(next){
+    this.serviceProviderServiceId = this._id;
     next()
 })
-const fieldMappingsMasterModel = mongoose.model('fieldMappingsMaster', fieldMappingsMasterSchema)
+const fieldMappingsMasterModel = mongoose.model('serviceproviderservices', serviceProviderServices)
 module.exports = fieldMappingsMasterModel

@@ -8,8 +8,8 @@ const customConstants = require("../../config/constants.json");
 const sessionsModel = require("../../models/sessionsModel");
 const integrationsMasterModel = require("../../models/integrationsMasterModel");
 const integrationsMasterServiceProvidersModel = require("../../models/integrationsMasterServiceProvidersModel");
-const fieldMappingsMasterModel = require("../../models/fieldMappingsMasterModel");
-const fieldMappingMasterDefaultServicesModel = require("../../models/fieldMappingMasterDefaultServicesModel");
+const serviceProviderServicesModel = require("../../models/serviceProviderServicesModel");
+const serviceProvidersIntegrationWithServicesModel = require("../../models/serviceProvidersIntegrationWithServicesModel");
 const serviceProviderListModel = require('../../models/serviceProviderList')
 const { encryptData, decryptData } = require('../../utils/encryptionAlgorithms')
 const accountsModel = require('../../models/accountsModel')
@@ -25,7 +25,7 @@ const CYSOperations = require('../../middleware/CYSOperations')
 const CPDWorkordersModel = require("../../models/CPDWorkordersModel");
 const usersModel = require("../../models/usersModel");
 const DFWorkOrdersModel = require("../../models/DFWorkOrdersModel");
-const serviceProvidersMappingAndServicesModel = require("../../models/serviceProvidersMappingAndServicesModel");
+const serviceProviderIntegrationsModel = require("../../models/serviceProviderIntegrationsModel");
 const { dateAsset } = require('../../utils/utilsFunctions');
 const { getServiceWorkOrdersAndStatus, getStatusFieldMappings, defaultSatusMappingKeys } = require("../../utils/general");
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require('../../utils/serviceProvidersAuthentication');
@@ -183,10 +183,10 @@ exports.getCPDToDFMatchedBuildingDetails = asyncWrapper(async (req, res) => {
  */
 
 exports.getGlobalConstants = asyncWrapper(async (req, res) => {
-  const fieldMappingMasterDefaultServices = await fieldMappingMasterDefaultServicesModel.find({});
-  const fieldMappingsMasters = await fieldMappingsMasterModel.find({});
+  const serviceProvidersIntegrationServices = await serviceProvidersIntegrationWithServicesModel.find({});
+  const serviceProviderServices = await serviceProviderServicesModel.find({});
   // const serviceproviderlists = await serviceProviderListModel.find({});
-  const serviceProvidersMappingAndServices = await serviceProvidersMappingAndServicesModel.find({});
+  const serviceProviderIntegrations = await serviceProviderIntegrationsModel.find({});
   const timeZones = ["GMT", "UTC", "IST", "CST", "PST", "PDT", "CAT", "ECT", "PDT"]
 
   const cronSchedulePicker = {
@@ -221,11 +221,11 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
       data: {
-        fieldMappingMasterDefaultServices, fieldMappingsMasters, 
+        serviceProvidersIntegrationServices, serviceProviderServices, 
         timeZones,
         // serviceproviderlists, 
         cronSchedulePicker,
-        serviceProvidersMappingAndServices, dataPointsAccess, menus
+        serviceProviderIntegrations, dataPointsAccess, menus
       },
     });
 
@@ -499,7 +499,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
   let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod, updateDataPointURL, updateServiceMethod
   let defaultMappingKeys
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId)
-  let get_integration_field_mapping_master_default_keys = await fieldMappingMasterDefaultServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
+  let get_integration_field_mapping_master_default_keys = await serviceProvidersIntegrationWithServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (get_integration_field_mapping_master_default_keys.length > 0) {
     for (let fromAndTo of get_integration_field_mapping_master_default_keys) {
       let integrationsFieldMappingkeysExist = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId, serviceMethod: fromAndTo.serviceMethod })
@@ -535,8 +535,8 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       });
   }
   else {
-    fromFieldMappingkeysDetails = await fieldMappingsMasterModel.find({ serviceProvider: integrationDetails.from }).lean();
-    toFieldMappingkeysDetails = await fieldMappingsMasterModel.find({ serviceProvider: integrationDetails.to }).lean();
+    fromFieldMappingkeysDetails = await serviceProviderServicesModel.find({ serviceProvider: integrationDetails.from }).lean();
+    toFieldMappingkeysDetails = await serviceProviderServicesModel.find({ serviceProvider: integrationDetails.to }).lean();
     let fieldMappingDefaultKeys = []
     let get_integration_field_mapping_master_default_keys = [];
     fieldMappingDefaultKeys.push(...fromFieldMappingkeysDetails, ...toFieldMappingkeysDetails)
@@ -595,7 +595,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
     // Mapping should be done for toProvider from fromProvider
     keyMapping = getKeyMapping(integrationDetails.to, integrationDetails.from);
 
-    // create work order keys to updaload fieldMappingMasterDefaultServicesModel.
+    // create work order keys to updaload serviceProvidersIntegrationWithServicesModel.
     let create_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel = {
       from: integrationDetails.from,
       to: integrationDetails.to,
@@ -603,9 +603,9 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       dataPointURL: `${keyMapping.dataPointURL}`,
       dataPoints: keyMapping.work_order
     }
-    let create_work_order_field_mapping_keys = await fieldMappingMasterDefaultServicesModel.create(create_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
+    let create_work_order_field_mapping_keys = await serviceProvidersIntegrationWithServicesModel.create(create_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
 
-    // Update work order keys to updaload fieldMappingMasterDefaultServicesModel.
+    // Update work order keys to updaload serviceProvidersIntegrationWithServicesModel.
     let update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel = {
       from: integrationDetails.from,
       to: integrationDetails.to,
@@ -613,7 +613,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       dataPointURL: `${keyMapping.updateDataPointURL}`,
       dataPoints: keyMapping.update_work_order_keys
     }
-    let update_work_order_field_mapping_keys = await fieldMappingMasterDefaultServicesModel.create(update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
+    let update_work_order_field_mapping_keys = await serviceProvidersIntegrationWithServicesModel.create(update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
 
     get_integration_field_mapping_master_default_keys.push({ ...create_work_order_field_mapping_keys._doc }, { ...update_work_order_field_mapping_keys._doc })
 
