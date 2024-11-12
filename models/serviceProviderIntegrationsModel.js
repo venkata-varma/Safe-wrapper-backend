@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const serviceProviderIntegrations = mongoose.Schema({
+const serviceProviderIntegrations = new mongoose.Schema({
     serviceProviderIntegrationId:{
         type:mongoose.Schema.Types.ObjectId,
         default:null
@@ -39,6 +39,7 @@ const serviceProviderIntegrations = mongoose.Schema({
 
 serviceProviderIntegrations.pre('save',function(next){
     this.serviceProviderIntegrationId = this._id
+    next()
 })
 
 module.exports = mongoose.model('serviceproviderintegrations',serviceProviderIntegrations);

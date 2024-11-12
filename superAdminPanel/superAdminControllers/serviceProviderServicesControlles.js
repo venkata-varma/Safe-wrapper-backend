@@ -8,7 +8,7 @@ const mongoose  = require("mongoose");
 
 
 exports.createServiceProvidersIntegration = asyncWrapper(async(req,res)=>{
-    const addServiceProviderIntegration = await serviceProviderIntegrationsModel.create({...req.body})
+    await serviceProviderIntegrationsModel.create({...req.body})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION,
