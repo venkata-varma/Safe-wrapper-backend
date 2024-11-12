@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 
 const serviceProvidersIntegrationWithServices = new mongoose.Schema({
-    serviceprovidersintegrationServiceId:{
+    serviceProvidersIntegrationServiceId:{
         type:mongoose.Schema.Types.ObjectId,
         default:null
     },
     serviceProviderIntegrationId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref:"serviceproviderIntegrations",
+        ref:"serviceproviderintegrations",
         default:null
     },
     from:{
@@ -49,7 +49,7 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
 }, {timestamps: true});
 
 serviceProvidersIntegrationWithServices.pre('save',function(next){
-    this.serviceprovidersintegrationServiceId = this._id;
+    this.serviceProvidersIntegrationServiceId = this._id;
     next();
 })
 

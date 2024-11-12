@@ -5,6 +5,16 @@ const serviceProviderIntegrations = mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         default:null
     },
+    fromServiceProviderListId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'serviceProviderList',
+        default:null
+    },
+    toServiceProviderListId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'serviceProviderList',
+        default:null
+    },
     from :{
         type : String,
         default : ""
@@ -31,4 +41,4 @@ serviceProviderIntegrations.pre('save',function(next){
     this.serviceProviderIntegrationId = this._id
 })
 
-module.exports = mongoose.model('serviceproviderIntegrations',serviceProviderIntegrations);
+module.exports = mongoose.model('serviceproviderintegrations',serviceProviderIntegrations);
