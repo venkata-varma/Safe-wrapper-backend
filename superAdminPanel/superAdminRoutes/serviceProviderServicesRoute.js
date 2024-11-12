@@ -20,5 +20,5 @@ router.get('/get-all-service-provider-integrations',serviceProviderServicesContr
 router.get('/get-all-service-provider-services-to-create-integration/:serviceProviderIntegrationId',serviceProviderServicesController.getAllServiceProviderServicesToCreateIntegration)
 router.get('/get-individual-service-providers-integration-details/:serviceProviderIntegrationId',serviceProviderServicesController.getIndividualServiceProviderIntegrationsDetails)
 router.get('/get-all-service-providers-integration-with-services',serviceProviderServicesController.getAllServiceProversIntegrationDefaultFiledMappingServices)
-router.get('/get-individual-service-providers-integration-services/:serviceProviderIntegrationServiceId',serviceProviderServicesController.getIndividualupdatecreateServiceProvidersIntegrationService)
+router.get('/get-individual-service-providers-integration-services/:serviceProviderIntegrationServiceId',serviceProviderServicesController.getIndividualServiceProvidersIntegrationService)
 module.exports = router
