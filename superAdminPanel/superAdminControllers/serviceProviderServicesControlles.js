@@ -168,6 +168,7 @@ exports.getIndividualServiceProviderIntegrationsDetails = asyncWrapper(async(req
 
 exports.getAllServiceProviderServicesToCreateIntegration = asyncWrapper(async(req,res)=>{
     const {serviceProviderIntegrationId} = req.params
+    
     const getServiceProvidersServices = await serviceProviderIntegrationsModel.aggregate([
         {
             $match:{
@@ -191,11 +192,44 @@ exports.getAllServiceProviderServicesToCreateIntegration = asyncWrapper(async(re
             }
         },
         {
+            $lookup:{
+                from:'serviceproviderlists',
+                foreignField:'_id',
+                localField:'fromServiceProviderListId',
+                as:'fromServiceProviderServiceList'
+            }
+        },
+        {
+            $lookup:{
+                from:'serviceproviderlists',
+                foreignField:'_id',
+                localField:'toServiceProviderListId',
+                as:'toServiceProviderServiceList'
+            }
+        },
+        {
+            $addFields: {
+                fromServiceProviderLogo: {
+                    $arrayElemAt: ['$fromServiceProviderServiceList.markedLogo', 0]
+                },
+                toServiceProviderLogo: {
+                    $arrayElemAt: ['$toServiceProviderServiceList.markedLogo', 0]
+                }
+            }
+        },
+        {
+            $unset: [
+                'fromServiceProviderServiceList', 
+                'toServiceProviderServiceList'
+            ]
+        },
+        {
             $project:{
-                serviceProvidersServices: '$$ROOT'
+                serviceProvidersServices: '$$ROOT',             
             }
         }
     ])
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_LIST_OF_SERVICE_PROVIDER_SERVICES_TO_CREATE_INTEGRATION,
