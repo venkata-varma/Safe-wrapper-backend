@@ -199,6 +199,6 @@ exports.getAllServiceProviderServicesToCreateIntegration = asyncWrapper(async(re
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_LIST_OF_SERVICE_PROVIDER_SERVICES_TO_CREATE_INTEGRATION,
-        data:getServiceProvidersServices
+        data:getServiceProvidersServices[0]
     })
 })
