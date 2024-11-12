@@ -3,10 +3,17 @@ const serviceProvidersIntegrationWithServicesModel = require("../../models/servi
 const serviceProviderServicesModel = require("../../models/serviceProviderServicesModel");
 const serviceProviderIntegrationsModel = require('../../models/serviceProviderIntegrationsModel')
 const { defaultSatusMappingKeys, getDefaultDestinationStatusMappingkeys } = require("../../utils/general");
-const customConstants = require('../config/customConstants.json')
+const customConstants = require('../config/customConstants.json');
+const mongoose  = require("mongoose");
 
 
-
+exports.createServiceProvidersIntegration = asyncWrapper(async(req,res)=>{
+    const addServiceProviderIntegration = await serviceProviderIntegrationsModel.create({...req.body})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION,
+    })
+})
 
 exports.createServiceProviderServices = asyncWrapper(async(req,res)=>{
     const addServiceProviderService = await serviceProviderServicesModel.create({...req.body,status:"active"})
@@ -156,5 +163,42 @@ exports.getIndividualServiceProviderIntegrationsDetails = asyncWrapper(async(req
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_SERVICE_PROVIDER_INTEGRATIONS_SERVICES_DETAILS,
         data:individualServiceProviderIntegrationsDetails
+    })
+})
+
+exports.getAllServiceProviderServicesToCreateIntegration = asyncWrapper(async(req,res)=>{
+    const {serviceProviderIntegrationId} = req.params
+    const getServiceProvidersServices = await serviceProviderIntegrationsModel.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(serviceProviderIntegrationId)
+            }
+        },
+        {
+            $lookup:{
+                from:'serviceproviderservices',
+                foreignField:'serviceProviderListId',
+                localField:'fromServiceProviderListId',
+                as:'fromServiceProviderServices'
+            }
+        },
+        {
+            $lookup:{
+                from:'serviceproviderservices',
+                foreignField:'serviceProviderListId',
+                localField:'toServiceProviderListId',
+                as:'toServiceProviderServices'
+            }
+        },
+        {
+            $project:{
+                serviceProvidersServices: '$$ROOT'
+            }
+        }
+    ])
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_LIST_OF_SERVICE_PROVIDER_SERVICES_TO_CREATE_INTEGRATION,
+        data:getServiceProvidersServices
     })
 })
