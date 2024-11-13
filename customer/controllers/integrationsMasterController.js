@@ -500,9 +500,9 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
   let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod, updateDataPointURL, updateServiceMethod
   let defaultMappingKeys
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId)
-  let get_integration_field_mapping_master_default_keys = await serviceProvidersIntegrationWithServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
-  if (get_integration_field_mapping_master_default_keys.length > 0) {
-    for (let fromAndTo of get_integration_field_mapping_master_default_keys) {
+  let integrationDefaultFieldMappings = await serviceProvidersIntegrationWithServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
+  if (integrationDefaultFieldMappings.length > 0) {
+    for (let fromAndTo of integrationDefaultFieldMappings) {
       let integrationsFieldMappingkeysExist = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId, serviceMethod: fromAndTo.serviceMethod })
       if (!integrationsFieldMappingkeysExist) {
         let getRequiredKeys = await getStatusFieldMappings(integrationsMasterId)
@@ -529,7 +529,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
         data: {
-          get_integration_field_mapping_master_default_keys,
+          integrationDefaultFieldMappings : integrationDefaultFieldMappings,
           defaultMappingKeys
           //  integrationFieldMappingCreate
         },
@@ -539,7 +539,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
     fromFieldMappingkeysDetails = await serviceProviderServicesModel.find({ serviceProvider: integrationDetails.from }).lean();
     toFieldMappingkeysDetails = await serviceProviderServicesModel.find({ serviceProvider: integrationDetails.to }).lean();
     let fieldMappingDefaultKeys = []
-    let get_integration_field_mapping_master_default_keys = [];
+    let integrationDefaultFieldMappings = [];
     fieldMappingDefaultKeys.push(...fromFieldMappingkeysDetails, ...toFieldMappingkeysDetails)
     function getKeyMapping(fromProvider, toProvider) {
       const fromKeys_create = { "create-work-order-keys": [] };
@@ -616,14 +616,14 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
     }
     let update_work_order_field_mapping_keys = await serviceProvidersIntegrationWithServicesModel.create(update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
 
-    get_integration_field_mapping_master_default_keys.push({ ...create_work_order_field_mapping_keys._doc }, { ...update_work_order_field_mapping_keys._doc })
+    integrationDefaultFieldMappings.push({ ...create_work_order_field_mapping_keys._doc }, { ...update_work_order_field_mapping_keys._doc })
 
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
-        data: { get_integration_field_mapping_master_default_keys }
+        data: { integrationDefaultFieldMappings }
       });
   }
 });
@@ -1320,63 +1320,6 @@ exports.getFieldMappingsByServiceType = asyncWrapper(async (req, res) => {
       }
     })
 })
-
-/**
- * Middlweare function to check for existence & status of account and integraiton 
- * If passed, function call is passed to "updateIntegrationFieldMappingsByServiceType"
- */
-
-exports.middlewareForIntegrationExist = asyncWrapper(async (req, res, next) => {
-
-
-  const integrationFieldDetails = await integrationsFieldMappingModel.findById(req.body.integrationFieldMappingId);
-  const integrationMaster = await integrationsMasterModel.findOne({ _id: integrationFieldDetails.integrationsMasterId });
-  const account = await accountsModel.findOne({ _id: integrationFieldDetails.accountId });
-  if (account.status !== 'active' || !account) {
-    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_ACCOUNT_MIDDLEWARE,
-    });
-  }
-  if (!integrationMaster || integrationMaster.status !== 'active') {
-    return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_MIDDLEWARE,
-    });
-  }
-  else {
-    next()
-  }
-});
-
-
-
-
-/**
- * Function to Find  Integration field mapping record of respective integration 
-    and update Field mapping record based on "Service method"
- * 
- */
-exports.updateIntegrationFieldMappingsByServiceType = asyncWrapper(async (req, res) => {
-  const updateFieldMapping = await integrationsFieldMappingModel.findOne({ _id: req.body.integrationFieldMappingId });
-  console.log('UpdateField', updateFieldMapping)
-
-  for (let mapping of updateFieldMapping.mappedKeys.get_integration_field_mapping_master_default_keys) {
-    if (mapping.fieldMappingMasterDefaultServicesId.toString() === req.body.fieldMappingMasterDefaultServicesId) {
-      mapping.dataPoints = req.body.integrationFieldMappings
-
-    }
-  }
-  await updateFieldMapping.save()
-
-  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
-    json({
-      status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_UPDATE_FIELD_MAPPINGS_BY_SERVICE,
-      data: { updateFieldMapping }
-    })
-})
-
 
 /**
  *  * After passing through middleware "validateIntegrationSettingsDetails" , function call is passed to this function to update status for Auto-data sync of Integration
