@@ -95,6 +95,14 @@ exports.deleteServiceProviderService = asyncWrapper(async(req,res)=>{
 
 exports.getAllServiceProversIntegrationDefaultFiledMappingServices = asyncWrapper(async(req,res)=>{
     const fieldMappingDefaultServices = await serviceProvidersIntegrationWithServicesModel.find({})
+                                                .populate({
+                                                    path:"serviceProviderIntegrationId",
+                                                    populate:[
+                                                        {path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"},
+                                                        {path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"}
+                                                    ]
+                                                })
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_DEFAULT_FIELD_MAPPINGS_SERVICE,
@@ -137,6 +145,13 @@ exports.updatecreateServiceProvidersIntegrationService = asyncWrapper(async(req,
 exports.getIndividualServiceProvidersIntegrationService = asyncWrapper(async(req,res)=>{
     const {serviceProviderIntegrationServiceId} = req.params
     const defaultFieldMappingServiceDetails = await serviceProvidersIntegrationWithServicesModel.findById(serviceProviderIntegrationServiceId)
+                                                     .populate({
+                                                         path:"serviceProviderIntegrationId",
+                                                         populate:[
+                                                             {path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"},
+                                                             {path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"}
+                                                         ]
+                                                     })
     let defaultSourceFieldMappingKeys = await defaultSatusMappingKeys(defaultFieldMappingServiceDetails.from)
     let defaultDestinationFieldMappingkeys = await getDefaultDestinationStatusMappingkeys(defaultFieldMappingServiceDetails.to, defaultFieldMappingServiceDetails.serviceMethod)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -149,6 +164,9 @@ exports.getIndividualServiceProvidersIntegrationService = asyncWrapper(async(req
 
 exports.getAllServiceProviderIntegrations = asyncWrapper(async(req,res)=>{
     let serviceProviderIntegrationsDetails = await serviceProviderIntegrationsModel.find({})
+                                                .populate({path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"})
+                                                .populate({path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"})
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_ALL_SERVICE_PROVIDER_INTEGRATIONS_DETAILS,
@@ -159,6 +177,14 @@ exports.getAllServiceProviderIntegrations = asyncWrapper(async(req,res)=>{
 exports.getIndividualServiceProviderIntegrationsDetails = asyncWrapper(async(req,res)=>{
     const {serviceProviderIntegrationId} = req.params
     const individualServiceProviderIntegrationsDetails = await serviceProvidersIntegrationWithServicesModel.find({serviceProviderIntegrationId:serviceProviderIntegrationId})
+                                                                .populate({
+                                                                    path:"serviceProviderIntegrationId",
+                                                                    populate:[
+                                                                        {path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo "},
+                                                                        {path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"}
+                                                                    ]
+                                                                })
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_SERVICE_PROVIDER_INTEGRATIONS_SERVICES_DETAILS,

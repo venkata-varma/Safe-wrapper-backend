@@ -396,7 +396,34 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
       $addFields: {
         integrationsExceptionsCount: { $size: "$integrationsExceptions" }
       }
-    }
+    },
+    {
+      $lookup: {
+          from: "serviceproviderintegrations",
+          let: { fromField: "$from", toField: "$to" },
+          pipeline: [
+              {
+                  $match: {
+                      $expr: {
+                          $and: [
+                              { $eq: ["$from", "$$fromField"] },
+                              { $eq: ["$to", "$$toField"] }
+                          ]
+                      }
+                  }
+              },
+              {
+                  $project: { services: 1 }
+              }
+          ],
+          as: "services"
+      }
+  },
+  {
+      $addFields: {
+          services: { $arrayElemAt: ["$services.services", 0] }
+      }
+  }
   ]);
 
   // for (let exceptionsCount of integrationsOfAccount) {

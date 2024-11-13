@@ -522,7 +522,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
         // nothing
       }
     }
-    integrationSourceServiceProviderServices = await defaultSatusMappingKeys(integrationDetails.from)
+    // integrationSourceServiceProviderServices = await defaultSatusMappingKeys(integrationDetails.from)
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
@@ -530,7 +530,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
         data: {
           integrationDefaultFieldMappings : integrationDefaultFieldMappings,
-          integrationSourceServiceProviderServices
+          // integrationSourceServiceProviderServices
           //  integrationFieldMappingCreate
         },
       });
