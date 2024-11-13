@@ -831,12 +831,14 @@ exports.validateIntegrationsMasterForEdit = asyncWrapper(async (req, res, next) 
 exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async (req, res, next) => {
 
   const integrationMasterId = req.params.integrationsMasterId;
-  const integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId)
+  let integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId).lean()
   const settingsDetails = await integrationsSettingsModel.find({ integrationsMasterId: integrationMasterId }).lean();
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationMasterId }).lean();
   const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId:integrationMasterId });
-  
-
+  integrationMasterDetails.services = (await serviceProviderIntegrationsModel.findOne(
+    { from: integrationMasterDetails.from, to: integrationMasterDetails.to },
+    { services: 1 }
+  ))?.services || [];
   if (!integrationMasterDetails) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
@@ -867,7 +869,8 @@ Function to return datails of a specific Integration master table record by "Par
 */
 exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
   const integrationsMasterId = req.params.integrationsMasterId;
-  const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId).lean();
+  // let integrationDetails = {}
+  let integrationDetails = await integrationsMasterModel.findById(integrationsMasterId).lean();
 
   console.log(integrationsMasterId, "integrationsMasterId");
 
@@ -964,6 +967,11 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
     delete week.toDate;
 
   }
+  
+  integrationDetails.services = (await serviceProviderIntegrationsModel.findOne(
+    { from: integrationDetails.from, to: integrationDetails.to },
+    { services: 1 }
+  ))?.services || [];
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
