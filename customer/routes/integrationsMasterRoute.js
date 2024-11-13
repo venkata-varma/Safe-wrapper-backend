@@ -31,7 +31,7 @@ router.patch('/update-integration-date-range/:integrationSettingsId',integration
 router.patch('/update-integration-master-status/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.updateIntegrationMasterStatus);
 
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
-router.get('/get-integration-default-filedmappings/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMasterExistForFieldMapping, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
+router.get('/get-integration-default-fieldmappings/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMasterExistForFieldMapping, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
 router.get('/get-single-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateIntegrationsMasterExistForSingleIntegration, integrationsMasterControllers.getSingleIntegrationMasterDetails)
 router.get('/pull-latest-workorders-by-integrationMasterId/:integrationsMasterId',integrationsMasterControllers.validateIntegrationStatus, integrationsMasterControllers.pullLatestWorkOrders);
 router.get('/get-all-integration-exceptions/:accountId', integrationsMasterControllers.validateAccountStatus, integrationsMasterControllers.getAllIntegrationExceptions);
