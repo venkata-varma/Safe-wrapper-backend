@@ -201,13 +201,13 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
 }
 
 // Function to return default field mapping keys based of "from" .
-const defaultSatusMappingKeys = async (from, serviceMethod) => {
-  let statusMappingDetails = await serviceProviderServicesModel.find({serviceProvider:from, serviceType:{$in:['work-order','work-order-status']}, serviceMethod:serviceMethod})
+const defaultSatusMappingKeys = async (from) => {
+  let statusMappingDetails = await serviceProviderServicesModel.find({serviceProvider:from})
   return statusMappingDetails
 }
 
 const getDefaultDestinationStatusMappingkeys = async(to, serviceMethod) =>{
-  let defaultDestinationStatusMappingkeys = await serviceProviderServicesModel.find({serviceProvider:to, serviceMethod:serviceMethod, serviceType:{$in:["work-orders"]}})
+  let defaultDestinationStatusMappingkeys = await serviceProviderServicesModel.find({serviceProvider:to, serviceMethod:serviceMethod})
   return defaultDestinationStatusMappingkeys
 }
 

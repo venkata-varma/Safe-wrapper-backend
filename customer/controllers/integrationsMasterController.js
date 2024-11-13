@@ -498,7 +498,7 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
 exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.params;
   let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod, updateDataPointURL, updateServiceMethod
-  let defaultMappingKeys
+  let integrationSourceServiceProviderServices
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId)
   let integrationDefaultFieldMappings = await serviceProvidersIntegrationWithServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (integrationDefaultFieldMappings.length > 0) {
@@ -522,7 +522,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
         // nothing
       }
     }
-    defaultMappingKeys = await defaultSatusMappingKeys(integrationDetails.from, 'get')
+    integrationSourceServiceProviderServices = await defaultSatusMappingKeys(integrationDetails.from)
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
@@ -530,7 +530,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
         data: {
           integrationDefaultFieldMappings : integrationDefaultFieldMappings,
-          defaultMappingKeys
+          integrationSourceServiceProviderServices
           //  integrationFieldMappingCreate
         },
       });

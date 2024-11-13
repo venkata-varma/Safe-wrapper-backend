@@ -137,7 +137,7 @@ exports.updatecreateServiceProvidersIntegrationService = asyncWrapper(async(req,
 exports.getIndividualServiceProvidersIntegrationService = asyncWrapper(async(req,res)=>{
     const {serviceProviderIntegrationServiceId} = req.params
     const defaultFieldMappingServiceDetails = await serviceProvidersIntegrationWithServicesModel.findById(serviceProviderIntegrationServiceId)
-    let defaultSourceFieldMappingKeys = await defaultSatusMappingKeys(defaultFieldMappingServiceDetails.from, 'get')
+    let defaultSourceFieldMappingKeys = await defaultSatusMappingKeys(defaultFieldMappingServiceDetails.from)
     let defaultDestinationFieldMappingkeys = await getDefaultDestinationStatusMappingkeys(defaultFieldMappingServiceDetails.to, defaultFieldMappingServiceDetails.serviceMethod)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
