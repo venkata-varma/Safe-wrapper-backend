@@ -348,7 +348,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
             // find initiated count of WO to push to SNOW
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
 
-            if (integrationObject.serviceMethod === "create") {
+            if (integrationObject.serviceMethod === "post") {
 
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
@@ -449,7 +449,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                     }
                 }
             }
-            if (integrationObject.serviceMethod === "update") {
+            if (integrationObject.serviceMethod === "patch") {
 
                 // Update work orders to the Dataforma.
                 const updateRequestSNOWWorkorders = await SNOWWorkOrdersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "update-request" })
