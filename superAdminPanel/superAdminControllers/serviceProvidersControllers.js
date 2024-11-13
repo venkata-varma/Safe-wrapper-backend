@@ -21,7 +21,7 @@ exports.validateServiceProviderExist = asyncWrapper(async(req,res,next)=>{
 })
 
 exports.createServiceproviders = asyncWrapper(async(req,res)=>{
-    const {logo,serviceProviders,testCredentials,workOrderStatus,status = "active"} = req.body
+    const {logo,serviceProviderShortName,serviceProviderFullName,testCredentials,workOrderStatus,status = "active"} = req.body
     let encryptCode
     if(req.body.credentials){
         encryptCode = await encryptData(req.body.credentials)
@@ -30,7 +30,7 @@ exports.createServiceproviders = asyncWrapper(async(req,res)=>{
         encryptCode = null
     }
 
-    const addServiceProviders = await serviceProvisersListModel.create({...req.body,testCredentials:encryptCode})
+    const addServiceProviders = await serviceProvisersListModel.create({...req.body, serviceProviders:serviceProviderShortName, testCredentials:encryptCode})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ADD_SERVICE_PROVIDER,
@@ -60,7 +60,7 @@ exports.serviceProviderCheck = asyncWrapper(async(req,res,next)=>{
 exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
     // const serviceProviderList = await serviceProvisersListModel.findOne({ _id: req.params.serviceProviderId })
 
-    let {serviceProviders} = req.body
+    let serviceProviders = req.body.serviceProviderShortName
     if(req.body.credentials){
         if (serviceProviders === 'CPD') {
             const checkCPDCredentials = await CPDAuthentication(req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type, req.body.credentials.baseUrl)

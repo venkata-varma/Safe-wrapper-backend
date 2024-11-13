@@ -209,12 +209,29 @@ exports.getAllServiceProviderServicesToCreateIntegration = asyncWrapper(async(re
         },
         {
             $addFields: {
-                fromServiceProviderLogo: {
-                    $arrayElemAt: ['$fromServiceProviderServiceList.markedLogo', 0]
+                source:{
+                    markedLogo: {
+                        $arrayElemAt: ['$fromServiceProviderServiceList.markedLogo', 0]
+                    },
+                    serviceProviderFullName:{
+                        $arrayElemAt:['$fromServiceProviderServiceList.serviceProviderFullName',0]
+                    },
+                    serviceProviderShortName:{
+                        $arrayElemAt:['$fromServiceProviderServiceList.serviceProviderShortName',0]
+                    }
+
                 },
-                toServiceProviderLogo: {
-                    $arrayElemAt: ['$toServiceProviderServiceList.markedLogo', 0]
-                }
+                destination:{
+                    markedLogo: {
+                        $arrayElemAt: ['$toServiceProviderServiceList.markedLogo', 0]
+                    },
+                    serviceProviderFullName:{
+                        $arrayElemAt:['$toServiceProviderServiceList.serviceProviderFullName',0]
+                    },
+                    serviceProviderShortName:{
+                        $arrayElemAt:['$toServiceProviderServiceList.serviceProviderShortName',0]
+                    }
+                }                
             }
         },
         {

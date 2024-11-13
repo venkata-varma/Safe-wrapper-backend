@@ -183,8 +183,8 @@ exports.getCPDToDFMatchedBuildingDetails = asyncWrapper(async (req, res) => {
  */
 
 exports.getGlobalConstants = asyncWrapper(async (req, res) => {
-  const serviceProvidersIntegrationServices = await serviceProvidersIntegrationWithServicesModel.find({});
-  const serviceProviderServices = await serviceProviderServicesModel.find({});
+  // const serviceProvidersIntegrationServices = await serviceProvidersIntegrationWithServicesModel.find({});
+  // const serviceProviderServices = await serviceProviderServicesModel.find({});
   // const serviceproviderlists = await serviceProviderListModel.find({});
   const serviceProviderIntegrations = await serviceProviderIntegrationsModel.find({});
   const timeZones = ["GMT", "UTC", "IST", "CST", "PST", "PDT", "CAT", "ECT", "PDT"]
@@ -221,11 +221,12 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
       data: {
-        serviceProvidersIntegrationServices, serviceProviderServices, 
-        timeZones,
+              timeZones,
+              cronSchedulePicker,
+              dataPointsAccess, menus,
+              serviceProviderIntegrations
+        // serviceProvidersIntegrationServices, serviceProviderServices, ,
         // serviceproviderlists, 
-        cronSchedulePicker,
-        serviceProviderIntegrations, dataPointsAccess, menus
       },
     });
 

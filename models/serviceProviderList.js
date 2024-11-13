@@ -22,6 +22,14 @@ const serviceProviderListSchema = new mongoose.Schema({
         required: [true, "Service Provider is mandatory"],
         default : ""
     },
+    serviceProviderShortName:{
+        type:String,
+        default:""
+    },
+    serviceProviderFullName:{
+        type:String,
+        default:""
+    },
     testCredentials: {
         type: mongoose.Schema.Types.Mixed,
         // required: [true, "Credentials are mandatory"],
