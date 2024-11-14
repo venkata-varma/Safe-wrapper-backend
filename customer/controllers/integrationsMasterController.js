@@ -336,6 +336,7 @@ exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
 
 exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.body;
+  
   console.log('integrationMasterId:===', integrationsMasterId)
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationsMasterId)
   if (!integrationMasterDetails) {
@@ -410,6 +411,8 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   }
   if (req.body.serviceProvider === 'SNOW') {
     const checkDFCredentials = await SNOWAuthentication(req.body.credentials.baseUrl, req.body.credentials.username, req.body.credentials.password, req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type)
+    // let baseURL = req.body.credentials.baseUrl.split('/').slice(0,3).join('/')
+    // console.log('baseURL:==',baseURL)
 
     if (checkDFCredentials !== 200) {
       return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({

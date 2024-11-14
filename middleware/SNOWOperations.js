@@ -380,13 +380,14 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                     let SNOWWorkOrderId; let SNOWWorkorderList = {};
 
                     let snowAuthToken = await SNOWAuthToken(decryptConfigCredentials.baseUrl, decryptConfigCredentials.username, decryptConfigCredentials.password, decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, "password")
-                    
+                    let baseURL = decryptConfigCredentials.baseUrl.split('/').slice(0,3).join('/')
                     if (!snowAuthToken.hasOwnProperty('access_token')) {    
                         await exceptionLogs(integrationObject, snowAuthToken?.response?.status || 401, snowAuthToken?.message, JSON.stringify(snowAuthToken?.response?.data?.messages), JSON.stringify(snowAuthToken?.config?.data), "snow-auth-failed", workOrder.CPDWorkOrderId, workOrder.CPDWorkOrders.WorkOrderNumber, "")
                     }
 
                     let SNOWWorkOrderDetails = await axios.post(
-                        urlConfigurations.SNOW.postIncident.URL,
+                        // urlConfigurations.SNOW.postIncident.URL,
+                        `${baseURL}/api/now/table/incident`,    
                         fieldmappingkeys,
                         {
                             headers: {
@@ -486,8 +487,10 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                     let SNOWWorkorderList = {}
                     let SNOWWorkOrderId
                     console.log("clodesdnotsmandatory", fieldmappingkeys)
+                    let baseURL = decryptConfigCredentials.baseUrl.split('/').slice(0,3).join('/')
+
                     let SNOWUpdatedWorkOrderId = await axios.patch(
-                        `${urlConfigurations.SNOW.updateIncidentById.URL}/${SNOWWorkOrder.SNOWWorkOrders.sys_id}`,
+                        `${baseURL}/api/now/table/incident/${SNOWWorkOrder.SNOWWorkOrders.sys_id}`,
                         fieldmappingkeys,
                         {
                             headers: {
