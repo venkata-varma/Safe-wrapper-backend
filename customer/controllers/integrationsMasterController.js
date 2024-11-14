@@ -513,7 +513,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
           from: integrationDetails.from,
           to: integrationDetails.to,
           serviceMethod: fromAndTo.serviceMethod,
-          serviceName: "work-order",
+          serviceType: fromAndTo.serviceType,
           createdBy: req.user._id,
           dataPoints: fromAndTo.dataPoints,
           requiredKeys: getRequiredKeys.requiredKeys || {}

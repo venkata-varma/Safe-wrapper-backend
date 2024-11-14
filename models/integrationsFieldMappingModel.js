@@ -41,7 +41,7 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
       type : String,
       default : ""
     },
-    serviceName:{
+    serviceType:{
       type : String,
       default : ""
     },

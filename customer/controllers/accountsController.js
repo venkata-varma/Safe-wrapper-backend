@@ -271,6 +271,19 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
             }
         },
         {
+            $lookup:{
+                from:"integrationsfieldmappings",
+                foreignField:"integrationsMasterId",
+                localField:"_id",
+                as:"integrationsFieldMappings"
+            }
+        },
+        {
+            $addFields:{
+                serviceTypes:"$integrationsFieldMappings.serviceType"
+            }
+        },
+        {
             $lookup: {
                 from: "serviceproviderintegrations",
                 let: { fromField: "$from", toField: "$to" },
