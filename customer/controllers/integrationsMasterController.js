@@ -499,6 +499,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
   const { integrationsMasterId } = req.params;
   let keyMapping, fromFieldMappingkeysDetails, toFieldMappingkeysDetails, dataPointURL, serviceMethod, updateDataPointURL, updateServiceMethod
   let integrationSourceServiceProviderServices
+  let defaultMappingKeys
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId)
   let integrationDefaultFieldMappings = await serviceProvidersIntegrationWithServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (integrationDefaultFieldMappings.length > 0) {
@@ -523,6 +524,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       }
     }
     // integrationSourceServiceProviderServices = await defaultSatusMappingKeys(integrationDetails.from)
+    defaultMappingKeys = await defaultSatusMappingKeys(integrationDetails.from, 'get')
     return res
       .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
       .json({
@@ -531,7 +533,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
         data: {
           integrationDefaultFieldMappings : integrationDefaultFieldMappings,
           // integrationSourceServiceProviderServices
-          //  integrationFieldMappingCreate
+           defaultMappingKeys
         },
       });
   }
