@@ -642,17 +642,17 @@ Returns committed Field mappings for either Work order or Invoices
 exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   // console.log(req.body, "checkkkk");
 
-  const { integrationsMasterId, userId, serviceMethod, serviceName, dataPoints, } = req.body;
+  const { integrationsMasterId, userId, serviceMethod, serviceType, dataPoints, } = req.body;
   const pastIntegrationDetails = await integrationsMasterModel.findOne({
     integrationsMasterId,
   });
 
   let updatedIntegrationsDetails;
-
+  console.log('integrationMasterId:===',integrationsMasterId)
   // Create or update the integrationsFieldMapping
   let integrationsFieldMapping;
   const existingFieldMapping = await integrationsFieldMappingModel.findOne({
-    integrationsMasterId, serviceMethod, serviceName
+    integrationsMasterId:integrationsMasterId, serviceMethod:serviceMethod, serviceType:serviceType
   });
 
   let CPDtoDFIntegrationExist = await integrationsMasterModel.findOne({ integrationsMasterId: integrationsMasterId, from: "CPD", to: "DF" }).lean()
@@ -668,15 +668,16 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
       workDescription: "DevRabbit Testing WorkOrders (Ignore)."
     }
   }
-
   if (existingFieldMapping) {
+    
     integrationsFieldMapping =
       await integrationsFieldMappingModel.findOneAndUpdate(
-        { integrationsMasterId, serviceMethod, serviceName },
+        { integrationsMasterId, serviceMethod, serviceType },
         { $set: { ...req.body, updatedBy: req.user._id } },
         { new: true }
       );
     updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId,{stepCount: pastIntegrationDetails.stepCount + 1},{new : true})
+    
   } else {
     const verifyFieldmappingHasOneRecord = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId })
     if (!verifyFieldmappingHasOneRecord) {
@@ -1076,7 +1077,8 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   }
 
   let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { dataPoints: dataPoints,from:from, to:to, serviceMethod:serviceMethod  } }, { new: true });
-  await integrationsMasterModel.findByIdAndUpdate(
+  
+  const inteDetails = await integrationsMasterModel.findByIdAndUpdate(
     { _id: req.params.integrationsMasterId, stepCount: { $lt: 5 } },
     [
       {
@@ -1094,6 +1096,7 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
     ],
     { new: true }
   );
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED,
