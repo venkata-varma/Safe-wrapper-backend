@@ -126,7 +126,7 @@ exports.deleteWebHook = asyncWrapper(async(req,res)=>{
 exports.generateWebhookToken = asyncWrapper(async(req,res)=>{
     const {accountId} = req.query
     
-    let webHookUrl = `${process.env.DOMAIN_NAME}/webhook/${accountId}`
+    let webHookUrl = `${process.env.DOMAIN_NAME}webhook/${accountId}`
     let webHookAuthenticationCode = jwt.sign({ accountId: accountId }, 'secret')
     const encryptedWebHookAuthCode = encryptData({authenticationCode:webHookAuthenticationCode})
     return res
