@@ -4,6 +4,8 @@ const customConstants = require('../../config/constants.json')
 const integrationsMasterModel = require('../../models/integrationsMasterModel')
 const jwt = require('jsonwebtoken');
 const { encryptData, decryptData } = require("../../utils/encryptionAlgorithms");
+const webHooksMasterModel = require("../../models/webHooksMasterModel");
+const webHookLogsModel = require("../../models/webHookLogs");
 
 exports.createWebHook = asyncWrapper(async(req,res)=>{
     const {accountId,integrationsMasterId} = req.body
@@ -138,5 +140,56 @@ exports.generateWebhookToken = asyncWrapper(async(req,res)=>{
         webHookUrl:webHookUrl,
         authenticationCode: encryptedWebHookAuthCode
       }
+    });
+})
+
+exports.validateWebHookData = asyncWrapper(async(req,res,next)=>{
+    const {token} = req.body
+    const webHookDetails = await webHooksMasterModel.findOne({authenticationCode:token}).populate('accountId integrationsMasterId').lean()
+    //console.log('webHookDetails:===',webHookDetails)
+    if(!webHookDetails){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND
+        });
+    }
+    if(webHookDetails.status !== "active"){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND
+        });
+    }
+    if(!webHookDetails.accountId || webHookDetails.accountId.status !== "active"){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED
+        });
+    }
+    if(!webHookDetails.integrationsMasterId || webHookDetails.integrationsMasterId.status !== "active"){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_INTEGRATION_ID_NOT_ACTIVE
+        });
+    }
+    else{
+        next()
+    }
+})
+
+exports.createWebHookLog = asyncWrapper(async(req,res)=>{
+    const {token,dataObject,primaryHookId} = req.body
+    const webHookDetails = await webHooksMasterModel.findOne({authenticationCode:token})
+    await webHookLogsModel.create({
+        accountId:webHookDetails.accountId,
+        integrationsMasterId:webHookDetails.integrationsMasterId,
+        webHookId:webHookDetails._id,
+        dataObject:dataObject,
+        primaryHookId:primaryHookId
+    })
+    return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_CREATE_WEBHOOK_LOG
     });
 })

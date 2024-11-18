@@ -5,18 +5,36 @@ const webHooksLogsSchema = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         default:null
     },
+    accountId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "accounts",
+        index : true,
+        default: null,
+    },
+    integrationsMasterId : { 
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "integrationsMaster",
+        index : true,
+        default : null
+    },
     webHookId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"webhooksmodel",
         default:null
     },
-    requestObject:{
+    dataObject:{
         type:mongoose.Schema.Types.Mixed,
         default:{}
     },
     status:{
         type:String,
-        default:"active"
+        enum:['received','initiated','sent','delevered','failed','deleted'],
+        default:"received"
+    },
+    primaryHookId:{
+        type:String,
+        unique:true,
+        default:""
     }
 },{timestamps:true})
 
@@ -24,4 +42,4 @@ webHooksLogsSchema.pre('save',function(next){
     this.webHookLogId = this._id
     next()
 })
-module.exports = mongoose.model('')
+module.exports = mongoose.model('webhooklogs',webHooksLogsSchema)
