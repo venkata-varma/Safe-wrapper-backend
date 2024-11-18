@@ -68,7 +68,7 @@ exports.updateWebHook = asyncWrapper(async(req,res)=>{
 
 exports.getAllWebHooks = asyncWrapper(async(req,res)=>{
     const {accountId,integrationsMasterId} = req.query
-    const getAllWebHooks = await webHooksModel.find({accountId,integrationsMasterId})
+    const getAllWebHooks = await webHooksModel.find({accountId,integrationsMasterId}).sort({_id:-1})
     return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
