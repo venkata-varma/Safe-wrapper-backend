@@ -1,7 +1,9 @@
 const asyncWrapper = require("../../middleware/asyncWrapper");
-const webHooksModel = require("../../models/webHooksModel");
+const webHooksModel = require("../../models/webHooksMasterModel");
 const customConstants = require('../../config/constants.json')
 const integrationsMasterModel = require('../../models/integrationsMasterModel')
+const jwt = require('jsonwebtoken');
+const { encryptData, decryptData } = require("../../utils/encryptionAlgorithms");
 
 exports.createWebHook = asyncWrapper(async(req,res)=>{
     const {accountId,integrationsMasterId} = req.body
@@ -119,4 +121,22 @@ exports.deleteWebHook = asyncWrapper(async(req,res)=>{
           data:webHookDetails
         });
     }
+})
+
+exports.generateWebhookToken = asyncWrapper(async(req,res)=>{
+    const {accountId} = req.query
+    
+    let webHookUrl = `${process.env.DOMAIN_NAME}/webhook/${accountId}`
+    let webHookAuthenticationCode = jwt.sign({ accountId: accountId }, 'secret')
+    const encryptedWebHookAuthCode = encryptData({authenticationCode:webHookAuthenticationCode})
+    return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_WEBHOOK,
+      data:{
+        webHookUrl:webHookUrl,
+        authenticationCode: encryptedWebHookAuthCode
+      }
+    });
 })

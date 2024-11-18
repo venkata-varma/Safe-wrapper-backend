@@ -6,7 +6,8 @@ const {createWebHook,
     updateWebHook,
     getAllWebHooks,
     getIndividualWebHook,
-    deleteWebHook} = require('../controllers/webHooksController')
+    deleteWebHook,
+    generateWebhookToken} = require('../controllers/webHooksController')
 
 
 router.post('/create-webhook', createWebHook)
@@ -16,5 +17,6 @@ router.patch('/delte-webhook',validateIntegrationForWebHook, deleteWebHook)
 
 router.get('/get-all-webhooks',validateIntegrationForWebHook, getAllWebHooks)
 router.get('/get-single-webhook',validateIntegrationForWebHook,getIndividualWebHook)
+router.get('/generate-webhook',generateWebhookToken)
 
 module.exports = router
