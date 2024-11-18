@@ -12,11 +12,15 @@ const webHooksSchema = new mongoose.Schema({
         index : true,
         default: null,
     },
-    integrationsMasterId : {
+    integrationsMasterId : { 
         type : mongoose.Schema.Types.ObjectId,
         ref : "integrationsMaster",
         index : true,
         default : null
+    },
+    webHookName:{
+        type:String,
+        default:""
     },
     webHookUrl: {
         type:String,
