@@ -18,7 +18,7 @@ const webHooksSchema = new mongoose.Schema({
         index : true,
         default : null
     },
-    webHookName:{
+    name:{
         type:String,
         default:""
     },
