@@ -109,7 +109,10 @@
     "MESSAGE_GET_ALL_WEBHOOK":"All webhook details.",
     "MESSAGE_WEBHOOK_NOT_FOUND":"Respective webhook details not found.",
     "MESSAGE_GET_INDIVIDUAL_WEBHOOK":"Webhook details.",
-    "MESSAGE_CREATE_WEBHOOK_LOG":"Webhook request created."
+    "MESSAGE_CREATE_WEBHOOK_LOG":"Webhook request created.",
+    "MESSAGE_DELETE_WEBHOOK":"Webhook deleted succesfully.",
+    "MESSAGE_ACTIVATE_WEBHOOK":"Webhook activated succesfully."
+
   },
   "statusCodes": {
     "FORBIDDEN": 403,

@@ -102,8 +102,10 @@ exports.getIndividualWebHook = asyncWrapper(async(req,res)=>{
 
 exports.deleteWebHook = asyncWrapper(async(req,res)=>{
     const {accountId,integrationsMasterId,webHookId} = req.query
+    const {status} = req.body
     console.log('req:===',req.query)
     let webHookDetails
+    
     webHookDetails = await webHooksModel.findOne({_id:webHookId,accountId:accountId,integrationsMasterId:integrationsMasterId}).lean()
     console.log('webHookDetails:===',webHookDetails)
 
@@ -114,14 +116,20 @@ exports.deleteWebHook = asyncWrapper(async(req,res)=>{
         });
     }
     else{
-        webHookDetails = await webHooksModel.findOneAndUpdate({_id:webHookId, accountId:accountId,integrationsMasterId:integrationsMasterId},{status:"deleted"},{new:true})
-        return res
-        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-        .json({
-          status: customConstants.messages.MESSAGE_SUCCESS,
-          message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_WEBHOOK,
-          data:webHookDetails
-        });
+        if(status === 'delete'){
+            webHookDetails = await webHooksModel.findOneAndUpdate({_id:webHookId, accountId:accountId,integrationsMasterId:integrationsMasterId},{status:"deleted"},{new:true})
+            return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+                status: customConstants.messages.MESSAGE_SUCCESS,
+                message: customConstants.messages.MESSAGE_DELETE_WEBHOOK,
+            })
+        }
+        else if(status === 'active'){
+            webHookDetails = await webHooksModel.findOneAndUpdate({_id:webHookId, accountId:accountId,integrationsMasterId:integrationsMasterId},{status:"active"},{new:true})            
+            return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+                status: customConstants.messages.MESSAGE_SUCCESS,
+                message: customConstants.messages.MESSAGE_ACTIVATE_WEBHOOK,
+            })
+        }
     }
 })
 
