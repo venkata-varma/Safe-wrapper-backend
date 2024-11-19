@@ -171,7 +171,7 @@ exports.getAllWebHooks = asyncWrapper(async (req, res) => {
             }
         }
     ]);
-    
+
     const getWebHookLogs = await webHooksModel.aggregate([
         {
             $match: {
@@ -274,9 +274,9 @@ exports.getAllWebHooks = asyncWrapper(async (req, res) => {
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
             data: {
-                getAllWebHooks,
-                getPast6WeeksStatuses: getPast6WeeksStatuses,
-                getOverallStatuses: getOverallStatuses[0].statuses
+                allWebHooks: getAllWebHooks,
+                pastSixWeeksData: getPast6WeeksStatuses,
+                overallStatusesCount: getOverallStatuses[0].statuses
             }
         });
 })
