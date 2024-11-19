@@ -147,9 +147,16 @@ exports.getAllWebHooks = asyncWrapper(async (req, res) => {
         },
         {
             $addFields: {
-                "webHookDetails.webhookLogsDetails": "$$REMOVE" // Remove the `webhookLogsDetails` field
+                "webHookDetails.webhookLogsDetails": "$$REMOVE", // Remove the `webhookLogsDetails` field
+                "webHookDetails.statuses":"$statuses"
             }
         },
+        {
+            $replaceRoot: {
+                newRoot: "$webHookDetails"
+            }
+        }
+        /*
         {
             $project: {
                 // webHookDetails: {
@@ -166,10 +173,11 @@ exports.getAllWebHooks = asyncWrapper(async (req, res) => {
                 //     requestObject: "$webHookDetails.requestObject"
                 // },
                 webHookDetails: 1,
-                statuses: 1,
+                // statuses: 1,
                 _id: 0
             }
         }
+            */
     ]);
 
     const getWebHookLogs = await webHooksModel.aggregate([
