@@ -144,7 +144,7 @@ exports.generateWebhookToken = asyncWrapper(async(req,res)=>{
 })
 
 exports.validateWebHookData = asyncWrapper(async(req,res,next)=>{
-    const {token} = req.body
+    const token = req.headers.authorization.split(' ')[1]
     const webHookDetails = await webHooksMasterModel.findOne({authenticationCode:token}).populate('accountId integrationsMasterId').lean()
     //console.log('webHookDetails:===',webHookDetails)
     if(!webHookDetails){
@@ -177,7 +177,8 @@ exports.validateWebHookData = asyncWrapper(async(req,res,next)=>{
 })
 
 exports.createWebHookLog = asyncWrapper(async(req,res)=>{
-    const {token,dataObject,primaryHookId} = req.body
+    const {dataObject,primaryHookId} = req.body
+    const token = req.headers.authorization.split(' ')[1]
     const webHookDetails = await webHooksMasterModel.findOne({authenticationCode:token})
     await webHookLogsModel.create({
         accountId:webHookDetails.accountId,
