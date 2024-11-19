@@ -146,7 +146,7 @@ exports.generateWebhookToken = asyncWrapper(async(req,res)=>{
 exports.validateWebHookData = asyncWrapper(async(req,res,next)=>{
     const token = req.headers.authorization.split(' ')[1]
     const webHookDetails = await webHooksMasterModel.findOne({authenticationCode:token}).populate('accountId integrationsMasterId').lean()
-    //console.log('webHookDetails:===',webHookDetails)
+    // console.log('webHookDetails:===',webHookDetails)
     if(!webHookDetails){
         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
             status: customConstants.messages.MESSAGE_FAIL,

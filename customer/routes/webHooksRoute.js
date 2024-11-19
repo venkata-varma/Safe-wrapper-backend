@@ -1,7 +1,6 @@
 const router = require('express').Router()
 
 
-const auth = require('../../middleware/authentication')
 const {createWebHook,
     validateIntegrationForWebHook,
     updateWebHook,
@@ -13,6 +12,10 @@ const {createWebHook,
     createWebHookLog} = require('../controllers/webHooksController')
 
 
+router.post('/create-webhook-logs',validateWebHookData, createWebHookLog)
+
+const auth = require('../../middleware/authentication')
+router.use(auth)
 router.post('/create-webhook', createWebHook)
 
 router.patch('/update-webhook',validateIntegrationForWebHook, updateWebHook)
@@ -23,6 +26,5 @@ router.get('/get-single-webhook',validateIntegrationForWebHook,getIndividualWebH
 router.get('/generate-webhook',generateWebhookToken)
 
 
-router.post('/create-webhook-logs',validateWebHookData, createWebHookLog)
 
 module.exports = router
