@@ -13,7 +13,9 @@ router.patch('/update-service-provider-service-status/:serviceProviderServiceId'
 router.get('/get-individual-service-provider-service-details/:serviceProviderServiceId',serviceProviderServicesController.validateServiceProviderServiceExist, serviceProviderServicesController.getIndividualServiceProviderServiceDetails)
 
 // Service providers integration with services APIs.
-router.post('/create-service-providers-integration-services',serviceProviderServicesController.validateServiceProvidersIntegrationService, serviceProviderServicesController.createServiceProvidersIntegrationService)
+router.post('/create-service-providers-integration-services',
+    // serviceProviderServicesController.validateServiceProvidersIntegrationService, 
+    serviceProviderServicesController.createServiceProvidersIntegrationService)
 router.patch('/update-service-providers-integration-services/:serviceProviderIntegrationServiceId',serviceProviderServicesController.updatecreateServiceProvidersIntegrationService)
 
 router.get('/get-all-service-provider-integrations',serviceProviderServicesController.getAllServiceProviderIntegrations)
