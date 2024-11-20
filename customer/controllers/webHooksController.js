@@ -284,7 +284,7 @@ exports.getAllWebHooks = asyncWrapper(async (req, res) => {
             data: {
                 allWebHooks: getAllWebHooks,
                 pastSixWeeksData: getPast6WeeksStatuses,
-                overallStatusesCount: getOverallStatuses[0].statuses
+                overallStatusesCount: getOverallStatuses[0]?.statuses || []
             }
         });
 })
