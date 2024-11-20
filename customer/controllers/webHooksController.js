@@ -43,6 +43,13 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
 
 exports.validateIntegrationForWebHook = asyncWrapper(async (req, res, next) => {
     const { accountId, integrationsMasterId, webHookId } = req.query
+
+    if(!accountId || !integrationsMasterId){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_MISSING_IDS
+        });
+    }
     const IntegrationMasterDetails = await integrationsMasterModel.findOne({ accountId: accountId, _id: integrationsMasterId }).populate('accountId')
 
     if (IntegrationMasterDetails.accountId.status !== "active") {
@@ -544,3 +551,167 @@ exports.createWebHookLog = asyncWrapper(async (req, res) => {
             message: customConstants.messages.MESSAGE_CREATE_WEBHOOK_LOG
         });
 })
+
+/*
+exports.getWebHookLogsReports = asyncWrapper(async(req,res)=>{
+    const{accountId,integrationsMasterId,webHookId} = req.query
+
+    const webHookDetails = await webHooksModel.findById(webHookId)
+    if(!webHookDetails || webHookDetails.status !== "active"){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND
+        });
+    }
+    // Retrieve query parameters
+    const statusQuery = req.query.status ? req.query.status.toLowerCase() : null;
+    const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+    const toDate = req.query.toDate ? new Date(new Date(req.query.toDate).setDate(new Date(req.query.toDate).getDate() + 1)) : (fromDateQuery ? new Date() : null);
+    
+    // Define valid priority values
+    const validateStatus = ['received','initiated','sent','delevered','failed','deleted']
+    
+    let webHookLogsReports = []
+    if(accountId === "null" || integrationsMasterId === "null" || webHookId=== "null"){
+        webHookLogsReports = []
+    }
+    else{
+        if (statusQuery && !validateStatus.includes(statusQuery)) {
+            webHookLogsReports = [];
+        } else {
+            webHookLogsReports = await webHooksModel.aggregate([
+                {
+                    $match: {
+                        accountId: new mongoose.Types.ObjectId(accountId),
+                        integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+                        webHookId: new mongoose.Types.ObjectId(webHookId),
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "webhooklogs",
+                        localField: "_id",
+                        foreignField: "webHookId",
+                        as: "webHookLogsDetails",
+                    },
+                },
+                {
+                    $addFields: {
+                        webHookLogsDetails: {
+                            $filter: {
+                                input: "$webHookLogsDetails",
+                                as: "webHookLogs",
+                                cond: {
+                                    $and: [
+                                        ...(fromDate && toDate
+                                            ? [
+                                                  {
+                                                      $gte: ["$$webHookLogs.createdAt", fromDate],
+                                                  },
+                                                  {
+                                                      $lte: ["$$webHookLogs.createdAt", toDate],
+                                                  },
+                                              ]
+                                            : []),
+                                        ...(statusQuery
+                                            ? [
+                                                  {
+                                                      $eq: ["$$webHookLogs.status", statusQuery],
+                                                  },
+                                              ]
+                                            : []),
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                },
+            ]);
+            
+        }
+    }
+    return res.json(webHookLogsReports)
+})
+    */
+
+
+exports.getWebHookLogsReports = asyncWrapper(async (req, res) => {
+    const { accountId, integrationsMasterId, webHookId } = req.query;
+
+    // Retrieve and validate webHook details
+    const webHookDetails = await webHooksModel.findById(webHookId);
+    if (!webHookDetails || webHookDetails.status !== "active") {
+        return res
+            .status(customConstants.statusCodes.BAD_REQUEST)
+            .json({
+                status: customConstants.messages.MESSAGE_FAIL,
+                message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+            });
+    }
+
+    // Retrieve query parameters
+    const statusQuery = req.query.status ? req.query.status.toLowerCase() : null;
+    const providedFromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+    const providedToDate = req.query.toDate ? new Date(req.query.toDate) : null;
+    
+    // Set default date range (last 7 days)
+    const toDate = providedToDate || new Date();
+    const fromDate = providedFromDate || new Date(new Date().setDate(new Date().getDate() - 6));
+
+    // Validate status values
+    const validStatuses = ['received', 'initiated', 'sent', 'delivered', 'failed', 'deleted'];
+    if (statusQuery && !validStatuses.includes(statusQuery)) {
+        return res.json([]);
+    }
+
+    let webHookLogsReports = [];
+
+    if (accountId === "null" || integrationsMasterId === "null" || webHookId === "null") {
+        webHookLogsReports = [];
+    } else {
+        webHookLogsReports = await webHooksModel.aggregate([
+            {
+                $match: {
+                    accountId: new mongoose.Types.ObjectId(accountId),
+                    integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+                    webHookId: new mongoose.Types.ObjectId(webHookId),
+                },
+            },
+            {
+                $lookup: {
+                    from: "webhooklogs",
+                    localField: "_id",
+                    foreignField: "webHookId",
+                    as: "webHookLogsDetails",
+                },
+            },
+            {
+                $addFields: {
+                    webHookLogsDetails: {
+                        $filter: {
+                            input: "$webHookLogsDetails",
+                            as: "webHookLogs",
+                            cond: {
+                                $and: [
+                                    { $gte: ["$$webHookLogs.createdAt", fromDate] },
+                                    { $lte: ["$$webHookLogs.createdAt", toDate] },
+                                    ...(statusQuery
+                                        ? [{ $eq: ["$$webHookLogs.status", statusQuery] }]
+                                        : []),
+                                ],
+                            },
+                        },
+                    },
+                },
+            },
+        ]);
+    }
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_WEBHOOK_LOGS_REPORTS,
+            data:webHookLogsReports
+        });
+});

@@ -107,11 +107,13 @@
     "MESSAGE_ADD_WEBHOOK":"Webhook added succesfully.",
     "MESSAGE_UPDATE_WEBHOOK":"Webhook updated succesfully.",
     "MESSAGE_GET_ALL_WEBHOOK":"All webhook details.",
-    "MESSAGE_WEBHOOK_NOT_FOUND":"Respective webhook details not found.",
+    "MESSAGE_WEBHOOK_NOT_FOUND":"Respective webhook details not found/inactive.",
     "MESSAGE_GET_INDIVIDUAL_WEBHOOK":"Webhook details.",
     "MESSAGE_CREATE_WEBHOOK_LOG":"Webhook request created.",
     "MESSAGE_DELETE_WEBHOOK":"Webhook deleted succesfully.",
-    "MESSAGE_ACTIVATE_WEBHOOK":"Webhook activated succesfully."
+    "MESSAGE_ACTIVATE_WEBHOOK":"Webhook activated succesfully.",
+    "MESSAGE_WEBHOOK_LOGS_REPORTS":"Webhook logs reports.",
+    "MESSAGE_MISSING_IDS":"accountId and IntegrationsMasterId required."
 
   },
   "statusCodes": {

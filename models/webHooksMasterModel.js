@@ -34,6 +34,10 @@ const webHooksSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.Mixed,
         default:{}
     },
+    primaryHookId:{
+        type:String,
+        default:""
+    },
     comments:{
         type:String,
         default:null
