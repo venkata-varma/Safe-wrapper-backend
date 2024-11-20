@@ -27,6 +27,10 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
         type: String,
         default:"work-order"
     },
+    name:{
+        type:String,
+        default:""
+    },
     dataPointURL: {
         type: String,
         required: [true, "Data point url is required"]
