@@ -650,7 +650,7 @@ exports.getWebHookLogsReports = asyncWrapper(async (req, res) => {
     }
 
     // Retrieve query parameters
-    const statusQuery = req.query.status ? req.query.status.toLowerCase() : null;
+    let statusQuery = req.query.status ? req.query.status.toLowerCase() : null;
     const providedFromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
     const providedToDate = req.query.toDate ? new Date(req.query.toDate) : null;
     
@@ -661,7 +661,7 @@ exports.getWebHookLogsReports = asyncWrapper(async (req, res) => {
     // Validate status values
     const validStatuses = ['received', 'initiated', 'sent', 'delivered', 'failed', 'deleted'];
     if (statusQuery && !validStatuses.includes(statusQuery)) {
-        return res.json([]);
+        statusQuery = null
     }
 
     let webHookLogsReports = [];
