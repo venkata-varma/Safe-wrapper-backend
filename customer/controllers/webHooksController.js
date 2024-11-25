@@ -449,7 +449,7 @@ exports.getIndividualWebHook = asyncWrapper(async (req, res) => {
     }
 })
 
-exports.deleteWebHook = asyncWrapper(async (req, res) => {
+exports.updateWebHookStatus = asyncWrapper(async (req, res) => {
     const { accountId, integrationsMasterId, webHookId } = req.query
     const { status } = req.body
     console.log('req:===', req.query)
@@ -479,6 +479,13 @@ exports.deleteWebHook = asyncWrapper(async (req, res) => {
                 message: customConstants.messages.MESSAGE_ACTIVATE_WEBHOOK,
             })
         }
+        else if (status === 'offline') {
+            webHookDetails = await webHooksModel.findOneAndUpdate({ _id: webHookId, accountId: accountId, integrationsMasterId: integrationsMasterId }, { status: "offline" }, { new: true })
+            return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+                status: customConstants.messages.MESSAGE_SUCCESS,
+                message: customConstants.messages.MESSAGE_WEBHOOK_OFFLINE,
+            })
+        }        
     }
 })
 

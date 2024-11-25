@@ -113,7 +113,9 @@
     "MESSAGE_DELETE_WEBHOOK":"Webhook deleted succesfully.",
     "MESSAGE_ACTIVATE_WEBHOOK":"Webhook activated succesfully.",
     "MESSAGE_WEBHOOK_LOGS_REPORTS":"Webhook logs reports.",
-    "MESSAGE_MISSING_IDS":"accountId and IntegrationsMasterId required."
+    "MESSAGE_MISSING_IDS":"accountId and IntegrationsMasterId required.",
+    "MESSAGE_WEBHOOK_OFFLINE":"Webhook deactivated succesfully."
+
 
   },
   "statusCodes": {

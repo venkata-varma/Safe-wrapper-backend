@@ -6,7 +6,7 @@ const {createWebHook,
     updateWebHook,
     getAllWebHooks,
     getIndividualWebHook,
-    deleteWebHook,
+    updateWebHookStatus,
     generateWebhookToken,
     validateWebHookData,
     createWebHookLog,
@@ -20,7 +20,7 @@ router.use(auth)
 router.post('/create-webhook', createWebHook)
 
 router.patch('/update-webhook',validateIntegrationForWebHook, updateWebHook)
-router.patch('/delte-webhook',validateIntegrationForWebHook, deleteWebHook)
+router.patch('/update-webhook-status',validateIntegrationForWebHook, updateWebHookStatus)
 
 router.get('/get-all-webhooks',validateIntegrationForWebHook, getAllWebHooks)
 router.get('/get-single-webhook',validateIntegrationForWebHook,getIndividualWebHook)

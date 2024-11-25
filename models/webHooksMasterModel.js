@@ -44,7 +44,7 @@ const webHooksSchema = new mongoose.Schema({
     },
     status:{
         type:String,
-        enum:['active','delete'],
+        enum:['active','offline','delete'],
         default:"active"
     }
 },{timestamps:true})
