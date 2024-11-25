@@ -6,6 +6,8 @@ const SNOWWorkOrdersModel = require("../models/SNOWWorkOrdersModel")
 const CYSWorkordersModel = require("../models/CYSWorkordersModel")
 const { sixWeekSales } = require('../utils/sixWeekSalesFunction')
 const { getCPDFullWorkOrderDetails } = require("./general")
+const moment = require('moment');
+
 
 /**
  * 
@@ -70,14 +72,13 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
             // Apply priorityQuery if it exists and is not 'all'
             if (priorityQuery && priorityQuery !== 'all') {
                 priorityFilter.priority = priorityQuery;
-            }            
+            }
             switch (record.serviceProvider) {
                 case 'CPD':
                     // Define search query filter
                     searchFilter = searchQuery ? { $or: [{ "CPDWorkOrders.WorkOrderNumber": searchQuery }, { "CPDWorkOrders.WorkOrderId": searchQuery }] } : {};
                     const workOrderDetails = await CPDWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
-                    getWorkOrderDetails = workOrderDetails !== null ? await getCPDFullWorkOrderDetails(integrationsQuery, workOrderDetails): {}
-                    
+
                     workOrder.workOrderDetails = getWorkOrderDetails
                     workOrder.type = getWorkOrderDetails?.Type
                     workOrder.category = getWorkOrderDetails?.WorkType?.Name
@@ -98,14 +99,18 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                     break;
                 case 'CYS':
                     searchFilter = searchQuery ? { CYSWorkOrderId: searchQuery } : {};
-                    getWorkOrderDetails = await CYSWorkordersModel.findOne({ $expr: { $eq: [{ 
-                        $convert: { 
-                          input: "$CYSWorkOrderId", 
-                          to: "string", 
-                          onError: ""
-                        }
-                      }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
-                    
+                    getWorkOrderDetails = await CYSWorkordersModel.findOne({
+                        $expr: {
+                            $eq: [{
+                                $convert: {
+                                    input: "$CYSWorkOrderId",
+                                    to: "string",
+                                    onError: ""
+                                }
+                            }, record.workOrderId]
+                        }, ...priorityFilter, ...searchFilter
+                    }).lean();
+
                     workOrder.workOrderDetails = getWorkOrderDetails !== null ? getWorkOrderDetails.CYSWorkOrders : {}
                     workOrder.priority = getWorkOrderDetails === null ? "medium" : getWorkOrderDetails.priority
                     break;
@@ -373,7 +378,7 @@ exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, d
 
 
         })
-//Sending New & updated counts based on results obtained from its above filters
+        //Sending New & updated counts based on results obtained from its above filters
         if (sourceWorkOrderLifeCycleRecordsCount === 0 && destinationWorkOrderLifeCycleRecordsCount === 0) {
             sourceNewWorkOrdersCount = 0,
                 sourceUpdatedWorkOrdersCount = 0,
@@ -410,6 +415,44 @@ exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, d
     //   console.log("sourceWorkOrderCounts", newUpdatedCounts)
     return newUpdatedCounts
 
-    
+
 
 }
+
+exports.getWebHooksLogsSixWeekSalesData = async (getWebHookLogs) => {
+    const sixWeekSalesData = sixWeekSales
+    const statusesEnum = ['received', 'initiated', 'delivered', 'failed', 'deleted'];
+
+    const processSalesData = (sixWeeksSalesData, getWebHookLogs) => {
+        return sixWeeksSalesData.map(week => {
+            const { fromDate, toDate } = week;
+            const statusCounts = statusesEnum.map(status => ({ status, count: 0 }));
+    
+            getWebHookLogs.forEach(hookLogs => {
+                hookLogs.webhookLogsDetails.forEach(item => {
+                    const exceptionCreatedAt = new Date(item.createdAt);
+                    if (exceptionCreatedAt >= new Date(fromDate) && exceptionCreatedAt <= new Date(toDate)) {
+                        const statusIndex = statusCounts.findIndex(statusItem => statusItem.status === item.status);
+                        if (statusIndex !== -1) {
+                            statusCounts[statusIndex].count += 1;
+                        } else {
+                            console.warn(`Unknown status: ${item.status} in logs.`);
+                        }
+                    }
+                });
+            });
+    
+            return {
+                weekStart: fromDate,
+                weekEnd: toDate,
+                statuses: statusCounts
+            };
+        });
+    };
+    
+
+    const result = processSalesData(sixWeekSalesData, getWebHookLogs);
+
+    return result
+};
+

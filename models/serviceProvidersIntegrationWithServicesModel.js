@@ -1,8 +1,14 @@
 const mongoose = require("mongoose");
 
-const fieldMappingMasterDefaultServices = new mongoose.Schema({
-    fieldMappingMasterDefaultServicesId: {
+const serviceProvidersIntegrationWithServices = new mongoose.Schema({
+    serviceProvidersIntegrationServiceId:{
+        type:mongoose.Schema.Types.ObjectId,
+        default:null
+    },
+    serviceProviderIntegrationId: {
         type: mongoose.Schema.Types.ObjectId,
+        ref:"serviceproviderintegrations",
+        default:null
     },
     from:{
         type:String,
@@ -14,8 +20,16 @@ const fieldMappingMasterDefaultServices = new mongoose.Schema({
     },
     serviceMethod:{
         type:String,
-        enum:["create","update","get","delete"],
+        enum:["post","patch","put","get","delete","head","options"],
       // default: ""
+    },
+    serviceType:{
+        type: String,
+        default:"work-order"
+    },
+    name:{
+        type:String,
+        default:""
     },
     dataPointURL: {
         type: String,
@@ -38,10 +52,10 @@ const fieldMappingMasterDefaultServices = new mongoose.Schema({
 
 }, {timestamps: true});
 
-fieldMappingMasterDefaultServices.pre('save',function(next){
-    this.fieldMappingMasterDefaultServicesId = this._id;
+serviceProvidersIntegrationWithServices.pre('save',function(next){
+    this.serviceProvidersIntegrationServiceId = this._id;
     next();
 })
 
 
-module.exports = mongoose.model('fieldMappingMasterDefaultServices', fieldMappingMasterDefaultServices);
+module.exports = mongoose.model('serviceprovidersintegrationwithservices', serviceProvidersIntegrationWithServices);

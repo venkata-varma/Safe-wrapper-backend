@@ -24,7 +24,6 @@ router.patch('/edit-integrationmaster-service-provider/:integrationsMasterId',in
 router.patch('/edit-integrationmaster-field-mappings/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMasterForEdit, integrationsMasterControllers.editIntegrationMasterFieldMappings)
 router.patch('/edit-integrationmaster-settings/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMasterForEdit, integrationsMasterControllers.editIntegrationMasterSettings)
 router.patch('/delete-integrationmaster/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.deactivateInteragtionMasterCrons)
-router.patch('/update-field-mappings-by-service',integrationsMasterControllers.middlewareForIntegrationExist, integrationsMasterControllers.updateIntegrationFieldMappingsByServiceType)
 router.patch('/update-integration-settings-data-sync/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateAutoDataSync);
 router.patch('/update-integration-settings-frequency/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateIntegrationSettingsFrequency)
 router.patch('/update-integration-workorder-status-field-mappings/:integrationSettingsId',integrationsMasterControllers.validateIntegrationSettingsDetails, integrationsMasterControllers.updateStatusFieldMappings)
@@ -32,7 +31,7 @@ router.patch('/update-integration-date-range/:integrationSettingsId',integration
 router.patch('/update-integration-master-status/:integrationsMasterId',integrationsMasterControllers.validateIntegrationsMaster, integrationsMasterControllers.updateIntegrationMasterStatus);
 
 router.get('/get-global-constants', integrationsMasterControllers.getGlobalConstants)
-router.get('/get-fieldmappingmaster-defaultservices-details/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMasterExistForFieldMapping, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
+router.get('/get-integration-default-fieldmappings/:integrationsMasterId',integrationsMasterControllers.validateintegrationsMasterExistForFieldMapping, integrationsMasterControllers.fieldMappingMasterDefaultServicesList)
 router.get('/get-single-integrationmaster-details/:integrationsMasterId', integrationsMasterControllers.validateIntegrationsMasterExistForSingleIntegration, integrationsMasterControllers.getSingleIntegrationMasterDetails)
 router.get('/pull-latest-workorders-by-integrationMasterId/:integrationsMasterId',integrationsMasterControllers.validateIntegrationStatus, integrationsMasterControllers.pullLatestWorkOrders);
 router.get('/get-all-integration-exceptions/:accountId', integrationsMasterControllers.validateAccountStatus, integrationsMasterControllers.getAllIntegrationExceptions);

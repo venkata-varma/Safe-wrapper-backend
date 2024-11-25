@@ -7,7 +7,7 @@ const SNOWWorkOrdersModel = require("../models/SNOWWorkOrdersModel");
 const CYSWorkordersModel = require("../models/CYSWorkordersModel");
 const workOrderLifeCycleModel = require("../models/workOrderLifeCycleModel");
 const integrationsMasterModel = require("../models/integrationsMasterModel");
-const fieldMappingsMasterModel = require("../models/fieldMappingsMasterModel");
+const serviceProviderServicesModel = require("../models/serviceProviderServicesModel");
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
 const serviceProviderCongiguration = require('../config/integrationsConfiguration');
 const { CPDAuthentication } = require("./serviceProvidersAuthentication");
@@ -201,11 +201,15 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
 }
 
 // Function to return default field mapping keys based of "from" .
-const defaultSatusMappingKeys = async (from, serviceMethod) => {
-  let statusMappingDetails = await fieldMappingsMasterModel.find({serviceProvider:from, serviceType:{$in:['work-order','work-order-status']}, serviceMethod:serviceMethod})
+const defaultSatusMappingKeys = async (from,serviceMethod) => {
+  let statusMappingDetails = await serviceProviderServicesModel.find({serviceProvider:from, serviceMethod:serviceMethod})
   return statusMappingDetails
 }
 
+const getDefaultDestinationStatusMappingkeys = async(to, serviceMethod) =>{
+  let defaultDestinationStatusMappingkeys = await serviceProviderServicesModel.find({serviceProvider:to, serviceMethod:serviceMethod})
+  return defaultDestinationStatusMappingkeys
+}
 
 /**
  * Function to return Status field mapping keys based on "from" & "to"
@@ -623,6 +627,6 @@ module.exports = {
   defaultSatusMappingKeys,
   integationOfAccountWorkOrderReports,
   getAllStatusFromWorkOrderLifeCycleForEmailNotifications,
-  getCPDFullWorkOrderDetails
-
+  getCPDFullWorkOrderDetails,
+  getDefaultDestinationStatusMappingkeys
 }

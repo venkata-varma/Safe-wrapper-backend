@@ -25,10 +25,12 @@ const usersRoute = require('./customer/routes/usersRoute');
 const integrationsRoute = require('./customer/routes/integrationsMasterRoute');
 const conditionalRoute = require('./customer/routes/conditionalRoute')
 const errorcontroller = require('./customer/controllers/errorcontroller');
+const webHooksRoute = require('./customer/routes/webHooksRoute')
 //super-admin-routes
 const superAdminAccountRoute = require('./superAdminPanel/superAdminRoutes/superAdminAccountsRoute')
 const superAdminUsersRoute = require('./superAdminPanel/superAdminRoutes/superAdminUsersRoute')
-
+const serviceProvidersRoute = require('./superAdminPanel/superAdminRoutes/serviceProvidersOperations')
+const serviceproviderServicesRoute = require('./superAdminPanel/superAdminRoutes/serviceProviderServicesRoute')
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
 
@@ -36,8 +38,12 @@ app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/integrations', integrationsRoute);
 app.use('/api/conditions', conditionalRoute);
+app.use('/api/webhook',webHooksRoute)
 app.use('/api/super-admin/accounts', superAdminAccountRoute);
 app.use('/api/super-admin/users', superAdminUsersRoute);
+app.use('/api/super-admin/service-provider',serviceProvidersRoute)
+app.use('/api/super-admin/service-provider-services',serviceproviderServicesRoute)
+
 const integrationsSchedules = require('./customer/controllers/schedulerController');
 const DFintegrations = require('./middleware/DFOperations');
 

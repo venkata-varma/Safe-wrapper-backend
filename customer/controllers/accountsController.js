@@ -85,7 +85,6 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             companyName: companyName,
             phone: phone,
             email: email,
-            role: 'super-admin',
         });
         await accountSettingsModel.create({
             accountId: accountData._id,
@@ -209,6 +208,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
     const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId }).countDocuments();
     const integrationsActivitylogCount = await integrationCronsModel.find({ accountId: accountId }).countDocuments();
     const accountSettings = await accountSettingsModel.findOne({accountId:accountId})
+    
     let integrationsOfAccount = await integrationsMasterModel.aggregate([
         {
             $match: {
@@ -226,7 +226,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         {
             $unwind: {
                 path: "$integrationSettings",
-                preserveNullAndEmptyArrays: true // This will keep documents without matching integrationSettings
+                preserveNullAndEmptyArrays: true
             }
         },
         {
@@ -268,8 +268,49 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
                 foreignField: "integrationsMasterId",
                 as: "workorderlifecycles"
             }
+        },
+        {
+            $lookup:{
+                from:"integrationsfieldmappings",
+                foreignField:"integrationsMasterId",
+                localField:"_id",
+                as:"integrationsFieldMappings"
+            }
+        },
+        {
+            $addFields:{
+                serviceTypes:"$integrationsFieldMappings.serviceType"
+            }
+        },
+        {
+            $lookup: {
+                from: "serviceproviderintegrations",
+                let: { fromField: "$from", toField: "$to" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ["$from", "$$fromField"] },
+                                    { $eq: ["$to", "$$toField"] }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        $project: { services: 1 }
+                    }
+                ],
+                as: "services"
+            }
+        },
+        {
+            $addFields: {
+                services: { $arrayElemAt: ["$services.services", 0] }
+            }
         }
     ]);
+    
 
     const workOrderReports = await integationOfAccountWorkOrderReports(integrationsOfAccount)
     const failedCPDWorkOrders = await integrationsMasterModel.aggregate([

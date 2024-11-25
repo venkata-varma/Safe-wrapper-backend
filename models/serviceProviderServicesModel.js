@@ -1,19 +1,28 @@
 const mongoose = require("mongoose");
 
-const fieldMappingsMasterSchema = new mongoose.Schema({
-    fieldMappingMasterId: {
+const serviceProviderServices = new mongoose.Schema({
+    serviceProviderServiceId: {
         type: mongoose.Schema.Types.ObjectId,
         default: null
     },
     serviceProvider: {
         type: String,
         required: [true, "Service provider is required"],
-        enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"],
+        // enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"],
         default: ""
     },  
+    serviceTitle: {
+        type: String,
+        default:""
+    },
+    serviceProviderListId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "serviceProviderList",
+        default:null
+    },
     serviceMethod:{
         type:String,
-        enum:["create","update","get","delete"],
+        enum:["post","patch","put","get","delete","head","options"],
         default:""
     },
     serviceType: {
@@ -28,8 +37,8 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
     },
     dataPoints: {
         type: Array,
-        required: [true, "Elements are required"],
-        default: ""
+        // required: [true, "Elements are required"],
+        default: []
     },
     dataPointPriority: {
         type: String,
@@ -42,10 +51,18 @@ const fieldMappingsMasterSchema = new mongoose.Schema({
         default: "active"
 
     },
-
+    requestObject:{
+        type:mongoose.Schema.Types.Mixed,
+        default:{}
+    }
 }, {
     timestamps: true
 })
 
-const fieldMappingsMasterModel = mongoose.model('fieldMappingsMaster', fieldMappingsMasterSchema)
-module.exports = fieldMappingsMasterModel
+
+serviceProviderServices.pre('save',function(next){
+    this.serviceProviderServiceId = this._id;
+    next()
+})
+const serviceProviderServicesModel = mongoose.model('serviceproviderservices', serviceProviderServices)
+module.exports = serviceProviderServicesModel
