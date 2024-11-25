@@ -81,9 +81,9 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                     getWorkOrderDetails = await getCPDFullWorkOrderDetails(integrationsQuery, workOrderDetails)
 
                     workOrder.workOrderDetails = getWorkOrderDetails
-                    workOrder.type = getWorkOrderDetails.Type
-                    workOrder.category = getWorkOrderDetails.WorkType.Name
-                    workOrder.priority = workOrderDetails.priority
+                    workOrder.type = getWorkOrderDetails?.Type
+                    workOrder.category = getWorkOrderDetails?.WorkType?.Name
+                    workOrder.priority = workOrderDetails?.priority
 
                     break;
                 case 'DF':
