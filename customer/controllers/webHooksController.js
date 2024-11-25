@@ -655,8 +655,11 @@ exports.getWebHookLogsReports = asyncWrapper(async (req, res) => {
     const providedToDate = req.query.toDate ? new Date(req.query.toDate) : null;
     
     // Set default date range (last 7 days)
-    const toDate = providedToDate || new Date();
-    const fromDate = providedFromDate || new Date(new Date().setDate(new Date().getDate() - 6));
+    // const toDate = providedToDate || new Date();
+    // const fromDate = providedFromDate || new Date(new Date().setDate(new Date().getDate() - 6));
+    const toDate = providedToDate ? moment(providedToDate).add(1, 'days').format('YYYY-MM-DDTHH:mm:ss') : moment().add(1, 'days').format('YYYY-MM-DDTHH:mm:ss');
+    const fromDate = providedFromDate ? moment(providedFromDate).format('YYYY-MM-DDTHH:mm:ss') : moment().subtract(6, 'days').format('YYYY-MM-DDTHH:mm:ss');
+
 
     // Validate status values
     const validStatuses = ['received', 'initiated', 'sent', 'delivered', 'failed', 'deleted'];
@@ -693,8 +696,8 @@ exports.getWebHookLogsReports = asyncWrapper(async (req, res) => {
                             as: "webHookLogs",
                             cond: {
                                 $and: [
-                                    { $gte: ["$$webHookLogs.createdAt", fromDate] },
-                                    { $lte: ["$$webHookLogs.createdAt", toDate] },
+                                    { $gte: ["$$webHookLogs.createdAt", new Date(fromDate)] },
+                                    { $lte: ["$$webHookLogs.createdAt", new Date(toDate)] },
                                     ...(statusQuery
                                         ? [{ $eq: ["$$webHookLogs.status", statusQuery] }]
                                         : []),
