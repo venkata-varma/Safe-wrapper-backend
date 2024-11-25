@@ -85,7 +85,6 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             companyName: companyName,
             phone: phone,
             email: email,
-            role: 'super-admin',
         });
         await accountSettingsModel.create({
             accountId: accountData._id,

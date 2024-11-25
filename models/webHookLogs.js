@@ -24,6 +24,7 @@ const webHooksLogsSchema = new mongoose.Schema({
     },
     dataObject:{
         type:mongoose.Schema.Types.Mixed,
+        dataType:String,
         default:{}
     },
     status:{
@@ -33,7 +34,7 @@ const webHooksLogsSchema = new mongoose.Schema({
     },
     primaryHookId:{
         type:String,
-        unique:true,
+        // unique:true,
         default:""
     }
 },{timestamps:true})

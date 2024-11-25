@@ -41,7 +41,7 @@ const usersSchema = new mongoose.Schema({
         type:String,
         enum:['super-admin','admin','manager', 'support'],
         required:[true, 'Role is required.'],
-        default:""
+        default:"admin"
     },
     status:{
         type:String,
