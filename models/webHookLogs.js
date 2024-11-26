@@ -29,7 +29,7 @@ const webHooksLogsSchema = new mongoose.Schema({
     },
     status:{
         type:String,
-        enum:['received','initiated','sent','delevered','failed','deleted'],
+        enum:['received','initiated','sent','delivered','failed','deleted'],
         default:"received"
     },
     primaryHookId:{

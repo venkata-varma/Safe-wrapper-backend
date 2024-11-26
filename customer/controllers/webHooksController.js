@@ -106,7 +106,7 @@ exports.getAllWebHooks = asyncWrapper(async (req, res) => {
     const { accountId, integrationsMasterId } = req.query
     // const getAllWebHooks = await webHooksModel.find({accountId,integrationsMasterId}).sort({_id:-1})
 
-    const statusesEnum = ['received', 'initiated', 'delivered', 'failed', 'deleted'];
+    const statusesEnum = ['received','initiated','sent','delivered','failed','deleted'];
     const getAllWebHooks = await webHooksModel.aggregate([
         {
             $match: {
@@ -361,7 +361,7 @@ exports.getIndividualWebHook = asyncWrapper(async (req, res) => {
         });
     }
     else {
-        const statusesEnum = ['received', 'initiated', 'delivered', 'failed', 'deleted'];
+        const statusesEnum = ['received','initiated','sent','delivered','failed','deleted'];
         const getAllWebHooks = await webHooksModel.aggregate([
             {
                 $match: {
@@ -629,7 +629,7 @@ exports.getWebHookLogsReports = asyncWrapper(async (req, res) => {
 
 
     // Validate status values
-    const validStatuses = ['received', 'initiated', 'sent', 'delivered', 'failed', 'deleted'];
+    const validStatuses = ['received','initiated','sent','delivered','failed','deleted'];
     if (statusQuery && !validStatuses.includes(statusQuery)) {
         statusQuery = null
     }
