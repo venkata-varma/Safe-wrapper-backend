@@ -5,6 +5,7 @@ const serviceProviderIntegrationsModel = require('../../models/serviceProviderIn
 const { defaultSatusMappingKeys, getDefaultDestinationStatusMappingkeys } = require("../../utils/general");
 const customConstants = require('../config/customConstants.json');
 const mongoose  = require("mongoose");
+const serviceProviderListModel = require("../../models/serviceProviderList");
 
 exports.validateServiceProvidersIntegration = asyncWrapper(async(req,res,next)=>{
     const {from, to} = req.body
@@ -57,7 +58,7 @@ exports.validateServiceProviderStatus = asyncWrapper(async(req,res,next)=>{
 })
 exports.validateServiceProviderServiceExist = asyncWrapper(async(req,res,next)=>{
     const {serviceProviderServiceId} = req.params
-    const fieldMappingDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId)
+    const fieldMappingDetails = await serviceProviderListModel.findById(serviceProviderServiceId)
     if(!fieldMappingDetails){
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -79,7 +80,8 @@ exports.updateServiceProviderServices = asyncWrapper(async(req,res)=>{
 })
 
 exports.getIndividualServiceProviderServiceDetails= asyncWrapper(async(req,res)=>{
-    const serviceProviderServiceDetails = await serviceProviderServicesModel.findById(req.params.serviceProviderServiceId)
+    const {serviceProviderServiceId} = req.params
+    const serviceProviderServiceDetails = await serviceProviderServicesModel.find({serviceProviderListId:serviceProviderServiceId})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_FIELD_MAPPING_DETAILS,
