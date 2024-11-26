@@ -7,8 +7,8 @@ const customConstants = require('../config/customConstants.json')
 
 
 exports.validateServiceProviderExist = asyncWrapper(async(req,res,next)=>{
-    const {serviceProviders} = req.body
-    const serviceProviderExist = await serviceProvisersListModel.find({serviceProviders:serviceProviders})
+    const {serviceProviderShortName, serviceProviderFullName} = req.body
+    const serviceProviderExist = await serviceProvisersListModel.find({$or:[{serviceProviderShortName:serviceProviderShortName},{serviceProviderFullName:serviceProviderFullName}]})
     if(serviceProviderExist.length>0){
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
