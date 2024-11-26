@@ -29,7 +29,7 @@ exports.createServiceProvidersIntegration = asyncWrapper(async(req,res)=>{
 })
 
 exports.createServiceProviderServices = asyncWrapper(async(req,res)=>{
-    const addServiceProviderService = await serviceProviderServicesModel.create({...req.body,serviceProvider:serviceProviderShortName,status:"active"})
+    const addServiceProviderService = await serviceProviderServicesModel.create({...req.body,serviceProvider:req.body.serviceProviderShortName,status:"active"})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ADD_FIELD_MAPPINGS,
