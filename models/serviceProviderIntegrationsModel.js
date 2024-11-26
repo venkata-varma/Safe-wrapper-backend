@@ -34,6 +34,10 @@ const serviceProviderIntegrations = new mongoose.Schema({
     mapping : {
         type : Object,
         default : {}
+    },
+    status:{
+        type:String,
+        default:"active"
     }
 },{timestamps:true});
 
