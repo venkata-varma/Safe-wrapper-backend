@@ -58,7 +58,7 @@ exports.validateServiceProviderStatus = asyncWrapper(async(req,res,next)=>{
 })
 exports.validateServiceProviderServiceExist = asyncWrapper(async(req,res,next)=>{
     const {serviceProviderServiceId} = req.params
-    const fieldMappingDetails = await serviceProviderListModel.findById(serviceProviderServiceId)
+    const fieldMappingDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId)
     if(!fieldMappingDetails){
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -81,7 +81,7 @@ exports.updateServiceProviderServices = asyncWrapper(async(req,res)=>{
 
 exports.getIndividualServiceProviderServiceDetails= asyncWrapper(async(req,res)=>{
     const {serviceProviderServiceId} = req.params
-    const serviceProviderServiceDetails = await serviceProviderServicesModel.find({serviceProviderListId:serviceProviderServiceId})
+    const serviceProviderServiceDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_FIELD_MAPPING_DETAILS,

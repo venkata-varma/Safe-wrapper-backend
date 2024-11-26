@@ -146,7 +146,7 @@ exports.updateServiceProviderList = asyncWrapper(async (req, res) => {
 exports.getIndividualServiceProviderServiceDetails = asyncWrapper(async(req,res)=>{
     const {serviceProviderId} = req.params
     const serviceProviderDetails = await serviceProvisersListModel.findById(serviceProviderId).lean()
-    const serviceProviderServices = await serviceProviderServicesModel.find({serviceProvider:serviceProviderDetails.serviceProviders})
+    const serviceProviderServices = await serviceProviderServicesModel.find({serviceProviderListId:serviceProviderId})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER,
