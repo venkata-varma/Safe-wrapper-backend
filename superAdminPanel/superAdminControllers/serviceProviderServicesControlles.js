@@ -6,6 +6,19 @@ const { defaultSatusMappingKeys, getDefaultDestinationStatusMappingkeys } = requ
 const customConstants = require('../config/customConstants.json');
 const mongoose  = require("mongoose");
 
+exports.validateServiceProvidersIntegration = asyncWrapper(async(req,res,next)=>{
+    const {from, to} = req.body
+    const serviceProvidersIntegrationsDetails = await serviceProviderIntegrationsModel.find({from:from,to:to})
+    if(serviceProvidersIntegrationsDetails.length > 0){
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION_EXIST,
+        })
+    }
+    else{
+        next()
+    }
+})
 
 exports.createServiceProvidersIntegration = asyncWrapper(async(req,res)=>{
     await serviceProviderIntegrationsModel.create({...req.body})
