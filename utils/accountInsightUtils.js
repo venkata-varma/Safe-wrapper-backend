@@ -421,7 +421,7 @@ exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, d
 
 exports.getWebHooksLogsSixWeekSalesData = async (getWebHookLogs) => {
     const sixWeekSalesData = sixWeekSales
-    const statusesEnum = ['received', 'initiated', 'delivered', 'failed', 'deleted'];
+    const statusesEnum = ['received','initiated','sent','delivered','failed','deleted'];
 
     const processSalesData = (sixWeeksSalesData, getWebHookLogs) => {
         return sixWeeksSalesData.map(week => {
