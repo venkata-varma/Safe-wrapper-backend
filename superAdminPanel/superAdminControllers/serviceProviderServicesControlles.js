@@ -43,6 +43,14 @@ exports.validateServiceProvidersIntegrationExist = asyncWrapper(async(req,res,ne
     }
 })
 
+exports.updateServiceProvidersIntegration = asyncWrapper(async(req,res)=>{
+    const {serviceProviderIntegrationId} = req.params
+    await serviceProviderIntegrationsModel.findByIdAndUpdate(serviceProviderIntegrationId,{...req.body},{new:true})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION_UPDATE,
+    })
+})
 exports.updateServiceProvidersIntegrationStatus = asyncWrapper(async(req,res)=>{
     const {serviceProviderIntegrationId} = req.params
     const {status} = req.body
@@ -265,7 +273,9 @@ exports.getAllServiceProviderIntegrations = asyncWrapper(async(req,res)=>{
             },
             {
                 $addFields: {
-                    integrationMappingsCount: { $size: "$integrationMappings" }
+                    integrationMappingsCount: { $size: "$integrationMappings" },
+                    fromServiceProviderListId:"$fromServiceProviderDetails",
+                    toServiceProviderListId:"$toServiceProviderDetails"
                 }
             },
             {
@@ -282,19 +292,17 @@ exports.getAllServiceProviderIntegrations = asyncWrapper(async(req,res)=>{
                     createdAt:1,
                     updateAt:1,
                     serviceProviderIntegrationId:1,
-                    fromServiceProviderDetails: {
+                    fromServiceProviderListId: {
                         serviceProviderFullName: 1,
                         serviceProviderShortName: 1,
                         serviceProviderListId: 1,
                         markedLogo: 1,
-                        fromServiceProviderListId:1
                     },
-                    toServiceProviderDetails: {
+                    toServiceProviderListId: {
                         serviceProviderFullName: 1,
                         serviceProviderShortName: 1,
                         serviceProviderListId: 1,
                         markedLogo: 1,
-                        toServiceProviderListId:1
                     },
                     integrationMappingsCount: 1
                 }

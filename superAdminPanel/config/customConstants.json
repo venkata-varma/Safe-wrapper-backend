@@ -58,6 +58,7 @@
       "MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION_EXIST":"Service providers integration already exist.", 
       "MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION_NOT_EXIST":"Respective integration does not exist.",      
       "MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION":"Service providers integration created successfully.",
+      "MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION_UPDATE":"Service providers integration updated successfully.",
       "MESSAGE_UPDATE_SERVICE_PROVIDERS_INTEGRATION_STATUS_DELETE":"Integration service deleted successfully.",
       "MESSAGE_UPDATE_SERVICE_PROVIDERS_INTEGRATION_STATUS_OFFLINE":"Integration service deactivated successfully.",
       "MESSAGE_UPDATE_SERVICE_PROVIDERS_INTEGRATION_STATUS_ACTIVE":"Integration service activated successfully."    
