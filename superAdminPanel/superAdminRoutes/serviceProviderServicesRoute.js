@@ -5,7 +5,8 @@ const {superAdminAuth} = require('../middleware/superAdminAuthentication')
 router.use(superAdminAuth)
 
 router.post('/create-service-provider-integration',serviceProviderServicesController.validateServiceProvidersIntegration,serviceProviderServicesController.createServiceProvidersIntegration)
-
+router.patch('/update-service-providers-integration-status/:serviceProviderIntegrationId',serviceProviderServicesController.validateServiceProvidersIntegrationExist,serviceProviderServicesController.updateServiceProvidersIntegrationStatus)
+router.get('/get-all-service-provider-integrations',serviceProviderServicesController.getAllServiceProviderIntegrations)
 
 router.post('/create-service-provider-services',serviceProviderServicesController.createServiceProviderServices)
 router.patch('/update-service-provider-services/:serviceProviderServiceId',serviceProviderServicesController.validateServiceProviderStatus, serviceProviderServicesController.updateServiceProviderServices)
@@ -18,7 +19,6 @@ router.post('/create-service-providers-integration-services',
     serviceProviderServicesController.createServiceProvidersIntegrationService)
 router.patch('/update-service-providers-integration-services/:serviceProviderIntegrationServiceId',serviceProviderServicesController.updatecreateServiceProvidersIntegrationService)
 
-router.get('/get-all-service-provider-integrations',serviceProviderServicesController.getAllServiceProviderIntegrations)
 router.get('/get-all-service-provider-services-to-create-integration/:serviceProviderIntegrationId',serviceProviderServicesController.getAllServiceProviderServicesToCreateIntegration)
 router.get('/get-individual-service-providers-integration-details/:serviceProviderIntegrationId',serviceProviderServicesController.getIndividualServiceProviderIntegrationsDetails)
 router.get('/get-all-service-providers-integration-with-services',serviceProviderServicesController.getAllServiceProversIntegrationDefaultFiledMappingServices)

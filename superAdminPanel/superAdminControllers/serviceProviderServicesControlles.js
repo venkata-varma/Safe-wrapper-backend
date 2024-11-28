@@ -29,6 +29,47 @@ exports.createServiceProvidersIntegration = asyncWrapper(async(req,res)=>{
     })
 })
 
+exports.validateServiceProvidersIntegrationExist = asyncWrapper(async(req,res,next)=>{
+    const {serviceProviderIntegrationId} = req.params
+    const serviceProviderIntegrationDetails = await serviceProviderIntegrationsModel.findById(serviceProviderIntegrationId)
+    if(!serviceProviderIntegrationDetails){
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION_NOT_EXIST,
+        })
+    }
+    else{
+        next()
+    }
+})
+
+exports.updateServiceProvidersIntegrationStatus = asyncWrapper(async(req,res)=>{
+    const {serviceProviderIntegrationId} = req.params
+    const {status} = req.body
+    if(status === 'delete'){
+        await serviceProviderIntegrationsModel.findByIdAndUpdate(serviceProviderIntegrationId,{status:"deleted"},{new:true})
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDERS_INTEGRATION_STATUS_DELETE,
+        })
+    }
+    else if(status === 'active'){
+        await serviceProviderIntegrationsModel.findByIdAndUpdate(serviceProviderIntegrationId,{status:"active"},{new:true})
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDERS_INTEGRATION_STATUS_ACTIVE,
+        })
+    }
+    else if(status === 'offline'){
+        await serviceProviderIntegrationsModel.findByIdAndUpdate(serviceProviderIntegrationId,{status:"offline"},{new:true})
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDERS_INTEGRATION_STATUS_OFFLINE,
+        })
+    }
+
+})
+
 exports.createServiceProviderServices = asyncWrapper(async(req,res)=>{
     const addServiceProviderService = await serviceProviderServicesModel.create({...req.body,serviceProvider:req.body.serviceProviderShortName,status:"active"})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -178,9 +219,89 @@ exports.getIndividualServiceProvidersIntegrationService = asyncWrapper(async(req
 
 
 exports.getAllServiceProviderIntegrations = asyncWrapper(async(req,res)=>{
-    let serviceProviderIntegrationsDetails = await serviceProviderIntegrationsModel.find({})
-                                                .populate({path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"})
-                                                .populate({path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"})
+   
+    const serviceProviderIntegrationsDetails = await serviceProviderIntegrationsModel.aggregate(
+        [
+            {
+                $addFields: {
+                    serviceProviderIntegrationDetails: "$$ROOT"
+                }
+            },
+            {
+                $lookup: {
+                    from: "serviceproviderlists",
+                    localField: "fromServiceProviderListId",
+                    foreignField: "_id",
+                    as: "fromServiceProviderDetails"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$fromServiceProviderDetails",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $lookup: {
+                    from: "serviceproviderlists",
+                    localField: "toServiceProviderListId",
+                    foreignField: "_id",
+                    as: "toServiceProviderDetails"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$toServiceProviderDetails",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $lookup: {
+                    from: "serviceprovidersintegrationwithservices",
+                    localField: "_id",
+                    foreignField: "serviceProviderIntegrationId",
+                    as: "integrationMappings"
+                }
+            },
+            {
+                $addFields: {
+                    integrationMappingsCount: { $size: "$integrationMappings" }
+                }
+            },
+            {
+                $project: {
+                    // "serviceProviderIntegrationDetails": 0,
+                    fromServiceProviderListId: 1,
+                    toServiceProviderListId: 1,
+                    services: 1,
+                    filterServices: 1,
+                    mapping: 1,
+                    from:1,
+                    to:1,
+                    status:1,
+                    createdAt:1,
+                    updateAt:1,
+                    serviceProviderIntegrationId:1,
+                    fromServiceProviderDetails: {
+                        serviceProviderFullName: 1,
+                        serviceProviderShortName: 1,
+                        serviceProviderListId: 1,
+                        markedLogo: 1,
+                        fromServiceProviderListId:1
+                    },
+                    toServiceProviderDetails: {
+                        serviceProviderFullName: 1,
+                        serviceProviderShortName: 1,
+                        serviceProviderListId: 1,
+                        markedLogo: 1,
+                        toServiceProviderListId:1
+                    },
+                    integrationMappingsCount: 1
+                }
+            }
+        ]
+        );
+    
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
