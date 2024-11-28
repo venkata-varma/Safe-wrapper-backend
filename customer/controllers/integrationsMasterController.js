@@ -128,6 +128,41 @@ exports.getImages = asyncWrapper(async (req, res) => {
       url : 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/devRabbit_logo.png'
     }
   ]
+  
+  const serviceProviderLogos = [
+    {
+      name: "TT",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/TurboTax_logo.png'      
+    },
+    {
+      name: "CPD",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/CorrigoPro_logo.png'      
+    },
+    {
+      name: "DF",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/Quickbooks_logo.png'      
+    },
+    {
+      name: "CYS",
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/cyrious_log.png'
+    },
+    {
+      name: "SNOW",
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/servicenow_logo.png'
+    },
+    {
+      name: "QB",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/TurboTax_logo.png'      
+    },
+    {
+      name: "SC",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/serviceChannel_logo.png'      
+    },
+    {
+      name: "AM",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/Acumatica_logo.png'      
+    }
+  ]
 
   if (!baseUrl || !imageUrls) {
     return res.status(500).json({ error: "Unable to construct image URL" });
@@ -138,7 +173,7 @@ exports.getImages = asyncWrapper(async (req, res) => {
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_IMAGES,
-      imageUrls,
+      imageUrls,serviceProviderLogos
     });
 });
 
