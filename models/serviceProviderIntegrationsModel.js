@@ -15,6 +15,10 @@ const serviceProviderIntegrations = new mongoose.Schema({
         ref:'serviceProviderList',
         default:null
     },
+    name:{
+        type:String,
+        default:""
+    },
     from :{
         type : String,
         default : ""
