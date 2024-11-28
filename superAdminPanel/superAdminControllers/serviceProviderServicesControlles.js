@@ -121,7 +121,7 @@ exports.validateServiceProviderServiceExist = asyncWrapper(async(req,res,next)=>
 
 exports.updateServiceProviderServices = asyncWrapper(async(req,res)=>{
     const {serviceProviderServiceId} = req.params
-    const updateServiceProviderServices = await serviceProviderServicesModel.findByIdAndUpdate(serviceProviderServiceId,{...req.body,serviceProvider:serviceProviderShortName},{new:true})
+    const updateServiceProviderServices = await serviceProviderServicesModel.findByIdAndUpdate(serviceProviderServiceId,{...req.body,serviceProvider:req.body.serviceProviderShortName},{new:true})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_FIELD_MAPPINGS,
