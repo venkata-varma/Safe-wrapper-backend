@@ -23,7 +23,7 @@ exports.validateServiceProviderExist = asyncWrapper(async(req,res,next)=>{
 exports.createServiceproviders = asyncWrapper(async(req,res)=>{
     const {logo,serviceProviderShortName,serviceProviderFullName,testCredentials,workOrderStatus,status = "active"} = req.body
     let encryptCode
-    if(req.body.credentials){
+    if(testCredentials !== null && testCredentials){
         encryptCode = await encryptData(req.body.credentials)
     }
     else{
