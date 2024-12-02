@@ -60,7 +60,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
 
     const baseUrl = process.env.DOMAIN_NAME;
     const { accountName, companyName, email, phone, password, status } = req.body
-    const accountDetails = await accountsModel.findOne({ $or: [{ email }, { phone }] })
+    const accountDetails = await usersModel.findOne({ $or: [{ email }, { phone }] })
     if (accountDetails) {
         return res.status(409).json({
             status: customConstants.messages.MESSAGE_FAIL,
