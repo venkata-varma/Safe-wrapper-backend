@@ -10,10 +10,13 @@ const {createWebHook,
     generateWebhookToken,
     validateWebHookData,
     createWebHookLog,
-    getWebHookLogsReports} = require('../controllers/webHooksController')
+    getWebHookLogsReports,
+    CPDTestWebHookLog} = require('../controllers/webHooksController')
 
 
 router.post('/create-webhook-logs',validateWebHookData, createWebHookLog)
+router.post('/cpd-test-webhook', CPDTestWebHookLog)
+
 
 const auth = require('../../middleware/authentication')
 router.use(auth)

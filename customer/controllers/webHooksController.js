@@ -599,6 +599,29 @@ exports.createWebHookLog = asyncWrapper(async (req, res) => {
         });
 })
 
+
+/**
+ * Create CPD test webhook log.
+ */
+
+exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
+    const { dataObject, primaryHookId } = req.body
+    // const token = req.headers.authorization.split(' ')[1]
+    // const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token })
+    await webHookLogsModel.create({
+        // accountId: webHookDetails.accountId,
+        // integrationsMasterId: webHookDetails.integrationsMasterId,
+        webHookId: webHookDetails._id,
+        dataObject: dataObject,
+        primaryHookId: primaryHookId
+    })
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_CREATE_WEBHOOK_LOG
+        });
+})
 /**
  * Get the webhook logs reports by filters.
  */
