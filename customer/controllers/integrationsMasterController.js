@@ -129,38 +129,38 @@ exports.getImages = asyncWrapper(async (req, res) => {
     }
   ]
   
-  const serviceProviderLogos = [
+  const serviceProviderMarkedLogos = [
     {
       name: "TT",
-      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/TurboTax_logo.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/TurboTax_png.png'      
     },
     {
       name: "CPD",
-      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/CorrigoPro_logo.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/CorrigoPro_png.png'      
     },
     {
       name: "DF",
-      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/Quickbooks_logo.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/dataforma_png.png'      
     },
     {
       name: "CYS",
-      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/cyrious_log.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/cyrious_png.png'
     },
     {
       name: "SNOW",
-      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/servicenow_logo.png'
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/servicenow_png.png'
     },
     {
       name: "QB",
-      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/TurboTax_logo.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/Quickbooks_png.png'      
     },
     {
       name: "SC",
-      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/serviceChannel_logo.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/servicechannel_png.png'      
     },
     {
       name: "AM",
-      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/dev-isync-markedLogos/Acumatica_logo.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/Acumatica_png.png'      
     }
   ]
 
@@ -173,7 +173,7 @@ exports.getImages = asyncWrapper(async (req, res) => {
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_IMAGES,
-      imageUrls,serviceProviderLogos
+      imageUrls,serviceProviderMarkedLogos
     });
 });
 
