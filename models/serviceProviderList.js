@@ -35,6 +35,10 @@ const serviceProviderListSchema = new mongoose.Schema({
         // required: [true, "Credentials are mandatory"],
         default:null
     },
+    categories:{
+        type:Array,
+        default:[]
+    },
     workOrderStatus:{
         type : Array,
         default : []

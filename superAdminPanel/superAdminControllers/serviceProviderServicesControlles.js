@@ -130,7 +130,7 @@ exports.updateServiceProviderServices = asyncWrapper(async(req,res)=>{
 
 exports.getIndividualServiceProviderServiceDetails= asyncWrapper(async(req,res)=>{
     const {serviceProviderServiceId} = req.params
-    const serviceProviderServiceDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId)
+    const serviceProviderServiceDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId).populate('serviceProviderListId','serviceProviderFullName serviceProviderShortName categories markedLogo serviceProviderListId _id')
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_FIELD_MAPPING_DETAILS,
@@ -162,8 +162,8 @@ exports.getAllServiceProversIntegrationDefaultFiledMappingServices = asyncWrappe
                                                 .populate({
                                                     path:"serviceProviderIntegrationId",
                                                     populate:[
-                                                        {path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"},
-                                                        {path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"}
+                                                        {path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo categories"},
+                                                        {path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo categories"}
                                                     ]
                                                 })
 
@@ -212,8 +212,8 @@ exports.getIndividualServiceProvidersIntegrationService = asyncWrapper(async(req
                                                      .populate({
                                                          path:"serviceProviderIntegrationId",
                                                          populate:[
-                                                             {path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"},
-                                                             {path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"}
+                                                             {path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo categories"},
+                                                             {path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo categories"}
                                                          ]
                                                      })
     let defaultSourceFieldMappingKeys = await defaultSatusMappingKeys(defaultFieldMappingServiceDetails.from)
@@ -296,12 +296,14 @@ exports.getAllServiceProviderIntegrations = asyncWrapper(async(req,res)=>{
                         serviceProviderFullName: 1,
                         serviceProviderShortName: 1,
                         serviceProviderListId: 1,
+                        categories:1,
                         markedLogo: 1,
                     },
                     toServiceProviderListId: {
                         serviceProviderFullName: 1,
                         serviceProviderShortName: 1,
                         serviceProviderListId: 1,
+                        categories:1,
                         markedLogo: 1,
                     },
                     integrationMappingsCount: 1
@@ -324,8 +326,8 @@ exports.getIndividualServiceProviderIntegrationsDetails = asyncWrapper(async(req
                                                                 .populate({
                                                                     path:"serviceProviderIntegrationId",
                                                                     populate:[
-                                                                        {path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo "},
-                                                                        {path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo"}
+                                                                        {path:"fromServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo categories "},
+                                                                        {path:"toServiceProviderListId", select:"serviceProviderFullName serviceProviderShortName serviceProviderListId markedLogo categories"}
                                                                     ]
                                                                 })
 
@@ -388,6 +390,9 @@ exports.getAllServiceProviderServicesToCreateIntegration = asyncWrapper(async(re
                     },
                     serviceProviderShortName:{
                         $arrayElemAt:['$fromServiceProviderServiceList.serviceProviderShortName',0]
+                    },
+                    categories:{
+                        $arrayElemAt:['$fromServiceProviderServiceList.categories',0]
                     }
 
                 },
@@ -400,6 +405,9 @@ exports.getAllServiceProviderServicesToCreateIntegration = asyncWrapper(async(re
                     },
                     serviceProviderShortName:{
                         $arrayElemAt:['$toServiceProviderServiceList.serviceProviderShortName',0]
+                    },
+                    categories:{
+                        $arrayElemAt:['$fromServiceProviderServiceList.categories',0]
                     }
                 }                
             }
