@@ -611,8 +611,8 @@ exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
     await webHookLogsModel.create({
         // accountId: webHookDetails.accountId,
         // integrationsMasterId: webHookDetails.integrationsMasterId,
-        // webHookId: webHookDetails._id,
-        dataObject: req.body,
+        webHookId: new mongoose.Types.ObjectId('674d78c44924d5d293cf53ae'),
+        dataObject: dataObject,
         primaryHookId: primaryHookId
     })
     return res
