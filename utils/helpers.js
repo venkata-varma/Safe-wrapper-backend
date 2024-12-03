@@ -4,6 +4,13 @@ const { encryptData, decryptData } = require('./encryptionAlgorithms')
 
 const key = Buffer.from(process.env.CRYPTO_KEY, 'hex');
 let iv = Buffer.from(process.env.CRYPTO_IV, 'hex')
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
 async function hashPwd(pwd) {
 
     var hmac = await bcrypt.hash(pwd, Number(process.env.WEBSITE_SALT));
@@ -54,9 +61,29 @@ for (let i = 0; i < 12; i++) {
     currentEndDate.setMilliseconds(currentEndDate.getMilliseconds() - 1); // Set up for the next week's end date
 }
 
+const AWS_REGION = 'us-west-1'
+const S3_BUCKET = 'dev-isync-imgs'
+const client = new S3Client({
+  region: AWS_REGION,
+});
+async function preSignedUrlToUpload(key) {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: key,
+        ACL: "public-read",
+      });
+      const url = await getSignedUrl(client, command, { expiresIn: 3600 })
+      // const url = await presignedUrl(command);
+      return url;
+    } catch (err) {
+      throw err;
+    }
+  }
 
 module.exports = {
     hashPwd, 
     comparePassword,
-    twelveWeeksSales   
+    twelveWeeksSales,
+    preSignedUrlToUpload   
 }
