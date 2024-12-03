@@ -32,6 +32,11 @@ const webHooksLogsSchema = new mongoose.Schema({
         dataType:String,
         default:{}
     },
+    dataObjectHeader:{
+        type:mongoose.Schema.Types.Mixed,
+        dataType:String,
+        default:{}
+    },
     status:{
         type:String,
         enum:['received','initiated','sent','delivered','failed','deleted'],
