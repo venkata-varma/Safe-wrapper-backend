@@ -9,8 +9,12 @@ const multer = require('multer');
 const { preSignedUrlToUpload } = require('../../utils/helpers');
 
 const upload = multer({ storage: multer.memoryStorage() });
-
+const AWS = require('aws-sdk');
+const s3 = new AWS.S3({
+    region: 'us-west-1'
+});
 // Route for generating presigned URL for file upload
+/*
 router.post('/get-image', upload.single('file'), async (req, res) => {
     try {
         console.log('req.file.file:===',req.file)
@@ -26,6 +30,35 @@ router.post('/get-image', upload.single('file'), async (req, res) => {
         return res.json(error)
     }
 });
+*/
+
+router.post('/get-image', upload.single('file'), async (req, res) => {
+    try {
+        console.log('req.file.file:===', req.file);
+
+        const fileName = `uploads/${Date.now()}-${req.file.originalname}`;
+        const params = {
+            Bucket: 'dev-isync-images',
+            Key: fileName, // e.g., image name or path
+            Expires: 60, // URL expiration in seconds
+            ContentType: 'image/png', // Type of file being uploaded
+        };
+        const presignedUrl = await s3.getSignedUrlPromise('putObject', params); 
+
+        let URL = `https://dev-isync-images.s3.us-west-1.amazonaws.com/${fileName}`;
+        console.log('Presigned URL:', presignedUrl);
+
+        return res.json({ url: presignedUrl, OURL: URL });
+    } catch (error) {
+        console.error('Error generating presigned URL:', error);
+        return res.status(500).json({ error: 'Failed to generate presigned URL', details: error });
+    }
+});
+
+
+
+
+
 
 router.post('/create-account',upload.single('logo'), accountsControllers.validateAccountRegistration, accountsControllers.createAccount)
 router.use(auth)
