@@ -611,7 +611,7 @@ exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
     const { dataObject, primaryHookId } = req.body
     // const token = req.headers.authorization.split(' ')[1]
     // const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token })
-    const sanitizedDataObject = stringify(dataObject);
+    const sanitizedDataObject = stringify(req.body);
     const sanitizedHeaders = stringify(req.headers);
     const sanitizedResData = stringify(res.data);
     const sanitizedRes = stringify(res);
