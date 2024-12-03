@@ -40,7 +40,7 @@ router.post('/get-image', upload.single('file'), async (req, res) => {
         const params = {
             Bucket: 'dev-isync-images',
             Key: fileName, // e.g., image name or path
-            Expires: 60, // URL expiration in seconds
+            Expires: 60*60, // URL expiration in seconds
             ContentType: 'image/png', // Type of file being uploaded
         };
         const presignedUrl = await s3.getSignedUrlPromise('putObject', params); 
