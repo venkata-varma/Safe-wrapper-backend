@@ -32,6 +32,16 @@ const webHooksLogsSchema = new mongoose.Schema({
         dataType:String,
         default:{}
     },
+    dataObject2:{
+        type:mongoose.Schema.Types.Mixed,
+        dataType:String,
+        default:{}
+    },
+    dataObject3:{
+        type:mongoose.Schema.Types.Mixed,
+        dataType:String,
+        default:{}
+    },
     dataObjectHeader:{
         type:mongoose.Schema.Types.Mixed,
         dataType:String,
