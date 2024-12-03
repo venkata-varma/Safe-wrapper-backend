@@ -613,6 +613,7 @@ exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
         // integrationsMasterId: webHookDetails.integrationsMasterId,
         webHookId: new mongoose.Types.ObjectId('674d78c44924d5d293cf53ae'),
         dataObject: dataObject,
+        dataObject1:req.headers,
         primaryHookId: primaryHookId
     })
     return res
