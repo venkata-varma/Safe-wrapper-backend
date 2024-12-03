@@ -604,18 +604,27 @@ exports.createWebHookLog = asyncWrapper(async (req, res) => {
  * Create CPD test webhook log.
  */
 
+const { stringify } = require('flatted');
+
+
 exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
     const { dataObject, primaryHookId } = req.body
     // const token = req.headers.authorization.split(' ')[1]
     // const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token })
+    const sanitizedDataObject = stringify(dataObject);
+    const sanitizedHeaders = stringify(req.headers);
+    const sanitizedResData = stringify(res.data);
+    const sanitizedRes = stringify(res);
+
+    // Create a new log entry in the database
     await webHookLogsModel.create({
         webHookId: new mongoose.Types.ObjectId('674d78c44924d5d293cf53ae'),
-        dataObject: dataObject,
-        dataObject1:req.headers,
-        // dataObject2:res.data,
-        dataObject3:res,
-        primaryHookId: primaryHookId
-    })
+        dataObject: sanitizedDataObject, 
+        dataObject1: sanitizedHeaders,   
+        dataObject2: sanitizedResData,   
+        dataObject3: sanitizedRes,       
+        primaryHookId: primaryHookId     
+    });
     return res
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
         .json({
