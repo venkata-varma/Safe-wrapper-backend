@@ -615,7 +615,7 @@ exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
         dataObject: dataObject,
         dataObject1:req.headers,
         dataObject2:res.data,
-        dataObject3:res.data.Headers,
+        dataObject3:res.data.headers,
         dataObjectHeader:res,
         primaryHookId: primaryHookId
     })
