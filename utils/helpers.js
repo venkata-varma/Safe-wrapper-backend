@@ -62,7 +62,7 @@ for (let i = 0; i < 12; i++) {
 }
 
 const AWS_REGION = 'us-west-1'
-const S3_BUCKET = 'dev-isync-imgs'
+const S3_BUCKET = 'dev-isync-images'
 const client = new S3Client({
   region: AWS_REGION,
 });
