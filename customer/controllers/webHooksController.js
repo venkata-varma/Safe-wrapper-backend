@@ -8,6 +8,7 @@ const webHooksMasterModel = require("../../models/webHooksMasterModel");
 const webHookLogsModel = require("../../models/webHookLogs");
 const { default: mongoose } = require("mongoose");
 const moment = require('moment');
+const { stringify } = require('flatted');
 const { getWebHooksLogsSixWeekSalesData } = require("../../utils/accountInsightUtils");
 
 /**
@@ -604,25 +605,15 @@ exports.createWebHookLog = asyncWrapper(async (req, res) => {
  * Create CPD test webhook log.
  */
 
-const { stringify } = require('flatted');
-
-
 exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
-    const { dataObject, primaryHookId } = req.body
     // const token = req.headers.authorization.split(' ')[1]
     // const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token })
     const sanitizedDataObject = stringify(req.body);
-    const sanitizedHeaders = stringify(req.headers);
-    const sanitizedResData = stringify(res.data);
-    const sanitizedRes = stringify(res);
 
     // Create a new log entry in the database
     await webHookLogsModel.create({
         webHookId: new mongoose.Types.ObjectId('674d78c44924d5d293cf53ae'),
-        dataObject: sanitizedDataObject, 
-        dataObject1: sanitizedHeaders,   
-        dataObject2: sanitizedResData,   
-        dataObject3: sanitizedRes,       
+        dataObject: sanitizedDataObject,     
         primaryHookId: primaryHookId     
     });
     return res

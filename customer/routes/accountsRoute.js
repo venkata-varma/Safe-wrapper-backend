@@ -1,64 +1,8 @@
 const router = require('express').Router();
 const { access } = require('fs');
 const accountsControllers = require('../controllers/accountsController');
-const path = require('path')
 const auth = require('../../middleware/authentication');
-// const {upload}=require('../../utils/fileUpload')
-
-const multer = require('multer');
-const { preSignedUrlToUpload } = require('../../utils/helpers');
-
-const upload = multer({ storage: multer.memoryStorage() });
-const AWS = require('aws-sdk');
-const s3 = new AWS.S3({
-    region: 'us-west-1'
-});
-// Route for generating presigned URL for file upload
-/*
-router.post('/get-image', upload.single('file'), async (req, res) => {
-    try {
-        console.log('req.file.file:===',req.file)
-        const fileName = `uploads/${Date.now()}-${req.file.originalname}`;
-        
-        // const presignedUrl = await getPresignedUrl("dev-isync-images", fileName);
-        let presignedUrl = await preSignedUrlToUpload(fileName)
-        console.log('Presigned URL:', presignedUrl);
-        let URL =  `https://dev-isync-imgs.s3.us-west-1.amazonaws.com/${fileName}`
-        return res.json({ url: presignedUrl, OURL: URL });
-    }
-    catch (error) {
-        return res.json(error)
-    }
-});
-*/
-
-router.post('/get-image', upload.single('file'), async (req, res) => {
-    try {
-        console.log('req.file.file:===', req.file);
-
-        const fileName = `uploads/${Date.now()}-${req.file.originalname}`;
-        const params = {
-            Bucket: 'dev-isync-images',
-            Key: fileName, // e.g., image name or path
-            Expires: 60*60, // URL expiration in seconds
-            // ContentType: 'image/png', // Type of file being uploaded
-            ACL: 'public-read'
-        };
-        const presignedUrl = await s3.getSignedUrlPromise('putObject', params); 
-
-        let URL = `https://dev-isync-images.s3.us-west-1.amazonaws.com/${fileName}`;
-        console.log('Presigned URL:', presignedUrl);
-
-        return res.json({ url: presignedUrl, OURL: URL });
-    } catch (error) {
-        console.error('Error generating presigned URL:', error);
-        return res.status(500).json({ error: 'Failed to generate presigned URL', details: error });
-    }
-});
-
-
-
-
+const {upload}=require('../../utils/fileUpload')
 
 
 router.post('/create-account',upload.single('logo'), accountsControllers.validateAccountRegistration, accountsControllers.createAccount)
