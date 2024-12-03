@@ -609,14 +609,11 @@ exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
     // const token = req.headers.authorization.split(' ')[1]
     // const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token })
     await webHookLogsModel.create({
-        // accountId: webHookDetails.accountId,
-        // integrationsMasterId: webHookDetails.integrationsMasterId,
         webHookId: new mongoose.Types.ObjectId('674d78c44924d5d293cf53ae'),
         dataObject: dataObject,
         dataObject1:req.headers,
-        dataObject2:res.data,
+        // dataObject2:res.data,
         dataObject3:res,
-        dataObjectHeader:req.headers,
         primaryHookId: primaryHookId
     })
     return res
