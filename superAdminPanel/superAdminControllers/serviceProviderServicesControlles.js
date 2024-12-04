@@ -194,8 +194,8 @@ exports.getAllServiceProversIntegrationDefaultFiledMappingServices = asyncWrappe
 })
 
 exports.validateServiceProvidersIntegrationService = asyncWrapper(async(req,res,next)=>{
-    const {from, to, dataPoints, dataPointURL, serviceMethod, dataPointPriority, serviceType} = req.body
-    const validateFieldMappingDefaultServices = await serviceProvidersIntegrationWithServicesModel.find({from:from, to:to, serviceMethod:serviceMethod, serviceType: serviceType})
+    const {from, to, dataPoints, dataPointURL, serviceMethod, dataPointPriority, serviceName} = req.body
+    const validateFieldMappingDefaultServices = await serviceProvidersIntegrationWithServicesModel.find({from:from, to:to, serviceMethod:serviceMethod, serviceName: serviceName})
     if(validateFieldMappingDefaultServices.length > 0){
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,

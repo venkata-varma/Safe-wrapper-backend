@@ -279,7 +279,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         },
         {
             $addFields:{
-                serviceTypes:"$integrationsFieldMappings.serviceType"
+                serviceName:"$integrationsFieldMappings.serviceName"
             }
         },
         {
