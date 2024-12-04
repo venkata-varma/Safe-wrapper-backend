@@ -649,7 +649,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       to: integrationDetails.to,
       serviceMethod: keyMapping.serviceMethod,
       dataPointURL: `${keyMapping.dataPointURL}`,
-      dataPoints: keyMapping.work_order
+      mappedDataPoints: keyMapping.work_order
     }
     let create_work_order_field_mapping_keys = await serviceProvidersIntegrationWithServicesModel.create(create_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
 
@@ -659,7 +659,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       to: integrationDetails.to,
       serviceMethod: keyMapping.updateServiceMethod,
       dataPointURL: `${keyMapping.updateDataPointURL}`,
-      dataPoints: keyMapping.update_work_order_keys
+      mappedDataPoints: keyMapping.update_work_order_keys
     }
     let update_work_order_field_mapping_keys = await serviceProvidersIntegrationWithServicesModel.create(update_work_order_keys_data_to_upload_fieldMappingMasterDefaultServicesModel);
 
