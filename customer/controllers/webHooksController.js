@@ -608,7 +608,7 @@ exports.createWebHookLog = asyncWrapper(async (req, res) => {
 exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
     // const token = req.headers.authorization.split(' ')[1]
     // const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token })
-    const sanitizedDataObject = stringify(req.body);
+    const sanitizedDataObject = req.body;
 
     // Create a new log entry in the database
     await webHookLogsModel.create({
