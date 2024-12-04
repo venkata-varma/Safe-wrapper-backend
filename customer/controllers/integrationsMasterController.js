@@ -1372,8 +1372,8 @@ exports.middlewareForAccountIntegrationExist = asyncWrapper(async (req, res, nex
 
 exports.getFieldMappingsByServiceType = asyncWrapper(async (req, res) => {
   const integrationsMasterId = req.query.integrationsMasterId;
-  const { serviceType } = req.query;
-  const integrationFieldMappingsService = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId, serviceType: serviceType })
+  const { serviceName } = req.query;
+  const integrationFieldMappingsService = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId, serviceName: serviceName })
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
