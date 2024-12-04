@@ -39,6 +39,8 @@
       "MESSAGE_GET_INTEGRATION_BUILDING_DETAILS":"Integration building details.",
       "MESSAGE_SERVICE_PROVIDER_EXIST":"Service provider already exist.",
       "MESSAGE_ADD_SERVICE_PROVIDER":"Service provider added successfully.",
+      "MESSAGE_VALIDATE_SERVICE_PROVIDER":"Service provider is inactive/deleted.",
+      "MESSAGE_VALIDATE_SERVICE_PROVIDER_EXIST":"Service provider does not exist.",
       "MESSAGE_INVALID_SERVICE_PROVIDER":"Invalid service provider.",
       "MESSAGE_UPDATE_SERVICE_PROVIDER":"Service provider details updated successfully.",
       "MESSAGE_ADD_FIELD_MAPPINGS":"Service provider service added successfully.",

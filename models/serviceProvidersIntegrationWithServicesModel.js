@@ -1,58 +1,99 @@
 const mongoose = require("mongoose");
 
 const serviceProvidersIntegrationWithServices = new mongoose.Schema({
-    serviceProvidersIntegrationServiceId:{
-        type:mongoose.Schema.Types.ObjectId,
-        default:null
+    serviceProvidersIntegrationServiceId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null
     },
     serviceProviderIntegrationId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref:"serviceproviderintegrations",
-        default:null
+        ref: "serviceproviderintegrations",
+        default: null
     },
-    from:{
-        type:String,
+    from: {
+        type: String,
         // enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"]
     },
     to: {
         type: String,
         // enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"]
     },
-    serviceMethod:{
-        type:String,
-        enum:["post","patch","put","get","delete","head","options"],
-      // default: ""
-    },
-    serviceType:{
+    name: {
         type: String,
-        default:"work-order"
+        default: ""
     },
-    name:{
-        type:String,
-        default:""
+    sourceIntegrationServices: [{
+        dataPointUrl:{
+            type:String,
+            default:""
+        },
+        serviceName:{
+            type:String,
+            default:""
+        },
+        serviceMethod:{
+            type:String,
+            default:""
+        },
+        serviceProviderServiceId:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"serviceproviderservices",
+            default:null
+        }
+    }],
+    destinationIntegrationServices: [{
+        dataPointUrl:{
+            type:String,
+            default:""
+        },
+        serviceName:{
+            type:String,
+            default:""
+        },
+        serviceMethod:{
+            type:String,
+            default:""
+        },
+        serviceProviderServiceId:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"serviceproviderservices",
+            default:null
+        }
+    }],
+    sourceDataPoins: {
+        type: Array,
+        default: []
     },
-    dataPointURL: {
-        type: String,
-        required: [true, "Data point url is required"]
+    destinationDataPoins: {
+        type: Array,
+        default: []
     },
-    dataPoints: {
+    mappedDataPoints: {
         type: Object,
         required: [true, "Elements are required"]
     },
     dataPointPriority: {
         type: String,
         enum: ['Primary', 'Secondary', 'Optional'],
-        default:"Primary"
+        default: "Primary"
     },
     status: {
         type: String,
         enum: ['active', 'deleted'],
-        default:"active"
+        default: "active"
     },
+    serviceMethod:{
+        type:String,
+        default:""
+    },
+    serviceName:{
+        type:String,
+        default:""
+    }
 
-}, {timestamps: true});
+}, { timestamps: true });
 
-serviceProvidersIntegrationWithServices.pre('save',function(next){
+serviceProvidersIntegrationWithServices.pre('save', function (next) {
     this.serviceProvidersIntegrationServiceId = this._id;
     next();
 })

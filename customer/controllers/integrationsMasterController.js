@@ -543,7 +543,9 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
   let integrationDefaultFieldMappings = await serviceProvidersIntegrationWithServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (integrationDefaultFieldMappings.length > 0) {
     for (let fromAndTo of integrationDefaultFieldMappings) {
-      let integrationsFieldMappingkeysExist = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId, serviceMethod: fromAndTo.serviceMethod })
+      let integrationsFieldMappingkeysExist = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId, 
+                                              serviceMethod: fromAndTo?.serviceMethod, 
+                                              serviceName: fromAndTo?.serviceName })
       if (!integrationsFieldMappingkeysExist) {
         let getRequiredKeys = await getStatusFieldMappings(integrationsMasterId)
         const integrationFieldMappingCreate = await integrationsFieldMappingModel.create({
@@ -552,10 +554,14 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
           integrationsMasterId: integrationsMasterId,
           from: integrationDetails.from,
           to: integrationDetails.to,
-          serviceMethod: fromAndTo.serviceMethod,
-          serviceType: fromAndTo.serviceType,
+          serviceMethod: fromAndTo?.serviceMethod,
+          serviceName: fromAndTo?.serviceName,
           createdBy: req.user._id,
-          dataPoints: fromAndTo.dataPoints,
+          sourceIntegrationServices:fromAndTo?.sourceIntegrationServices,
+          destinationIntegrationServices:fromAndTo?.destinationIntegrationServices,
+          sourceDataPoins:fromAndTo?.sourceDataPoins,
+          destinationDataPoins:fromAndTo?.destinationDataPoins,
+          dataPoints: fromAndTo?.mappedDataPoints,
           requiredKeys: getRequiredKeys.requiredKeys || {}
         })
       } else {
@@ -678,7 +684,7 @@ Returns committed Field mappings for either Work order or Invoices
 exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   // console.log(req.body, "checkkkk");
 
-  const { integrationsMasterId, userId, serviceMethod, serviceType, dataPoints, } = req.body;
+  const { integrationsMasterId, userId, serviceMethod, serviceName, dataPoints, } = req.body;
   const pastIntegrationDetails = await integrationsMasterModel.findOne({
     integrationsMasterId,
   });
@@ -688,7 +694,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
   // Create or update the integrationsFieldMapping
   let integrationsFieldMapping;
   const existingFieldMapping = await integrationsFieldMappingModel.findOne({
-    integrationsMasterId:integrationsMasterId, serviceMethod:serviceMethod, serviceType:serviceType
+    integrationsMasterId:integrationsMasterId, serviceMethod:serviceMethod, serviceName:serviceName
   });
 
   let CPDtoDFIntegrationExist = await integrationsMasterModel.findOne({ integrationsMasterId: integrationsMasterId, from: "CPD", to: "DF" }).lean()
@@ -1102,7 +1108,7 @@ Returns Updated record with new values
 
 */
 exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
-  const { fieldMappingId, dataPoints, serviceMethod, from, to } = req.body;
+  const { fieldMappingId, dataPoints, serviceMethod, from, to, serviceName } = req.body;
   const integrationFieldMapping = await integrationsFieldMappingModel.findById(fieldMappingId);
 
   if (!integrationFieldMapping) {
@@ -1112,7 +1118,7 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
     });
   }
 
-  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { dataPoints: dataPoints,from:from, to:to, serviceMethod:serviceMethod  } }, { new: true });
+  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { dataPoints: dataPoints,from:from, to:to, serviceMethod:serviceMethod, serviceName: serviceName  } }, { new: true });
   
   const inteDetails = await integrationsMasterModel.findByIdAndUpdate(
     { _id: req.params.integrationsMasterId, stepCount: { $lt: 5 } },

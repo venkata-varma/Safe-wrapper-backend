@@ -41,7 +41,7 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
       type : String,
       default : ""
     },
-    serviceType:{
+    serviceName:{
       type : String,
       default : ""
     },
@@ -50,13 +50,29 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
       enum: ["default", "custom"],
       default: "default",
     },
-    dataPoints: {
-      type: Object,
-      default: {},
-    },
     requiredKeys : {
       type : Object,
       default : {}
+    },
+    sourceIntegrationServices:{
+      type:Array,
+      default:[]
+    },
+    destinationIntegrationServices:{
+      type:Array,
+      default:[]
+    },
+    sourceDataPoins:{
+      type:Array,
+      default:[]
+    },
+    destinationDataPoins:{
+      type:Array,
+      default:[]
+    },
+    dataPoints: {
+      type: Object,
+      default: {},
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
