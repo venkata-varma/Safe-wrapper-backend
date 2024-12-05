@@ -70,7 +70,7 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
       type:Array,
       default:[]
     },
-    dataPoints: {
+    mappedDataPoints: {
       type: Object,
       default: {},
     },

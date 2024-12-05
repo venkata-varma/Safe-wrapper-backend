@@ -561,7 +561,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
           destinationIntegrationServices:fromAndTo?.destinationIntegrationServices,
           sourceDataPoins:fromAndTo?.sourceDataPoins,
           destinationDataPoins:fromAndTo?.destinationDataPoins,
-          dataPoints: fromAndTo?.mappedDataPoints,
+          mappedDataPoints: fromAndTo?.mappedDataPoints,
           requiredKeys: getRequiredKeys.requiredKeys || {}
         })
       } else {
@@ -596,8 +596,8 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       fieldMappingDefaultKeys.forEach(hotkey => {
         if (hotkey.serviceProvider === fromProvider) {
           if (hotkey.serviceType === "work-orders" && hotkey.serviceMethod === "create") {
-            dataPointURL = hotkey.dataPointURL;
-            serviceMethod = hotkey.serviceMethod;
+            dataPointURL = hotkey?.dataPointURL || "";
+            serviceMethod = hotkey?.serviceMethod;
             fromKeys_create["create-work-order-keys"] = hotkey.dataPoints;
           }
         } else if (hotkey.serviceProvider === toProvider) {
@@ -610,7 +610,7 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       fieldMappingDefaultKeys.forEach(hotkey => {
         if (hotkey.serviceProvider === fromProvider) {
           if (hotkey.serviceType === "work-orders" && hotkey.serviceMethod === "update") {
-            updateDataPointURL = hotkey.dataPointURL;
+            updateDataPointURL = hotkey?.dataPointURL || "";
             updateServiceMethod = hotkey.serviceMethod;
             fromKeys_update["update-work-order-keys"] = hotkey.dataPoints;
           }
@@ -684,7 +684,7 @@ Returns committed Field mappings for either Work order or Invoices
 exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
   // console.log(req.body, "checkkkk");
 
-  const { integrationsMasterId, userId, serviceMethod, serviceName, dataPoints, } = req.body;
+  const { integrationsMasterId, userId, serviceMethod, serviceName, mappedDataPoints, } = req.body;
   const pastIntegrationDetails = await integrationsMasterModel.findOne({
     integrationsMasterId,
   });
@@ -1108,7 +1108,7 @@ Returns Updated record with new values
 
 */
 exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
-  const { fieldMappingId, dataPoints, serviceMethod, from, to, serviceName } = req.body;
+  const { fieldMappingId, mappedDataPoints, serviceMethod, from, to, serviceName } = req.body;
   const integrationFieldMapping = await integrationsFieldMappingModel.findById(fieldMappingId);
 
   if (!integrationFieldMapping) {
@@ -1118,7 +1118,7 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
     });
   }
 
-  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { dataPoints: dataPoints,from:from, to:to, serviceMethod:serviceMethod, serviceName: serviceName  } }, { new: true });
+  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { mappedDataPoints: mappedDataPoints,from:from, to:to, serviceMethod:serviceMethod, serviceName: serviceName  } }, { new: true });
   
   const inteDetails = await integrationsMasterModel.findByIdAndUpdate(
     { _id: req.params.integrationsMasterId, stepCount: { $lt: 5 } },

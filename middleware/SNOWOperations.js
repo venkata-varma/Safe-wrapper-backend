@@ -353,7 +353,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
                     let workOrderPushedCount = 0
-                    fieldmappingkeys = integrationObject.dataPoints
+                    fieldmappingkeys = integrationObject.mappedDataPoints
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
 
                     // Find list of DF credentails (encrypted) & then decrypt. 
@@ -456,7 +456,7 @@ exports.SNOWCreateIncidents = async (integrationFieldObject, typeOfCron) => {
                 const updateRequestSNOWWorkorders = await SNOWWorkOrdersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "update-request" })
 
                 for (let SNOWWorkOrder of updateRequestSNOWWorkorders) {
-                    fieldmappingkeys = integrationObject.dataPoints
+                    fieldmappingkeys = integrationObject.mappedDataPoints
                     const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, "CPDWorkOrders.WorkOrderNumber": SNOWWorkOrder.SNOWWorkOrders.user_input })
 
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })

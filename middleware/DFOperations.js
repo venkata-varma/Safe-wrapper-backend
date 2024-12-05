@@ -245,7 +245,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
-                    fieldmappingkeys = integrationObject.dataPoints
+                    fieldmappingkeys = integrationObject.mappedDataPoints
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
                     
                     // Find list of DF credentails (encrypted) & then decrypt. 
@@ -355,7 +355,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                 const updateRequestDFWorkorders = await DFWorkOrdersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "update-request" })
 
                 for (let DFWorkOrder of updateRequestDFWorkorders) {
-                    fieldmappingkeys = integrationObject.dataPoints
+                    fieldmappingkeys = integrationObject.mappedDataPoints
                     const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, "CPDWorkOrders.WorkOrderNumber": DFWorkOrder.DFWorkOrders.numberAlt })
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
 

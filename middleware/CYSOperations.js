@@ -186,7 +186,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
 
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
-                    fieldmappingkeys = integrationObject.dataPoints
+                    fieldmappingkeys = integrationObject.mappedDataPoints
 
                     const getWorkOrderStatusDefaultMappingKeys = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId })
 
@@ -292,7 +292,7 @@ exports.CYSCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                 const updateRequestCYSWorkorders = await CYSWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "update-request" })
                 
                 for (let CYSWorkOrder of updateRequestCYSWorkorders) {
-                    fieldmappingkeys = integrationObject.dataPoints
+                    fieldmappingkeys = integrationObject.mappedDataPoints
                     const getCPDWorkOrderStatus = await CPDWorkordersModel.findOne({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId,
                         "CPDWorkOrders.WorkOrderNumber": CYSWorkOrder.CYSWorkOrders.estimate.PONumber
                         })
