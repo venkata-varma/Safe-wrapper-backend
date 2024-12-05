@@ -595,13 +595,13 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
       const toKeys_update = { "update-work-order-keys": [] };
       fieldMappingDefaultKeys.forEach(hotkey => {
         if (hotkey.serviceProvider === fromProvider) {
-          if (hotkey.serviceType === "work-orders" && hotkey.serviceMethod === "create") {
+          if (hotkey.serviceName === "work-orders" && hotkey.serviceMethod === "create") {
             dataPointURL = hotkey?.dataPointURL || "";
             serviceMethod = hotkey?.serviceMethod;
             fromKeys_create["create-work-order-keys"] = hotkey.dataPoints;
           }
         } else if (hotkey.serviceProvider === toProvider) {
-          if (hotkey.serviceType === "work-order" && hotkey.serviceMethod === "get") {
+          if (hotkey.serviceName === "work-order" && hotkey.serviceMethod === "get") {
             toKeys_create["create-work-order-keys"] = hotkey.dataPoints;
           }
         }
@@ -609,13 +609,13 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
 
       fieldMappingDefaultKeys.forEach(hotkey => {
         if (hotkey.serviceProvider === fromProvider) {
-          if (hotkey.serviceType === "work-orders" && hotkey.serviceMethod === "update") {
+          if (hotkey.serviceName === "work-orders" && hotkey.serviceMethod === "update") {
             updateDataPointURL = hotkey?.dataPointURL || "";
             updateServiceMethod = hotkey.serviceMethod;
             fromKeys_update["update-work-order-keys"] = hotkey.dataPoints;
           }
         } else if (hotkey.serviceProvider === toProvider) {
-          if (hotkey.serviceType === "work-order" && hotkey.serviceMethod === "get") {
+          if (hotkey.serviceName === "work-order" && hotkey.serviceMethod === "get") {
             toKeys_update["update-work-order-keys"] = hotkey.dataPoints;
           }
         }
@@ -714,7 +714,7 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
     
     integrationsFieldMapping =
       await integrationsFieldMappingModel.findOneAndUpdate(
-        { integrationsMasterId, serviceMethod, serviceType },
+        { integrationsMasterId, serviceMethod, serviceName },
         { $set: { ...req.body, updatedBy: req.user._id } },
         { new: true }
       );
