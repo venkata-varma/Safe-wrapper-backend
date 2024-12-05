@@ -90,7 +90,7 @@ exports.validateServiceProviderStatus = asyncWrapper(async(req,res,next)=>{
     const {serviceProviderListId} = req.body
     const serviceProviderDetails = await serviceProviderListModel.findById(serviceProviderListId)
     if(!serviceProviderDetails){
-        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+        return res.status(customConstants.statusCodes.DATA_ALREADY_EXISTED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_VALIDATE_SERVICE_PROVIDER_EXIST,
         })
