@@ -25,7 +25,7 @@ const serviceProviderServices = new mongoose.Schema({
         enum:["post","patch","put","get","delete","head","options"],
         default:""
     },
-    serviceType: {
+    serviceName: {
         type: String,
         required: [true, "Service type is required"],
         default: ""
