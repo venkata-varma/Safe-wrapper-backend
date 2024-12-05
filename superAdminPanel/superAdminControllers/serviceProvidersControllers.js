@@ -10,7 +10,7 @@ exports.validateServiceProviderExist = asyncWrapper(async(req,res,next)=>{
     const {serviceProviderShortName, serviceProviderFullName} = req.body
     const serviceProviderExist = await serviceProvisersListModel.find({$or:[{serviceProviderShortName:serviceProviderShortName},{serviceProviderFullName:serviceProviderFullName}]})
     if(serviceProviderExist.length>0){
-        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+        return res.status(customConstants.statusCodes.DATA_ALREADY_EXISTED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_EXIST,
         })
