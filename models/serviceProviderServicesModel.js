@@ -30,7 +30,7 @@ const serviceProviderServices = new mongoose.Schema({
         required: [true, "Service type is required"],
         default: ""
     },
-    dataPointURL: {
+    dataPointUrl: {
         type: String,
         required: [true, "Data point url is required"],
         default: ""
