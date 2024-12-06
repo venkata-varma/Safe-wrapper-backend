@@ -22,6 +22,10 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
         type: String,
         default: ""
     },
+    dataPointUrl:{
+        type:String,
+        default:""
+    },
     sourceIntegrationServices: [{
         dataPointUrl:{
             type:String,
