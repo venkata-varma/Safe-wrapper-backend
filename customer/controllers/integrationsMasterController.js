@@ -559,8 +559,8 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
           createdBy: req.user._id,
           sourceIntegrationServices:fromAndTo?.sourceIntegrationServices,
           destinationIntegrationServices:fromAndTo?.destinationIntegrationServices,
-          sourceDataPoins:fromAndTo?.sourceDataPoins,
-          destinationDataPoins:fromAndTo?.destinationDataPoins,
+          sourceDataPoints:fromAndTo?.sourceDataPoints,
+          destinationDataPoints:fromAndTo?.destinationDataPoints,
           mappedDataPoints: fromAndTo?.mappedDataPoints,
           requiredKeys: getRequiredKeys.requiredKeys || {}
         })

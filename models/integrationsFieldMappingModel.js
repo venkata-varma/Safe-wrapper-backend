@@ -62,11 +62,11 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
       type:Array,
       default:[]
     },
-    sourceDataPoins:{
+    sourceDataPoints:{
       type:Array,
       default:[]
     },
-    destinationDataPoins:{
+    destinationDataPoints:{
       type:Array,
       default:[]
     },

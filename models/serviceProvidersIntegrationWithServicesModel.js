@@ -60,11 +60,11 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
             default:null
         }
     }],
-    sourceDataPoins: {
+    sourceDataPoints: {
         type: Array,
         default: []
     },
-    destinationDataPoins: {
+    destinationDataPoints: {
         type: Array,
         default: []
     },
