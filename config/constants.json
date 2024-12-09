@@ -8,6 +8,7 @@
     "MESSAGE_FAIL": "fail", 
     "MESSAGE_WARNING": "warning",
     "MESSAGE_REQUEST_BODY_ERROR": "Payload validation error.",
+    "MESSAGE_IMAGE_UPLOAD":"Image uploaded succesfully.",
     "MESSAGE_SESSION_EXPIRED": "Your session has expired or token no longer available. This incident wil record.",
     "MESSAGE_ACCOUNT_CREATED": "Your account has been created successfully.",
     "MESSAGE_ACCOUNT_UPDATED":"Account information updated successfully.",

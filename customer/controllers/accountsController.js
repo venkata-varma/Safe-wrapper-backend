@@ -19,6 +19,18 @@ const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports,
 const { workOrderLifeCycleReports, sixWeeksSalesDetails, mapNewUpdatedCounts,  mapNewUpdatedWorkOrdersCounts} = require('../../utils/accountInsightUtils')
 const path=require('path');
 const { preSignedUrlToUpload } = require('../../utils/fileUpload');
+
+
+exports.uploadImageToS3 = asyncWrapper(async(req,res)=>{
+    const {file} = req.file
+    const getImageUrl = await preSignedUrlToUpload(file)
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_IMAGE_UPLOAD,
+        data:getImageUrl
+    })
+})
+
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
