@@ -51,6 +51,10 @@ const serviceProviderServices = new mongoose.Schema({
         default: "active"
 
     },
+    category:{
+        type:String,
+        default:""
+    },
     requestObject:{
         type:mongoose.Schema.Types.Mixed,
         default:{}
