@@ -22,8 +22,7 @@ const { preSignedUrlToUpload } = require('../../utils/fileUpload');
 
 
 exports.uploadImageToS3 = asyncWrapper(async(req,res)=>{
-    const {file} = req.file
-    const getImageUrl = await preSignedUrlToUpload(file)
+    const getImageUrl = await preSignedUrlToUpload(req.file)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_IMAGE_UPLOAD,
