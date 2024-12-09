@@ -49,7 +49,6 @@ const serviceProviderServices = new mongoose.Schema({
         type: String,
         enum: ['active', 'deleted'],
         default: "active"
-
     },
     category:{
         type:String,

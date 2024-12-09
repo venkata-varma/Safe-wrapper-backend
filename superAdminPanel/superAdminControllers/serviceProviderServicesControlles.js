@@ -21,6 +21,48 @@ exports.validateServiceProvidersIntegration = asyncWrapper(async(req,res,next)=>
     }
 })
 
+exports.validateServiceProviderServicesExist = asyncWrapper(async(req,res,next) => {
+    const {fromServiceProviderListId, toServiceProviderListId} = req.body
+    
+    // const [fromServiceProviderData, toServiceProviderData] = await Promise.all([
+    //     serviceProviderListModel.findById(fromServiceProviderListId),
+    //     serviceProviderListModel.findById(toServiceProviderListId),
+    // ]);
+
+    // if(!fromServiceProviderData || !fromServiceProviderData?.testCredentials|| [null,undefined,""].includes(fromServiceProviderData.testCredentials)){
+    //     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+    //         status: customConstants.messages.MESSAGE_FAIL,
+    //         message: customConstants.messages.MESSAGE_FROM_SERVICEPROVIDER_TESTCREDENTIALS_NOT_EXIST.replace('from', req.body.from),
+    //     });
+    // }
+    // if(!toServiceProviderData || !toServiceProviderData?.testCredentials|| [null,undefined,""].includes(toServiceProviderData.testCredentials)){
+    //     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+    //         status: customConstants.messages.MESSAGE_FAIL,
+    //         message: customConstants.messages.MESSAGE_TO_SERVICEPROVIDER_TESTCREDENTIALS_NOT_EXIST.replace('to',req.body.to),
+    //     })
+    // }
+
+    const [fromServiceProviderServices, toServiceProviderServices] = await Promise.all([
+        serviceProviderServicesModel.find({ serviceProviderListId: fromServiceProviderListId }),
+        serviceProviderServicesModel.find({ serviceProviderListId: toServiceProviderListId }),
+    ]);
+    if(!fromServiceProviderServices.length){
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_FROM_SERVICEPROVIDER_SERVICES_NOT_EXIST.replace('from',req.body.from),
+        })
+    }
+    if(!toServiceProviderServices.length){
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_TO_SERVICEPROVIDER_SERVICES_NOT_EXIST.replace('to',req.body.to),
+        })
+    }
+    else{
+        next()
+    }
+})
+
 exports.createServiceProvidersIntegration = asyncWrapper(async(req,res)=>{
     await serviceProviderIntegrationsModel.create({...req.body})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -105,6 +147,7 @@ exports.validateServiceProviderStatus = asyncWrapper(async(req,res,next)=>{
         next()
     }
 })
+
 exports.validateServiceProviderServiceStatus = asyncWrapper(async(req,res,next)=>{
     const {serviceProviderServiceId} = req.params
     const fieldMappingDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId)

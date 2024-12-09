@@ -43,7 +43,11 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref:"serviceproviderservices",
             default:null
-        }
+        },
+        category:{
+            type:String,
+            default:""
+        },
     }],
     destinationIntegrationServices: [{
         dataPointUrl:{
@@ -62,7 +66,11 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref:"serviceproviderservices",
             default:null
-        }
+        },
+        category:{
+            type:String,
+            default:""
+        },
     }],
     sourceDataPoints: {
         type: Array,

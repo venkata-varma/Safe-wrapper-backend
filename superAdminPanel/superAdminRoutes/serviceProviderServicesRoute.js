@@ -4,7 +4,9 @@ const {superAdminAuth} = require('../middleware/superAdminAuthentication')
 
 router.use(superAdminAuth)
 
-router.post('/create-service-provider-integration',serviceProviderServicesController.validateServiceProvidersIntegration,serviceProviderServicesController.createServiceProvidersIntegration)
+router.post('/create-service-provider-integration',serviceProviderServicesController.validateServiceProvidersIntegration, 
+    serviceProviderServicesController.validateServiceProviderServicesExist, 
+    serviceProviderServicesController.createServiceProvidersIntegration)
 router.patch('/update-service-providers-integration/:serviceProviderIntegrationId',serviceProviderServicesController.validateServiceProvidersIntegrationExist,serviceProviderServicesController.updateServiceProvidersIntegration)
 router.patch('/update-service-providers-integration-status/:serviceProviderIntegrationId',serviceProviderServicesController.validateServiceProvidersIntegrationExist,serviceProviderServicesController.updateServiceProvidersIntegrationStatus)
 router.get('/get-all-service-provider-integrations',serviceProviderServicesController.getAllServiceProviderIntegrations)
