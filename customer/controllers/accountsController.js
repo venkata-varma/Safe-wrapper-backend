@@ -17,7 +17,8 @@ const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports, getCPDFullWorkOrderDetails } = require('../../utils/general')
 const { workOrderLifeCycleReports, sixWeeksSalesDetails, mapNewUpdatedCounts,  mapNewUpdatedWorkOrdersCounts} = require('../../utils/accountInsightUtils')
-const path=require('path')
+const path=require('path');
+const { preSignedUrlToUpload } = require('../../utils/fileUpload');
 /*
 Miidleware function to controller, "createAccount"
 Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
@@ -71,7 +72,8 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            logo: req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : "" 
+            // logo: req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : "" 
+            logo: req.file ? await preSignedUrlToUpload(req.file) : "" 
         })
         const customId = new mongoose.Types.ObjectId();
 
@@ -140,7 +142,9 @@ exports.updateAccount = asyncWrapper(async(req,res)=>{
     const baseUrl = process.env.DOMAIN_NAME;
     const {accountId} = req.params
     const { accountName, companyName, phone, } = req.body
-    req.body.logo = req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : (await accountsModel.findById(accountId,{logo:1})).logo
+
+    // req.body.logo = req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : (await accountsModel.findById(accountId,{logo:1})).logo
+    req.body.logo = req.file ? await preSignedUrlToUpload(req.file) : (await accountsModel.findById(accountId,{logo:1})).logo
     
     const accountDetails = await accountsModel.findByIdAndUpdate(accountId,{
         ...req.body,

@@ -2,6 +2,16 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const axios = require('axios')
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const {
+    S3Client,
+    PutObjectCommand,
+    GetObjectCommand,
+    DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
+
+
 /**
  * Middleware Function for the "CreateAccount" controller to handle image file uploads using Multer.
  * Image details are in "req.file" and other fields are in "req.body".
@@ -44,6 +54,53 @@ const upload = multer({
     },
 });
 
+
+const AWS_REGION = 'us-west-1'
+const S3_BUCKET = 'dev-isync-images'
+const client = new S3Client({
+    region: AWS_REGION,
+});
+// Generate a presigned URL for file upload
+async function preSignedUrlToUpload(file) {
+    try {
+        console.log("file:===", file);
+        const fileName = `uploads/${Date.now()}-${file.originalname}`;
+        const command = new PutObjectCommand({
+            Bucket: S3_BUCKET,
+            Key: fileName,
+            ContentType: file.mimetype,
+        });
+
+        const url = await getSignedUrl(client, command, { expiresIn: 3600 });
+        console.log("Presigned URL:==", url);
+
+        const uploadUrl = await uploadImageToS3bucket(url, file.buffer, file.mimetype, fileName);
+        return uploadUrl;
+    } catch (err) {
+        console.error("Error generating presigned URL:", err.message);
+        throw new Error("Failed to generate presigned URL.");
+    }
+}
+
+// Upload the file to S3 using the presigned URL
+const uploadImageToS3bucket = async (presignedUrl, fileBuffer, mimeType, fileName) => {
+    try {
+        const response = await axios.put(presignedUrl, fileBuffer, {
+            headers: {
+                "Content-Type": mimeType,
+            },
+        });
+
+        console.log("Upload Response:", response.status);
+        return `https://dev-isync-images.s3.us-west-1.amazonaws.com/${fileName}`;
+    } catch (error) {
+        console.error("Error uploading file to S3:", error.message);
+        throw new Error("Failed to upload file to S3.");
+    }
+};
+
+
 module.exports = {
     upload,
+    preSignedUrlToUpload,
 };
