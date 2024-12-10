@@ -3,16 +3,19 @@ const mongoose = require('mongoose')
 const serviceProviderIntegrations = new mongoose.Schema({
     serviceProviderIntegrationId:{
         type:mongoose.Schema.Types.ObjectId,
+        index:true,
         default:null
     },
     fromServiceProviderListId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'serviceProviderList',
+        index:true,
         default:null
     },
     toServiceProviderListId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'serviceProviderList',
+        index:true,
         default:null
     },
     name:{

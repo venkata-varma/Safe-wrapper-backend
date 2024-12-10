@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const serviceProviderListSchema = new mongoose.Schema({
     serviceProviderListId: {
         type: mongoose.Schema.Types.ObjectId,
+        index:true,
         default:null
     },
     logo: {

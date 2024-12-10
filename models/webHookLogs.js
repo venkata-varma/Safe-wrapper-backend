@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const webHooksLogsSchema = new mongoose.Schema({
     webHookLogId: {
         type:mongoose.Schema.Types.ObjectId,
+        index:true,
         default:null
     },
     accountId: {
@@ -20,6 +21,7 @@ const webHooksLogsSchema = new mongoose.Schema({
     webHookId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"webhooksmodel",
+        index:true,
         default:null
     },
     dataObject:{

@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const webHooksSchema = new mongoose.Schema({
     webHookId:{
         type:mongoose.Schema.Types.ObjectId,
+        index:true,
         default:null
     },
     accountId: {

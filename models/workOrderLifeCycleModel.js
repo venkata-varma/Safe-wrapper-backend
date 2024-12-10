@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const workOrderLifeCycleSchema = new mongoose.Schema({
     workOrderLifeCycleId : {
         type : mongoose.Schema.Types.ObjectId,
+        index:true,
         default : null
     },
     workOrderId:{

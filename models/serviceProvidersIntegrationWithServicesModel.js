@@ -3,11 +3,13 @@ const mongoose = require("mongoose");
 const serviceProvidersIntegrationWithServices = new mongoose.Schema({
     serviceProvidersIntegrationServiceId: {
         type: mongoose.Schema.Types.ObjectId,
+        index:true,
         default: null
     },
     serviceProviderIntegrationId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "serviceproviderintegrations",
+        index:true,
         default: null
     },
     from: {
@@ -42,6 +44,7 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
         serviceProviderServiceId:{
             type: mongoose.Schema.Types.ObjectId,
             ref:"serviceproviderservices",
+            index:true,
             default:null
         },
         category:{
@@ -64,6 +67,7 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
         },
         serviceProviderServiceId:{
             type: mongoose.Schema.Types.ObjectId,
+            index:true,
             ref:"serviceproviderservices",
             default:null
         },
