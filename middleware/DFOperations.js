@@ -241,7 +241,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
             // find initiated count of WO to push to DF. 
             const CPDWorkOrderDetails = await CPDWorkordersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "initiated" }).lean();
             
-            if (integrationObject.serviceMethod === "create") {
+            if (integrationObject.serviceMethod === "post") {
                
                 // Now loop the CPDWO and then push to DF by API.
                 for (let workOrder of CPDWorkOrderDetails) {
@@ -349,7 +349,7 @@ exports.DFCreateWorkorders = async (integrationFieldObject, typeOfCron) => {
                     }
                 }
             }            
-            else if (integrationObject.serviceMethod === "update") {
+            else if (integrationObject.serviceMethod === "patch") {
 
                 // Update work orders to the Dataforma.
                 const updateRequestDFWorkorders = await DFWorkOrdersModel.find({ integrationsMasterId: integrationObject.integrationsMasterId, accountId: integrationObject.accountId, status: "update-request" })
