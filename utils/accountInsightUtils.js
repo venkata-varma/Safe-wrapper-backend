@@ -78,7 +78,8 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                     // Define search query filter
                     searchFilter = searchQuery ? { $or: [{ "CPDWorkOrders.WorkOrderNumber": searchQuery }, { "CPDWorkOrders.WorkOrderId": searchQuery }] } : {};
                     const workOrderDetails = await CPDWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
-
+                    getWorkOrderDetails = workOrderDetails !== null ? await getCPDFullWorkOrderDetails(integrationsQuery, workOrderDetails): {}
+           
                     workOrder.workOrderDetails = getWorkOrderDetails
                     workOrder.type = getWorkOrderDetails?.Type
                     workOrder.category = getWorkOrderDetails?.WorkType?.Name
