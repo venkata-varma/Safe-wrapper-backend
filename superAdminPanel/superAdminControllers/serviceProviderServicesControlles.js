@@ -7,6 +7,12 @@ const customConstants = require('../config/customConstants.json');
 const mongoose  = require("mongoose");
 const serviceProviderListModel = require("../../models/serviceProviderList");
 
+
+/** (Deprecated on 13-Dec-2024 based on test case analysis from Senior Tester)
+ * If status of existing (service provider - service provider) 's  Integration is updated to 'deleted', it is just a "SOFT delete". 
+ * Middleware to check if (service provider - service provider)'s integration exists in database, even if status is 'deleted'. 
+ * Functionality Deprecated on 13-Dec-2024 to let super admin create integration even if it exists based on test case analysis.
+ */
 exports.validateServiceProvidersIntegration = asyncWrapper(async(req,res,next)=>{
     const {from, to} = req.body
     const serviceProvidersIntegrationsDetails = await serviceProviderIntegrationsModel.find({from:from,to:to})
