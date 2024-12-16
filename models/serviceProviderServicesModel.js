@@ -3,20 +3,13 @@ const mongoose = require("mongoose");
 const serviceProviderServices = new mongoose.Schema({
     serviceProviderServiceId: {
         type: mongoose.Schema.Types.ObjectId,
+        index:true,
         default: null
     },
     serviceProvider: {
         type: String,
         required: [true, "Service provider is required"],
         // enum: ["CPD", "SNOW", "DF", "SC", "TT", "QB", "MGP", "SI", "AM","CYS"],
-        default: ""
-    },  
-    primaryKeyColumn: {
-        type: String,
-        default: ""
-    },  
-    dataMappingPath: {
-        type: String,
         default: ""
     },  
     serviceTitle: {
@@ -26,6 +19,7 @@ const serviceProviderServices = new mongoose.Schema({
     serviceProviderListId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "serviceProviderList",
+        index:true,
         default:null
     },
     serviceMethod:{
@@ -33,12 +27,12 @@ const serviceProviderServices = new mongoose.Schema({
         enum:["post","patch","put","get","delete","head","options"],
         default:""
     },
-    serviceType: {
+    serviceName: {
         type: String,
         required: [true, "Service type is required"],
         default: ""
     },
-    dataPointURL: {
+    dataPointUrl: {
         type: String,
         required: [true, "Data point url is required"],
         default: ""
@@ -57,7 +51,10 @@ const serviceProviderServices = new mongoose.Schema({
         type: String,
         enum: ['active', 'deleted'],
         default: "active"
-
+    },
+    category:{
+        type:String,
+        default:""
     },
     requestObject:{
         type:mongoose.Schema.Types.Mixed,
