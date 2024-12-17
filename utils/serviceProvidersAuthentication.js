@@ -30,9 +30,7 @@ const DFAuthentication = async (df_auth, df_servicecode, base_url) => {
 
         },
         data: {
-
             "dateCreatedOnAfter": "2024-05-04",
-
         }
     };
 

@@ -31,6 +31,8 @@ const superAdminAccountRoute = require('./superAdminPanel/superAdminRoutes/super
 const superAdminUsersRoute = require('./superAdminPanel/superAdminRoutes/superAdminUsersRoute')
 const serviceProvidersRoute = require('./superAdminPanel/superAdminRoutes/serviceProvidersOperations')
 const serviceproviderServicesRoute = require('./superAdminPanel/superAdminRoutes/serviceProviderServicesRoute')
+
+const serviceProviderAuthValidation = require('./src/routes/serviceProviderAutheticationStatus')
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
 
@@ -43,6 +45,7 @@ app.use('/api/super-admin/accounts', superAdminAccountRoute);
 app.use('/api/super-admin/users', superAdminUsersRoute);
 app.use('/api/super-admin/service-provider',serviceProvidersRoute)
 app.use('/api/super-admin/service-provider-services',serviceproviderServicesRoute)
+app.use('/api/check-authentication-status',serviceProviderAuthValidation)
 
 const integrationsSchedules = require('./customer/controllers/schedulerController');
 const DFintegrations = require('./middleware/DFOperations');

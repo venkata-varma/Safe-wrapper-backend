@@ -115,8 +115,9 @@
     "MESSAGE_ACTIVATE_WEBHOOK":"Webhook activated succesfully.",
     "MESSAGE_WEBHOOK_LOGS_REPORTS":"Webhook logs reports.",
     "MESSAGE_MISSING_IDS":"accountId and IntegrationsMasterId required.",
-    "MESSAGE_WEBHOOK_OFFLINE":"Webhook deactivated succesfully."
-
+    "MESSAGE_WEBHOOK_OFFLINE":"Webhook deactivated succesfully.",
+    "MESSAGE_VALIDATE_SERVICEPROVIDER_SUCCESS":"The service provider has been successfully validated.",
+    "MESSAGE_VALIDATE_SERVICEPROVIDER_FAILED":"Invalid Credentials/Service Method."
 
   },
   "statusCodes": {
