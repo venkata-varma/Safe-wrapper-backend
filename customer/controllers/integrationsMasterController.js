@@ -34,6 +34,8 @@ const { default: axios } = require("axios");
 const DFConfigurations = require('../../config/integrationsConfiguration');
 const { getAllDFBuldingsData, searchDFBuildingsByStateAndCountry, searchDFBuildingByNameAndStreet } = require("../../middleware/findDFBuildingOperation");
 const accountSettingsModel=require('../../models/accountSettingsModel')
+const { validateServiceProviders } = require("../../utils/authUtils")
+
 const moment = require('moment')
 /**
  * Get the static images.
@@ -424,6 +426,21 @@ exports.validateintegrationsMasterExistForFieldMapping = asyncWrapper(async (req
 
 exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
 
+  let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
+    if(serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined || serviceProviderValidation.statusCode !== 200){
+      return res.status(serviceProviderValidation.statusCode).json({
+        status: serviceProviderValidation.status,
+        message:serviceProviderValidation.message
+     })
+    }
+    else{
+      next()
+    }
+})
+
+/*
+exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
+
   if (req.body.serviceProvider === 'CPD') {
     const checkCPDCredentials = await CPDAuthentication(req.body.credentials.client_id, req.body.credentials.client_secret, req.body.credentials.grant_type, req.body.credentials.baseUrl)
 
@@ -469,6 +486,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   }
   next()
 })
+  */
 
 
 /*

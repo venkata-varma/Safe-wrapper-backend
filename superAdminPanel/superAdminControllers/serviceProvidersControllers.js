@@ -3,7 +3,8 @@ const serviceProviderServicesModel = require("../../models/serviceProviderServic
 const serviceProvisersListModel = require('../../models/serviceProviderList');
 const { encryptData } = require("../../utils/encryptionAlgorithms");
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require("../../utils/serviceProvidersAuthentication");
-const customConstants = require('../config/customConstants.json')
+const customConstants = require('../config/customConstants.json');
+const { validateServiceProviders } = require("../../utils/authUtils");
 
 
 exports.validateServiceProviderExist = asyncWrapper(async(req,res,next)=>{
@@ -56,6 +57,25 @@ exports.serviceProviderCheck = asyncWrapper(async(req,res,next)=>{
  * If valid, this middleware passes function call to next function "updateServiceProviderList"
  * 
  */
+
+exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
+
+    let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
+    if(req.body.credentials && req.body.credentials !== null && Object.values(req.body.credentials).length > 0){
+        if(serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined || serviceProviderValidation.statusCode !== 200){
+            return res.status(serviceProviderValidation.statusCode).json({
+              status: serviceProviderValidation.status,
+              message:serviceProviderValidation.message
+           })
+          }
+          next()
+    }
+    else{
+        next()
+    }
+  })
+
+/*
 exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
     // const serviceProviderList = await serviceProvisersListModel.findOne({ _id: req.params.serviceProviderId })
     
@@ -113,6 +133,7 @@ exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res,
     }
     
 })
+    */
 
 /**
  * After middleware to validate credentials is passed, this funtion is to encrypt credentials and update it in record
