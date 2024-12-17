@@ -33,7 +33,7 @@ const SNOWWorkOrdersModel = require("../../models/SNOWWorkOrdersModel");
 const { default: axios } = require("axios");
 const DFConfigurations = require('../../config/integrationsConfiguration');
 const { getAllDFBuldingsData, searchDFBuildingsByStateAndCountry, searchDFBuildingByNameAndStreet } = require("../../middleware/findDFBuildingOperation");
-const accountSettingsModel=require('../../models/accountSettingsModel')
+const accountSettingsModel = require('../../models/accountSettingsModel')
 const { validateServiceProviders } = require("../../utils/authUtils")
 
 const moment = require('moment')
@@ -118,31 +118,31 @@ exports.getImages = asyncWrapper(async (req, res) => {
       url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/data_range_icon.png'
     },
     {
-      name : "Super-Admin-Logo",
-      url : 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/Super_Admin_Logo.png'
+      name: "Super-Admin-Logo",
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/Super_Admin_Logo.png'
     },
     {
-      name : "TEST-ACCOUNT-IMAGE",
-      url : 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/QSP_Test.png'
+      name: "TEST-ACCOUNT-IMAGE",
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/QSP_Test.png'
     },
     {
-      name : "DEVRABBIT-IMAGE",
-      url : 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/devRabbit_logo.png'
+      name: "DEVRABBIT-IMAGE",
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/devRabbit_logo.png'
     }
   ]
-  
+
   const serviceProviderMarkedLogos = [
     {
       name: "TT",
-      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/TurboTax_png.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/TurboTax_png.png'
     },
     {
       name: "CPD",
-      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/CorrigoPro_png.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/CorrigoPro_png.png'
     },
     {
       name: "DF",
-      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/dataforma_png.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/dataforma_png.png'
     },
     {
       name: "CYS",
@@ -154,15 +154,15 @@ exports.getImages = asyncWrapper(async (req, res) => {
     },
     {
       name: "QB",
-      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/Quickbooks_png.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/Quickbooks_png.png'
     },
     {
       name: "SC",
-      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/servicechannel_png.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/servicechannel_png.png'
     },
     {
       name: "AM",
-      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/Acumatica_png.png'      
+      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/Acumatica_png.png'
     }
   ]
 
@@ -175,7 +175,7 @@ exports.getImages = asyncWrapper(async (req, res) => {
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_IMAGES,
-      imageUrls,serviceProviderMarkedLogos
+      imageUrls, serviceProviderMarkedLogos
     });
 });
 
@@ -199,14 +199,14 @@ exports.getCPDToDFMatchedBuildingDetails = asyncWrapper(async (req, res) => {
   const getFilteredDFBuildings = await searchDFBuildingsByStateAndCountry(serviceLocationCountry, ServiceLocation.Address.State, getDFBuildingDetails)
   const getMatchedDFBuilding = await searchDFBuildingByNameAndStreet(ServiceLocation, getFilteredDFBuildings)
 
-  
+
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: "DF Building Details.",
       data: {
-        matchedDFBuildingData:getMatchedDFBuilding.matchedDFBuildingData,
+        matchedDFBuildingData: getMatchedDFBuilding.matchedDFBuildingData,
         partialBuildingsMatchedData: getMatchedDFBuilding.partialBuildingsMatchedData
       },
     });
@@ -243,15 +243,15 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
     "exceptions": true
   }
   const menus = {
-        "dashboard": true,
-        "integrations": true,
-        "fieldsmapping": true,
-        "insights": true,
-        "exceptions": true,
-        "settings": true,
-        "createintegrations": true,
-        "wolifecycle":true,
-        "conditions":true
+    "dashboard": true,
+    "integrations": true,
+    "fieldsmapping": true,
+    "insights": true,
+    "exceptions": true,
+    "settings": true,
+    "createintegrations": true,
+    "wolifecycle": true,
+    "conditions": true
   }
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -259,10 +259,10 @@ exports.getGlobalConstants = asyncWrapper(async (req, res) => {
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_GLOBAL_CONSTANTS,
       data: {
-              timeZones,
-              cronSchedulePicker,
-              dataPointsAccess, menus,
-              serviceProviderIntegrations
+        timeZones,
+        cronSchedulePicker,
+        dataPointsAccess, menus,
+        serviceProviderIntegrations
         // serviceProvidersIntegrationServices, serviceProviderServices, ,
         // serviceproviderlists, 
       },
@@ -326,7 +326,7 @@ exports.getIntegrationCryptoService = asyncWrapper(async (req, res) => {
 exports.validateCreateIntegrationsCount = asyncWrapper(async (req, res, next) => {
   const integrationsCount = await integrationsMasterModel.find({ accountId: req.user.accountId });
 
-  const respectiveAccount = await accountSettingsModel.findOne({accountId: req.user.accountId});
+  const respectiveAccount = await accountSettingsModel.findOne({ accountId: req.user.accountId });
   if (integrationsCount.length >= respectiveAccount.noOfIntegrations) {
     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
       status: customConstants.messages.MESSAGE_WARNING,
@@ -374,7 +374,7 @@ exports.createIntegrationMaster = asyncWrapper(async (req, res) => {
 
 exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) => {
   const { integrationsMasterId } = req.body;
-  
+
   console.log('integrationMasterId:===', integrationsMasterId)
   const integrationMasterDetails = await integrationsMasterModel.findById(integrationsMasterId)
   if (!integrationMasterDetails) {
@@ -405,7 +405,7 @@ exports.validateintegrationsMasterExistForFieldMapping = asyncWrapper(async (req
       message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
     });
   }
-  else if(!integrationMasterDetails.to){
+  else if (!integrationMasterDetails.to) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_DESTINATION_SERVICEPROVIDER_NOT_FOUND,
@@ -425,17 +425,32 @@ exports.validateintegrationsMasterExistForFieldMapping = asyncWrapper(async (req
  */
 
 exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
-
+  const { credentials } = req.body
   let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
-    if(serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined || serviceProviderValidation.statusCode !== 200){
+  if (credentials.requestMethod === "body") {
+    if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
+        serviceProviderValidation.statusCode !== 200 || !serviceProviderValidation.getResponse?.access_token) {
       return res.status(serviceProviderValidation.statusCode).json({
         status: serviceProviderValidation.status,
-        message:serviceProviderValidation.message
-     })
+        message: serviceProviderValidation.message
+      })
     }
-    else{
+    else {
       next()
     }
+  }
+  else if (credentials.requestMethod === "headers") {
+    if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
+      serviceProviderValidation.statusCode !== 200) {
+      return res.status(serviceProviderValidation.statusCode).json({
+        status: serviceProviderValidation.status,
+        message: serviceProviderValidation.message
+      })
+    }
+    else {
+      next()
+    }
+  }
 })
 
 /*
@@ -561,9 +576,11 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
   let integrationDefaultFieldMappings = await serviceProvidersIntegrationWithServicesModel.find({ $and: [{ from: integrationDetails.from }, { to: integrationDetails.to }] })
   if (integrationDefaultFieldMappings.length > 0) {
     for (let fromAndTo of integrationDefaultFieldMappings) {
-      let integrationsFieldMappingkeysExist = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId, 
-                                              serviceMethod: fromAndTo?.serviceMethod, 
-                                              serviceName: fromAndTo?.serviceName })
+      let integrationsFieldMappingkeysExist = await integrationsFieldMappingModel.findOne({
+        integrationsMasterId: integrationsMasterId,
+        serviceMethod: fromAndTo?.serviceMethod,
+        serviceName: fromAndTo?.serviceName
+      })
       if (!integrationsFieldMappingkeysExist) {
         let getRequiredKeys = await getStatusFieldMappings(integrationsMasterId)
         const integrationFieldMappingCreate = await integrationsFieldMappingModel.create({
@@ -575,10 +592,10 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
           serviceMethod: fromAndTo?.serviceMethod,
           serviceName: fromAndTo?.serviceName,
           createdBy: req.user._id,
-          sourceIntegrationServices:fromAndTo?.sourceIntegrationServices,
-          destinationIntegrationServices:fromAndTo?.destinationIntegrationServices,
-          sourceDataPoints:fromAndTo?.sourceDataPoints,
-          destinationDataPoints:fromAndTo?.destinationDataPoints,
+          sourceIntegrationServices: fromAndTo?.sourceIntegrationServices,
+          destinationIntegrationServices: fromAndTo?.destinationIntegrationServices,
+          sourceDataPoints: fromAndTo?.sourceDataPoints,
+          destinationDataPoints: fromAndTo?.destinationDataPoints,
           mappedDataPoints: fromAndTo?.mappedDataPoints,
           requiredKeys: getRequiredKeys.requiredKeys || {}
         })
@@ -594,9 +611,9 @@ exports.fieldMappingMasterDefaultServicesList = asyncWrapper(async (req, res, ne
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_CREATED,
         data: {
-          integrationDefaultFieldMappings : integrationDefaultFieldMappings,
+          integrationDefaultFieldMappings: integrationDefaultFieldMappings,
           // integrationSourceServiceProviderServices
-           defaultMappingKeys
+          defaultMappingKeys
         },
       });
   }
@@ -708,11 +725,11 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
   });
 
   let updatedIntegrationsDetails;
-  console.log('integrationMasterId:===',integrationsMasterId)
+  console.log('integrationMasterId:===', integrationsMasterId)
   // Create or update the integrationsFieldMapping
   let integrationsFieldMapping;
   const existingFieldMapping = await integrationsFieldMappingModel.findOne({
-    integrationsMasterId:integrationsMasterId, serviceMethod:serviceMethod, serviceName:serviceName
+    integrationsMasterId: integrationsMasterId, serviceMethod: serviceMethod, serviceName: serviceName
   });
 
   let CPDtoDFIntegrationExist = await integrationsMasterModel.findOne({ integrationsMasterId: integrationsMasterId, from: "CPD", to: "DF" }).lean()
@@ -729,15 +746,15 @@ exports.updateIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => 
     }
   }
   if (existingFieldMapping) {
-    
+
     integrationsFieldMapping =
       await integrationsFieldMappingModel.findOneAndUpdate(
         { integrationsMasterId, serviceMethod, serviceName },
         { $set: { ...req.body, updatedBy: req.user._id } },
         { new: true }
       );
-    updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId,{stepCount: pastIntegrationDetails.stepCount + 1},{new : true})
-    
+    updatedIntegrationsDetails = await integrationsMasterModel.findByIdAndUpdate(integrationsMasterId, { stepCount: pastIntegrationDetails.stepCount + 1 }, { new: true })
+
   } else {
     const verifyFieldmappingHasOneRecord = await integrationsFieldMappingModel.findOne({ integrationsMasterId: integrationsMasterId })
     if (!verifyFieldmappingHasOneRecord) {
@@ -787,7 +804,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
   let updatedIntegrationsDetails;
   let integrationsSettings;
   const existingintegrationsSettings = await integrationsSettingsModel.findOne({ integrationsMasterId });
-  let statusFieldMappingKeys=await getStatusFieldMappings(integrationsMasterId)
+  let statusFieldMappingKeys = await getStatusFieldMappings(integrationsMasterId)
   if (existingintegrationsSettings) {
     integrationsSettings = await integrationsSettingsModel.findOneAndUpdate(
       { integrationsMasterId },
@@ -872,7 +889,7 @@ exports.validateIntegrationsMasterForEdit = asyncWrapper(async (req, res, next) 
       message: customConstants.messages.MESSAGE_INTEGRATION_NOT_FOUND,
     });
   }
-  else if(!integrationMasterDetails.from || !integrationMasterDetails.to){
+  else if (!integrationMasterDetails.from || !integrationMasterDetails.to) {
     return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_INTEGRATION_DESTINATION_SERVICEPROVIDER_NOT_FOUND,
@@ -900,7 +917,7 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
   let integrationMasterDetails = await integrationsMasterModel.findById(integrationMasterId).lean()
   const settingsDetails = await integrationsSettingsModel.find({ integrationsMasterId: integrationMasterId }).lean();
   const integrationMasterFieldMappingDetails = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationMasterId }).lean();
-  const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId:integrationMasterId });
+  const integrationMasterServiceProviders = await integrationsMasterServiceProvidersModel.find({ integrationsMasterId: integrationMasterId });
   integrationMasterDetails.services = (await serviceProviderIntegrationsModel.findOne(
     { from: integrationMasterDetails.from, to: integrationMasterDetails.to },
     { services: 1 }
@@ -915,8 +932,8 @@ exports.validateIntegrationsMasterExistForSingleIntegration = asyncWrapper(async
     return res.status(customConstants.statusCodes.PARTIAL_CONTENT).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_INTEGRATION_INCOMPLETE,
-      data:{
-        integrationDetails:integrationMasterDetails,
+      data: {
+        integrationDetails: integrationMasterDetails,
         integrationsSettingsDetails: settingsDetails,
         integrationMasterFieldMappingDetails: integrationMasterFieldMappingDetails,
         integrationMasterServiceProviders,
@@ -1033,7 +1050,7 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
     delete week.toDate;
 
   }
-  
+
   integrationDetails.services = (await serviceProviderIntegrationsModel.findOne(
     { from: integrationDetails.from, to: integrationDetails.to },
     { services: 1 }
@@ -1136,8 +1153,8 @@ exports.editIntegrationMasterFieldMappings = asyncWrapper(async (req, res) => {
     });
   }
 
-  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { mappedDataPoints: mappedDataPoints,from:from, to:to, serviceMethod:serviceMethod, serviceName: serviceName  } }, { new: true });
-  
+  let updatedFieldMapping = await integrationsFieldMappingModel.findByIdAndUpdate(fieldMappingId, { $set: { mappedDataPoints: mappedDataPoints, from: from, to: to, serviceMethod: serviceMethod, serviceName: serviceName } }, { new: true });
+
   const inteDetails = await integrationsMasterModel.findByIdAndUpdate(
     { _id: req.params.integrationsMasterId, stepCount: { $lt: 5 } },
     [
@@ -1225,47 +1242,47 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
 
   if (integrationsMasterDetails) {
-      let fromCredentials, toCredentials;
+    let fromCredentials, toCredentials;
 
-      switch (integrationsMasterDetails.from) {
-        case 'CPD':
-          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "CPD" }).lean();
-          await CPDOperations.getCPDWorkOrders(fromCredentials, "manual");
+    switch (integrationsMasterDetails.from) {
+      case 'CPD':
+        fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "CPD" }).lean();
+        await CPDOperations.getCPDWorkOrders(fromCredentials, "manual");
 
-          if (integrationsMasterDetails.to === 'DF') {
-            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "DF" }).lean();
-            await DFOperations.DFCreateWorkorders(toCredentials, "manual");
-          } else if (integrationsMasterDetails.to === 'CYS') { 
-            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "CYS" }).lean();
-            // console.log('CYS Credentials:', toCredentials);
-            // console.log('integrationsMasterDetails:===', integrationsMasterDetails)
-            await CYSOperations.CYSCreateWorkorders(toCredentials, "manual");
-          } else if (integrationsMasterDetails.to === 'SNOW') {
-          
-            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "SNOW" }).lean();
-         
-             await SNOWOperations.SNOWCreateIncidents(toCredentials, "manual");
-          }
-          break;
+        if (integrationsMasterDetails.to === 'DF') {
+          toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "DF" }).lean();
+          await DFOperations.DFCreateWorkorders(toCredentials, "manual");
+        } else if (integrationsMasterDetails.to === 'CYS') {
+          toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "CYS" }).lean();
+          // console.log('CYS Credentials:', toCredentials);
+          // console.log('integrationsMasterDetails:===', integrationsMasterDetails)
+          await CYSOperations.CYSCreateWorkorders(toCredentials, "manual");
+        } else if (integrationsMasterDetails.to === 'SNOW') {
 
-        case 'SNOW':
-          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "SNOW" }).lean();
-          await SNOWOperations.getSNOWWorkOrders(fromCredentials, "manual");
+          toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "SNOW" }).lean();
 
-          if (integrationsMasterDetails.to === 'CPD') {
-            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "CPD" }).lean();
+          await SNOWOperations.SNOWCreateIncidents(toCredentials, "manual");
+        }
+        break;
 
-          }
-          break;
+      case 'SNOW':
+        fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "SNOW" }).lean();
+        await SNOWOperations.getSNOWWorkOrders(fromCredentials, "manual");
 
-        case 'DF':
-          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "DF" }).lean();
-          // integrationCredentials.push(fromCredentials); // Uncomment if needed
-          break;
+        if (integrationsMasterDetails.to === 'CPD') {
+          toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "CPD" }).lean();
 
-        default:
-          console.log('No matching integrationsMasterDetails type found.');
-      }
+        }
+        break;
+
+      case 'DF':
+        fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "DF" }).lean();
+        // integrationCredentials.push(fromCredentials); // Uncomment if needed
+        break;
+
+      default:
+        console.log('No matching integrationsMasterDetails type found.');
+    }
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
@@ -1332,13 +1349,13 @@ exports.validateIntegrationStatus = asyncWrapper(async (req, res, next) => {
 exports.getAllIntegrationExceptions = asyncWrapper(async (req, res) => {
 
   const currentDate = moment()
-  const fromDate = moment(currentDate).subtract(7,'days').startOf('day')
+  const fromDate = moment(currentDate).subtract(7, 'days').startOf('day')
   const toDate = moment().endOf('day')
 
   const formattedFromDate = fromDate.format('YYYY-MM-DDTHH:mm:ss')
   const formattedToDate = toDate.format('YYYY-MM-DDTHH:mm:ss')
 
-  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt:{$gte:new Date(formattedFromDate), $lte: new Date(formattedToDate)} }).populate('integrationsMasterId').sort({ _id: -1 }).limit(100)
+  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt: { $gte: new Date(formattedFromDate), $lte: new Date(formattedToDate) } }).populate('integrationsMasterId').sort({ _id: -1 }).limit(100)
 
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -1519,9 +1536,9 @@ exports.getServiceProviderLists = asyncWrapper(async (req, res) => {
  * Function to update date range.
  */
 
-exports.updateDateRange = asyncWrapper(async (req,res) => {
-  const {integrationSettingsId} = req.params
-  await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId,{dataDumpRange:req.body.dataDumpRange},{new : true});
+exports.updateDateRange = asyncWrapper(async (req, res) => {
+  const { integrationSettingsId } = req.params
+  await integrationsSettingsModel.findByIdAndUpdate(integrationSettingsId, { dataDumpRange: req.body.dataDumpRange }, { new: true });
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGES_UPDATE_DATE_RANGE,
