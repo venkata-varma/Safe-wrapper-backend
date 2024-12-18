@@ -51,6 +51,10 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
             type:String,
             default:""
         },
+        priority:{
+            type:Number,
+            default:0
+        }
     }],
     destinationIntegrationServices: [{
         dataPointUrl:{
@@ -75,6 +79,10 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
             type:String,
             default:""
         },
+        priority:{
+            type:Number,
+            default:0
+        }
     }],
     sourceDataPoints: {
         type: Array,

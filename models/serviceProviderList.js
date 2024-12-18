@@ -36,6 +36,14 @@ const serviceProviderListSchema = new mongoose.Schema({
         // required: [true, "Credentials are mandatory"],
         default:null
     },
+    primaryKeyColumn:{
+        type:String,
+        default:""
+    },
+    dataMappingPath:{
+        type:String,
+        default:""
+    },
     categories:{
         type:Array,
         default:[]
