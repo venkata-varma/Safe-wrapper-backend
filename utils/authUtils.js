@@ -49,7 +49,7 @@ exports.validateServiceProviders = async (bodyData) => {
         data: bodyData.requestMethod === "body" ? querystring.stringify(bodyData.data) : bodyData.data
     };
     try {
-        const authResponse = await axios.request(createWorkOrderConfig)
+        const authResponse = await axios.request(createConfig)
         return {statusCode:authResponse.status, status: customConstants.messages.MESSAGE_SUCCESS,message:customConstants.messages.MESSAGE_VALIDATE_SERVICEPROVIDER_SUCCESS, responseData:authResponse.data };
     } catch (error) {
         console.log('ERORRR:===',error)

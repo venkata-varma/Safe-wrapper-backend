@@ -1348,14 +1348,9 @@ exports.validateIntegrationStatus = asyncWrapper(async (req, res, next) => {
  */
 exports.getAllIntegrationExceptions = asyncWrapper(async (req, res) => {
 
-  const currentDate = moment()
-  const fromDate = moment(currentDate).subtract(7, 'days').startOf('day')
-  const toDate = moment().endOf('day')
+  const {fromDate, toDate} = req.query
 
-  const formattedFromDate = fromDate.format('YYYY-MM-DDTHH:mm:ss')
-  const formattedToDate = toDate.format('YYYY-MM-DDTHH:mm:ss')
-
-  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt: { $gte: new Date(formattedFromDate), $lte: new Date(formattedToDate) } }).populate('integrationsMasterId').sort({ _id: -1 }).limit(100)
+  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt:{$gte:new Date(fromDate), $lte: new Date(toDate)} }).populate('integrationsMasterId').sort({ _id: -1 })
 
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
