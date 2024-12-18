@@ -36,7 +36,8 @@ const { getAllDFBuldingsData, searchDFBuildingsByStateAndCountry, searchDFBuildi
 const accountSettingsModel = require('../../models/accountSettingsModel')
 const { validateServiceProviders } = require("../../utils/authUtils")
 
-const moment = require('moment')
+const moment = require('moment');
+const { integrationOperationsServices } = require("../../globalModels/integrationOperations");
 /**
  * Get the static images.
  */
@@ -1237,6 +1238,7 @@ exports.deactivateInteragtionMasterCrons = asyncWrapper(async (req, res) => {
  * CPDOperations and DFOperations will makes the pull and push the work orders.
 */
 
+/*
 exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const { integrationsMasterId } = req.params;
   const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
@@ -1284,6 +1286,25 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
         console.log('No matching integrationsMasterDetails type found.');
     }
 
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_CRON_MANUAL,
+    });
+  } else {
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_VALIDATE_STATUS
+    });
+  }
+});
+*/
+
+exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
+  const { integrationsMasterId } = req.params;
+  const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
+
+  if (integrationsMasterDetails) {
+      await integrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId}))
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_CRON_MANUAL,

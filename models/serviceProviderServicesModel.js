@@ -12,8 +12,8 @@ const serviceProviderServices = new mongoose.Schema({
         default: ""
     },  
     primaryKeyColumn: {
-        type: String,
-        default: ""
+        type:Array,
+        default:[]
     },  
     dataMappingPath: {
         type: String,

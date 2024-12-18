@@ -54,6 +54,14 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
         priority:{
             type:Number,
             default:0
+        },
+        primaryKeyColumn:{
+            type:Array,
+            default:[]
+        },
+        dataMappingPath:{
+            type:String,
+            default:""
         }
     }],
     destinationIntegrationServices: [{
@@ -82,6 +90,14 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
         priority:{
             type:Number,
             default:0
+        },
+        primaryKeyColumn:{
+            type:Array,
+            default:[]
+        },
+        dataMappingPath:{
+            type:String,
+            default:""
         }
     }],
     sourceDataPoints: {

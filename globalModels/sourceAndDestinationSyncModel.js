@@ -18,18 +18,18 @@ class GlobalHTTPMethods {
         } catch (error) {
             res.status(error.response?.status || 500).json({ error: error.message });
         }
-    }
+    }  
 
     // Generic POST request handler with headers
-    static async handlePost(req, res) {
+    static async handlePost(integrationsServiceObject, authResponse, data) {
         try {
-            const { url, data, headers } = req.body;
+            const { dataPointUrl, serviceMethod } = integrationsServiceObject;
             if (!url || !data) {
                 return res.status(400).json({ message: "URL and data are required" });
             }
 
             const response = await axios.post(url, data, {
-                headers: JSON.parse(headers || '{}'), // Parse headers if provided
+                headers: authResponse, // Parse headers if provided
             });
 
             res.status(response.status).json(response.data);
