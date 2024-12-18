@@ -1,4 +1,5 @@
-
+const { response } = require("express");
+const axios = require('axios')
 
 class GlobalHTTPMethods {
     // Generic GET request handler with headers
@@ -21,19 +22,24 @@ class GlobalHTTPMethods {
     }  
 
     // Generic POST request handler with headers
-    static async handlePost(integrationsServiceObject, authResponse, data) {
+    static async handlePost(integrationsServiceObject, authRequest, payload) {
         try {
             const { dataPointUrl, serviceMethod } = integrationsServiceObject;
-            if (!url || !data) {
+            console.log('integrationsServiceObject:===',integrationsServiceObject)
+            if (!dataPointUrl || !payload) {
+                throw new Error("URL and data are required.");
                 return res.status(400).json({ message: "URL and data are required" });
             }
 
-            const response = await axios.post(url, data, {
-                headers: authResponse, // Parse headers if provided
+            const response = await axios.post(dataPointUrl, payload, {
+                headers: authRequest, // Parse headers if provided
             });
-
+            console.log("response:===",response.data)
+            return response.data
             res.status(response.status).json(response.data);
         } catch (error) {
+            console.log("errorresponse:===",error)
+            return error
             res.status(error.response?.status || 500).json({ error: error.message });
         }
     }

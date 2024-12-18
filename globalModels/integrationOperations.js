@@ -3,19 +3,23 @@ const integrationsSettingsModel = require("../models/integrationsSettingsModel")
 const serviceProviderServicesModel = require("../models/serviceProviderServicesModel");
 const { validateServiceProviders } = require("./serviceProviderAuthModel");
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
+const moment = require('moment');
+
 
 const integrationOperationsServices = async (integrationObject) => {
     //** devide the loops into indiviual funstions. */
     const sourceIntegrationServices = integrationObject.forEach(async (data) => {
-        const authToken = await getIntegrationAuthResponse(data.integrationsMasterId, integrationObject.from)
+        const authToken = await getIntegrationAuthResponse(data.integrationsMasterId, data.from)
         data.sourceIntegrationServices.forEach(async (item) => {
             switch (item.serviceMethod) {
                 case 'post':
                     const servicepayload = await getServicePayload(data.integrationsMasterId, integrationObject.from, item.serviceProviderServiceId)
-                    await GlobalHTTPMethods.handlePost(data.sourceIntegrationServices, authToken, servicepayload)
+                    console.log('servicepayload:==',servicepayload)
+                    await GlobalHTTPMethods.handlePost(item, authToken, servicepayload)
                     break;
-                case 'get':
-                    await GlobalHTTPMethods.handleGet(data.sourceIntegrationServices, authToken)
+                // case 'get':
+                // console.log('item.serviceMethod:==',item.serviceMethod)
+                //     await GlobalHTTPMethods.handleGet(data.sourceIntegrationServices, authToken)
                 default:
                     break;
             }
@@ -23,45 +27,83 @@ const integrationOperationsServices = async (integrationObject) => {
     });
 }
 
-async function getIntegrationAuthResponse (integrationsMasterId, sourceServiceProvider) {
-    const serviceProviderAuthResponse = await validateServiceProviders(await integrationsMasterServiceProvidersModel.findOne({integrationsMasterId:integrationsMasterId, serviceProvider:sourceServiceProvider}).credentials)
-                                        .then((res)=>{
-                                            return res.requestMethod === 'body' ? { Authorization: `bearer ${res.responseData.access_token}` } : res.responseData
-                                        })
-    return serviceProviderAuthResponse
+async function getIntegrationAuthResponse(integrationMasterId, sourceServiceProvider) {
+    console.log('integrationMasterId:---',integrationMasterId,sourceServiceProvider)
+    const serviceProviderDetails = await integrationsMasterServiceProvidersModel.findOne({
+        integrationsMasterId: integrationMasterId,
+        serviceProvider: sourceServiceProvider,
+    });
+
+    if (!serviceProviderDetails || !serviceProviderDetails.credentials) {
+        throw new Error('Service provider credentials not found.');
+    }
+    const authResponse = await validateServiceProviders(serviceProviderDetails.credentials)
+        .then((validationResult) => {
+            return validationResult.requestMethod === 'body'
+                ? { Authorization: `Bearer ${validationResult.responseData.access_token}` }
+                : validationResult.responseData;
+        });
+
+    return authResponse;
 }
 
-async function getServicePayload(integrationsMasterId, sourceServiceProvider, serviceProviderServiceId){
-    const serviceProviderServiceDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId)
-    const requestObject = serviceProviderServiceDetails.requestObject
-    
-    const getIntegrationsSettingsDetails = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationsMasterId});
-    const getDateRange = getIntegrationsSettingsDetails.dataDumpRange
-    
-    let payload
-    let currentDate = moment();
-    let formattedFromDate = moment(currentDate).subtract(getDateRange, 'days').startOf('day');
-    let formattedToDate  = moment().endOf('day');
-    fromDate = formattedFromDate.format('YYYY-MM-DDTHH:mm:ss');
-    toDate   = formattedToDate.format('YYYY-MM-DDTHH:mm:ss');
-    payload = {
-        "Parameters": {
-            //"WorkOrderNumber":"POS4L20001", /*Search by work order number
-            /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
-            "Created": {
-                "From": fromDate,
-                "To": toDate
-                // "From":"2024-07-12T00:00:00",
-                // "To":"2024-07-19T23:59:59"
-                // "To": "2024-02-14T24:00:00.000Z"
-            },
-            /*Search by work order status -> New,Accepted,Recalled,Rejected,CheckedIn,Paused,CheckedOut,OnHold,Verified,NeedsCompletionDetails*/
-            // "Statuses":getStatusesToSearchWO
-            //,"CustomerId" :"90256"
-        },
-        "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
+
+async function getServicePayload(integrationMasterId, sourceServiceProvider, serviceProviderServiceId) {
+    // Fetch service provider service details
+    const serviceDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId);
+    const parsedRequestObject = JSON.parse(serviceDetails.requestObject); // Parse request object
+    const dataMappingPaths = serviceDetails.dataMappingPath;
+
+    // Ensure parsedRequestObject is an object or array
+    if (typeof parsedRequestObject !== 'object' || parsedRequestObject === null) {
+        throw new Error('Invalid parsedRequestObject: Expected an object or array.');
     }
-   
+
+    // Fetch integration settings details
+    const integrationSettings = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationMasterId });
+    const dateRangeInDays = integrationSettings.dataDumpRange;
+
+    // Calculate date range
+    const currentMoment = moment();
+    const fromDateFormatted = currentMoment.subtract(dateRangeInDays, 'days').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+    const toDateFormatted = moment().endOf('day').format('YYYY-MM-DDTHH:mm:ss');
+
+    // Replace values in parsedRequestObject based on dataMappingPaths
+    dataMappingPaths.forEach((path) => {
+        const normalizedPath = path.replace(/\[([^\]]+)]/g, '.$1'); 
+        const pathSegments = normalizedPath.split('.'); 
+
+        let targetObject = parsedRequestObject;
+
+        // Traverse to the target key
+        for (let segmentIndex = 0; segmentIndex < pathSegments.length - 1; segmentIndex++) {
+            const segmentKey = pathSegments[segmentIndex];
+            if (Array.isArray(targetObject)) {
+                const arrayIndex = parseInt(segmentKey, 10);
+                if (isNaN(arrayIndex) || arrayIndex < 0 || arrayIndex >= targetObject.length) {
+                    throw new Error(`Invalid array index: ${segmentKey}`);
+                }
+                targetObject = targetObject[arrayIndex];
+            } else if (typeof targetObject === 'object' && segmentKey in targetObject) {
+                targetObject = targetObject[segmentKey];
+            } else {
+                throw new Error(`Invalid path: ${path}`);
+            }
+        }
+        // Replace value for the final key
+        const finalKey = pathSegments[pathSegments.length - 1];
+        if (typeof targetObject === 'object' && finalKey in targetObject) {
+            if (targetObject[finalKey] === 'date') { // Check data type
+                targetObject[finalKey] = finalKey.toLowerCase() === 'from' ? fromDateFormatted : toDateFormatted;
+            }
+        } else {
+            throw new Error(`Key not found: ${finalKey}`);
+        }
+    });
+
+    return parsedRequestObject;
 }
+
+
 
 module.exports = { integrationOperationsServices }
