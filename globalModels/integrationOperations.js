@@ -1,5 +1,6 @@
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
 const integrationsSettingsModel = require("../models/integrationsSettingsModel");
+const serviceProviderServicesModel = require("../models/serviceProviderServicesModel");
 const { validateServiceProviders } = require("./serviceProviderAuthModel");
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 
@@ -7,10 +8,10 @@ const integrationOperationsServices = async (integrationObject) => {
     //** devide the loops into indiviual funstions. */
     const sourceIntegrationServices = integrationObject.forEach(async (data) => {
         const authToken = await getIntegrationAuthResponse(data.integrationsMasterId, integrationObject.from)
-        const servicepayload = await getServicePayload(data.integrationsMasterId, integrationObject.from)
         data.sourceIntegrationServices.forEach(async (item) => {
             switch (item.serviceMethod) {
                 case 'post':
+                    const servicepayload = await getServicePayload(data.integrationsMasterId, integrationObject.from, item.serviceProviderServiceId)
                     await GlobalHTTPMethods.handlePost(data.sourceIntegrationServices, authToken, servicepayload)
                     break;
                 case 'get':
@@ -30,16 +31,10 @@ async function getIntegrationAuthResponse (integrationsMasterId, sourceServicePr
     return serviceProviderAuthResponse
 }
 
-async function getServicePayload(integrationsMasterId, sourceServiceProvider){
-
-    switch (sourceServiceProvider) {
-        case 'CPD':
-            
-            break;
+async function getServicePayload(integrationsMasterId, sourceServiceProvider, serviceProviderServiceId){
+    const serviceProviderServiceDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId)
+    const requestObject = serviceProviderServiceDetails.requestObject
     
-        default:
-            break;
-    }
     const getIntegrationsSettingsDetails = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationsMasterId});
     const getDateRange = getIntegrationsSettingsDetails.dataDumpRange
     

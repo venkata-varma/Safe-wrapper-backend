@@ -426,11 +426,11 @@ exports.validateintegrationsMasterExistForFieldMapping = asyncWrapper(async (req
  */
 
 exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
-  const { credentials } = req.body
+  const { credentials, serviceProvider } = req.body
   let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
   if (credentials.requestMethod === "body") {
     if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
-        serviceProviderValidation.statusCode !== 200 || !serviceProviderValidation.responseData?.access_token) {
+        serviceProviderValidation.statusCode !== 200 || (!serviceProviderValidation.responseData?.access_token && serviceProvider !== "CYS")) {
       return res.status(serviceProviderValidation.statusCode).json({
         status: serviceProviderValidation.status,
         message: serviceProviderValidation.message
