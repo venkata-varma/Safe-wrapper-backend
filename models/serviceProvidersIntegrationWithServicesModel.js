@@ -60,8 +60,8 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
             default:[]
         },
         dataMappingPath:{
-            type:String,
-            default:""
+            type:Array,
+            default:[]
         }
     }],
     destinationIntegrationServices: [{
@@ -96,8 +96,8 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
             default:[]
         },
         dataMappingPath:{
-            type:String,
-            default:""
+            type:Array,
+            default:[]
         }
     }],
     sourceDataPoints: {
