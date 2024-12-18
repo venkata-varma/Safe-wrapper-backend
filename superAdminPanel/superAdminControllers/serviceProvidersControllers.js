@@ -60,15 +60,31 @@ exports.serviceProviderCheck = asyncWrapper(async(req,res,next)=>{
 
 exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
 
+    const { credentials } = req.body
     let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
-    if(req.body.credentials && req.body.credentials !== null && Object.values(req.body.credentials).length > 0){
-        if(serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined || serviceProviderValidation.statusCode !== 200){
-            return res.status(serviceProviderValidation.statusCode).json({
-              status: serviceProviderValidation.status,
-              message:serviceProviderValidation.message
-           })
-          }
-          next()
+    if (credentials.requestMethod === "body") {
+      if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
+          serviceProviderValidation.statusCode !== 200 || !serviceProviderValidation.responseData?.access_token) {
+        return res.status(serviceProviderValidation.statusCode).json({
+          status: serviceProviderValidation.status,
+          message: serviceProviderValidation.message
+        })
+      }
+      else {
+        next()
+      }
+    }
+    else if (credentials.requestMethod === "headers") {
+      if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
+        serviceProviderValidation.statusCode !== 200) {
+        return res.status(serviceProviderValidation.statusCode).json({
+          status: serviceProviderValidation.status,
+          message: serviceProviderValidation.message
+        })
+      }
+      else {
+        next()
+      }
     }
     else{
         next()

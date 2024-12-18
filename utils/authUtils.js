@@ -41,7 +41,7 @@ exports.checkOAuth = async ({baseUrl,clientId, secreteKey, grantType = 'client_c
     */
 
 exports.validateServiceProviders = async (bodyData) => {
-    let createWorkOrderConfig = {
+    let createConfig = {
         method: bodyData.serviceMethod,
         maxBodyLength: Infinity,
         url: bodyData.baseUrl,
@@ -50,7 +50,7 @@ exports.validateServiceProviders = async (bodyData) => {
     };
     try {
         const authResponse = await axios.request(createWorkOrderConfig)
-        return {statusCode:authResponse.status, status: customConstants.messages.MESSAGE_SUCCESS,message:customConstants.messages.MESSAGE_VALIDATE_SERVICEPROVIDER_SUCCESS, getResponse:authResponse.data };
+        return {statusCode:authResponse.status, status: customConstants.messages.MESSAGE_SUCCESS,message:customConstants.messages.MESSAGE_VALIDATE_SERVICEPROVIDER_SUCCESS, responseData:authResponse.data };
     } catch (error) {
         console.log('ERORRR:===',error)
         return {statusCode:error.response.status, status: customConstants.messages.MESSAGE_FAIL, message:customConstants.messages.MESSAGE_VALIDATE_SERVICEPROVIDER_FAILED };

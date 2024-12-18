@@ -429,7 +429,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
   if (credentials.requestMethod === "body") {
     if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
-        serviceProviderValidation.statusCode !== 200 || !serviceProviderValidation.getResponse?.access_token) {
+        serviceProviderValidation.statusCode !== 200 || !serviceProviderValidation.responseData?.access_token) {
       return res.status(serviceProviderValidation.statusCode).json({
         status: serviceProviderValidation.status,
         message: serviceProviderValidation.message
