@@ -7,7 +7,6 @@ exports.validateServiceProviders = async (bodyData) => {
     // Find integration credentails and then decrypt and pull CPD calls.
     let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: bodyData };
     let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-     
     let createConfig = {
         method: decryptConfigCredentials.serviceMethod,
         maxBodyLength: Infinity,
