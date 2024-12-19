@@ -14,7 +14,7 @@ const sourceIntegrationOperationsServices = async (integrationObject) => {
 
 // Function to process a single integration's data
 const processIntegrationData = async (data) => {
-    const authToken = await getIntegrationAuthResponse(data.integrationsMasterId, data.from);
+    const authToken = await getServiceproviderAuthResponse(data.integrationsMasterId, data.from);
     let integrationDetails = data
     // Sort services by priority and process them one by one
     const sortedServices = data.sourceIntegrationServices.sort((a, b) => a.priority - b.priority);
@@ -124,7 +124,7 @@ const modifyUrlsWithDependentData = (url, primaryKeyColumn, dependentData) => {
 
 
 // Function to retrieve the authentication response for the integration service
-async function getIntegrationAuthResponse(integrationMasterId, sourceServiceProvider) {
+async function getServiceproviderAuthResponse(integrationMasterId, sourceServiceProvider) {
     console.log('integrationMasterId:', integrationMasterId, sourceServiceProvider);
 
     const serviceProviderDetails = await integrationsMasterServiceProvidersModel.findOne({
