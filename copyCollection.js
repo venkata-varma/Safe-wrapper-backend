@@ -3,32 +3,37 @@ const { default: axios } = require("axios");
 const mongooseConnect = require("./config/dbConnection");
 const { default: mongoose } = require("mongoose");
 
-async function GSMS(collectionName, requestObj) {
+exports.GSMS = async (collectionName, requestObj) =>  {
 
-  
-  await mongooseConnect.DbConnect();
+    try {
+        await mongooseConnect.DbConnect();
 
-  await initializeCollectionIfAbsent(collectionName);
-  const collection = mongoose.connection.db.collection(collectionName)
-  await collection.insertOne(requestObj)
+        await initializeCollectionIfAbsent(collectionName);
+        const collection = mongoose.connection.db.collection(collectionName)
+        await collection.insertOne(requestObj)
+    }
+    catch(error){
+        console.log("error@GSMS:==",error)
+    }
+    
 }
 
 async function initializeCollectionIfAbsent(collectionName) {
-  try {
-    // Access the collection
-    const collection = mongoose.connection.db.collection(collectionName);
+    try {
+        // Access the collection
+        const collection = mongoose.connection.db.collection(collectionName);
 
-    // Get the document count
-    const checkCollectionCount = await collection.find({}).limit(1).hasNext();
+        // Get the document count
+        const checkCollectionCount = await collection.find({}).limit(1).hasNext();
 
-    console.log('HASNEXT CONTAINS', checkCollectionCount);
-    
-    if (!checkCollectionCount) {
-        createDynamicCollection(collectionName)
+        console.log('HASNEXT CONTAINS', checkCollectionCount);
+
+        if (!checkCollectionCount) {
+            createDynamicCollection(collectionName)
+        }
+    } catch (error) {
+        console.error("Error getting collection length:", error);
     }
-  } catch (error) {
-    console.error("Error getting collection length:", error);
-  }
 }
 
 async function createDynamicCollection(targetCollectionName) {
@@ -56,8 +61,8 @@ async function createDynamicCollection(targetCollectionName) {
 
 // // Example Usage
 // const sourceCollectionName = "dfworkorders";
-const targetCollectionName = "plangridworkorders";
-
+// const targetCollectionName = "plangridworkorders";
+/*
 GSMS(targetCollectionName, {
   accountId: new mongoose.Types.ObjectId("667d4177bc77277e43bc1e2f"),
   integrationsCronId: new mongoose.Types.ObjectId("667d468e4d9212bd8e72b988"),
@@ -75,3 +80,5 @@ GSMS(targetCollectionName, {
   status: "completed",
   priority: "high"
 });
+*/
+// module.exports = {GSMS}

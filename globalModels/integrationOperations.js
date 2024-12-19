@@ -11,7 +11,7 @@ const integrationOperationsServices = async (integrationObject) => {
         // Process each integration data
         await processIntegrationData(data);
     }
-};
+};  
 
 // Function to process a single integration's data
 const processIntegrationData = async (data) => {
