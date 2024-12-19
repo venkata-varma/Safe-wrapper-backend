@@ -16,7 +16,7 @@ async function start() {
     let integrationMasterInfo = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
     let sourceInfo = await integrationsMasterServiceProvidersModel.findOne({integrationsMasterId: integrationsMasterId, serviceProvider: integrationMasterInfo.from}).lean()
     // console.log(sourceInfo);
-    
+    // getSourceObjects
     await getWorkOrders(sourceInfo)
 }
 
