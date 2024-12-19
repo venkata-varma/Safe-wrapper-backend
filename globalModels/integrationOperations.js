@@ -5,31 +5,46 @@ const { validateServiceProviders } = require("./serviceProviderAuthModel");
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 const moment = require('moment');
 
-
-
 // Main function to handle integration operations for each service in the integrationObject
 const integrationOperationsServices = async (integrationObject) => {
-    // Loop through each item in the integrationObject
-    const sourceIntegrationServices = integrationObject.forEach(async (data) => {
-        // Fetch the authentication token for the source service provider using the integrationMasterId and 'from' provider
-        const authToken = await getIntegrationAuthResponse(data.integrationsMasterId, data.from);
-        data.sourceIntegrationServices.forEach(async (item) => {    // Loop through the sourceIntegrationServices array to perform service-specific actions
-            switch (item.serviceMethod) {   
-                case 'post':
-                    const servicepayload = await getServicePayload(data.integrationsMasterId, integrationObject.from, item.serviceProviderServiceId);
-                    console.log('servicepayload:==', servicepayload);
-                    await GlobalHTTPMethods.handlePost(item, authToken, servicepayload);
-                    break;
-                // case 'get':
-                //     console.log('item.serviceMethod:==', item.serviceMethod);
-                //     await GlobalHTTPMethods.handleGet(data.sourceIntegrationServices, authToken);
-                default:
-                    break;
-            }
-        });
-    });
-}
+    for (const data of integrationObject) {
+        // Process each integration data
+        await processIntegrationData(data);
+    }
+};
 
+// Function to process a single integration's data
+const processIntegrationData = async (data) => {
+    // Fetch the authentication token for the source service provider
+    const authToken = await getIntegrationAuthResponse(data.integrationsMasterId, data.from);
+
+    // Process each service in sourceIntegrationServices
+    for (const item of data.sourceIntegrationServices) {
+        await processIntegrationService(item, data.integrationsMasterId, data.from, authToken);
+    }
+};
+
+// Function to process a single service
+const processIntegrationService = async (service, integrationsMasterId, sourceProvider, authToken) => {
+    switch (service.serviceMethod) {
+        case 'post':
+            // Generate payload for the POST request
+            const servicePayload = await getServicePayload(integrationsMasterId, sourceProvider, service.serviceProviderServiceId);
+            console.log('servicePayload:==', servicePayload);
+
+            // Perform the POST request
+            await GlobalHTTPMethods.handlePost(service, authToken, servicePayload);
+            break;
+
+        // Uncomment and implement GET or other methods if needed
+        // case 'get':
+        //     console.log('service.serviceMethod:==', service.serviceMethod);
+        //     await GlobalHTTPMethods.handleGet(service, authToken);
+        default:
+            console.warn(`Unsupported service method: ${service.serviceMethod}`);
+            break;
+    }
+};
 
 // Function to retrieve the authentication response for the integration service
 async function getIntegrationAuthResponse(integrationMasterId, sourceServiceProvider) {
@@ -59,66 +74,95 @@ async function getIntegrationAuthResponse(integrationMasterId, sourceServiceProv
     return authResponse;
 }
 
+// Main function to get the service payload
 async function getServicePayload(integrationMasterId, sourceServiceProvider, serviceProviderServiceId) {
-    // Fetch service provider service details
-    const serviceDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId);
-    const parsedRequestObject = JSON.parse(serviceDetails.requestObject); // Parse request object
-    const dataMappingPaths = serviceDetails.dataMappingPath;
+    const serviceDetails = await fetchServiceDetails(serviceProviderServiceId);
+    const integrationSettings = await fetchIntegrationSettings(integrationMasterId);
 
-    // Ensure parsedRequestObject is an object or array
+    const parsedRequestObject = parseRequestObject(serviceDetails.requestObject);
+    const dateRange = calculateDateRange(integrationSettings.dataDumpRange);
+
+    const updatedPayload = updatePayloadWithMappings(parsedRequestObject, serviceDetails.dataMappingPath, dateRange);
+
+    return updatedPayload;
+}
+
+// Fetch service provider service details
+async function fetchServiceDetails(serviceProviderServiceId) {
+    const serviceDetails = await serviceProviderServicesModel.findById(serviceProviderServiceId);
+    if (!serviceDetails) {
+        throw new Error('Service details not found.');
+    }
+    return serviceDetails;
+}
+
+// Fetch integration settings
+async function fetchIntegrationSettings(integrationsMasterId) {
+    const integrationSettings = await integrationsSettingsModel.findOne({ integrationsMasterId });
+    if (!integrationSettings) {
+        throw new Error('Integration settings not found.');
+    }
+    return integrationSettings;
+}
+
+// Parse the request object and ensure it's valid
+function parseRequestObject(requestObject) {
+    const parsedRequestObject = JSON.parse(requestObject);
     if (typeof parsedRequestObject !== 'object' || parsedRequestObject === null) {
         throw new Error('Invalid parsedRequestObject: Expected an object or array.');
     }
+    return parsedRequestObject;
+}
 
-    // Fetch integration settings details
-    const integrationSettings = await integrationsSettingsModel.findOne({ integrationsMasterId: integrationMasterId });
-    const dateRangeInDays = integrationSettings.dataDumpRange;
-
-    // Calculate date range
+// Calculate date range based on a given range in days
+function calculateDateRange(dateRangeInDays) {
     const currentMoment = moment();
     const fromDateFormatted = currentMoment.subtract(dateRangeInDays, 'days').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
     const toDateFormatted = moment().endOf('day').format('YYYY-MM-DDTHH:mm:ss');
 
-    // Replace values in parsedRequestObject based on dataMappingPaths
+    return { fromDateFormatted, toDateFormatted };
+}
+
+// Update the payload with data mapping paths and date range
+function updatePayloadWithMappings(parsedRequestObject, dataMappingPaths, dateRange) {
     dataMappingPaths.forEach((path, index) => {
-        const normalizedPath = path.replace(/\[([^\]]+)]/g, '.$1'); // Normalize path (handle array-like notation)
-        const pathSegments = normalizedPath.split('.'); // Split the path into segments
+        const normalizedPath = normalizePath(path);
+        const targetObject = traverseToTarget(parsedRequestObject, normalizedPath);
 
-        let targetObject = parsedRequestObject; // Start from the root of the parsedRequestObject
-
-        // Traverse the object or array using the path segments
-        for (let segmentIndex = 0; segmentIndex < pathSegments.length - 1; segmentIndex++) {
-            const segmentKey = pathSegments[segmentIndex];
-
-            // Handle array index if applicable
-            if (Array.isArray(targetObject)) {
-                const arrayIndex = parseInt(segmentKey, 10);
-                if (isNaN(arrayIndex) || arrayIndex < 0 || arrayIndex >= targetObject.length) {
-                    throw new Error(`Invalid array index: ${segmentKey}`);
-                }
-                targetObject = targetObject[arrayIndex]; // Move to the next array element
-            } else if (typeof targetObject === 'object' && segmentKey in targetObject) {
-                targetObject = targetObject[segmentKey]; // Traverse deeper into the object
-            } else {
-                throw new Error(`Invalid path: ${path}`);
+        const finalKey = normalizedPath[normalizedPath.length - 1];
+        if (targetObject && typeof targetObject === 'object' && finalKey in targetObject) {
+            if (targetObject[finalKey] === 'date') {
+                targetObject[finalKey] = index === 0 ? dateRange.fromDateFormatted : dateRange.toDateFormatted;
             }
-        }
-
-        // Final key to update
-        const finalKey = pathSegments[pathSegments.length - 1];
-
-        // Replace value for the final key based on the index of the element in dataMappingPaths
-        if (typeof targetObject === 'object' && finalKey in targetObject) {
-            if (targetObject[finalKey] === 'date') { // Check if it's a date field
-                // Dynamically assign the correct date value
-                targetObject[finalKey] = index === 0 ? fromDateFormatted : toDateFormatted;
-            }
-        } else {
-            throw new Error(`Key not found: ${finalKey}`);
         }
     });
-
     return parsedRequestObject;
+}
+
+// Normalize path to handle array-like notation
+function normalizePath(path) {
+    return path.replace(/\[([^\]]+)]/g, '.$1').split('.'); // Normalize and split into segments
+}
+
+// Traverse an object or array to the target location based on path segments
+function traverseToTarget(object, pathSegments) {
+    let target = object;
+
+    for (let i = 0; i < pathSegments.length - 1; i++) {
+        const segment = pathSegments[i];
+        if (Array.isArray(target)) {
+            const index = parseInt(segment, 10);
+            if (isNaN(index) || index < 0 || index >= target.length) {
+                throw new Error(`Invalid array index: ${segment}`);
+            }
+            target = target[index];
+        } else if (typeof target === 'object' && segment in target) {
+            target = target[segment];
+        } else {
+            throw new Error(`Invalid path: ${pathSegments.join('.')}`);
+        }
+    }
+    return target;
 }
 
 

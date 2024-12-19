@@ -28,7 +28,6 @@ class GlobalHTTPMethods {
             console.log('integrationsServiceObject:===',integrationsServiceObject)
             if (!dataPointUrl || !payload) {
                 throw new Error("URL and data are required.");
-                return res.status(400).json({ message: "URL and data are required" });
             }
 
             const response = await axios.post(dataPointUrl, payload, {
@@ -36,11 +35,9 @@ class GlobalHTTPMethods {
             });
             console.log("response:===",response.data)
             return response.data
-            res.status(response.status).json(response.data);
         } catch (error) {
             console.log("errorresponse:===",error)
             return error
-            res.status(error.response?.status || 500).json({ error: error.message });
         }
     }
 
