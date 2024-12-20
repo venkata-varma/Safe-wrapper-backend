@@ -1300,12 +1300,15 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
 });
 */
 
+/**
+ * This function will useful for manual pull data from source and push to destination. 
+ */
 exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const { integrationsMasterId } = req.params;
   const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
 
   if (integrationsMasterDetails) {
-    const integrationDetails = await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId})
+    
     await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, from:integrationsMasterDetails.from}))
     // await integrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, from:integrationsMasterDetails.from}))
 

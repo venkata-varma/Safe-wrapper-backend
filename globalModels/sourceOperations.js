@@ -5,43 +5,50 @@ const { validateServiceProviders, validateSPAuthentication } = require("./servic
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 const moment = require('moment');
 
+/**
+ * 
+ * @param {*} integrationObject holds field N X number of mapping records (Both source & destination)
+ * 1. First, we are looping the integration mappings (N X number). 
+ * 2. Authenticate & get required tokens
+ * 3. Fetch source side data objects by calling API calls.  
+ * 4. Insert into source side collections with new status and required data points. 
+ */
 const sourceIntegrationOperationsServices = async (integrationObject) => {
     for (const data of integrationObject) {
         // Process each integration data
-        await processIntegrationData(data);
+        await processSIMappings(data);
     }
 };
 
-// Function to process a single integration's data
-const processIntegrationData = async (data) => {
+/**
+ * 
+ * @param {*} data holds {} 
+ */
+const processSIMappings = async (data) => {
     const authToken = await getServiceproviderAuthResponse(data.integrationsMasterId, data.from);
     let integrationDetails = data
     // Sort services by priority and process them one by one
     const sortedServices = data.sourceIntegrationServices.sort((a, b) => a.priority - b.priority);
-    await processServicesWithDependencies(sortedServices, data.integrationsMasterId, data.from, authToken, integrationDetails);
+    await processSIServiceCalls(sortedServices, data.integrationsMasterId, data.from, authToken, integrationDetails);
 };
 
 // Function to process services with dependencies
-const processServicesWithDependencies = async (services, integrationsMasterId, sourceProvider, authToken, integrationDetails, responseData = null) => {
+const processSIServiceCalls = async (services, integrationsMasterId, sourceProvider, authToken, integrationDetails, responseData = null) => {
     for (const serviceObject of services) {
-        // If there's dependency data, add it to the serviceObject
-        if (responseData) {
-            // console.log('responseData:===', responseData)
-            serviceObject.dependentData = responseData; // Attach dependent data
-        }
 
+        if (responseData)
+            serviceObject.dependentData = responseData; // Attach dependent data
+        
         // Process the current service and get its response
         const currentResponse = await processIntegrationService(serviceObject, integrationsMasterId, sourceProvider, authToken,integrationDetails);
-
-        // console.log('currentResponse:===', currentResponse?.WorkOrders)
-
+        
         // If the current response has length > 1, recursively call for the next priority
         if (currentResponse?.WorkOrders !== undefined && currentResponse?.WorkOrders.length > 0) {
             const remainingServices = services.filter(s => s.priority > serviceObject.priority); // Get next priority services
             // console.log('Remaining Services for next call:', remainingServices);
 
             if (remainingServices.length > 0) {
-                await processServicesWithDependencies(
+                await processSIServiceCalls(
                     remainingServices,
                     integrationsMasterId,
                     sourceProvider,
@@ -124,6 +131,16 @@ const modifyUrlsWithDependentData = (url, primaryKeyColumn, dependentData) => {
 
 
 // Function to retrieve the authentication response for the integration service
+/**
+ * 
+ * @param {*} integrationMasterId 
+ * @param {*} sourceServiceProvider
+ * 1. Fetch service provider authentication credentials 
+ * 2. Validate service provider authentication credentils
+ * 3. Find response & find data path.
+ * @returns required authentication credentials say {token, refresh token & others}
+ */
+
 async function getServiceproviderAuthResponse(integrationMasterId, sourceServiceProvider) {
     console.log('integrationMasterId:', integrationMasterId, sourceServiceProvider);
 
