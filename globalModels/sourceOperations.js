@@ -59,9 +59,9 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
     let responseData;
     switch (serviceObject.serviceMethod) {
         case 'post':
-            const servicePayload = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId);
-            console.log('POST Payload:', servicePayload);
-            responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, servicePayload, integrationDetails);
+            const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId);
+            console.log('POST Payload:', requestObject);
+            responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, requestObject, integrationDetails);
             break;
 
         case 'get':
