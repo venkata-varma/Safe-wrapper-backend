@@ -18,20 +18,17 @@ exports.GlobalServiceModelForDynamicCollection = async (collectionName, requestO
 }
 
 async function initializeCollectionIfAbsent(collectionName) {
-  try {
-    // Access the collection
-    const collection = mongoose.connection.db.collection(collectionName);
+    
+        // Access the collection
+        const collection = mongoose.connection.db.collection(collectionName);
 
-    // Get the document count
-    const checkCollectionCount = await collection.find({}).limit(1).hasNext();
+        // Get the document count
+        const checkCollectionCount = await collection.find({}).limit(1).hasNext();
 
     
     if (!checkCollectionCount) {
         createDynamicCollection(collectionName)
     }
-  } catch (error) {
-    console.error("Error getting collection length:", error);
-  }
 }
 
 async function createDynamicCollection(targetCollectionName) {

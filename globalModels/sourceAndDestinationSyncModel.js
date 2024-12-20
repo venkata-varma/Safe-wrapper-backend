@@ -1,22 +1,37 @@
 const { response } = require("express");
-const axios = require('axios')
+const axios = require('axios');
+const {GlobalServiceModelForDynamicCollection} = require("../copyCollection");
 
 class GlobalHTTPMethods {
     // Generic GET request handler with headers
-    static async handleGet(req, res) {
+    static async handleGet(serviceObject, authToken, dataPointUrl, integrationDetails) {
         try {
-            const { url, params, headers } = req.query;
-            if (!url) {
-                return res.status(400).json({ message: "URL is required" });
+            // const { dataPointUrl, primaryKeyColumn } = serviceObject
+            if (!dataPointUrl) {
+                throw new Error("URL and data are required.");
             }
 
-            const response = await axios.get(url, {
-                params,
-                headers: JSON.parse(headers || '{}'), // Parse headers if provided
+            const response = await axios.get(dataPointUrl, {
+                // params,
+                headers: authToken, // Parse headers if provided
             });
-
-            res.status(response.status).json(response.data);
+            GlobalServiceModelForDynamicCollection('cpdtestdataobject',
+                {
+                    accountId: integrationDetails.accountId,
+                    integrationsCronId: integrationDetails.integrationsMasterId,
+                    integrationsMasterId: integrationDetails.integrationsMasterId,
+                    refId: response.data.WorkOrders[0].WorkOrderId,
+                    refWorkOrderStatus: response.data.WorkOrders[0].Status,
+                    responseObject: JSON.stringify(response.data.WorkOrders[0]),
+                    status: "completed",
+                    priority: "high"
+                  }
+            )
+            return response.data
         } catch (error) {
+
+            // console.log('error:===',error)
+            return error
             res.status(error.response?.status || 500).json({ error: error.message });
         }
     }  
@@ -25,7 +40,7 @@ class GlobalHTTPMethods {
     static async handlePost(integrationsServiceObject, authRequest, payload) {
         try {
             const { dataPointUrl, serviceMethod } = integrationsServiceObject;
-            console.log('integrationsServiceObject:===',integrationsServiceObject)
+            // console.log('integrationsServiceObject:===',integrationsServiceObject)
             if (!dataPointUrl || !payload) {
                 throw new Error("URL and data are required.");
             }
@@ -33,7 +48,7 @@ class GlobalHTTPMethods {
             const response = await axios.post(dataPointUrl, payload, {
                 headers: authRequest, // Parse headers if provided
             });
-            console.log("response:===",response.data)
+            // console.log("response:===",response.data)
             return response.data
         } catch (error) {
             console.log("errorresponse:===",error)

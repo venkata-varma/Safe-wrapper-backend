@@ -38,6 +38,7 @@ const { validateServiceProviders } = require("../../utils/authUtils")
 
 const moment = require('moment');
 const { integrationOperationsServices } = require("../../globalModels/integrationOperations");
+const { sourceIntegrationOperationsServices } = require("../../globalModels/sourceOperations");
 /**
  * Get the static images.
  */
@@ -1304,7 +1305,10 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
 
   if (integrationsMasterDetails) {
-      await integrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId}))
+    const integrationDetails = await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId})
+    await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, from:integrationsMasterDetails.from}))
+    // await integrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, from:integrationsMasterDetails.from}))
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_CRON_MANUAL,
