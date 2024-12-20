@@ -59,7 +59,7 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
     let responseData;
     switch (serviceObject.serviceMethod) {
         case 'post':
-            const servicePayload = await getServicePayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId);
+            const servicePayload = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId);
             console.log('POST Payload:', servicePayload);
             responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, servicePayload, integrationDetails);
             break;
@@ -147,7 +147,7 @@ async function getServiceproviderAuthResponse(integrationMasterId, sourceService
 
 
 // Main function to get the service payload
-async function getServicePayload(integrationMasterId, sourceServiceProvider, serviceProviderServiceId) {
+async function getRequestPayload(integrationMasterId, sourceServiceProvider, serviceProviderServiceId) {
     const serviceDetails = await fetchServiceDetails(serviceProviderServiceId);
     const integrationSettings = await fetchIntegrationSettings(integrationMasterId);
 

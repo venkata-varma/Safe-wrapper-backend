@@ -37,15 +37,15 @@ class GlobalHTTPMethods {
     }  
 
     // Generic POST request handler with headers
-    static async handlePost(integrationsServiceObject, authRequest, payload) {
+    static async handlePost(integrationsServiceObject, authRequest, requestObject) {
         try {
             const { dataPointUrl, serviceMethod } = integrationsServiceObject;
             // console.log('integrationsServiceObject:===',integrationsServiceObject)
-            if (!dataPointUrl || !payload) {
+            if (!dataPointUrl || !requestObject) {
                 throw new Error("URL and data are required.");
             }
 
-            const response = await axios.post(dataPointUrl, payload, {
+            const response = await axios.post(dataPointUrl, requestObject, {
                 headers: authRequest, // Parse headers if provided
             });
             // console.log("response:===",response.data)
