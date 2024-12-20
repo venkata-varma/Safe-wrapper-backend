@@ -1,5 +1,6 @@
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
 const integrationsSettingsModel = require("../models/integrationsSettingsModel");
+const serviceProviderIntegrationsModel = require("../models/serviceProviderIntegrationsModel");
 const serviceProviderServicesModel = require("../models/serviceProviderServicesModel");
 const { validateServiceProviders, validateSPAuthentication } = require("./serviceProviderAuthModel");
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
@@ -37,15 +38,19 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
     for (const serviceObject of services) {
 
         if (responseData)
+            // console.log('responseData:===',responseData)
             serviceObject.dependentData = responseData; // Attach dependent data
-        
+
         // Process the current service and get its response
-        const currentResponse = await processIntegrationService(serviceObject, integrationsMasterId, sourceProvider, authToken,integrationDetails);
-        
+        const currentResponse = await processIntegrationService(serviceObject, integrationsMasterId, sourceProvider, authToken, integrationDetails);
+
+        let dataMappingPathKey = serviceObject.dataMappingPath[0]
+        // console.log('currentResponse[`${dataMappingPathKey}`]:===',currentResponse[`${dataMappingPathKey}`])
         // If the current response has length > 1, recursively call for the next priority
-        if (currentResponse?.WorkOrders !== undefined && currentResponse?.WorkOrders.length > 0) {
+        if (currentResponse[`${dataMappingPathKey}`] !== undefined && currentResponse[`${dataMappingPathKey}`].length > 0) {
             const remainingServices = services.filter(s => s.priority > serviceObject.priority); // Get next priority services
             // console.log('Remaining Services for next call:', remainingServices);
+            console.log('currentResponse[`${dataMappingPathKey}`]:===',)
 
             if (remainingServices.length > 0) {
                 await processSIServiceCalls(
@@ -54,7 +59,7 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                     sourceProvider,
                     authToken,
                     integrationDetails,
-                    currentResponse.WorkOrders // Pass the current response as dependent data
+                    currentResponse[`${dataMappingPathKey}`] // Pass the current response as dependent data
                 );
             }
         }
@@ -66,7 +71,7 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
     let responseData;
     switch (serviceObject.serviceMethod) {
         case 'post':
-            const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId);
+            const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId, integrationDetails);
             console.log('POST Payload:', requestObject);
             responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, requestObject, integrationDetails);
             break;
@@ -105,7 +110,7 @@ const modifyUrlsWithDependentData = (url, primaryKeyColumn, dependentData) => {
 
         primaryKeyColumn.forEach((key) => {
             const placeholder = `{{${key}}}`; // Placeholder format (e.g., {{workOrderId}})
-            
+
             // Hardcode value for messageId, or replace with dependentData value for other keys
             let value;
             if (key === 'messageId') {
@@ -164,14 +169,16 @@ async function getServiceproviderAuthResponse(integrationMasterId, sourceService
 
 
 // Main function to get the service payload
-async function getRequestPayload(integrationMasterId, sourceServiceProvider, serviceProviderServiceId) {
+async function getRequestPayload(integrationMasterId, sourceServiceProvider, serviceProviderServiceId, integrationDetails) {
     const serviceDetails = await fetchServiceDetails(serviceProviderServiceId);
     const integrationSettings = await fetchIntegrationSettings(integrationMasterId);
 
     const parsedRequestObject = parseRequestObject(serviceDetails.requestObject);
     const dateRange = calculateDateRange(integrationSettings.dataDumpRange);
 
-    const updatedPayload = updatePayloadWithMappings(parsedRequestObject, serviceDetails.dataMappingPath, dateRange);
+    const sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: integrationDetails.from, to: integrationDetails.to })
+    // console.log('sourceSettingsData:===',sourceSettingsData)
+    const updatedPayload = updatePayloadWithMappings(parsedRequestObject, sourceSettingsData?.settings[0]?.sourceSettings, dateRange);
 
     return updatedPayload;
 }
@@ -212,23 +219,38 @@ function calculateDateRange(dateRangeInDays) {
     return { fromDateFormatted, toDateFormatted };
 }
 
-// Update the payload with data mapping paths and date range
 function updatePayloadWithMappings(parsedRequestObject, dataMappingPaths, dateRange) {
-    dataMappingPaths.forEach((path, index) => {
-        const normalizedPath = normalizePath(path);
-        const targetObject = traverseToTarget(parsedRequestObject, normalizedPath);
+    let dateIndex = 0; // Counter to track which date (from or to) to assign
 
-        const finalKey = normalizedPath[normalizedPath.length - 1];
-        if (targetObject && typeof targetObject === 'object' && finalKey in targetObject) {
-            if (targetObject[finalKey] === 'date') {
-                targetObject[finalKey] = index === 0 ? dateRange.fromDateFormatted : dateRange.toDateFormatted;
+    // Iterate over each entry in the dataMappingPaths
+    Object.entries(dataMappingPaths).forEach(([key, path]) => {
+        if (path === "date") {
+            const normalizedPath = normalizePath(key); // Normalize the key to a path array
+            const parentPath = normalizedPath.slice(0, -1); // Extract the parent path (all except final key)
+            const finalKey = normalizedPath[normalizedPath.length - 1]; // Extract the final key (e.g., 'From' or 'To')
+
+            // Use traverseToTarget to get the parent object
+            const targetObject = traverseToTarget(parsedRequestObject, parentPath);
+
+            // Check if targetObject exists and the finalKey is found directly on targetObject
+            if (targetObject && finalKey in targetObject) {
+                console.log(`Key '${finalKey}' found in targetObject. Assigning value...`);
+                targetObject[finalKey] = dateIndex === 0
+                    ? dateRange.fromDateFormatted
+                    : dateRange.toDateFormatted;
+
+                // Increment dateIndex to toggle between fromDate and toDate
+                dateIndex++;
+            } else {
+                console.warn(`Failed to find or update key '${finalKey}' in targetObject:`, targetObject);
             }
         }
     });
+
     return parsedRequestObject;
 }
 
-// Normalize path to handle array-like notation
+// Normalize path to handle array-like notation (e.g., "Parameters[0].Created.From" => ["Parameters", "0", "Created", "From"])
 function normalizePath(path) {
     return path.replace(/\[([^\]]+)]/g, '.$1').split('.'); // Normalize and split into segments
 }
@@ -237,21 +259,30 @@ function normalizePath(path) {
 function traverseToTarget(object, pathSegments) {
     let target = object;
 
-    for (let i = 0; i < pathSegments.length - 1; i++) {
+    // Iterate through each path segment, except for the final one
+    for (let i = 0; i < pathSegments.length; i++) {
         const segment = pathSegments[i];
+
+        // Check if the target is an array and use the index
         if (Array.isArray(target)) {
             const index = parseInt(segment, 10);
             if (isNaN(index) || index < 0 || index >= target.length) {
-                throw new Error(`Invalid array index: ${segment}`);
+                console.error(`Invalid array index: ${segment}`);
+                return null;
             }
-            target = target[index];
+            target = target[index]; // Update target to the item at the specified index
         } else if (typeof target === 'object' && segment in target) {
-            target = target[segment];
+            target = target[segment]; // Update target to the next level in the object
         } else {
-            throw new Error(`Invalid path: ${pathSegments.join('.')}`);
+            console.error(`Invalid path segment: ${segment} in path ${pathSegments.join('.')}`);
+            return null; // If the path is invalid, return null
         }
     }
-    return target;
+
+    return target; // Return the final object in the path
 }
+
+
+
 
 module.exports = { sourceIntegrationOperationsServices }

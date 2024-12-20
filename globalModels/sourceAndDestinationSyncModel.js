@@ -1,11 +1,13 @@
 const { response } = require("express");
 const axios = require('axios');
-const {GlobalServiceModelForDynamicCollection} = require("../copyCollection");
+const { GlobalServiceModelForDynamicCollection } = require("../createDynamicCollection");
 
 class GlobalHTTPMethods {
     // Generic GET request handler with headers
     static async handleGet(serviceObject, authToken, dataPointUrl, integrationDetails) {
         try {
+            let dataMappingPathKey = serviceObject.dataMappingPath[0]
+
             // const { dataPointUrl, primaryKeyColumn } = serviceObject
             if (!dataPointUrl) {
                 throw new Error("URL and data are required.");
@@ -20,21 +22,21 @@ class GlobalHTTPMethods {
                     accountId: integrationDetails.accountId,
                     integrationsCronId: integrationDetails.integrationsMasterId,
                     integrationsMasterId: integrationDetails.integrationsMasterId,
-                    refId: response.data.WorkOrders[0].WorkOrderId,
-                    refWorkOrderStatus: response.data.WorkOrders[0].Status,
-                    responseObject: JSON.stringify(response.data.WorkOrders[0]),
+                    refId: response.data[`${dataMappingPathKey}`].WorkOrderId,
+                    refWorkOrderStatus: response.data[`${dataMappingPathKey}`].Status,
+                    responseObject: JSON.stringify(response.data[`${dataMappingPathKey}`]),
                     status: "completed",
                     priority: "high"
-                  }
+                }
             )
             return response.data
         } catch (error) {
 
-            // console.log('error:===',error)
+            // console.log('GetError:===',error)
             return error
             res.status(error.response?.status || 500).json({ error: error.message });
         }
-    }  
+    }
 
     // Generic POST request handler with headers
     static async handlePost(integrationsServiceObject, authRequest, requestObject) {
@@ -51,7 +53,7 @@ class GlobalHTTPMethods {
             // console.log("response:===",response.data)
             return response.data
         } catch (error) {
-            console.log("errorresponse:===",error)
+            // console.log("CreateError:===",error)
             return error
         }
     }
