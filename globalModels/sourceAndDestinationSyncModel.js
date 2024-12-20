@@ -1,6 +1,6 @@
 const { response } = require("express");
 const axios = require('axios');
-const {GSMS} = require("../copyCollection");
+const {GlobalServiceModelForDynamicCollection} = require("../copyCollection");
 
 class GlobalHTTPMethods {
     // Generic GET request handler with headers
@@ -15,7 +15,7 @@ class GlobalHTTPMethods {
                 // params,
                 headers: authToken, // Parse headers if provided
             });
-            GSMS('cpdtestdataobject',
+            GlobalServiceModelForDynamicCollection('cpdtestdataobject',
                 {
                     accountId: integrationDetails.accountId,
                     integrationsCronId: integrationDetails.integrationsMasterId,
