@@ -499,3 +499,18 @@ exports.getAllServiceProviderServicesToCreateIntegration = asyncWrapper(async(re
         data:getServiceProvidersServices[0]
     })
 })
+
+/**
+ * Get individual single integration details.
+ */
+
+exports.getSingleIntegrationDetails = asyncWrapper(async(req,res)=>{
+    const {serviceProviderIntegrationId} = req.params;
+    const integrationsDetails = await serviceProviderIntegrationsModel.findById(serviceProviderIntegrationId)
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_ALL_SERVICE_PROVIDER_INTEGRATIONS_DETAILS,
+        data:integrationsDetails
+    })
+})
