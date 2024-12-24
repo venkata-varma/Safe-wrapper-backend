@@ -55,6 +55,10 @@ const serviceProviderIntegrations = new mongoose.Schema({
             mappingSettings:{
                 type:Object,
                 default:{}
+            },
+            statusSettings:{
+                type:Object,
+                default:{}
             }
         }
     ],
