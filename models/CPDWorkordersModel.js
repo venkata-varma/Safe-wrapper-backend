@@ -53,6 +53,10 @@ const CPDWorkordersModelSchema = mongoose.Schema(
         errorMessage: {
             type: String,
             default: null
+        },
+        refWorkOrderStatus:{
+            type:String,
+            default:""
         }
     }, { timestamps: true });
 
