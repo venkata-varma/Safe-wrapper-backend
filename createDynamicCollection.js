@@ -3,14 +3,15 @@ const { default: axios } = require("axios");
 const mongooseConnect = require("./config/dbConnection");
 const { default: mongoose } = require("mongoose");
 
-exports.GlobalServiceModelForDynamicCollection = async (collectionName, requestObj) =>  {
+const GlobalServiceModelForDynamicCollection = async (collectionName, requestObj) =>  {
 
-  
   try {
     
     await initializeCollectionIfAbsent(collectionName);
     const collection = mongoose.connection.db.collection(collectionName)
     await collection.insertOne(requestObj)
+    
+
   } catch (error) {
     console.log("Error Occurred at GlobalServiceModelForDynamicCollection::", error);
     
@@ -43,8 +44,7 @@ async function createDynamicCollection(targetCollectionName) {
 
     // Create the new collection
     const targetCollection = await mongoose.connection.db.createCollection(targetCollectionName);
-
-
+   
     // Apply the same indexes to the target collection
     for (const index of indexes) {
         const indexKey = index.key;
@@ -56,3 +56,4 @@ async function createDynamicCollection(targetCollectionName) {
 
 
 
+module.exports = {GlobalServiceModelForDynamicCollection}

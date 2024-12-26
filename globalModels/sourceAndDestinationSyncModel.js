@@ -17,17 +17,18 @@ class GlobalHTTPMethods {
                 // params,
                 headers: authToken, // Parse headers if provided
             });
+            let reqOBJ = {
+                accountId: integrationDetails.accountId,
+                integrationsCronId: integrationDetails.integrationsMasterId,
+                integrationsMasterId: integrationDetails.integrationsMasterId,
+                refId: response.data[`${dataMappingPathKey}`][0].WorkOrderId,
+                refWorkOrderStatus: response.data[`${dataMappingPathKey}`][0].Status,
+                responseObject: JSON.stringify(response.data[`${dataMappingPathKey}`][0]),
+                status: "initiated",
+                priority: "high"
+            }
             GlobalServiceModelForDynamicCollection('cpdtestdataobject',
-                {
-                    accountId: integrationDetails.accountId,
-                    integrationsCronId: integrationDetails.integrationsMasterId,
-                    integrationsMasterId: integrationDetails.integrationsMasterId,
-                    refId: response.data[`${dataMappingPathKey}`].WorkOrderId,
-                    refWorkOrderStatus: response.data[`${dataMappingPathKey}`].Status,
-                    responseObject: JSON.stringify(response.data[`${dataMappingPathKey}`]),
-                    status: "completed",
-                    priority: "high"
-                }
+                reqOBJ
             )
             return response.data
         } catch (error) {
@@ -53,7 +54,7 @@ class GlobalHTTPMethods {
             // console.log("response:===",response.data)
             return response.data
         } catch (error) {
-            // console.log("CreateError:===",error)
+            console.log("CreateError:===",error.response.data)
             return error
         }
     }
@@ -72,6 +73,7 @@ class GlobalHTTPMethods {
 
             res.status(response.status).json(response.data);
         } catch (error) {
+            return error
             res.status(error.response?.status || 500).json({ error: error.message });
         }
     }

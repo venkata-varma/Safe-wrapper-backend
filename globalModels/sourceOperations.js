@@ -78,7 +78,7 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
 
         case 'get':
             // Use dependent data for GET request if available
-            console.log('Using dependent data for GET:', serviceObject);
+            // console.log('Using dependent data for GET:', serviceObject);
             const urls = await modifyUrlsWithDependentData(serviceObject.dataPointUrl, serviceObject.primaryKeyColumn, serviceObject.dependentData);
 
             // Loop over each URL and get the detailed report
@@ -98,7 +98,7 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
 // Helper to modify the URL with dependent data (returns an array of URLs)
 const modifyUrlsWithDependentData = (url, primaryKeyColumn, dependentData) => {
     if (!Array.isArray(dependentData) || dependentData.length === 0) {
-        console.error('Invalid dependent data, returning original URL.');
+        // console.error('Invalid dependent data, returning original URL.');
         return [url]; // Return an array with the original URL if dependentData is invalid
     }
 
@@ -126,7 +126,7 @@ const modifyUrlsWithDependentData = (url, primaryKeyColumn, dependentData) => {
             }
         });
 
-        console.log('Modified URL for work order:', modifiedUrl); // Debugging output for modified URL
+        // console.log('Modified URL for work order:', modifiedUrl); // Debugging output for modified URL
         urls.push(modifiedUrl); // Push the generated URL to the array
     });
 
@@ -178,7 +178,7 @@ async function getRequestPayload(integrationMasterId, sourceServiceProvider, ser
 
     const sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: integrationDetails.from, to: integrationDetails.to })
     // console.log('sourceSettingsData:===',sourceSettingsData)
-    const updatedPayload = updatePayloadWithMappings(parsedRequestObject, sourceSettingsData?.settings[0]?.sourceSettings, dateRange);
+    const updatedPayload = updatePayloadWithMappings(parsedRequestObject, sourceSettingsData?.settings?.sourceSettings, dateRange);
 
     return updatedPayload;
 }
@@ -213,7 +213,8 @@ function parseRequestObject(requestObject) {
 // Calculate date range based on a given range in days
 function calculateDateRange(dateRangeInDays) {
     const currentMoment = moment();
-    const fromDateFormatted = currentMoment.subtract(dateRangeInDays, 'days').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+    const fromDateFormatted = currentMoment.subtract(dateRangeInDays, 'days').startOf('day').
+    format('YYYY-MM-DDTHH:mm:ss');
     const toDateFormatted = moment().endOf('day').format('YYYY-MM-DDTHH:mm:ss');
 
     return { fromDateFormatted, toDateFormatted };

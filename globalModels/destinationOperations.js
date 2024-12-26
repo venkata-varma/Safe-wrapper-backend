@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const CPDWorkordersModel = require("../models/CPDWorkordersModel");
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
 const integrationsSettingsModel = require("../models/integrationsSettingsModel");
@@ -6,6 +7,7 @@ const serviceProviderServicesModel = require("../models/serviceProviderServicesM
 const { validateServiceProviders, validateSPAuthentication } = require("./serviceProviderAuthModel");
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 const moment = require('moment');
+require("dotenv").config();
 
 /**
  * 
@@ -44,18 +46,32 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
 
         if (serviceObject.serviceMethod === 'post' && integrationDetails.from === "CPD") {
             // Fetch documents in parallel
-            const requestDataToBeSent = await CPDWorkordersModel.find({
-                integrationsMasterId: integrationsMasterId,
-                accountId: integrationDetails.accountId,
-                status: "initiated"
-            });
+
+            // const requestDataToBeSent = await mongoose.connection.db.collection("cpdtestdataobject").find({
+            //     integrationsMasterId: integrationsMasterId,
+            //     accountId: integrationDetails.accountId,
+            //     status: "initiated"
+            // });
             // console.log('requestDataToBeSent:===',requestDataToBeSent)
+            const cursor = mongoose.connection.db
+                .collection("cpdtestdataobject")
+                .find({
+                    integrationsMasterId: integrationsMasterId,
+                    accountId: integrationDetails.accountId,
+                    status: "initiated",
+                }).limit(2);
+
+            const requestDataToBeSent = [];
+            for await (const doc of cursor) {
+                requestDataToBeSent.push(doc);
+            }
 
             if (requestDataToBeSent.length > 0) {
                 // Process all documents in parallel
                 const responses = await Promise.all(
                     requestDataToBeSent.map(async data => {
-                        serviceObject.dataToSend = data.CPDWorkOrders; // Attach the data to the service object
+                        serviceObject.dataToSend = JSON.parse(data.responseObject); // Attach the data to the service object
+                        serviceObject.referenceStatus = data.refWorkOrderStatus
                         return processIntegrationService(
                             serviceObject,
                             integrationsMasterId,
@@ -65,7 +81,6 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                         );
                     })
                 );
-                console.log('responsesData:===', responses)
                 // Combine responses for recursive calls
                 for (const currentResponse of responses) {
                     let dataMappingPathKey = serviceObject.dataMappingPath[0];
@@ -97,7 +112,7 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
             );
 
             let dataMappingPathKey = serviceObject.dataMappingPath[0];
-            if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
+            if (currentResponse !== undefined && currentResponse[`${dataMappingPathKey}`]?.length > 0) {
                 const remainingServices = services.filter(s => s.priority > serviceObject.priority);
 
                 if (remainingServices.length > 0) {
@@ -127,8 +142,9 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
             const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationFieldMappingDetails = integrationDetails);
             console.log('requestObject:===', requestObject)
             // return true
-            console.log('POST Payload:', requestObject);
+            // console.log('POST Payload:', requestObject);
             responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, requestObject, integrationDetails);
+            console.log('responseData:===',responseData)
             break;
 
         case 'get':
@@ -213,7 +229,7 @@ async function getServiceproviderAuthResponse(integrationMasterId, sourceService
 
     const authResponse = await validateSPAuthentication(serviceProviderDetails.credentials).then((validationResult) => {
         return validationResult.requestMethod === 'body'
-            ? { Authorization: `Bearer ${validationResult.responseData.access_token}` }
+            ? { Authorization: `Bearer ${validationResult.responseData.access_token}` ,'Content-Type': 'application/json'}
             : validationResult.responseData;
     });
 
@@ -228,7 +244,7 @@ async function getRequestPayload(integrationMasterId, sourceServiceProvider, ser
 
     const destinationSettingsData = await serviceProviderIntegrationsModel.findOne({ from: integrationFieldMappingDetails.from, to: integrationFieldMappingDetails.to })
     // console.log('sourceSettingsData:===',sourceSettingsData)
-    const updatedPayload = updatePayloadWithMappings(integrationFieldMappingDetails.mappedDataPoints, destinationSettingsData?.settings[0]?.sourceSettings, serviceObject.dataToSend);
+    const updatedPayload = updatePayloadWithMappings(integrationFieldMappingDetails.mappedDataPoints, destinationSettingsData?.settings?.mappingSettings, serviceObject.dataToSend, destinationSettingsData?.settings?.statusSettings, serviceObject.referenceStatus);
 
     return updatedPayload;
 }
@@ -256,7 +272,10 @@ function getNestedValue(obj, path) {
     if (obj === null || obj === undefined) {
         return undefined; // Return undefined if obj is null or undefined
     }
-
+    // console.log('path:==',path)
+    if (typeof path !== 'string') {
+        return path;
+    }
     const keys = path.split('.'); // Split the path into keys
     let result = obj;
 
@@ -284,7 +303,21 @@ function getNestedValue(obj, path) {
     return result;
 }
 
-function updatePayloadWithMappings(mappedDataPoints, destinationSettingsData, dataToSend) {
+function assignStatus(statusValue, statusSettings) {
+    console.log('statusValue:===', statusValue);
+
+    // Use Object.entries and find the key where value matches
+    let statusKey = Object.entries(statusSettings).find(([key, value]) => value === statusValue);
+
+    if (statusKey)
+        return statusKey[0];
+    else
+        return statusValue;
+
+}
+
+
+function updatePayloadWithMappings(mappedDataPoints, destinationMappingSettings, dataToSend, statusSettings, referenceStatus) {
     // Ensure dataToSend is an object
     if (dataToSend === null || dataToSend === undefined) {
         console.error('The provided dataToSend object is null or undefined');
@@ -292,6 +325,11 @@ function updatePayloadWithMappings(mappedDataPoints, destinationSettingsData, da
     }
 
     Object.entries(mappedDataPoints).forEach(([mappedKey, value]) => {
+        // console.log('value:===',value)
+        if (value === 'settings.referenceStatus') {
+            statusKey = assignStatus(referenceStatus, statusSettings)
+            mappedDataPoints[mappedKey] = statusKey;
+        }
         if (typeof value === 'object' && !Array.isArray(value)) {
             // For nested objects in mappedDataPoints
             Object.keys(value).forEach((subKey) => {
@@ -314,6 +352,11 @@ function updatePayloadWithMappings(mappedDataPoints, destinationSettingsData, da
             }
         }
     });
+    // console.log('destinationMappingSettings:==',destinationMappingSettings)
+    mappedDataPoints = Object.assign(mappedDataPoints, destinationMappingSettings)
+    // mappedDataPoints = destinationMappingSettings === true ? Object.assign(mappedDataPoints,destinationMappingSettings) : mappedDataPoints
+    console.log('mappedDataPoints:==', mappedDataPoints)
+
     const nestedObject = keysToNestedObjectWithArrays(mappedDataPoints);
     // console.log(JSON.stringify(nestedObject, null, 2));
     return (JSON.stringify(nestedObject, null, 2));
