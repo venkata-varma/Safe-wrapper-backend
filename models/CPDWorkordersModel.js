@@ -57,7 +57,15 @@ const CPDWorkordersModelSchema = mongoose.Schema(
         refWorkOrderStatus:{
             type:String,
             default:""
-        }
+        },
+        responseObject:{
+            type: mongoose.Schema.Types.Mixed,
+            default: null
+        },
+        refId:{
+            type: Number, // ObjectId field without ref
+            required: true,
+        },
     }, { timestamps: true });
 
 module.exports = mongoose.model('cpdworkorders', CPDWorkordersModelSchema)
