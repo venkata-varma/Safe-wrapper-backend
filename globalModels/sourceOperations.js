@@ -20,7 +20,7 @@ const sourceIntegrationOperationsServices = async (integrationObject) => {
         await processSIMappings(data);
     }
 };
-
+var sourceSettingsData
 /**
  * 
  * @param {*} data holds {} 
@@ -33,25 +33,33 @@ const processSIMappings = async (data) => {
     await processSIServiceCalls(sortedServices, data.integrationsMasterId, data.from, authToken, integrationDetails);
 };
 
+/*
 // Function to process services with dependencies
 const processSIServiceCalls = async (services, integrationsMasterId, sourceProvider, authToken, integrationDetails, responseData = null) => {
-    for (const serviceObject of services) {
+    console.log('services:===',services)
 
-        if (responseData)
-            // console.log('responseData:===',responseData)
-            serviceObject.dependentData = responseData; // Attach dependent data
-
+        for (const serviceObject of services) {
+        // Attach dependent data (only first time or use it as needed)
+        if (responseData) {
+            serviceObject.dependentData = responseData; // Attach dependent data to the service object only once
+        }
         // Process the current service and get its response
-        const currentResponse = await processIntegrationService(serviceObject, integrationsMasterId, sourceProvider, authToken, integrationDetails);
+        const currentResponse = await processIntegrationService(
+            serviceObject, 
+            integrationsMasterId, 
+            sourceProvider, 
+            authToken, 
+            integrationDetails, 
+            sourceSettingsData?.sourceDataBaseName
+        );
 
-        let dataMappingPathKey = serviceObject.dataMappingPath[0]
-        // console.log('currentResponse[`${dataMappingPathKey}`]:===',currentResponse[`${dataMappingPathKey}`])
+        let dataMappingPathKey = serviceObject.dataMappingPath[0];
+
         // If the current response has length > 1, recursively call for the next priority
         if (currentResponse[`${dataMappingPathKey}`] !== undefined && currentResponse[`${dataMappingPathKey}`].length > 0) {
             const remainingServices = services.filter(s => s.priority > serviceObject.priority); // Get next priority services
-            // console.log('Remaining Services for next call:', remainingServices);
-            console.log('currentResponse[`${dataMappingPathKey}`]:===',)
 
+            // Avoid passing responseData again, just pass the currentResponse for the next iteration
             if (remainingServices.length > 0) {
                 await processSIServiceCalls(
                     remainingServices,
@@ -59,32 +67,74 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                     sourceProvider,
                     authToken,
                     integrationDetails,
-                    currentResponse[`${dataMappingPathKey}`] // Pass the current response as dependent data
+                    currentResponse[`${dataMappingPathKey}`] // Pass the current response data for recursion
                 );
             }
         }
     }
 };
+*/
+
+const processSIServiceCalls = async (services, integrationsMasterId, sourceProvider, authToken, integrationDetails, responseData = null) => {
+    // Store POST response data that will be used in GET requests
+    let postResponseData = null;
+
+    for (const serviceObject of services) {
+        // Attach dependent data to the service object (only the first time or as needed)
+        if (responseData) {
+            serviceObject.dependentData = responseData; // Attach dependent data to the service object
+        }
+
+        let dataMappingPathKey = serviceObject.dataMappingPath[0]
+
+        if (serviceObject.serviceMethod === 'post') {
+            // Process the POST request and get the response
+            const currentResponse = await processIntegrationService(
+                serviceObject,
+                integrationsMasterId,
+                sourceProvider,
+                authToken,
+                integrationDetails,
+                sourceSettingsData?.sourceDataBaseName
+            );
+
+            // Store the POST response data for the next GET requests
+            postResponseData = currentResponse;
+        }
+        
+        // If the service is GET, we need to use the response data from the POST service
+        if (serviceObject.serviceMethod === 'get' && postResponseData[`${dataMappingPathKey}`].length > 0) {
+            serviceObject.dependentData = postResponseData[`${dataMappingPathKey}`]
+            const currentResponse = await processIntegrationService(
+                serviceObject,
+                integrationsMasterId,
+                sourceProvider,
+                authToken,
+                integrationDetails,
+                sourceSettingsData?.sourceDataBaseName
+            );
+        }
+    }
+};
+
 
 // Function to process a single service
-const processIntegrationService = async (serviceObject, integrationsMasterId, sourceProvider, authToken, integrationDetails) => {
+const processIntegrationService = async (serviceObject, integrationsMasterId, sourceProvider, authToken, integrationDetails, dataBaseName) => {
     let responseData;
     switch (serviceObject.serviceMethod) {
         case 'post':
             const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId, integrationDetails);
-            console.log('POST Payload:', requestObject);
-            responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, requestObject, integrationDetails);
+            // console.log('POST Payload:', requestObject);
+            responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, requestObject, integrationDetails, dataBaseName);
             break;
 
         case 'get':
             // Use dependent data for GET request if available
-            // console.log('Using dependent data for GET:', serviceObject);
             const urls = await modifyUrlsWithDependentData(serviceObject.dataPointUrl, serviceObject.primaryKeyColumn, serviceObject.dependentData);
-
             // Loop over each URL and get the detailed report
             for (const modifiedUrl of urls) {
                 console.log('Making GET request to URL:', modifiedUrl);
-                responseData = await GlobalHTTPMethods.handleGet(serviceObject, authToken, modifiedUrl, integrationDetails); // Passing modified URL for GET
+                responseData = await GlobalHTTPMethods.handleGet(serviceObject, authToken, modifiedUrl, integrationDetails, dataBaseName); // Passing modified URL for GET
             }
             break;
 
@@ -94,6 +144,7 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
     }
     return responseData;
 };
+
 
 // Helper to modify the URL with dependent data (returns an array of URLs)
 const modifyUrlsWithDependentData = (url, primaryKeyColumn, dependentData) => {
@@ -129,9 +180,9 @@ const modifyUrlsWithDependentData = (url, primaryKeyColumn, dependentData) => {
         // console.log('Modified URL for work order:', modifiedUrl); // Debugging output for modified URL
         urls.push(modifiedUrl); // Push the generated URL to the array
     });
-
     return urls; // Return the array of modified URLs
 };
+
 
 
 
@@ -176,7 +227,7 @@ async function getRequestPayload(integrationMasterId, sourceServiceProvider, ser
     const parsedRequestObject = parseRequestObject(serviceDetails.requestObject);
     const dateRange = calculateDateRange(integrationSettings.dataDumpRange);
 
-    const sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: integrationDetails.from, to: integrationDetails.to })
+    sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: integrationDetails.from, to: integrationDetails.to }).lean()
     // console.log('sourceSettingsData:===',sourceSettingsData)
     const updatedPayload = updatePayloadWithMappings(parsedRequestObject, sourceSettingsData?.settings?.sourceSettings, dateRange);
 

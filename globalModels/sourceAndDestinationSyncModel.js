@@ -1,10 +1,11 @@
 const { response } = require("express");
 const axios = require('axios');
 const { GlobalServiceModelForDynamicCollection } = require("../createDynamicCollection");
+const { addRecordIntoDataBase } = require("./dataBaseOperations");
 
 class GlobalHTTPMethods {
     // Generic GET request handler with headers
-    static async handleGet(serviceObject, authToken, dataPointUrl, integrationDetails) {
+    static async handleGet(serviceObject, authToken, dataPointUrl, integrationDetails, dataBaseName) {
         try {
             let dataMappingPathKey = serviceObject.dataMappingPath[0]
 
@@ -17,19 +18,9 @@ class GlobalHTTPMethods {
                 // params,
                 headers: authToken, // Parse headers if provided
             });
-            let reqOBJ = {
-                accountId: integrationDetails.accountId,
-                integrationsCronId: integrationDetails.integrationsMasterId,
-                integrationsMasterId: integrationDetails.integrationsMasterId,
-                refId: response.data[`${dataMappingPathKey}`][0].WorkOrderId,
-                refWorkOrderStatus: response.data[`${dataMappingPathKey}`][0].Status,
-                responseObject: JSON.stringify(response.data[`${dataMappingPathKey}`][0]),
-                status: "initiated",
-                priority: "high"
-            }
-            GlobalServiceModelForDynamicCollection('cpdtestdataobject',
-                reqOBJ
-            )
+            
+            await addRecordIntoDataBase(integrationDetails, serviceObject, dataBaseName, response.data[`${dataMappingPathKey}`][0], "initiated");
+
             return response.data
         } catch (error) {
 
@@ -54,7 +45,7 @@ class GlobalHTTPMethods {
             // console.log("response:===",response.data)
             return response.data
         } catch (error) {
-            console.log("CreateError:===",error.response.data)
+            console.log("CreateError:===", error.response.data)
             return error
         }
     }

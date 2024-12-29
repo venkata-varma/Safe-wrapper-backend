@@ -7,6 +7,7 @@ const serviceProviderServicesModel = require("../models/serviceProviderServicesM
 const { validateServiceProviders, validateSPAuthentication } = require("./serviceProviderAuthModel");
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 const moment = require('moment');
+const { addRecordIntoDataBase } = require("./dataBaseOperations");
 require("dotenv").config();
 
 /**
@@ -23,7 +24,7 @@ const destinationIntegrationOperationsServices = async (integrationObject) => {
         await processSIMappings(data);
     }
 };
-
+var destinationSettingsData
 /**
  * 
  * @param {*} data holds {} 
@@ -44,22 +45,16 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
             serviceObject.dependentData = dependentData; // Attach dependent data
         }
 
-        if (serviceObject.serviceMethod === 'post' && integrationDetails.from === "CPD") {
+        if (serviceObject.serviceMethod === 'post') {
             // Fetch documents in parallel
 
-            // const requestDataToBeSent = await mongoose.connection.db.collection("cpdtestdataobject").find({
-            //     integrationsMasterId: integrationsMasterId,
-            //     accountId: integrationDetails.accountId,
-            //     status: "initiated"
-            // });
-            // console.log('requestDataToBeSent:===',requestDataToBeSent)
-            const cursor = mongoose.connection.db
-                .collection("cpdtestdataobject")
+             const cursor = mongoose.connection.db
+                .collection(`${destinationSettingsData?.sourceDataBaseName}`)
                 .find({
                     integrationsMasterId: integrationsMasterId,
                     accountId: integrationDetails.accountId,
                     status: "initiated",
-                }).limit(2);
+                });
 
             const requestDataToBeSent = [];
             for await (const doc of cursor) {
@@ -77,27 +72,33 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                             integrationsMasterId,
                             sourceProvider,
                             authToken,
-                            integrationDetails
+                            integrationDetails,
+                            destinationSettingsData?.destinationDataBaseName
                         );
                     })
                 );
                 // Combine responses for recursive calls
                 for (const currentResponse of responses) {
                     let dataMappingPathKey = serviceObject.dataMappingPath[0];
-                    if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
-                        const remainingServices = services.filter(s => s.priority > serviceObject.priority);
-
-                        if (remainingServices.length > 0) {
-                            // Recursive call for next priority services
-                            await processSIServiceCalls(
-                                remainingServices,
-                                integrationsMasterId,
-                                sourceProvider,
-                                authToken,
-                                integrationDetails,
-                                currentResponse[`${dataMappingPathKey}`]
-                            );
+                    if(Array.isArray(currentResponse[`${dataMappingPathKey}`])){
+                        if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
+                            const remainingServices = services.filter(s => s.priority > serviceObject.priority);
+    
+                            if (remainingServices.length > 0) {
+                                // Recursive call for next priority services
+                                await processSIServiceCalls(
+                                    remainingServices,
+                                    integrationsMasterId,
+                                    sourceProvider,
+                                    authToken,
+                                    integrationDetails,
+                                    currentResponse[`${dataMappingPathKey}`]
+                                );
+                            }
                         }
+                    }
+                    else if(typeof currentResponse[`${dataMappingPathKey}`] === 'object'){
+                        await addRecordIntoDataBase(integrationDetails, serviceObject, destinationSettingsData?.destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], status="completed")
                     }
                 }
             }
@@ -108,7 +109,8 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                 integrationsMasterId,
                 sourceProvider,
                 authToken,
-                integrationDetails
+                integrationDetails,
+                destinationSettingsData?.destinationDataBaseName
             );
 
             let dataMappingPathKey = serviceObject.dataMappingPath[0];
@@ -135,16 +137,12 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
 
 
 // Function to process a single service
-const processIntegrationService = async (serviceObject, integrationsMasterId, sourceProvider, authToken, integrationDetails) => {
+const processIntegrationService = async (serviceObject, integrationsMasterId, sourceProvider, authToken, integrationDetails, dataBaseName) => {
     let responseData;
     switch (serviceObject.serviceMethod) {
         case 'post':
             const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationFieldMappingDetails = integrationDetails);
-            console.log('requestObject:===', requestObject)
-            // return true
-            // console.log('POST Payload:', requestObject);
-            responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, requestObject, integrationDetails);
-            console.log('responseData:===',responseData)
+            responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, requestObject, integrationDetails, dataBaseName);
             break;
 
         case 'get':
@@ -155,7 +153,7 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
             // Loop over each URL and get the detailed report
             for (const modifiedUrl of urls) {
                 console.log('Making GET request to URL:', modifiedUrl);
-                responseData = await GlobalHTTPMethods.handleGet(serviceObject, authToken, modifiedUrl, integrationDetails); // Passing modified URL for GET
+                responseData = await GlobalHTTPMethods.handleGet(serviceObject, authToken, modifiedUrl, integrationDetails, dataBaseName); // Passing modified URL for GET
             }
             break;
 
@@ -242,7 +240,7 @@ async function getRequestPayload(integrationMasterId, sourceServiceProvider, ser
     const serviceDetails = await fetchServiceDetails(serviceObject.serviceProviderServiceId);
     const integrationSettings = await fetchIntegrationSettings(integrationMasterId);
 
-    const destinationSettingsData = await serviceProviderIntegrationsModel.findOne({ from: integrationFieldMappingDetails.from, to: integrationFieldMappingDetails.to })
+    destinationSettingsData = await serviceProviderIntegrationsModel.findOne({ from: integrationFieldMappingDetails.from, to: integrationFieldMappingDetails.to }).lean()
     // console.log('sourceSettingsData:===',sourceSettingsData)
     const updatedPayload = updatePayloadWithMappings(integrationFieldMappingDetails.mappedDataPoints, destinationSettingsData?.settings?.mappingSettings, serviceObject.dataToSend, destinationSettingsData?.settings?.statusSettings, serviceObject.referenceStatus);
 
