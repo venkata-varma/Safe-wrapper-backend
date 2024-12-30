@@ -18,13 +18,17 @@ require("dotenv").config();
  * 3. Fetch source side data objects by calling API calls.  
  * 4. Insert into source side collections with new status and required data points. 
  */
+var destinationSettingsData
+
 const destinationIntegrationOperationsServices = async (integrationObject) => {
+
     for (const data of integrationObject) {
         // Process each integration data
+        destinationSettingsData = await serviceProviderIntegrationsModel.findOne({ from: data.from, to: data.to }).lean()
+
         await processSIMappings(data);
     }
 };
-var destinationSettingsData
 /**
  * 
  * @param {*} data holds {} 
@@ -48,7 +52,7 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
         if (serviceObject.serviceMethod === 'post') {
             // Fetch documents in parallel
 
-             const cursor = mongoose.connection.db
+            const cursor = mongoose.connection.db
                 .collection(`${destinationSettingsData?.sourceDataBaseName}`)
                 .find({
                     integrationsMasterId: integrationsMasterId,
@@ -80,10 +84,10 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                 // Combine responses for recursive calls
                 for (const currentResponse of responses) {
                     let dataMappingPathKey = serviceObject.dataMappingPath[0];
-                    if(Array.isArray(currentResponse[`${dataMappingPathKey}`])){
+                    if (currentResponse[`${dataMappingPathKey}`] !== undefined && Array.isArray(currentResponse[`${dataMappingPathKey}`])) {
                         if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
                             const remainingServices = services.filter(s => s.priority > serviceObject.priority);
-    
+
                             if (remainingServices.length > 0) {
                                 // Recursive call for next priority services
                                 await processSIServiceCalls(
@@ -97,12 +101,99 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                             }
                         }
                     }
-                    else if(typeof currentResponse[`${dataMappingPathKey}`] === 'object'){
-                        await addRecordIntoDataBase(integrationDetails, serviceObject, destinationSettingsData?.destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], status="completed")
+                    else if (typeof currentResponse[`${dataMappingPathKey}`] === 'object') {
+                        await addRecordIntoDataBase(integrationDetails, serviceObject, destinationSettingsData?.destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], status = "completed")
                     }
                 }
             }
-        } else {
+        }
+        else if (serviceObject.serviceMethod === 'patch') {
+            // Fetch documents in parallel
+            const cursor = mongoose.connection.db
+                .collection(`${destinationSettingsData?.destinationDataBaseName}`)
+                .find({
+                    integrationsMasterId: integrationsMasterId,
+                    accountId: integrationDetails.accountId,
+                    status: "update-request",
+                });
+            const requestDataToBeSent = [];
+            for await (const doc of cursor) {
+                requestDataToBeSent.push(doc);
+            }
+            if (requestDataToBeSent.length > 0) {
+                // Process all documents in parallel
+                const responses = await Promise.all(
+                    requestDataToBeSent.map(async data => {
+                        serviceObject.dependentData = JSON.parse(data.responseObject); // Attach the data to the service object
+
+                        const customFieldMappingObject = await getCustomFieldMappingObject(integrationDetails.customFieldMapping, serviceObject.dependentData)
+                        serviceObject.referenceStatus = data.refWorkOrderStatus
+                        const keys = Object.keys(customFieldMappingObject);
+                        const workOrderNumberKey = customFieldMappingObject[keys[0]];
+                        const workOrderNumberToSearch = customFieldMappingObject[keys[1]];
+                    
+
+                        const sourceCursor = mongoose.connection.db
+                            .collection(`${destinationSettingsData?.sourceDataBaseName}`)
+                            .find({
+                                integrationsMasterId: integrationsMasterId,
+                                accountId: integrationDetails.accountId,
+                            });
+
+                        let matchedDocument = null;
+                        // Use `for await...of` to iterate over the cursor and find the match
+                        for await (const doc of sourceCursor) {
+                            try {
+                                const parsedResponse = JSON.parse(doc.responseObject); // Parse the stringified responseObject
+                                if (parsedResponse[workOrderNumberKey] === workOrderNumberToSearch) {
+                                    matchedDocument = doc;
+                                    break; // Exit the loop once the document is found
+                                }
+                            } catch (error) {
+                                console.error("Error parsing responseObject:", error);
+                            }
+                        }
+                        // console.log('matchedDocument:==',matchedDocument)
+                        serviceObject.dataToSend = JSON.parse(matchedDocument.responseObject)
+                        return processIntegrationService(
+                            serviceObject,
+                            integrationsMasterId,
+                            sourceProvider,
+                            authToken,
+                            integrationDetails,
+                            destinationSettingsData?.destinationDataBaseName
+                        );
+                    })
+                );
+                console.log('responses:===',responses)
+                // Combine responses for recursive calls
+                for (const currentResponse of responses) {
+                    let dataMappingPathKey = serviceObject.dataMappingPath[0];
+                    if (currentResponse[`${dataMappingPathKey}`] !== undefined && Array.isArray(currentResponse[`${dataMappingPathKey}`])) {
+                        if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
+                            const remainingServices = services.filter(s => s.priority > serviceObject.priority);
+
+                            if (remainingServices.length > 0) {
+                                // Recursive call for next priority services
+                                await processSIServiceCalls(
+                                    remainingServices,
+                                    integrationsMasterId,
+                                    sourceProvider,
+                                    authToken,
+                                    integrationDetails,
+                                    currentResponse[`${dataMappingPathKey}`]
+                                );
+                            }
+                        }
+                    }
+                    else if (typeof currentResponse[`${dataMappingPathKey}`] === 'object') {
+                        await addRecordIntoDataBase(integrationDetails, serviceObject, destinationSettingsData?.destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], status = "completed")
+                    }
+                }
+            }
+        }
+        /*
+        else {
             // Process single service for non-CPD or non-post scenarios
             const currentResponse = await processIntegrationService(
                 serviceObject,
@@ -129,32 +220,40 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                 }
             }
         }
+            */
     };
 
     // Process all services in parallel
     await Promise.all(services.map(serviceObject => processService(serviceObject, responseData)));
 };
 
+const getCustomFieldMappingObject = async (customFieldMapping, dependentData) => {
+    const prepareObject = Object.fromEntries(
+        Object.entries(customFieldMapping).map(([key, mappingKey]) => [key, dependentData[mappingKey]])
+    );
+    return prepareObject;
+};
+
 
 // Function to process a single service
 const processIntegrationService = async (serviceObject, integrationsMasterId, sourceProvider, authToken, integrationDetails, dataBaseName) => {
     let responseData;
+    let requestObject
     switch (serviceObject.serviceMethod) {
         case 'post':
-            const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationFieldMappingDetails = integrationDetails);
+            requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationFieldMappingDetails = integrationDetails);
             responseData = await GlobalHTTPMethods.handlePost(serviceObject, authToken, requestObject, integrationDetails, dataBaseName);
             break;
 
         case 'get':
-            // Use dependent data for GET request if available
-            console.log('Using dependent data for GET:', serviceObject);
+            responseData = await GlobalHTTPMethods.handleGet(serviceObject, authToken, modifiedUrl, integrationDetails, dataBaseName); // Passing modified URL for GET
+            break;
+        case 'patch':
             const urls = await modifyUrlsWithDependentData(serviceObject.dataPointUrl, serviceObject.primaryKeyColumn, serviceObject.dependentData);
+            requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationFieldMappingDetails = integrationDetails);
+            console.log('requestObject:==', requestObject)
 
-            // Loop over each URL and get the detailed report
-            for (const modifiedUrl of urls) {
-                console.log('Making GET request to URL:', modifiedUrl);
-                responseData = await GlobalHTTPMethods.handleGet(serviceObject, authToken, modifiedUrl, integrationDetails, dataBaseName); // Passing modified URL for GET
-            }
+            responseData = await GlobalHTTPMethods.handlePatch(serviceObject, authToken, urls[0], integrationDetails, dataBaseName, requestObject); // Passing modified URL for GET
             break;
 
         default:
@@ -164,9 +263,14 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
     return responseData;
 };
 
-/*
+
 // Helper to modify the URL with dependent data (returns an array of URLs)
-const modifyUrlsWithDependentData = (url, primaryKeyColumn, dependentData) => {
+const modifyUrlsWithDependentData = async(url, primaryKeyColumn, dependentDataObject) => {
+    // console.log('Datasss:==',url, primaryKeyColumn, dependentData)
+    let dependentData = Array.isArray(dependentDataObject)
+        ? [...dependentDataObject]
+        : [dependentDataObject];
+
     if (!Array.isArray(dependentData) || dependentData.length === 0) {
         console.error('Invalid dependent data, returning original URL.');
         return [url]; // Return an array with the original URL if dependentData is invalid
@@ -202,7 +306,7 @@ const modifyUrlsWithDependentData = (url, primaryKeyColumn, dependentData) => {
 
     return urls; // Return the array of modified URLs
 };
-*/
+
 /**
  * 
  * @param {*} integrationMasterId 
@@ -227,7 +331,7 @@ async function getServiceproviderAuthResponse(integrationMasterId, sourceService
 
     const authResponse = await validateSPAuthentication(serviceProviderDetails.credentials).then((validationResult) => {
         return validationResult.requestMethod === 'body'
-            ? { Authorization: `Bearer ${validationResult.responseData.access_token}` ,'Content-Type': 'application/json'}
+            ? { Authorization: `Bearer ${validationResult.responseData.access_token}`, 'Content-Type': 'application/json' }
             : validationResult.responseData;
     });
 
@@ -239,9 +343,6 @@ async function getServiceproviderAuthResponse(integrationMasterId, sourceService
 async function getRequestPayload(integrationMasterId, sourceServiceProvider, serviceObject, integrationFieldMappingDetails) {
     const serviceDetails = await fetchServiceDetails(serviceObject.serviceProviderServiceId);
     const integrationSettings = await fetchIntegrationSettings(integrationMasterId);
-
-    destinationSettingsData = await serviceProviderIntegrationsModel.findOne({ from: integrationFieldMappingDetails.from, to: integrationFieldMappingDetails.to }).lean()
-    // console.log('sourceSettingsData:===',sourceSettingsData)
     const updatedPayload = updatePayloadWithMappings(integrationFieldMappingDetails.mappedDataPoints, destinationSettingsData?.settings?.mappingSettings, serviceObject.dataToSend, destinationSettingsData?.settings?.statusSettings, serviceObject.referenceStatus);
 
     return updatedPayload;

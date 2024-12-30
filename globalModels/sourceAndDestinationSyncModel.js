@@ -70,20 +70,23 @@ class GlobalHTTPMethods {
     }
 
     // Generic PATCH request handler with headers
-    static async handlePatch(req, res) {
+    static async handlePatch(serviceObject, authToken, dataPointUrl, integrationDetails, dataBaseName, requestObject) {
         try {
-            const { url, data, headers } = req.body;
-            if (!url || !data) {
-                return res.status(400).json({ message: "URL and data are required" });
+            let dataMappingPathKey = serviceObject.dataMappingPath[0]
+
+            if (!dataPointUrl || !requestObject) {
+                throw new Error("URL and data are required.");
             }
 
-            const response = await axios.patch(url, data, {
-                headers: JSON.parse(headers || '{}'), // Parse headers if provided
+            const response = await axios.patch(dataPointUrl, requestObject, {
+                headers: authToken, // Parse headers if provided
             });
-
-            res.status(response.status).json(response.data);
+            // console.log("response:===",response.data)
+            await addRecordIntoDataBase(integrationDetails, serviceObject, dataBaseName, response.data[`${dataMappingPathKey}`], "completed");
+            return response.data
         } catch (error) {
-            res.status(error.response?.status || 500).json({ error: error.message });
+            // console.log('PatchError:===',error)
+            return error
         }
     }
 

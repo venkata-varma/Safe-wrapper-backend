@@ -5,28 +5,28 @@ const baseSourceRequestModelSchema = mongoose.Schema(
         accountId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "accounts",
-            index:true,
+            index: true,
             default: null,
         },
-        integrationsCronId :{
-            type : mongoose.Schema.Types.ObjectId,
-            ref : 'integrationscrons',
-            index:true,
-            deafult : null
+        integrationsCronId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'integrationscrons',
+            index: true,
+            deafult: null
         },
-        integrationsMasterId : {
-            type : mongoose.Schema.Types.ObjectId,
-            ref : "integrationsMaster",
-            index:true,
-            default : null
+        integrationsMasterId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "integrationsMaster",
+            index: true,
+            default: null
         },
-        refId:{
-            type: Number, // ObjectId field without ref
+        refId: {
+            type: String, // ObjectId field without ref
             required: true,
         },
-        refWorkOrderStatus:{
-            type : String,
-            default : null
+        refWorkOrderStatus: {
+            type: String,
+            default: null
         },
         responseObject: {
             type: String,
@@ -37,21 +37,28 @@ const baseSourceRequestModelSchema = mongoose.Schema(
             default: null
         },
         status: {
-            type : String,
-            enum : ['initiated', 'pending', 'completed', 'error', 'failed'],
-            default : "initiated"
+            type: String,
+            enum: ['initiated', 'pending', 'completed', 'error', 'failed'],
+            default: "initiated"
         },
-        priority:{
-            type : String,
-            enum : ['low','medium','high'],
-            default:"medium"
+        priority: {
+            type: String,
+            enum: ['low', 'medium', 'high'],
+            default: "medium"
         },
-       
+
         errorMessage: {
             type: String,
             default: null
         }
     }, { timestamps: true });
 
-module.exports = mongoose.model('basesourcerequest', baseSourceRequestModelSchema)
 
+const baseSourceRequestModel = mongoose.model('basesourcerequest', baseSourceRequestModelSchema)
+
+
+module.exports = {
+    baseSourceRequestModelSchema,
+    baseSourceRequestModel
+
+}
