@@ -60,6 +60,14 @@ const serviceProviderIntegrations = new mongoose.Schema({
             default: {}
         }
     },
+    metrics:{
+        sourceDataBaseName:{
+            type:String
+        },
+        destinationDataBaseName:{
+            type:String
+        },
+    },
     status: {
         type: String,
         default: "active"

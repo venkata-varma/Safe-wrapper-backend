@@ -44,6 +44,10 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
       enum: ["BasicAuth", "BearerToken", "OAuth1.0", "OAuth2.0", "APIKEY"],
       default: "BasicAuth",
     },
+    dataMappingPath:{
+      type:Array,
+      default:[]
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",

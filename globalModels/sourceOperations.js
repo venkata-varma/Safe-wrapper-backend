@@ -1,3 +1,8 @@
+/**
+ * 1. This script developed by Chandu Sai on 15th Dec - 2024.
+ * STEP-1  
+ */
+
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
 const integrationsSettingsModel = require("../models/integrationsSettingsModel");
 const serviceProviderIntegrationsModel = require("../models/serviceProviderIntegrationsModel");
@@ -5,6 +10,7 @@ const serviceProviderServicesModel = require("../models/serviceProviderServicesM
 const { validateServiceProviders, validateSPAuthentication } = require("./serviceProviderAuthModel");
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 const moment = require('moment');
+var sourceSettingsData
 
 /**
  * 
@@ -16,11 +22,10 @@ const moment = require('moment');
  */
 const sourceIntegrationOperationsServices = async (integrationObject) => {
     for (const data of integrationObject) {
-        // Process each integration data
+        sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: data.from, to: data.to }).lean()
         await processSIMappings(data);
     }
 };
-var sourceSettingsData
 /**
  * 
  * @param {*} data holds {} 
@@ -101,7 +106,7 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
             // Store the POST response data for the next GET requests
             postResponseData = currentResponse;
         }
-        
+
         // If the service is GET, we need to use the response data from the POST service
         if (serviceObject.serviceMethod === 'get' && postResponseData[`${dataMappingPathKey}`].length > 0) {
             serviceObject.dependentData = postResponseData[`${dataMappingPathKey}`]
@@ -208,10 +213,10 @@ async function getServiceproviderAuthResponse(integrationMasterId, sourceService
     if (!serviceProviderDetails || !serviceProviderDetails.credentials) {
         throw new Error('Service provider credentials not found.');
     }
-
+    console.log('serviceProviderDetails:==', serviceProviderDetails.dataMappingPath)
     const authResponse = await validateSPAuthentication(serviceProviderDetails.credentials).then((validationResult) => {
         return validationResult.requestMethod === 'body'
-            ? { Authorization: `Bearer ${validationResult.responseData.access_token}` }
+            ? { Authorization: `Bearer ${validationResult.responseData[`${serviceProviderDetails.dataMappingPath[0]}`]}`, 'Content-Type': 'application/json' }
             : validationResult.responseData;
     });
 
@@ -226,9 +231,6 @@ async function getRequestPayload(integrationMasterId, sourceServiceProvider, ser
 
     const parsedRequestObject = parseRequestObject(serviceDetails.requestObject);
     const dateRange = calculateDateRange(integrationSettings.dataDumpRange);
-
-    sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: integrationDetails.from, to: integrationDetails.to }).lean()
-    // console.log('sourceSettingsData:===',sourceSettingsData)
     const updatedPayload = updatePayloadWithMappings(parsedRequestObject, sourceSettingsData?.settings?.sourceSettings, dateRange);
 
     return updatedPayload;
@@ -265,7 +267,7 @@ function parseRequestObject(requestObject) {
 function calculateDateRange(dateRangeInDays) {
     const currentMoment = moment();
     const fromDateFormatted = currentMoment.subtract(dateRangeInDays, 'days').startOf('day').
-    format('YYYY-MM-DDTHH:mm:ss');
+        format('YYYY-MM-DDTHH:mm:ss');
     const toDateFormatted = moment().endOf('day').format('YYYY-MM-DDTHH:mm:ss');
 
     return { fromDateFormatted, toDateFormatted };

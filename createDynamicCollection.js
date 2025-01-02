@@ -77,15 +77,19 @@ const { baseSourceRequestModelSchema } = require('./models/baseSourceRequestMode
  * @returns "String'""
  */
 async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynamicModel) {
-  const isExisting = await dynamicModel.findOne({ refId: requestObject.refId , accountId:requestObject.accountId, integrationsMasterId:requestObject.integrationsMasterId});
+  const isExisting = await dynamicModel.findOne({ refId: requestObject.refId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId });
   if (!isExisting) {
     var createRecord = await dynamicModel.create(requestObject)
-    return `Record created into dynamic model successfully`
-  } else if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
-    return 'Record already exists and Rreference status is unchanged. No changes made!'
-  } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {
-    var updateExistingRecord = await dynamicModel.findOneAndUpdate({ refId :requestObject.refId}, { referenceStatus: requestObject.referenceStatus }, { new: true, runValidators: true })
-    return 'Record already exists and Rreference status is changed. so, record is updated with latest status'
+    return
+    `Record created into dynamic model successfully`
+  } else if (isExisting && (isExisting.refWorkOrderStatus === requestObject.refWorkOrderStatus)) {
+    return
+    'Record already exists and Rreference status is unchanged. No changes made!'
+  } else if (isExisting && (isExisting.refWorkOrderStatus !== requestObject.refWorkOrderStatus)) {
+    var updateExistingRecord = await dynamicModel.findOneAndUpdate({ refId: requestObject.refId }, { refWorkOrderStatus: requestObject.refWorkOrderStatus, responseObject: requestObject.responseObject, status: "update-request" }, { new: true, runValidators: true })
+    console.log('updateExistingRecord:===', updateExistingRecord)
+    return
+    'Record already exists and Rreference status is changed. so, record is updated with latest status'
 
   }
 
@@ -101,11 +105,13 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
 exports.GlobalServiceModelForDynamicCollection = async (collectionName, requestObj) => {
   try {
     const dynamicModel = await initializeCollectionIfAbsent(collectionName);
-    const validatePayload = await validatePayloadWithExistingAndCreateOrUpdate(requestObj, dynamicModel);
-
-    console.log(validatePayload);
+    if (requestObj !== undefined) {
+      const validatePayload = await validatePayloadWithExistingAndCreateOrUpdate(requestObj, dynamicModel);
+      console.log(validatePayload);
+    }
   } catch (error) {
-    console.log("Error Occurred at GlobalServiceModelForDynamicCollection::", error);
+
+    console.log("Error Occurred at GlobalServiceModelForDynamicCollection::");
   }
 };
 
@@ -118,10 +124,10 @@ exports.GlobalServiceModelForDynamicCollection = async (collectionName, requestO
  */
 
 async function initializeCollectionIfAbsent(collectionName) {
-  console.log("mognoose models", mongoose.models)
+  // console.log("mognoose models", mongoose.models)
   const existingModel = mongoose.models[collectionName]; // Check if the model already exists
   if (existingModel) {
-    console.log(`Model ${existingModel} already exists`)
+    // console.log(`Model ${existingModel} already exists`)
     return existingModel;
   }
 
@@ -149,7 +155,7 @@ async function createDynamicCollection(targetCollectionName) {
     targetCollectionName // Collection name
   );
 
-  console.log(`Dynamic collection ${targetCollectionName} initialized.`);
+  // console.log(`Dynamic collection ${targetCollectionName} initialized.`);
   return DynamicModel;
 }
 

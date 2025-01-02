@@ -40,6 +40,7 @@ const moment = require('moment');
 const { integrationOperationsServices } = require("../../globalModels/integrationOperations");
 const { sourceIntegrationOperationsServices } = require("../../globalModels/sourceOperations");
 const { destinationIntegrationOperationsServices } = require("../../globalModels/destinationOperations");
+const { GlobalServiceModelForDynamicCollection } = require("../../createDynamicCollection");
 /**
  * Get the static images.
  */
@@ -432,7 +433,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
   if (credentials.requestMethod === "body") {
     if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
-        serviceProviderValidation.statusCode !== 200 || (!serviceProviderValidation.responseData?.access_token && serviceProvider !== "CYS")) {
+      serviceProviderValidation.statusCode !== 200 || (!serviceProviderValidation.responseData?.access_token && serviceProvider !== "CYS")) {
       return res.status(serviceProviderValidation.statusCode).json({
         status: serviceProviderValidation.status,
         message: serviceProviderValidation.message
@@ -1309,7 +1310,8 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
 
   if (integrationsMasterDetails) {
-    
+    await createServiceProviderDataBaseCollections(integrationsMasterDetails)
+
     await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, from:integrationsMasterDetails.from}))
     await destinationIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, to:integrationsMasterDetails.to}))
 
@@ -1324,6 +1326,40 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
     });
   }
 });
+
+const createServiceProviderDataBaseCollections = async (integrationsMasterDetails) => {
+  let createSourceDataBase, createDestinationDataBase;
+
+  const serviceProviderIntegrationCheck = await serviceProviderIntegrationsModel.findOne({
+    from: integrationsMasterDetails.from,
+    to: integrationsMasterDetails.to,
+  });
+  
+ if (serviceProviderIntegrationCheck) {
+    if (!await mongoose.connection.db.listCollections({ name: `${integrationsMasterDetails.from.toLowerCase()}operations` }).hasNext()) {
+      createSourceDataBase = await GlobalServiceModelForDynamicCollection(`${integrationsMasterDetails.from.toLowerCase()}operations`);
+    }
+    if (!await mongoose.connection.db.listCollections({ name: `${integrationsMasterDetails.to.toLowerCase()}operations` }).hasNext()) {
+      createDestinationDataBase = await GlobalServiceModelForDynamicCollection(`${integrationsMasterDetails.to.toLowerCase()}operations`);
+    }
+    if (createSourceDataBase || createDestinationDataBase) {
+      await serviceProviderIntegrationsModel.findOneAndUpdate(
+        { from: integrationsMasterDetails.from, to: integrationsMasterDetails.to },
+        {
+          $set: {
+            metrics: {
+              ...(createSourceDataBase && { sourceDataBaseName: createSourceDataBase }),
+              ...(createDestinationDataBase && { destinationDataBaseName: createDestinationDataBase }),
+            },
+          },
+        }
+      );
+    }
+  } else {
+    return;
+  }
+};
+
 
 /*
 * Verify the status of account.
@@ -1377,9 +1413,9 @@ exports.validateIntegrationStatus = asyncWrapper(async (req, res, next) => {
  */
 exports.getAllIntegrationExceptions = asyncWrapper(async (req, res) => {
 
-  const {fromDate, toDate} = req.query
+  const { fromDate, toDate } = req.query
 
-  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt:{$gte:new Date(fromDate), $lte: new Date(toDate)} }).populate('integrationsMasterId').sort({ _id: -1 })
+  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } }).populate('integrationsMasterId').sort({ _id: -1 })
 
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)

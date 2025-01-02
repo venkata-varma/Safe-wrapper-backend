@@ -8,7 +8,7 @@ class GlobalHTTPMethods {
     static async handleGet(serviceObject, authToken, dataPointUrl, integrationDetails, dataBaseName) {
         try {
             let dataMappingPathKey = serviceObject.dataMappingPath[0]
-
+            
             // const { dataPointUrl, primaryKeyColumn } = serviceObject
             if (!dataPointUrl) {
                 throw new Error("URL and data are required.");
@@ -18,9 +18,9 @@ class GlobalHTTPMethods {
                 // params,
                 headers: authToken, // Parse headers if provided
             });
-            
-            await addRecordIntoDataBase(integrationDetails, serviceObject, dataBaseName, response.data[`${dataMappingPathKey}`][0], "initiated");
-
+            const responseData = response.data[dataMappingPathKey]
+            const recordToInsert = Array.isArray(responseData) ? responseData[0] : responseData;
+            await addRecordIntoDataBase(integrationDetails, serviceObject, dataBaseName, recordToInsert, "initiated");
             return response.data
         } catch (error) {
 
