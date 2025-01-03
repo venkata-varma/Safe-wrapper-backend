@@ -82,11 +82,11 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
     var createRecord = await dynamicModel.create(requestObject)
     return
     `Record created into dynamic model successfully`
-  } else if (isExisting && (isExisting.refWorkOrderStatus === requestObject.refWorkOrderStatus)) {
+  } else if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
     return
     'Record already exists and Rreference status is unchanged. No changes made!'
-  } else if (isExisting && (isExisting.refWorkOrderStatus !== requestObject.refWorkOrderStatus)) {
-    var updateExistingRecord = await dynamicModel.findOneAndUpdate({ refId: requestObject.refId }, { refWorkOrderStatus: requestObject.refWorkOrderStatus, responseObject: requestObject.responseObject, status: "update-request" }, { new: true, runValidators: true })
+  } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {
+    var updateExistingRecord = await dynamicModel.findOneAndUpdate({ refId: requestObject.refId }, { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request" }, { new: true, runValidators: true })
     console.log('updateExistingRecord:===', updateExistingRecord)
     return
     'Record already exists and Rreference status is changed. so, record is updated with latest status'

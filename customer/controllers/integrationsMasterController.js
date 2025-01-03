@@ -1313,7 +1313,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
     await createServiceProviderDataBaseCollections(integrationsMasterDetails)
 
     await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, from:integrationsMasterDetails.from}))
-    await destinationIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, to:integrationsMasterDetails.to}))
+    // await destinationIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, to:integrationsMasterDetails.to}))
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,

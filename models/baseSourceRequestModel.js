@@ -20,11 +20,15 @@ const baseSourceRequestModelSchema = mongoose.Schema(
             index: true,
             default: null
         },
-        refId: {
-            type: String, // ObjectId field without ref
+        sourceReferenceId: {
+            type: String, 
             required: true,
         },
-        refWorkOrderStatus: {
+        destinationReferenceId: {
+            type: String,
+            required: true,
+        },
+        referenceStatus: {
             type: String,
             default: null
         },

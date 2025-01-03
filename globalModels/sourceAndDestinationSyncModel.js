@@ -5,10 +5,10 @@ const { addRecordIntoDataBase } = require("./dataBaseOperations");
 
 class GlobalHTTPMethods {
     // Generic GET request handler with headers
-    static async handleGet(serviceObject, authToken, dataPointUrl, integrationDetails, dataBaseName) {
+    static async handleGet(serviceObject, authToken, dataPointUrl, integrationDetails, settingsData) {
         try {
             let dataMappingPathKey = serviceObject.dataMappingPath[0]
-            
+            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
             // const { dataPointUrl, primaryKeyColumn } = serviceObject
             if (!dataPointUrl) {
                 throw new Error("URL and data are required.");
@@ -20,7 +20,7 @@ class GlobalHTTPMethods {
             });
             const responseData = response.data[dataMappingPathKey]
             const recordToInsert = Array.isArray(responseData) ? responseData[0] : responseData;
-            await addRecordIntoDataBase(integrationDetails, serviceObject, dataBaseName, recordToInsert, "initiated");
+            // await addRecordIntoDataBase(integrationDetails, serviceObject,dataMappingPathKey,primaryKeyColumn, settingsData?.sourceDataBaseName, recordToInsert, settingsData?.destinationDataBaseName, "initiated", "destination", sourceReferenceId);
             return response.data
         } catch (error) {
 
@@ -33,6 +33,7 @@ class GlobalHTTPMethods {
     // Generic POST request handler with headers
     static async handlePost(integrationsServiceObject, authRequest, requestObject) {
         try {
+
             const { dataPointUrl, serviceMethod } = integrationsServiceObject;
             // console.log('integrationsServiceObject:===',integrationsServiceObject)
             if (!dataPointUrl || !requestObject) {

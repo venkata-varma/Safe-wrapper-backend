@@ -129,6 +129,10 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
     serviceName:{
         type:String,
         default:""
+    },
+    customFieldMapping:{
+        type:Object,
+        default:{}
     }
 
 }, { timestamps: true });

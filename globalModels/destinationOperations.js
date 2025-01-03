@@ -35,31 +35,61 @@ const destinationIntegrationOperationsServices = async (integrationObject) => {
 const processSIMappings = async (data) => {
     const authToken = await getServiceproviderAuthResponse(data.integrationsMasterId, data.to);
     let integrationDetails = data
-    // Sort services by priority and process them one by one
     const sortedServices = data.destinationIntegrationServices.sort((a, b) => a.priority - b.priority);
     await processSIServiceCalls(sortedServices, data.integrationsMasterId, data.to, authToken, integrationDetails);
 };
 
+const preProcessDestinationSet = async (integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, currentResponse, sourceDataBaseName, operationType, sourceReferenceId) => {
 
-// Function to process services with dependencies
-const processSIServiceCalls = async (services, integrationsMasterId, sourceProvider, authToken, integrationDetails, responseData = null) => {
-    // Use a helper function to process a single service
-    let requestObject
+    if (currentResponse !== undefined && currentResponse[`${dataMappingPathKey}`] !== undefined && Array.isArray(currentResponse[`${dataMappingPathKey}`])) {
+        if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
+            await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], sourceDataBaseName, "completed", operationType, sourceReferenceId)
+        }
+    }
+    else if (currentResponse !== undefined && typeof currentResponse[`${dataMappingPathKey}`] === 'object') {
+        await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], sourceDataBaseName, "completed", operationType, sourceReferenceId)
+    }
+}
+
+const processIndividualGetOperations = async (integrationDetails, integrationsMasterId, sourceProvider, authToken, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, postResponses, sourceDataBaseName) => {
+    for (let { sourceRecord, currentResponse, sourceReferenceId } of postResponses) {
+        let responseToSend = currentResponse
+        if (responseToSend) {
+            const responseDataArray = Array.isArray(responseToSend)
+                ? responseToSend
+                : [responseToSend];
+            serviceObject.dependentData = responseDataArray; // Attach POST response data to GET
+            const getCurrentResponse = await processIntegrationService(
+                serviceObject,
+                integrationsMasterId,
+                sourceProvider,
+                authToken,
+                integrationDetails,
+                destinationSettingsData.destinationDataBaseName
+            );
+            await preProcessDestinationSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, getCurrentResponse, sourceDataBaseName, "destination", sourceReferenceId)
+        }
+    }
+}
+
+const submitSourceWorkOrdersToDestination = async (services, integrationsMasterId, sourceProvider, authToken, integrationDetails) => {
+    const numberOfAPICalls = services.length
     let postResponses = []
-    for (serviceObject of services) {
-        if (serviceObject.serviceMethod === 'post') {
-            // Fetch documents in parallel
-
-
+    let requestObject
+    if (numberOfAPICalls === 1) {
+        if (services[0].serviceMethod === 'post') {
+            let dataMappingPathKey = services[0].dataMappingPath[0]
+            let primaryKeyColumn = services[0].primaryKeyColumn[0]
             const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.sourceDataBaseName, "initiated")
             if (sourceData.length > 0) {
                 for (let data of sourceData) {
-                    serviceObject.dataToSend = JSON.parse(data.responseObject); // Attach the data to the service object
-                    serviceObject.referenceStatus = data.refWorkOrderStatus
-                    requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
 
+                    services.dataToSend = JSON.parse(data.responseObject);
+                    services.referenceStatus = data.referenceStatus
+                    requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, services, integrationDetails);
+                    // console.log('requestObject:===',requestObject)
                     let currentResponse = await processIntegrationService(
-                        serviceObject,
+                        services[0],
                         integrationsMasterId,
                         sourceProvider,
                         authToken,
@@ -68,34 +98,81 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                         requestObject
                     );
                     postResponses.push({ sourceRecord: data, currentResponse });
-                    let dataMappingPathKey = serviceObject.dataMappingPath[0];
-                    if (currentResponse[`${dataMappingPathKey}`] !== undefined && Array.isArray(currentResponse[`${dataMappingPathKey}`])) {
-                        if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
-                            await addRecordIntoDataBase(integrationDetails, serviceObject, destinationSettingsData?.destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], sourceDataBaseName = destinationSettingsData.sourceDataBaseName, "completed")
-                        }
-                    }
-                    else if (typeof currentResponse[`${dataMappingPathKey}`] === 'object') {
-                        await addRecordIntoDataBase(integrationDetails, serviceObject, destinationSettingsData?.destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], sourceDataBaseName = destinationSettingsData.sourceDataBaseName, "completed")
-                    }
+                    await preProcessDestinationSet(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.destinationDataBaseName, currentResponse, sourceDataBaseName = destinationSettingsData.sourceDataBaseName, "destination", data.sourceReferenceId)
+
                 }
             }
         }
-        else if (serviceObject.serviceMethod === 'patch') {
-            // Fetch documents in parallel
+        else if (services[0].serviceMethod === 'patch') {
+
             const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.sourceDataBaseName, "update-request")
-
+            let dataMappingPathKey = services[0].dataMappingPath[0]
+            let primaryKeyColumn = services[0].primaryKeyColumn[0]
             if (sourceData.length > 0) {
-                // Process all documents in parallel
-                const responses = await Promise.all(
-                    sourceData.map(async data => {
-                        serviceObject.dataToSend = JSON.parse(data.responseObject); // Attach the data to the service object
+                for (let data of sourceData) {
+                    services.dataToSend = JSON.parse(data.responseObject);
+                    services.referenceStatus = data.referenceStatus
 
-                        const customFieldMappingObject = await getCustomFieldMappingObject(integrationDetails.customFieldMapping, serviceObject.dataToSend)
-                        serviceObject.referenceStatus = data.refWorkOrderStatus
-                        const keys = Object.keys(customFieldMappingObject);
-                        const workOrderNumberKey = customFieldMappingObject[keys[0]];
-                        const workOrderNumberToSearch = customFieldMappingObject[keys[1]];
-                        let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.destinationDataBaseName, workOrderNumberKey, workOrderNumberToSearch)
+                    let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.destinationDataBaseName, data?.sourceReferenceId)
+                    
+                    services[0].dependentData = JSON.parse(destinationRecords.responseObject)
+                    requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, services, integrationDetails);
+                    console.log('requestObject:===', requestObject)
+
+                    let currentResponse = await processIntegrationService(
+                        services[0],
+                        integrationsMasterId,
+                        sourceProvider,
+                        authToken,
+                        integrationDetails,
+                        destinationSettingsData?.destinationDataBaseName,
+                        requestObject
+                    );
+                    postResponses.push({ sourceRecord: data, currentResponse });
+                    await preProcessDestinationSet(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.destinationDataBaseName, currentResponse, sourceDataBaseName = destinationSettingsData.sourceDataBaseName, "destination", data.sourceReferenceId)
+
+                }
+            }
+        }
+    }
+
+    else if (numberOfAPICalls > 1) {
+        for (let serviceObject of services) {
+            let dataMappingPathKey = serviceObject.dataMappingPath[0]
+            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
+            if (serviceObject.serviceMethod === 'post') {
+                const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.sourceDataBaseName, "initiated")
+
+                if (sourceData.length > 0) {
+                    for (let data of sourceData) {
+                        services.dataToSend = JSON.parse(data.responseObject);
+                        services.referenceStatus = data.referenceStatus
+                        requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, services, integrationDetails);
+                        // console.log('requestObject:===',requestObject)
+                        let currentResponse = await processIntegrationService(
+                            serviceObject,
+                            integrationsMasterId,
+                            sourceProvider,
+                            authToken,
+                            integrationDetails,
+                            destinationSettingsData?.destinationDataBaseName,
+                            requestObject
+                        );
+                        postResponses.push({ sourceRecord: data, currentResponse, sourceReferenceId: data.sourceReferenceId });
+                        // await preProcessDestinationSet(integrationDetails, serviceObject,dataMappingPathKey,primaryKeyColumn, destinationSettingsData?.destinationDataBaseName, currentResponse, sourceDataBaseName = destinationSettingsData.sourceDataBaseName)
+
+                    }
+                }
+            }
+            else if (serviceObject.serviceMethod === 'patch') {
+
+                const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.sourceDataBaseName, "update-request")
+
+                if (sourceData.length > 0) {
+                    for (let data of sourceData) {
+                        serviceObject.dataToSend = JSON.parse(data.responseObject);
+                        serviceObject.referenceStatus = data.referenceStatus
+                        let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.destinationDataBaseName, data?.sourceReferenceId)
 
                         serviceObject.dependentData = JSON.parse(destinationRecords.responseObject)
                         requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
@@ -109,46 +186,25 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
                             destinationSettingsData?.destinationDataBaseName,
                             requestObject
                         );
-                        let dataMappingPathKey = serviceObject.dataMappingPath[0];
-                        if (currentResponse[`${dataMappingPathKey}`] !== undefined && Array.isArray(currentResponse[`${dataMappingPathKey}`])) {
-                            if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
-                                await addRecordIntoDataBase(integrationDetails, serviceObject, destinationSettingsData?.destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], "completed")
-                            }
-                        }
-                        else if (typeof currentResponse[`${dataMappingPathKey}`] === 'object') {
-                            await addRecordIntoDataBase(integrationDetails, serviceObject, destinationSettingsData?.destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], "completed")
-                        }
-                    })
-                );
-            }
-        }
-        else if (serviceObject.serviceMethod === 'get') {
-            // Use the stored currentResponse from POST
-            if (postResponses.length > 0) {
-                for (const { sourceRecord, currentResponse } of postResponses) {
-                    const dataMappingPathKey = serviceObject.dataMappingPath[0];
-                    if (currentResponse) {
-                        const responseDataArray = Array.isArray(currentResponse[dataMappingPathKey])
-                            ? currentResponse
-                            : [currentResponse];
-                        serviceObject.dependentData = currentResponse; // Attach POST response data to GET
-                        const getResponse = await processIntegrationService(
-                            serviceObject,
-                            integrationsMasterId,
-                            sourceProvider,
-                            authToken,
-                            integrationDetails,
-                            destinationSettingsData.destinationDataBaseName
-                        );
+                        postResponses.push({ sourceRecord: data, currentResponse, sourceReferenceId: data.sourceReferenceId });
                     }
                 }
-            } else {
-                console.error('No previous POST response data available for GET method.');
             }
+            else if (serviceObject.serviceMethod === 'get') {
+                if (postResponses.length > 0) {
+                    await processIndividualGetOperations(integrationDetails, integrationsMasterId, sourceProvider, authToken, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.destinationDataBaseName, postResponses, sourceDataBaseName = destinationSettingsData.sourceDataBaseName)
+                }
+            }
+
         }
+
     }
+}
 
+// Function to process services with dependencies
+const processSIServiceCalls = async (services, integrationsMasterId, sourceProvider, authToken, integrationDetails, responseData = null) => {
 
+    let submitWorkOrders = await submitSourceWorkOrdersToDestination(services, integrationsMasterId, sourceProvider, authToken, integrationDetails)
 };
 
 async function getSourceRecords(integrationDetails, databaseName, status) {
@@ -158,7 +214,7 @@ async function getSourceRecords(integrationDetails, databaseName, status) {
             integrationsMasterId: integrationDetails.integrationsMasterId,
             accountId: integrationDetails.accountId,
             status: status,
-        });
+        }).limit(3);
 
     const requestDataToBeSent = [];
     for await (const doc of records) {
@@ -167,37 +223,18 @@ async function getSourceRecords(integrationDetails, databaseName, status) {
     return requestDataToBeSent
 }
 
-async function getDestinationRecords(integrationDetails, database, workOrderNumberKey, workOrderNumberToSearch) {
+const getDestinationRecords = async (integrationDetails, database, sourceReferenceId) => {
     const destinationRecords = await mongoose.connection.db
         .collection(`${database}`)
         .find({
             integrationsMasterId: integrationDetails.integrationsMasterId,
             accountId: integrationDetails.accountId,
-        });
+            sourceReferenceId: sourceReferenceId
+        }).toArray()
 
-    let matchedDocument = null;
-    // Use `for await...of` to iterate over the destinationRecords and find the match
-    for await (const doc of destinationRecords) {
-        try {
-            const parsedResponse = JSON.parse(doc.responseObject); // Parse the stringified responseObject
-            if (parsedResponse[workOrderNumberKey] === workOrderNumberToSearch) {
-                matchedDocument = doc;
-                break;
-            }
-        } catch (error) {
-            console.error("Error parsing responseObject:", error);
-        }
-    }
-    return matchedDocument
+
+    return destinationRecords[0]
 }
-
-const getCustomFieldMappingObject = async (customFieldMapping, dependentData) => {
-    const prepareObject = Object.fromEntries(
-        Object.entries(customFieldMapping).map(([key, mappingKey]) => [key, dependentData[mappingKey]])
-    );
-    return prepareObject;
-};
-
 
 // Function to process a single service
 const processIntegrationService = async (serviceObject, integrationsMasterId, sourceProvider, authToken, integrationDetails, dataBaseName, requestObject) => {
@@ -210,6 +247,7 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
 
         case 'get':
             const getUrl = await modifyUrlsWithDependentData(serviceObject.dataPointUrl, serviceObject.primaryKeyColumn, serviceObject.dependentData);
+
             responseData = await GlobalHTTPMethods.handleGet(serviceObject, authToken, getUrl[0], integrationDetails, dataBaseName); // Passing modified URL for GET
             break;
         case 'patch':
@@ -228,7 +266,7 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
 
 // Helper to modify the URL with dependent data (returns an array of URLs)
 const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataObject) => {
-    // console.log('Datasss:==',url, primaryKeyColumn, dependentData)
+    // console.log('Datasss:==',url, primaryKeyColumn, dependentDataObject)
     let dependentData = Array.isArray(dependentDataObject)
         ? [...dependentDataObject]
         : [dependentDataObject];
@@ -245,14 +283,12 @@ const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataO
         let modifiedUrl = url;
 
         primaryKeyColumn.forEach((key) => {
-            const placeholder = `{{${key}}}`; // Placeholder format (e.g., {{workOrderId}})
-
-            // Hardcode value for messageId, or replace with dependentData value for other keys
+            const placeholder = `{{${key}}}`; 
             let value;
             if (key === 'messageId') {
                 value = 'f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a'; // Hardcoded value for messageId
             } else {
-                value = dataObject[key]; // Get value from dependentData for other keys
+                value = dataObject[key];
             }
 
             if (value !== undefined) {
@@ -351,9 +387,6 @@ async function getNestedValue(dataToMap, mappingKey) {
                 }
             } else if (key in result) {
                 result = result[key]; // Access the next level in the object
-                // console.log('key:==',key)
-                // console.log('result:==',result)
-
             }
             else {
                 return undefined;
@@ -366,9 +399,6 @@ async function getNestedValue(dataToMap, mappingKey) {
 }
 
 function assignStatus(statusValue, statusSettings) {
-    console.log('statusValue:===', statusValue);
-
-    // Use Object.entries and find the key where value matches
     let statusKey = Object.entries(statusSettings).find(([key, value]) => value === statusValue);
 
     if (statusKey)
@@ -389,7 +419,8 @@ async function updatePayloadWithMappings(mappedDataPoints, destinationMappingSet
         if (value === 'settings.referenceStatus') {
             const statusKey = assignStatus(referenceStatus, statusSettings);
             fieldMappingObject[mappedKey] = statusKey;
-        } else if (typeof value === 'object' && !Array.isArray(value)) {
+        } else if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+            console.log('Object:===', value)
             for (const subKey of Object.keys(value)) {
                 const subKeyPath = `${mappedKey}.${subKey}`;
                 const nestedValue = await getNestedValue(dataToSend, subKeyPath);
@@ -406,7 +437,6 @@ async function updatePayloadWithMappings(mappedDataPoints, destinationMappingSet
         }
     }
     mappedDataPoints = Object.assign(fieldMappingObject, destinationMappingSettings);
-    // console.log('mappedDataPoints2:==', fieldMappingObject);
 
     const nestedObject = await keysToNestedObjectWithArrays(fieldMappingObject);
     return JSON.stringify(nestedObject, null, 2);
