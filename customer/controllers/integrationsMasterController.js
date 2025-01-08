@@ -1310,7 +1310,6 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
 
   if (integrationsMasterDetails) {
-    await createServiceProviderDataBaseCollections(integrationsMasterDetails)
 
     await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, from:integrationsMasterDetails.from}))
     await destinationIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, to:integrationsMasterDetails.to}))
@@ -1326,39 +1325,6 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
     });
   }
 });
-
-const createServiceProviderDataBaseCollections = async (integrationsMasterDetails) => {
-  let createSourceDataBase, createDestinationDataBase;
-
-  const serviceProviderIntegrationCheck = await serviceProviderIntegrationsModel.findOne({
-    from: integrationsMasterDetails.from,
-    to: integrationsMasterDetails.to,
-  });
-  
- if (serviceProviderIntegrationCheck) {
-    if (!await mongoose.connection.db.listCollections({ name: `${integrationsMasterDetails.from.toLowerCase()}operations` }).hasNext()) {
-      createSourceDataBase = await GlobalServiceModelForDynamicCollection(`${integrationsMasterDetails.from.toLowerCase()}operations`);
-    }
-    if (!await mongoose.connection.db.listCollections({ name: `${integrationsMasterDetails.to.toLowerCase()}operations` }).hasNext()) {
-      createDestinationDataBase = await GlobalServiceModelForDynamicCollection(`${integrationsMasterDetails.to.toLowerCase()}operations`);
-    }
-    if (createSourceDataBase || createDestinationDataBase) {
-      await serviceProviderIntegrationsModel.findOneAndUpdate(
-        { from: integrationsMasterDetails.from, to: integrationsMasterDetails.to },
-        {
-          $set: {
-            metrics: {
-              ...(createSourceDataBase && { sourceDataBaseName: createSourceDataBase }),
-              ...(createDestinationDataBase && { destinationDataBaseName: createDestinationDataBase }),
-            },
-          },
-        }
-      );
-    }
-  } else {
-    return;
-  }
-};
 
 
 /*

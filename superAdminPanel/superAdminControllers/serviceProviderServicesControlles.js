@@ -6,6 +6,7 @@ const { defaultSatusMappingKeys, getDefaultDestinationStatusMappingkeys } = requ
 const customConstants = require('../config/customConstants.json');
 const mongoose  = require("mongoose");
 const serviceProviderListModel = require("../../models/serviceProviderList");
+const { GlobalServiceModelForDynamicCollection } = require("../../createDynamicCollection");
 
 
 /** (Deprecated on 13-Dec-2024 based on test case analysis from Senior Tester)
@@ -71,11 +72,47 @@ exports.validateServiceProviderServicesExist = asyncWrapper(async(req,res,next) 
 
 exports.createServiceProvidersIntegration = asyncWrapper(async(req,res)=>{
     await serviceProviderIntegrationsModel.create({...req.body})
+    let integrationDetails = {from:req.body.from, to:req.body.to}
+    await createServiceProviderDataBaseCollections(integrationDetails)
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_CREATE_SERVICE_PROVIDERS_INTEGRATION,
     })
 })
+
+const createServiceProviderDataBaseCollections = async (integrationsDetails) => {
+    let createSourceDataBase, createDestinationDataBase;
+  
+    const serviceProviderIntegrationCheck = await serviceProviderIntegrationsModel.findOne({
+      from: integrationsDetails.from,
+      to: integrationsDetails.to,
+    });
+    
+   if (serviceProviderIntegrationCheck) {
+      if (!await mongoose.connection.db.listCollections({ name: `${integrationsDetails.from.toLowerCase()}operations` }).hasNext()) {
+        createSourceDataBase = await GlobalServiceModelForDynamicCollection(`${integrationsDetails.from.toLowerCase()}operations`);
+      }
+      if (!await mongoose.connection.db.listCollections({ name: `${integrationsDetails.to.toLowerCase()}operations` }).hasNext()) {
+        createDestinationDataBase = await GlobalServiceModelForDynamicCollection(`${integrationsDetails.to.toLowerCase()}operations`);
+      }
+      if (createSourceDataBase || createDestinationDataBase) {
+        await serviceProviderIntegrationsModel.findOneAndUpdate(
+          { from: integrationsDetails.from, to: integrationsDetails.to },
+          {
+            $set: {
+              metrics: {
+                ...(createSourceDataBase && { sourceDataBaseName: createSourceDataBase }),
+                ...(createDestinationDataBase && { destinationDataBaseName: createDestinationDataBase }),
+              },
+            },
+          }
+        );
+      }
+    } else {
+      return;
+    }
+  };
 
 exports.validateServiceProvidersIntegrationExist = asyncWrapper(async(req,res,next)=>{
     const {serviceProviderIntegrationId} = req.params
