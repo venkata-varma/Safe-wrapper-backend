@@ -80,7 +80,7 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
         if (services[0].serviceMethod === 'post') {
             let dataMappingPathKey = services[0].dataMappingPath[0]
             let primaryKeyColumn = services[0].primaryKeyColumn[0]
-            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.sourceDataBaseName, "initiated")
+            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.settings?.metrics?.sourceDataBaseName, "initiated")
             if (sourceData.length > 0) {
                 for (let data of sourceData) {
 
@@ -94,18 +94,18 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
                         sourceProvider,
                         authToken,
                         integrationDetails,
-                        destinationSettingsData?.destinationDataBaseName,
+                        destinationSettingsData?.settings?.metrics?.destinationDataBaseName,
                         requestObject
                     );
-                    postResponses.push({ sourceRecord: data, currentResponse });
-                    await preProcessDestinationSet(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.destinationDataBaseName, currentResponse, sourceDataBaseName = destinationSettingsData.sourceDataBaseName, "destination", data.sourceReferenceId)
+                    
+                    await preProcessDestinationSet(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.settings?.metrics?.destinationDataBaseName, currentResponse, sourceDataBaseName = destinationSettingsData?.settings?.metrics?.sourceDataBaseName, "destination", data.sourceReferenceId)
 
                 }
             }
         }
         else if (services[0].serviceMethod === 'patch') {
 
-            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.sourceDataBaseName, "update-request")
+            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.settings?.metrics?.sourceDataBaseName, "update-request")
             let dataMappingPathKey = services[0].dataMappingPath[0]
             let primaryKeyColumn = services[0].primaryKeyColumn[0]
             if (sourceData.length > 0) {
@@ -113,7 +113,7 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
                     services.dataToSend = JSON.parse(data.responseObject);
                     services.referenceStatus = data.referenceStatus
 
-                    let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.destinationDataBaseName, data?.sourceReferenceId)
+                    let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.settings?.metrics?.destinationDataBaseName, data?.sourceReferenceId)
                     
                     services[0].dependentData = JSON.parse(destinationRecords.responseObject)
                     requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, services, integrationDetails);
@@ -125,11 +125,11 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
                         sourceProvider,
                         authToken,
                         integrationDetails,
-                        destinationSettingsData?.destinationDataBaseName,
+                        destinationSettingsData?.settings?.metrics?.destinationDataBaseName,
                         requestObject
                     );
-                    postResponses.push({ sourceRecord: data, currentResponse });
-                    await preProcessDestinationSet(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.destinationDataBaseName, currentResponse, sourceDataBaseName = destinationSettingsData.sourceDataBaseName, "destination", data.sourceReferenceId)
+                    // postResponses.push({ sourceRecord: data, currentResponse });
+                    await preProcessDestinationSet(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.settings?.metrics?.destinationDataBaseName, currentResponse, sourceDataBaseName = destinationSettingsData?.settings?.metrics?.sourceDataBaseName, "destination", data.sourceReferenceId)
 
                 }
             }
@@ -141,7 +141,7 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
             let dataMappingPathKey = serviceObject.dataMappingPath[0]
             let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
             if (serviceObject.serviceMethod === 'post') {
-                const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.sourceDataBaseName, "initiated")
+                const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.settings?.metrics?.sourceDataBaseName, "initiated")
 
                 if (sourceData.length > 0) {
                     for (let data of sourceData) {
@@ -155,7 +155,7 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
                             sourceProvider,
                             authToken,
                             integrationDetails,
-                            destinationSettingsData?.destinationDataBaseName,
+                            destinationSettingsData?.settings?.metrics?.destinationDataBaseName,
                             requestObject
                         );
                         postResponses.push({ sourceRecord: data, currentResponse, sourceReferenceId: data.sourceReferenceId });
@@ -166,13 +166,13 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
             }
             else if (serviceObject.serviceMethod === 'patch') {
 
-                const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.sourceDataBaseName, "update-request")
+                const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.settings?.metrics?.sourceDataBaseName, "update-request")
 
                 if (sourceData.length > 0) {
                     for (let data of sourceData) {
                         serviceObject.dataToSend = JSON.parse(data.responseObject);
                         serviceObject.referenceStatus = data.referenceStatus
-                        let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.destinationDataBaseName, data?.sourceReferenceId)
+                        let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.settings?.metrics?.destinationDataBaseName, data?.sourceReferenceId)
 
                         serviceObject.dependentData = JSON.parse(destinationRecords.responseObject)
                         requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
@@ -183,7 +183,7 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
                             sourceProvider,
                             authToken,
                             integrationDetails,
-                            destinationSettingsData?.destinationDataBaseName,
+                            destinationSettingsData?.settings?.metrics?.destinationDataBaseName,
                             requestObject
                         );
                         postResponses.push({ sourceRecord: data, currentResponse, sourceReferenceId: data.sourceReferenceId });
@@ -192,7 +192,7 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
             }
             else if (serviceObject.serviceMethod === 'get') {
                 if (postResponses.length > 0) {
-                    await processIndividualGetOperations(integrationDetails, integrationsMasterId, sourceProvider, authToken, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.destinationDataBaseName, postResponses, sourceDataBaseName = destinationSettingsData.sourceDataBaseName)
+                    await processIndividualGetOperations(integrationDetails, integrationsMasterId, sourceProvider, authToken, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.settings?.metrics?.destinationDataBaseName, postResponses, sourceDataBaseName = destinationSettingsData?.settings?.metrics?.sourceDataBaseName)
                 }
             }
 
@@ -214,7 +214,7 @@ async function getSourceRecords(integrationDetails, databaseName, status) {
             integrationsMasterId: integrationDetails.integrationsMasterId,
             accountId: integrationDetails.accountId,
             status: status,
-        }).limit(3);
+        });
 
     const requestDataToBeSent = [];
     for await (const doc of records) {

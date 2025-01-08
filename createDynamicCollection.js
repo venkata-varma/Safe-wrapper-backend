@@ -68,6 +68,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const mongooseConnect = require("./config/dbConnection");
 const { baseSourceRequestModelSchema } = require('./models/baseSourceRequestModel');
+const workOrderLifeCycleModel = require("./models/workOrderLifeCycleModel");
 
 /**
  * 
@@ -76,21 +77,56 @@ const { baseSourceRequestModelSchema } = require('./models/baseSourceRequestMode
  * Function that takes Model and Request object; checks if record exists; or exists with same status or not; based on that, performs necessary creation / Updation 
  * @returns "String'""
  */
-async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynamicModel) {
-  const isExisting = await dynamicModel.findOne({ refId: requestObject.refId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId });
-  if (!isExisting) {
-    var createRecord = await dynamicModel.create(requestObject)
-    return
-    `Record created into dynamic model successfully`
-  } else if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
-    return
-    'Record already exists and Rreference status is unchanged. No changes made!'
-  } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {
-    var updateExistingRecord = await dynamicModel.findOneAndUpdate({ refId: requestObject.refId }, { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request" }, { new: true, runValidators: true })
-    console.log('updateExistingRecord:===', updateExistingRecord)
-    return
-    'Record already exists and Rreference status is changed. so, record is updated with latest status'
+async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynamicModel, operationType, updatingDataBaseName, integrationDetails) {
+  let isExisting = await mongoose.connection.db.collection(dynamicModel).findOne({ referenceId: requestObject.referenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId });
+  if (operationType === "source") {
+    if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
+      console.log('sourceUpdateExistingRecord1:===',)
+      return
+      'Record already exists and Rreference status is unchanged. No changes made!'
+    }
+    else if (!isExisting) {
+      var createRecord = await mongoose.connection.db.collection(dynamicModel).insertOne(requestObject)
+      await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.from, integrationDetails.accountId, integrationDetails.integrationsMasterId)
+      return
+      `Record created into dynamic model successfully`
+    } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {
+      // console.log('requestObject:==',requestObject)
+      var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ referenceId: requestObject.referenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId },
+        { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request" } }, { new: true, runValidators: true })
+      await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.from, integrationDetails.accountId, integrationDetails.integrationsMasterId)
+      console.log('updateExistingRecord2:===')
+      return
+      'Record already exists and Rreference status is changed. so, record is updated with latest status'
 
+    }
+  }
+  else if (operationType === "destination") {
+  console.log("dynamicModel:===",dynamicModel)
+
+    if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
+      console.log('destinationUpdateExistingRecord1:===',)
+      return
+      'Record already exists and Rreference status is unchanged. No changes made!'
+    }
+    else if (!isExisting) {
+      var createRecord = await mongoose.connection.db.collection(dynamicModel).insertOne(requestObject)
+      await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.to, integrationDetails.accountId, integrationDetails.integrationsMasterId)
+      var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId }, { $set: { status: "completed" } }, { new: true, runValidators: true })
+      return
+      `Record created into dynamic model successfully`
+    } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {
+      // var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).findOneAndUpdate({ sourceReferenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId },
+      //   { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request" }, { new: true, runValidators: true })
+      var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ destinationReferenceId: requestObject.referenceId, }, { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "completed", } }, { new: true, runValidators: true });
+      await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.to, integrationDetails.accountId, integrationDetails.integrationsMasterId)
+
+      var updateSourceRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ referenceId: requestObject.sourceReferenceId, }, { $set: { status: "completed" } }, { new: true, runValidators: true })
+      console.log('updateExistingRecord2:===')
+      return
+      'Record already exists and Rreference status is changed. so, record is updated with latest status'
+
+    }
   }
 
 }
@@ -102,16 +138,18 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
  * @param {*} requestObj 
  * This funtion is Main funtion for all other nested functions in this file . 
  */
-exports.GlobalServiceModelForDynamicCollection = async (collectionName, requestObj) => {
+exports.GlobalServiceModelForDynamicCollection = async (collectionName, requestObj, operationType, updatingDataBaseName, integrationDetails) => {
   try {
+
     const dynamicModel = await initializeCollectionIfAbsent(collectionName);
+
     if (requestObj !== undefined) {
-      const validatePayload = await validatePayloadWithExistingAndCreateOrUpdate(requestObj, dynamicModel);
+      const validatePayload = await validatePayloadWithExistingAndCreateOrUpdate(requestObj, dynamicModel, operationType, updatingDataBaseName, integrationDetails);
       console.log(validatePayload);
     }
   } catch (error) {
 
-    console.log("Error Occurred at GlobalServiceModelForDynamicCollection::");
+    console.log("Error Occurred at GlobalServiceModelForDynamicCollection::", error);
   }
 };
 
@@ -122,7 +160,7 @@ exports.GlobalServiceModelForDynamicCollection = async (collectionName, requestO
  * If not exists, calls nested function "createDynamicCollection" to creare Mongoose model dynamically.
  * @returns "CollectionName"
  */
-
+/*
 async function initializeCollectionIfAbsent(collectionName) {
   // console.log("mognoose models", mongoose.models)
   const existingModel = mongoose.models[collectionName]; // Check if the model already exists
@@ -133,7 +171,19 @@ async function initializeCollectionIfAbsent(collectionName) {
 
   return createDynamicCollection(collectionName); // Create a new model if it doesn't exist
 }
+*/
 
+async function initializeCollectionIfAbsent(collectionName) {
+
+  if (await mongoose.connection.db.listCollections({ name: collectionName }).hasNext()) {
+    console.log(`Collection name ${collectionName} already exists`)
+    return collectionName;
+  } else {
+    return createDynamicCollection(collectionName); // Create a new model if it doesn't exist
+  }
+
+
+}
 
 /**
  * 
@@ -158,6 +208,20 @@ async function createDynamicCollection(targetCollectionName) {
   // console.log(`Dynamic collection ${targetCollectionName} initialized.`);
   return DynamicModel;
 }
+
+const creteWOLifeCycle = async (referenceId, status, serviceProvider, accountId, integrationsMasterId) => {
+  // insert work order life cycle.
+  await workOrderLifeCycleModel.create({
+    workOrderId: referenceId,
+    // WorkOrderNumber: work.WorkOrderNumber,
+    workOrderStatus: status,
+    accountId: accountId,
+    integrationsMasterId: integrationsMasterId,
+    serviceProvider: serviceProvider,
+    date_created: new Date()
+  });
+}
+
 
 // // Ensure the database connection is established before calling any functions
 // const connectAndRun = async () => {

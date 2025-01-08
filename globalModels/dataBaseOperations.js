@@ -9,16 +9,16 @@ exports.addRecordIntoDataBase = async (integrationDetails, serviceObject, dataMa
         accountId: integrationDetails.accountId,
         integrationsCronId: integrationDetails.integrationsMasterId,
         integrationsMasterId: integrationDetails.integrationsMasterId,
-        sourceReferenceId: operationType === "source" ? responseObject[`${refIdKey}`] : sourceReferenceId,
+        referenceId:responseObject[`${refIdKey}`].toString(),
+        sourceReferenceId: operationType === "source" ? responseObject[`${refIdKey}`].toString() : sourceReferenceId,
         destinationReferenceId: operationType === "destination" ? responseObject[`${refIdKey}`] : "",
         referenceStatus: responseObject.Status,
         responseObject: JSON.stringify(responseObject),
         status: status,
         priority: "high"
     }
-    console.log('reqOBJ:===', reqOBJ)
-
+    
     GlobalServiceModelForDynamicCollection(`${insertingDataBaseName}`,
-        reqOBJ
+        reqOBJ,operationType, updatingDataBaseName, integrationDetails
     )
 }

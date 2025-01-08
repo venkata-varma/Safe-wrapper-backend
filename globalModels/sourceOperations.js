@@ -48,11 +48,12 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
         if (responseData) {
             serviceObject.dependentData = responseData; // Attach dependent data to the service object
         }
-
+        
         let dataMappingPathKey = serviceObject?.dataMappingPath[0]
         let primaryKeyColumn = serviceObject?.primaryKeyColumn[0]
         if (serviceObject.serviceMethod === 'post') {
             const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId, integrationDetails);
+            console.log('requestObject:==',requestObject)
             const currentResponse = await processIntegrationService(
                 serviceObject,
                 integrationsMasterId,
@@ -81,21 +82,21 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
 
                 const responseData = currentResponse[`${dataMappingPathKey}`]
                 const recordToInsert = Array.isArray(responseData) ? responseData[0] : responseData;
-                await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, sourceSettingsData?.destinationDataBaseName, recordToInsert, sourceSettingsData?.sourceDataBaseName, "source", recordToInsert[`${primaryKeyColumn}`])
+                await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, sourceSettingsData?.settings?.metrics?.sourceDataBaseName, recordToInsert, sourceSettingsData?.settings?.metrics?.destinationDataBaseName, "source", recordToInsert[`${primaryKeyColumn}`])
             }
 
         }
     }
 };
-const preProcessSourceSet = async (integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, currentResponse, sourceDataBaseName, operationType, sourceReferenceId) => {
+const preProcessSourceSet = async (integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, operationType, sourceReferenceId) => {
 
     if (currentResponse !== undefined && currentResponse[`${dataMappingPathKey}`] !== undefined && Array.isArray(currentResponse[`${dataMappingPathKey}`])) {
         if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
-            await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], sourceDataBaseName, "completed", operationType, sourceReferenceId)
+            await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse[`${dataMappingPathKey}`], updatingDataBaseName, "initiated", operationType, sourceReferenceId)
         }
     }
     else if (currentResponse !== undefined && typeof currentResponse === 'object') {
-        await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, currentResponse, sourceDataBaseName, "completed", operationType, sourceReferenceId)
+        await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, "initiated", operationType, sourceReferenceId)
     }
 }
 

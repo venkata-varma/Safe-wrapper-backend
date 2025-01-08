@@ -18,8 +18,8 @@ class GlobalHTTPMethods {
                 // params,
                 headers: authToken, // Parse headers if provided
             });
-            const responseData = response.data[dataMappingPathKey]
-            const recordToInsert = Array.isArray(responseData) ? responseData[0] : responseData;
+            // const responseData = response.data[dataMappingPathKey]
+            // const recordToInsert = Array.isArray(responseData) ? responseData[0] : responseData;
             // await addRecordIntoDataBase(integrationDetails, serviceObject,dataMappingPathKey,primaryKeyColumn, settingsData?.sourceDataBaseName, recordToInsert, settingsData?.destinationDataBaseName, "initiated", "destination", sourceReferenceId);
             return response.data
         } catch (error) {
@@ -82,8 +82,6 @@ class GlobalHTTPMethods {
             const response = await axios.patch(dataPointUrl, requestObject, {
                 headers: authToken, // Parse headers if provided
             });
-            // console.log("response:===",response.data)
-            await addRecordIntoDataBase(integrationDetails, serviceObject, dataBaseName, response.data[`${dataMappingPathKey}`], "completed");
             return response.data
         } catch (error) {
             // console.log('PatchError:===',error)

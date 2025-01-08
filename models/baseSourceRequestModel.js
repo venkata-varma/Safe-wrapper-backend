@@ -20,26 +20,33 @@ const baseSourceRequestModelSchema = mongoose.Schema(
             index: true,
             default: null
         },
-        sourceReferenceId: {
+        referenceId: {
             type: String, 
-            required: true,
-        },
-        destinationReferenceId: {
-            type: String,
             required: true,
         },
         referenceStatus: {
             type: String,
+            required:true,
             default: null
         },
         responseObject: {
             type: String,
             default: null
         },
-        customFields: {
-            type: String,
-            default: null
+        sourceReferenceId: {
+            type: String, 
+            default:null
+            // required: true,
         },
+        destinationReferenceId: {
+            type: String,
+            default:null
+            // required: true,
+        },
+        // customFields: {
+        //     type: String,
+        //     default: null
+        // },
         status: {
             type: String,
             enum: ['initiated', 'pending', 'completed', 'error', 'failed'],
@@ -50,11 +57,6 @@ const baseSourceRequestModelSchema = mongoose.Schema(
             enum: ['low', 'medium', 'high'],
             default: "medium"
         },
-
-        errorMessage: {
-            type: String,
-            default: null
-        }
     }, { timestamps: true });
 
 
