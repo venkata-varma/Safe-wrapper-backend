@@ -1311,12 +1311,44 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
 
   if (integrationsMasterDetails) {
 
-    await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, from:integrationsMasterDetails.from}))
-    await destinationIntegrationOperationsServices(await integrationsFieldMappingModel.find({integrationsMasterId:integrationsMasterId, to:integrationsMasterDetails.to}))
+    await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId, from: integrationsMasterDetails.from }))
+    await destinationIntegrationOperationsServices(await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId, to: integrationsMasterDetails.to }))
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_CRON_MANUAL,
+    });
+  } else {
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_INTEGRATION_VALIDATE_STATUS
+    });
+  }
+});
+
+exports.startQAIntegrationMappings = asyncWrapper(async (req, res) => {
+  const { integrationsMasterId } = req.params;
+  const integrationsMasterDetails = await serviceProviderIntegrationsModel.findOne({ _id: integrationsMasterId, status: "active" });
+  let startTestResponseObject = {
+    sourceAuthenticationStatus: false,
+    destinationAuthenticationStatus: false,
+    sourcePullCount: 0,
+    destinationPushCount: 0,
+  }
+  if (integrationsMasterDetails) {
+
+    const sourceTestResponse = await sourceIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ serviceProviderIntegrationId: integrationsMasterId, from: integrationsMasterDetails.from }))
+    const destinationTestResponse = await destinationIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ serviceProviderIntegrationId: integrationsMasterId, to: integrationsMasterDetails.to }))
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_CRON_MANUAL,
+      startTestResponseObject : {
+        sourceAuthenticationStatus: sourceTestResponse.sourceAuthenticationStatus,
+        destinationAuthenticationStatus: destinationTestResponse.destinationAuthenticationStatus,
+        sourcePullCount: sourceTestResponse.sourcePullCount,
+        destinationPushCount: destinationTestResponse.destinationPushCount,
+      }
     });
   } else {
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({

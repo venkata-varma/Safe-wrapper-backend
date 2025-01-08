@@ -37,12 +37,12 @@ const serviceProviderListSchema = new mongoose.Schema({
         default:null
     },
     primaryKeyColumn:{
-        type:String,
-        default:""
+        type:Array,
+        default:[]
     },
     dataMappingPath:{
-        type:String,
-        default:""
+        type:Array,
+        default:[]
     },
     categories:{
         type:Array,

@@ -38,4 +38,5 @@ router.get('/get-all-integration-exceptions/:accountId', integrationsMasterContr
 router.get('/get-field-mappings-by-service/:accountId',integrationsMasterControllers.middlewareForAccountIntegrationExist, integrationsMasterControllers.getFieldMappingsByServiceType)
 router.get('/get-service-provider-lists', integrationsMasterControllers.getServiceProviderLists)
 
+router.get('/start-QA-integration-mappings/:integrationsMasterId',integrationsMasterControllers.startQAIntegrationMappings)
 module.exports = router;

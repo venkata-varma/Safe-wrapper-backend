@@ -8,7 +8,16 @@ const { validateServiceProviders, validateSPAuthentication } = require("./servic
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 const moment = require('moment');
 const { addRecordIntoDataBase } = require("./dataBaseOperations");
+const serviceProviderList = require("../models/serviceProviderList");
 require("dotenv").config();
+
+
+let startTestResponseObject = {
+    sourceAuthenticationStatus: false,
+    destinationAuthenticationStatus: false,
+    sourcePullCount: 0,
+    destinationPushCount: 0,
+}
 
 /**
  * 
@@ -27,6 +36,7 @@ const destinationIntegrationOperationsServices = async (integrationObject) => {
         destinationSettingsData = await serviceProviderIntegrationsModel.findOne({ from: data.from, to: data.to }).lean();
         await processSIMappings(data);
     }
+    return startTestResponseObject
 };
 /**
  * 
@@ -67,6 +77,7 @@ const processIndividualGetOperations = async (integrationDetails, integrationsMa
                 integrationDetails,
                 destinationSettingsData.destinationDataBaseName
             );
+            startTestResponseObject.destinationPushCount++
             await preProcessDestinationSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, getCurrentResponse, sourceDataBaseName, "destination", sourceReferenceId)
         }
     }
@@ -97,7 +108,7 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
                         destinationSettingsData?.settings?.metrics?.destinationDataBaseName,
                         requestObject
                     );
-                    
+                    startTestResponseObject.destinationPushCount++
                     await preProcessDestinationSet(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.settings?.metrics?.destinationDataBaseName, currentResponse, sourceDataBaseName = destinationSettingsData?.settings?.metrics?.sourceDataBaseName, "destination", data.sourceReferenceId)
 
                 }
@@ -114,10 +125,10 @@ const submitSourceWorkOrdersToDestination = async (services, integrationsMasterI
                     services.referenceStatus = data.referenceStatus
 
                     let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.settings?.metrics?.destinationDataBaseName, data?.sourceReferenceId)
-                    
+
                     services[0].dependentData = JSON.parse(destinationRecords.responseObject)
                     requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, services, integrationDetails);
-                    console.log('requestObject:===', requestObject)
+                    // console.log('requestObject:===', requestObject)
 
                     let currentResponse = await processIntegrationService(
                         services[0],
@@ -283,7 +294,7 @@ const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataO
         let modifiedUrl = url;
 
         primaryKeyColumn.forEach((key) => {
-            const placeholder = `{{${key}}}`; 
+            const placeholder = `{{${key}}}`;
             let value;
             if (key === 'messageId') {
                 value = 'f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a'; // Hardcoded value for messageId
@@ -318,21 +329,22 @@ const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataO
 async function getServiceproviderAuthResponse(integrationMasterId, sourceServiceProvider) {
     console.log('integrationMasterId:', integrationMasterId, sourceServiceProvider);
 
-    const serviceProviderDetails = await integrationsMasterServiceProvidersModel.findOne({
+    let serviceProviderDetails = await integrationsMasterServiceProvidersModel.findOne({
         integrationsMasterId: integrationMasterId,
         serviceProvider: sourceServiceProvider,
     });
 
     if (!serviceProviderDetails || !serviceProviderDetails.credentials) {
-        throw new Error('Service provider credentials not found.');
+        serviceProviderDetails = await serviceProviderList.findOne({ serviceProviders: sourceServiceProvider })
+        // throw new Error('Service provider credentials not found.');
     }
 
-    const authResponse = await validateSPAuthentication(serviceProviderDetails.credentials).then((validationResult) => {
+    const authResponse = await validateSPAuthentication(serviceProviderDetails.credentials || serviceProviderDetails.testCredentials).then((validationResult) => {
+        startTestResponseObject.destinationAuthenticationStatus = validationResult.status
         return validationResult.requestMethod === 'body'
             ? { Authorization: `Bearer ${validationResult.responseData[`${serviceProviderDetails.dataMappingPath[0]}`]}`, 'Content-Type': 'application/json' }
             : validationResult.responseData;
     });
-
     return authResponse;
 }
 

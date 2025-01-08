@@ -6,12 +6,20 @@
 const integrationsMasterServiceProvidersModel = require("../models/integrationsMasterServiceProvidersModel");
 const integrationsSettingsModel = require("../models/integrationsSettingsModel");
 const serviceProviderIntegrationsModel = require("../models/serviceProviderIntegrationsModel");
+const serviceProviderList = require("../models/serviceProviderList");
 const serviceProviderServicesModel = require("../models/serviceProviderServicesModel");
 const { addRecordIntoDataBase } = require("./dataBaseOperations");
 const { validateServiceProviders, validateSPAuthentication } = require("./serviceProviderAuthModel");
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 const moment = require('moment');
 var sourceSettingsData
+
+let startTestResponseObject = {
+    sourceAuthenticationStatus: false,
+    destinationAuthenticationStatus: false,
+    sourcePullCount: 0,
+    destinationPullCount: 0,
+}
 
 /**
  * 
@@ -26,6 +34,7 @@ const sourceIntegrationOperationsServices = async (integrationObject) => {
         sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: data.from, to: data.to }).lean()
         await processSIMappings(data);
     }
+    return startTestResponseObject
 };
 /**
  * 
@@ -48,12 +57,12 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
         if (responseData) {
             serviceObject.dependentData = responseData; // Attach dependent data to the service object
         }
-        
+
         let dataMappingPathKey = serviceObject?.dataMappingPath[0]
         let primaryKeyColumn = serviceObject?.primaryKeyColumn[0]
         if (serviceObject.serviceMethod === 'post') {
             const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId, integrationDetails);
-            console.log('requestObject:==',requestObject)
+            console.log('requestObject:==', requestObject)
             const currentResponse = await processIntegrationService(
                 serviceObject,
                 integrationsMasterId,
@@ -68,6 +77,7 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
             postResponseData = currentResponse;
         }
         // If the service is GET, we need to use the response data from the POST service
+        console.log('dataMappingPathKey:===', dataMappingPathKey)
         if (serviceObject.serviceMethod === 'get' && postResponseData[`${dataMappingPathKey}`].length > 0) {
             for (let data of postResponseData[`${dataMappingPathKey}`]) {
                 serviceObject.dependentData = data
@@ -82,6 +92,7 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
 
                 const responseData = currentResponse[`${dataMappingPathKey}`]
                 const recordToInsert = Array.isArray(responseData) ? responseData[0] : responseData;
+                startTestResponseObject.sourcePullCount++
                 await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, sourceSettingsData?.settings?.metrics?.sourceDataBaseName, recordToInsert, sourceSettingsData?.settings?.metrics?.destinationDataBaseName, "source", recordToInsert[`${primaryKeyColumn}`])
             }
 
@@ -176,16 +187,17 @@ const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataO
 async function getServiceproviderAuthResponse(integrationMasterId, sourceServiceProvider) {
     console.log('integrationMasterId:', integrationMasterId, sourceServiceProvider);
 
-    const serviceProviderDetails = await integrationsMasterServiceProvidersModel.findOne({
+    let serviceProviderDetails = await integrationsMasterServiceProvidersModel.findOne({
         integrationsMasterId: integrationMasterId,
         serviceProvider: sourceServiceProvider,
-    });
+    }).lean();
 
     if (!serviceProviderDetails || !serviceProviderDetails.credentials) {
-        throw new Error('Service provider credentials not found.');
+        serviceProviderDetails = await serviceProviderList.findOne({ serviceProviders: sourceServiceProvider })
+        // throw new Error('Service provider credentials not found.');
     }
-    console.log('serviceProviderDetails:==', serviceProviderDetails.dataMappingPath)
-    const authResponse = await validateSPAuthentication(serviceProviderDetails.credentials).then((validationResult) => {
+    const authResponse = await validateSPAuthentication(serviceProviderDetails.credentials || serviceProviderDetails?.testCredentials).then((validationResult) => {
+        startTestResponseObject.sourceAuthenticationStatus = validationResult.status
         return validationResult.requestMethod === 'body'
             ? { Authorization: `Bearer ${validationResult.responseData[`${serviceProviderDetails.dataMappingPath[0]}`]}`, 'Content-Type': 'application/json' }
             : validationResult.responseData;
@@ -218,9 +230,10 @@ async function fetchServiceDetails(serviceProviderServiceId) {
 
 // Fetch integration settings
 async function fetchIntegrationSettings(integrationsMasterId) {
-    const integrationSettings = await integrationsSettingsModel.findOne({ integrationsMasterId });
+    let integrationSettings = await integrationsSettingsModel.findOne({ integrationsMasterId });
     if (!integrationSettings) {
-        throw new Error('Integration settings not found.');
+        integrationSettings = { dataDumpRange: 28 }
+        // throw new Error('Integration settings not found.');
     }
     return integrationSettings;
 }
