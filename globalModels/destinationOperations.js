@@ -34,7 +34,7 @@ const destinationIntegrationOperationsServices = async (integrationObject) => {
         sourceAuthenticationStatus: false,
         destinationAuthenticationStatus: false,
         sourcePullCount: 0,
-        destinationPullCount: 0,
+        destinationPushCount: 0,
     }
     for (const data of integrationObject) {
         // Process each integration data
