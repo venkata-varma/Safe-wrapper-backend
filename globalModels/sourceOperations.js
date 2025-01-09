@@ -18,7 +18,7 @@ let startTestResponseObject = {
     sourceAuthenticationStatus: false,
     destinationAuthenticationStatus: false,
     sourcePullCount: 0,
-    destinationPullCount: 0,
+    destinationPushCount: 0,
 }
 
 /**
@@ -34,7 +34,7 @@ const sourceIntegrationOperationsServices = async (integrationObject) => {
         sourceAuthenticationStatus: false,
         destinationAuthenticationStatus: false,
         sourcePullCount: 0,
-        destinationPullCount: 0,
+        destinationPushCount: 0,
     }
     for (const data of integrationObject) {
         sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: data.from, to: data.to }).lean()
