@@ -53,6 +53,7 @@ const processSIServiceCalls = async (services, integrationsMasterId, sourceProvi
     let postResponseData = null;
 
     for (const serviceObject of services) {
+
         // Attach dependent data to the service object (only the first time or as needed)
         if (responseData) {
             serviceObject.dependentData = responseData; // Attach dependent data to the service object
@@ -169,9 +170,6 @@ const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataO
     });
     return urls; // Return the array of modified URLs
 };
-
-
-
 
 // Function to retrieve the authentication response for the integration service
 /**

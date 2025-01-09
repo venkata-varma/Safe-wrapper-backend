@@ -1328,7 +1328,9 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
 
 exports.startQAIntegrationMappings = asyncWrapper(async (req, res) => {
   const { integrationsMasterId } = req.params;
-  const integrationsMasterDetails = await serviceProviderIntegrationsModel.findOne({ _id: integrationsMasterId, status: "active" });
+  // const integrationsMasterDetails = await serviceProviderIntegrationsModel.findOne({ _id: integrationsMasterId, status: "active" });
+  const integrationsMasterDetails = await serviceProvidersIntegrationWithServicesModel.findById({ _id: integrationsMasterId});
+
   let startTestResponseObject = {
     sourceAuthenticationStatus: false,
     destinationAuthenticationStatus: false,
@@ -1336,9 +1338,11 @@ exports.startQAIntegrationMappings = asyncWrapper(async (req, res) => {
     destinationPushCount: 0,
   }
   if (integrationsMasterDetails) {
+    // const sourceTestResponse = await sourceIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ serviceProviderIntegrationId: integrationsMasterId, from: integrationsMasterDetails.from }))
+    // const destinationTestResponse = await destinationIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ serviceProviderIntegrationId: integrationsMasterId, to: integrationsMasterDetails.to }))
+    const sourceTestResponse = await sourceIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ _id: integrationsMasterId, from: integrationsMasterDetails.from }))
+    const destinationTestResponse = await destinationIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ _id: integrationsMasterId, to: integrationsMasterDetails.to }))
 
-    const sourceTestResponse = await sourceIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ serviceProviderIntegrationId: integrationsMasterId, from: integrationsMasterDetails.from }))
-    const destinationTestResponse = await destinationIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ serviceProviderIntegrationId: integrationsMasterId, to: integrationsMasterDetails.to }))
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
