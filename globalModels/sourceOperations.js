@@ -30,6 +30,12 @@ let startTestResponseObject = {
  * 4. Insert into source side collections with new status and required data points. 
  */
 const sourceIntegrationOperationsServices = async (integrationObject) => {
+    startTestResponseObject = {
+        sourceAuthenticationStatus: false,
+        destinationAuthenticationStatus: false,
+        sourcePullCount: 0,
+        destinationPullCount: 0,
+    }
     for (const data of integrationObject) {
         sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: data.from, to: data.to }).lean()
         await processSIMappings(data);
