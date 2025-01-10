@@ -66,6 +66,7 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
 
     if (finalResultData.length > 0) {
         for (let eachResult of finalResultData) {
+            startTestResponseObject.sourcePullCount++
             await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, sourceSettingsData?.settings?.metrics?.sourceDataBaseName, eachResult, sourceSettingsData?.settings?.metrics?.destinationDataBaseName, "source", eachResult[`${primaryKeyColumn}`])
         }
     }
