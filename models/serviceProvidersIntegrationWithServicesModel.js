@@ -133,6 +133,11 @@ const serviceProvidersIntegrationWithServices = new mongoose.Schema({
     customFieldMapping:{
         type:Object,
         default:{}
+    },
+    mappingMode:{
+        type:String,
+        enum:['live','offline','draft'],
+        default:"live"
     }
 
 }, { timestamps: true });

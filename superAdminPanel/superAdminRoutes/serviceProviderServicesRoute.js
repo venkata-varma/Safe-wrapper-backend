@@ -27,6 +27,9 @@ router.post('/create-service-providers-integration-services',
     // serviceProviderServicesController.validateServiceProvidersIntegrationService, 
     serviceProviderServicesController.createServiceProvidersIntegrationService)
 router.patch('/update-service-providers-integration-services/:serviceProviderIntegrationServiceId',serviceProviderServicesController.updatecreateServiceProvidersIntegrationService)
+router.patch('/update-service-provider-integration-service-mapping-mode/:serviceProviderIntegrationServiceId',serviceProviderServicesController.updatecreateServiceProvidersIntegrationServiceMappingMode)
+router.patch('/update-service-provider-integration-service-status/:serviceProviderIntegrationServiceId',serviceProviderServicesController.updatecreateServiceProvidersIntegrationServiceStatus)
+
 
 router.get('/get-all-service-provider-services-to-create-integration/:serviceProviderIntegrationId',serviceProviderServicesController.getAllServiceProviderServicesToCreateIntegration)
 router.get('/get-individual-service-providers-integration-details/:serviceProviderIntegrationId',serviceProviderServicesController.getIndividualServiceProviderIntegrationsDetails)

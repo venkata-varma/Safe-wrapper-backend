@@ -311,6 +311,34 @@ exports.updatecreateServiceProvidersIntegrationService = asyncWrapper(async(req,
     })
 })
 
+exports.updatecreateServiceProvidersIntegrationServiceMappingMode = asyncWrapper(async(req,res)=>{
+    const {serviceProviderIntegrationServiceId} = req.params
+    await serviceProvidersIntegrationWithServicesModel.findByIdAndUpdate(serviceProviderIntegrationServiceId,{mappingMode:req.body.mappingMode},{new:true, upsert:true})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_UPDATE_FIELD_MAPPINGS_SERVICE_MODE,
+    })
+})
+
+exports.updatecreateServiceProvidersIntegrationServiceStatus = asyncWrapper(async(req,res)=>{
+    const {serviceProviderIntegrationServiceId} = req.params
+    const {status} = req.body
+    if(status === 'delete'){
+        await serviceProvidersIntegrationWithServicesModel.findByIdAndUpdate(serviceProviderIntegrationServiceId,{status:"deleted"},{new:true})
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_UPDATE_INTEGRATION_FIELD_MAPPINGS_STATUS_DELETE,
+        })
+    }
+    else if(status === 'active'){
+        await serviceProvidersIntegrationWithServicesModel.findByIdAndUpdate(serviceProviderIntegrationServiceId,{status:"active"},{new:true})
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_UPDATE_INTEGRATIONS_FIELD_MAPPINGS_STATUS_ACTIVE,
+        })
+    }
+})
+
 exports.getIndividualServiceProvidersIntegrationService = asyncWrapper(async(req,res)=>{
     const {serviceProviderIntegrationServiceId} = req.params
     const defaultFieldMappingServiceDetails = await serviceProvidersIntegrationWithServicesModel.findById(serviceProviderIntegrationServiceId)

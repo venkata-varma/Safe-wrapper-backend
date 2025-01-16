@@ -5,6 +5,7 @@ const { encryptData } = require("../../utils/encryptionAlgorithms");
 const { CPDAuthentication, DFAuthentication, SNOWAuthentication, CYSAuthentication } = require("../../utils/serviceProvidersAuthentication");
 const customConstants = require('../config/customConstants.json');
 const { validateServiceProviders } = require("../../utils/authUtils");
+const { default: mongoose } = require("mongoose");
 
 
 exports.validateServiceProviderExist = asyncWrapper(async(req,res,next)=>{
@@ -255,4 +256,27 @@ exports.deleteServiceProviderList = asyncWrapper(async (req, res) => {
             message: customConstants.messages.MESSAGE_ACTIVE_SERVICE_PROVIDER_LIST,
         })
     }
+})
+
+exports.serviceProviderExist = asyncWrapper(async(req,res,next)=>{
+    const {serviceProviderId} = req.params
+    const serviceProviderExist = await serviceProvisersListModel.findById({_id: new mongoose.Types.ObjectId(serviceProviderId)})
+    if(!serviceProviderExist){
+        return res.status(customConstants.statusCodes.DATA_ALREADY_EXISTED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_INVALID,
+        })
+    }
+    else{
+        next()
+    }
+})
+
+exports.updateSPServiceCategories = asyncWrapper(async(req,res)=>{
+    const {serviceProviderId} = req.params
+    await serviceProvisersListModel.findByIdAndUpdate(serviceProviderId,{categories:req.body.categories},{new:true,upsert:true})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER_CATEGORIES,
+    })
 })
