@@ -67,7 +67,7 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
     if (finalResultData.length > 0) {
         for (let eachResult of finalResultData) {
             startTestResponseObject.sourcePullCount++
-            await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, sourceSettingsData?.settings?.metrics?.sourceDataBaseName, eachResult, sourceSettingsData?.settings?.metrics?.destinationDataBaseName, "source", eachResult[`${primaryKeyColumn}`])
+            await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, sourceSettingsData?.metrics?.sourceDataBaseName, eachResult, sourceSettingsData?.metrics?.destinationDataBaseName, "source", eachResult[`${primaryKeyColumn}`])
         }
     }
     return startTestResponseObject
@@ -127,7 +127,7 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
         const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
         return prePareResult.push(Object.assign(finalResultData[0], responseToSend))
     }
-    else if (finalResultData.length <= 0) {
+    else if (finalResultData.length <= 0 &&  ![undefined, null].includes(finalResultData[0])) {
         let prePareResult = []
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
         const result = await processIntegrationService(
@@ -141,6 +141,9 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
         const responseData = result[`${dataMappingPathKey}`]
         const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
         return prePareResult.push(Object.assign(finalResultData[0], responseToSend))
+    }
+    else{
+        return finalResultData
     }
 }
 
@@ -179,13 +182,14 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
 
 // Helper to modify the URL with dependent data (returns an array of URLs)
 const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataObject) => {
+    
     let dependentData = Array.isArray(dependentDataObject)
         ? [...dependentDataObject]
         : [dependentDataObject];
 
 
     let urls = [];
-
+    
     // Generate a URL for each object in dependentData
     dependentData.forEach(dataObject => {
         let modifiedUrl = url;
