@@ -52,6 +52,10 @@ const serviceProviderListSchema = new mongoose.Schema({
         type : Array,
         default : []
     },
+    comments:{
+        type:String,
+        default:""
+    },
     status: {
         type: String,
         enum: ['active', 'deleted'],
