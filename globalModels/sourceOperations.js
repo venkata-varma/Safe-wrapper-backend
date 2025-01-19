@@ -13,7 +13,7 @@ const { validateServiceProviders, validateSPAuthentication } = require("./servic
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 const moment = require('moment');
 var sourceSettingsData
-
+ 
 let startTestResponseObject = {
     sourceAuthenticationStatus: false,
     destinationAuthenticationStatus: false,
@@ -81,6 +81,7 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
     if (finalResultData === null) {
         const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId, integrationDetails);
         console.log('requestObject:==', requestObject)
+       
         const currentResponse = await processIntegrationService(
             serviceObject,
             integrationsMasterId,

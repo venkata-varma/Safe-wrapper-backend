@@ -55,175 +55,170 @@ const processSIMappings = async (data) => {
     await processSIServiceCalls(sortedServices, data.integrationsMasterId, data.to, authToken, integrationDetails);
 };
 
-const preProcessDestinationSet = async (integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, currentResponse, sourceDataBaseName, operationType, sourceReferenceId) => {
-    if (currentResponse !== undefined && currentResponse[`${dataMappingPathKey}`] !== undefined && Array.isArray(currentResponse[`${dataMappingPathKey}`])) {
-        if (currentResponse[`${dataMappingPathKey}`]?.length > 0) {
-            await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], sourceDataBaseName, "completed", operationType, sourceReferenceId)
+const processSIServiceCalls = async (SPServices, integrationsMasterId, sourceProvider, authToken, integrationDetails) => {
+    let finalResultData = null; let dataMappingPathKey; let primaryKeyColumn;
+    for (serviceObject of SPServices) {
+        dataMappingPathKey = serviceObject?.dataMappingPath[0]
+        primaryKeyColumn = serviceObject?.primaryKeyColumn[0]
+
+        finalResultData = await preProcessServiceCall(serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails);
+
+    }
+    // finalResultData = Array.isArray(finalResultData) ? finalResultData : [finalResultData]
+    console.log('finalResultData:==', finalResultData)
+    if (![null, undefined].includes(finalResultData)) {
+        for (let eachResult of finalResultData) {
+            await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.metrics?.destinationDataBaseName, eachResult, destinationSettingsData?.metrics?.sourceDataBaseName, "destination", eachResult.sourceReferenceId)
+            startTestResponseObject.destinationPushCount++
         }
     }
-    else if (currentResponse !== undefined && typeof currentResponse[`${dataMappingPathKey}`] === 'object') {
-        await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, currentResponse[`${dataMappingPathKey}`], sourceDataBaseName, "completed", operationType, sourceReferenceId)
-    }
+    return startTestResponseObject
 }
 
-const processIndividualGetOperations = async (integrationDetails, integrationsMasterId, sourceProvider, authToken, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, postResponses, sourceDataBaseName) => {
-    for (let { sourceRecord, currentResponse, sourceReferenceId } of postResponses) {
-        let responseToSend = currentResponse
-        if (responseToSend) {
-            const responseDataArray = Array.isArray(responseToSend)
-                ? responseToSend
-                : [responseToSend];
-            serviceObject.dependentData = responseDataArray; // Attach POST response data to GET
-            const getCurrentResponse = await processIntegrationService(
+const preProcessServiceCall = async (serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails) => {
+
+    let dataMappingPathKey = serviceObject?.dataMappingPath[0];
+    let primaryKeyColumn = serviceObject?.primaryKeyColumn[0];
+    if (finalResultData === null) {
+        if (serviceObject.serviceMethod === 'post') {
+            let prePareResult = []
+            let dataMappingPathKey = serviceObject.dataMappingPath[0]
+            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
+            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
+            // console.log('sourceData:===',sourceData)
+            if (sourceData.length > 0) {
+                for (let data of sourceData) {
+                    let responseData = {}
+                    serviceObject.dataToSend = { ...JSON.parse(data.responseObject), ...finalResultData };
+                    serviceObject.referenceStatus = data.referenceStatus
+                    requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
+                    console.log('createRequestObject:===', requestObject)
+                    let currentResponse = await processIntegrationService(
+                        serviceObject,
+                        integrationsMasterId,
+                        sourceProvider,
+                        authToken,
+                        integrationDetails,
+                        destinationSettingsData?.metrics?.destinationDataBaseName,
+                        requestObject
+                    );
+                    // responseData = currentResponse[`${dataMappingPathKey}`]
+                    // responseData.sourceReferenceId = data.referenceId
+                    // prePareResult.push(responseData)
+                    if (currentResponse[`${dataMappingPathKey}`]) {
+                        responseData = currentResponse[`${dataMappingPathKey}`];
+                        responseData.sourceReferenceId = data.referenceId;
+                        prePareResult.push(responseData);
+                    }
+
+                }
+            }
+            return prePareResult
+        }
+        else if (serviceObject.serviceMethod === 'patch') {
+            let prePareResult = []
+            let dataMappingPathKey = serviceObject.dataMappingPath[0]
+            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
+            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "update-request")
+            // console.log('sourceData:===',sourceData)
+            if (sourceData.length > 0) {
+                for (let data of sourceData) {
+                    let responseData = {}
+                    serviceObject.dataToSend = JSON.parse(data.responseObject);
+                    serviceObject.referenceStatus = data.referenceStatus
+                    let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.metrics?.destinationDataBaseName, data?.sourceReferenceId)
+
+                    serviceObject.dependentData = JSON.parse(destinationRecords.responseObject)
+                    requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
+                    console.log('updateRequestObject:===', requestObject)
+
+                    let currentResponse = await processIntegrationService(
+                        serviceObject,
+                        integrationsMasterId,
+                        sourceProvider,
+                        authToken,
+                        integrationDetails,
+                        destinationSettingsData?.metrics?.destinationDataBaseName,
+                        requestObject
+                    );
+                    // postResponses.push({ sourceRecord: data, currentResponse, sourceReferenceId: data.sourceReferenceId });
+                    // responseData = currentResponse[`${dataMappingPathKey}`]
+                    // responseData.sourceReferenceId = data.referenceId
+                    // prePareResult.push(responseData)
+                    if (currentResponse[`${dataMappingPathKey}`]) {
+                        responseData = currentResponse[`${dataMappingPathKey}`];
+                        responseData.sourceReferenceId = data.referenceId;
+                        prePareResult.push(responseData);
+                    }
+                }
+            }
+            return prePareResult
+        }
+    }
+    else if (await isMultiRecord(Array.isArray(responseData) ? responseData : [responseData])) {
+        let prePareResult = []
+        for (eachResult of finalResultData) {
+            serviceObject.dependentData = { ...eachResult, ...finalResultData }
+            const result = await processIntegrationService(
                 serviceObject,
                 integrationsMasterId,
                 sourceProvider,
                 authToken,
                 integrationDetails,
-                destinationSettingsData.destinationDataBaseName
+                destinationSettingsData
             );
-            startTestResponseObject.destinationPushCount++
-            await preProcessDestinationSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationDataBaseName, getCurrentResponse, sourceDataBaseName, "destination", sourceReferenceId)
+            const responseData = result[`${dataMappingPathKey}`]
+            const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+            prePareResult.push(Object.assign(eachResult, responseToSend))
         }
+        return prePareResult
+    }
+
+    else if (finalResultData !== null && finalResultData.length === 1) {
+        serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
+        let prePareResult = []
+        const result = await processIntegrationService(
+            serviceObject,
+            integrationsMasterId,
+            sourceProvider,
+            authToken,
+            integrationDetails,
+            destinationSettingsData
+        );
+        const responseData = result[`${dataMappingPathKey}`]
+        const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+        return prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend, finalResultData))
+    }
+    else if (finalResultData.length <= 0 && ![undefined, null].includes(finalResultData[0])) {
+        let prePareResult = []
+        serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
+        const result = await processIntegrationService(
+            serviceObject,
+            integrationsMasterId,
+            sourceProvider,
+            authToken,
+            integrationDetails,
+            destinationSettingsData
+        );
+        const responseData = result[`${dataMappingPathKey}`]
+        const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+        return prePareResult.push(Object.assign(finalResultData[0], responseToSend, finalResultData))
+    }
+    else {
+        return finalResultData
     }
 }
 
-const submitSourceWorkOrdersToDestination = async (services, integrationsMasterId, sourceProvider, authToken, integrationDetails) => {
-    const numberOfAPICalls = services.length
-    let postResponses = []
-    let requestObject
-    if (numberOfAPICalls === 1) {
-        if (services[0].serviceMethod === 'post') {
-            let dataMappingPathKey = services[0].dataMappingPath[0]
-            let primaryKeyColumn = services[0].primaryKeyColumn[0]
-            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
-            if (sourceData.length > 0) {
-                for (let data of sourceData) {
-
-                    services.dataToSend = JSON.parse(data.responseObject);
-                    services.referenceStatus = data.referenceStatus
-                    requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, services, integrationDetails);
-                    // console.log('requestObject:===',requestObject)
-                    let currentResponse = await processIntegrationService(
-                        services[0],
-                        integrationsMasterId,
-                        sourceProvider,
-                        authToken,
-                        integrationDetails,
-                        destinationSettingsData?.metrics?.destinationDataBaseName,
-                        requestObject
-                    );
-                    startTestResponseObject.destinationPushCount++
-                    await preProcessDestinationSet(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.metrics?.destinationDataBaseName, currentResponse, destinationSettingsData?.metrics?.sourceDataBaseName, "destination", data.sourceReferenceId)
-
-                }
-            }
-        }
-        else if (services[0].serviceMethod === 'patch') {
-
-            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "update-request")
-            let dataMappingPathKey = services[0].dataMappingPath[0]
-            let primaryKeyColumn = services[0].primaryKeyColumn[0]
-            if (sourceData.length > 0) {
-                for (let data of sourceData) {
-                    services.dataToSend = JSON.parse(data.responseObject);
-                    services.referenceStatus = data.referenceStatus
-
-                    let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.metrics?.destinationDataBaseName, data?.sourceReferenceId)
-
-                    services[0].dependentData = JSON.parse(destinationRecords.responseObject)
-                    requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, services, integrationDetails);
-                    // console.log('requestObject:===', requestObject)
-
-                    let currentResponse = await processIntegrationService(
-                        services[0],
-                        integrationsMasterId,
-                        sourceProvider,
-                        authToken,
-                        integrationDetails,
-                        destinationSettingsData?.metrics?.destinationDataBaseName,
-                        requestObject
-                    );
-                    // postResponses.push({ sourceRecord: data, currentResponse });
-                    await preProcessDestinationSet(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.metrics?.destinationDataBaseName, currentResponse, destinationSettingsData?.metrics?.sourceDataBaseName, "destination", data.sourceReferenceId)
-
-                }
-            }
-        }
-    }
-
-    else if (numberOfAPICalls > 1) {
-        for (let serviceObject of services) {
-            let dataMappingPathKey = serviceObject.dataMappingPath[0]
-            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
-            if (serviceObject.serviceMethod === 'post') {
-                const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
-                // console.log('sourceData:===',sourceData)
-                if (sourceData.length > 0) {
-                    for (let data of sourceData) {
-                        services.dataToSend = JSON.parse(data.responseObject);
-                        services.referenceStatus = data.referenceStatus
-                        console.log('authToken:===',authToken)
-
-                        requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, services, integrationDetails);
-                        console.log('requestObject:===', requestObject)
-                        let currentResponse = await processIntegrationService(
-                            serviceObject,
-                            integrationsMasterId,
-                            sourceProvider,
-                            authToken,
-                            integrationDetails,
-                            destinationSettingsData?.metrics?.destinationDataBaseName,
-                            requestObject
-                        );
-                        postResponses.push({ sourceRecord: data, currentResponse, sourceReferenceId: data.sourceReferenceId });
-                        // await preProcessDestinationSet(integrationDetails, serviceObject,dataMappingPathKey,primaryKeyColumn, destinationSettingsData?.destinationDataBaseName, currentResponse, sourceDataBaseName = destinationSettingsData.sourceDataBaseName)
-
-                    }
-                }
-            }
-            else if (serviceObject.serviceMethod === 'patch') {
-
-                const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "update-request")
-
-                if (sourceData.length > 0) {
-                    for (let data of sourceData) {
-                        serviceObject.dataToSend = JSON.parse(data.responseObject);
-                        serviceObject.referenceStatus = data.referenceStatus
-                        let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.metrics?.destinationDataBaseName, data?.sourceReferenceId)
-
-                        serviceObject.dependentData = JSON.parse(destinationRecords.responseObject)
-                        requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
-
-                        let currentResponse = await processIntegrationService(
-                            serviceObject,
-                            integrationsMasterId,
-                            sourceProvider,
-                            authToken,
-                            integrationDetails,
-                            destinationSettingsData?.metrics?.destinationDataBaseName,
-                            requestObject
-                        );
-                        postResponses.push({ sourceRecord: data, currentResponse, sourceReferenceId: data.sourceReferenceId });
-                    }
-                }
-            }
-            else if (serviceObject.serviceMethod === 'get') {
-                if (postResponses.length > 0) {
-                    await processIndividualGetOperations(integrationDetails, integrationsMasterId, sourceProvider, authToken, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.metrics?.destinationDataBaseName, postResponses, destinationSettingsData?.metrics?.sourceDataBaseName)
-                }
-            }
-
-        }
-
-    }
+const isMultiRecord = async (finalResultData) => {
+    return finalResultData.length > 1 ? true : false
 }
 
-// Function to process services with dependencies
-const processSIServiceCalls = async (services, integrationsMasterId, sourceProvider, authToken, integrationDetails, responseData = null) => {
+const preProcessSourceSet = async (integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, operationType, sourceReferenceId) => {
 
-    let submitWorkOrders = await submitSourceWorkOrdersToDestination(services, integrationsMasterId, sourceProvider, authToken, integrationDetails)
-};
+    if (currentResponse !== undefined) {
+        await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, "completed", operationType, sourceReferenceId)
+    }
+}
 
 async function getSourceRecords(integrationDetails, databaseName, status) {
     const records = await mongoose.connection.db
@@ -333,30 +328,6 @@ const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataO
  * @returns required authentication credentials say {token, refresh token & others}
  */
 
-/*
-async function getServiceproviderAuthResponse(integrationMasterId, sourceServiceProvider) {
-    console.log('integrationMasterId:', integrationMasterId, sourceServiceProvider);
-
-    let serviceProviderDetails = await integrationsMasterServiceProvidersModel.findOne({
-        integrationsMasterId: integrationMasterId,
-        serviceProvider: sourceServiceProvider,
-    });
-
-    if (!serviceProviderDetails || !serviceProviderDetails.credentials) {
-        serviceProviderDetails = await serviceProviderList.findOne({ serviceProviders: sourceServiceProvider })
-        // throw new Error('Service provider credentials not found.');
-    }
-
-    const authResponse = await validateSPAuthentication(serviceProviderDetails.credentials || serviceProviderDetails.testCredentials).then((validationResult) => {
-        startTestResponseObject.destinationAuthenticationStatus = validationResult.status
-        return validationResult.requestMethod === 'body'
-            ? { Authorization: `Bearer ${validationResult.responseData[`${serviceProviderDetails.dataMappingPath[0]}`]}`, 'Content-Type': 'application/json' }
-            : validationResult.responseData;
-    });
-    return authResponse;
-}
-*/
-
 async function getServiceproviderAuthResponse(integrationMasterId, sourceServiceProvider) {
     console.log('integrationMasterId:', integrationMasterId, sourceServiceProvider);
     var refresh_token_expires_on;
@@ -378,7 +349,7 @@ async function getServiceproviderAuthResponse(integrationMasterId, sourceService
             let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderDetails.credentials || serviceProviderDetails?.testCredentials };
             let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
             decryptConfigCredentials.data.refresh_token = validationResult.responseData.refresh_token
-            console.log("two times", decryptConfigCredentials)
+            // console.log("two times", decryptConfigCredentials)
             let newEncryptCode = encryptData(decryptConfigCredentials);
             if (!integrationMasterId) {
                 await serviceProviderList.findOneAndUpdate({ serviceProviders: sourceServiceProvider }, { $set: { testCredentials: newEncryptCode, refresh_token_expires_on } }, { new: true, runValidators: true })
@@ -421,43 +392,6 @@ async function fetchIntegrationSettings(integrationsMasterId) {
     }
     return integrationSettings;
 }
-/*
-async function getNestedValue(dataToMap, mappingKey) {
-    // Ensure dataToMap is an object before proceeding
-    if (dataToMap === null || dataToMap === undefined) {
-        return undefined; // Return undefined if dataToMap is null or undefined
-    }
-    // console.log('mappingKey:==',mappingKey)
-    if (typeof mappingKey !== 'string') {
-        return mappingKey;
-    }
-    const keys = mappingKey.split('.'); // Split the mappingKey into keys
-    let result = dataToMap;
-    for (const key of keys) {
-        if (result && typeof result === 'object') {
-            // Check for array access (e.g., WorkDetails.Assets[0].Comment)
-            const arrayMatch = key.match(/^(.+)\[(\d+)]$/);
-            if (arrayMatch) {
-                const arrayKey = arrayMatch[1];
-                const index = parseInt(arrayMatch[2], 10);
-                if (Array.isArray(result[arrayKey]) && result[arrayKey][index] !== undefined) {
-                    result = result[arrayKey][index];
-                } else {
-                    return undefined;
-                }
-            } else if (key in result) {
-                result = result[key]; // Access the next level in the object
-            }
-            else {
-                return undefined;
-            }
-        } else {
-            return undefined; // Return undefined if key doesn't exist
-        }
-    }
-    return result;
-}
-    */
 
 function assignStatus(statusValue, statusSettings) {
     let statusKey = Object.entries(statusSettings).find(([key, value]) => value === statusValue);
@@ -468,30 +402,22 @@ function assignStatus(statusValue, statusSettings) {
         return statusValue;
 
 }
+
 async function updatePayloadWithMappings(fieldMapping, destinationMappingSettings, dataToSend, statusSettings, referenceStatus) {
     let mappedDataPoints = {};
-    // fieldMapping = Object.assign(mappedDataPoints, destinationMappingSettings);
     fieldMapping = {
         ...fieldMapping,
         ...destinationMappingSettings
     }
-
-    // console.log("fieldMapping", fieldMapping)
-
-    // Iterate over fieldMapping using for-of loop
     for (const [mappedKey, value] of Object.entries(fieldMapping)) {
         const mappingKey = value;
-        if (mappingKey === 'reference.settings') {
-
+        if (mappingKey === 'settings.referenceStatus') {
             const statusKey = assignStatus(referenceStatus, statusSettings);
             mappedDataPoints[mappedKey] = statusKey;
-        } else
-
-            if (mappedKey.includes("[].")) {
+        } else if (mappedKey.includes("[].")) {
+            
                 // Handle array keys (e.g., sales_invoice.invoice_lines[].description)
                 const [parentKey, arrayKey] = mappedKey.split("[].");
-
-                // Process nested parent keys
                 const parentKeys = parentKey.split(".");
                 let currentParent = mappedDataPoints;
                 for (const [idx, nestedKey] of parentKeys.entries()) {
@@ -500,19 +426,12 @@ async function updatePayloadWithMappings(fieldMapping, destinationMappingSetting
                     }
                     currentParent = currentParent[nestedKey];
                 }
-
-                // Get the source array for mapping
                 const sourceArray = getNestedValue(dataToSend, mappingKey.split("[].")[0]) || [];
-
-                // Iterate over the source array and map each element
                 sourceArray.forEach((sourceItem, index) => {
                     const mappedItem = currentParent[index] || {};
-
-                    // Iterate over the array inner keys
                     for (const [innerKey, innerMapping] of Object.entries(fieldMapping)) {
                         if (innerKey.startsWith(`${parentKey}[].`)) {
                             const innerFieldKey = innerKey.split("[].")[1];
-
                             if (typeof innerMapping === "string" && !innerMapping.includes("[].")) {
                                 // Static string value (e.g., 'GB_NO_TAX')
                                 mappedItem[innerFieldKey] = innerMapping;
@@ -523,47 +442,32 @@ async function updatePayloadWithMappings(fieldMapping, destinationMappingSetting
                             }
                         }
                     }
-
                     currentParent[index] = mappedItem;
                 });
             }
-
-
-
-
             else if (typeof mappingKey === "object" && !Array.isArray(mappingKey) && mappingKey !== null) {
-                // Handle nested objects
-
-
                 mappedDataPoints[mappedKey] = {};
                 for (const [subKey, modelKey] of Object.entries(mappingKey)) {
                     mappedDataPoints[mappedKey][subKey] = modelKey ? getNestedValue(dataToSend, modelKey) : "";
                 }
-
-
-
-            } else if (typeof mappingKey === "string") {
-                // Handle simple string mappings
-                mappedDataPoints[mappedKey] = mappingKey ? getNestedValue(dataToSend, mappingKey) : "";
+            } 
+            else if (typeof mappingKey === "string") {
+                const resolvedValue = getNestedValue(dataToSend, mappingKey);
+                mappedDataPoints[mappedKey] = Object.values(destinationMappingSettings).includes(mappingKey) 
+                    ? (resolvedValue || mappingKey) 
+                    : resolvedValue;
             } else {
                 // Default behavior for other types
                 mappedDataPoints[mappedKey] = mappingKey;
             }
     }
-
-
-    // console.log("mappedDataPoints", mappedDataPoints)
-
     const nestedObject = await keysToNestedObjectWithArrays(mappedDataPoints);
-    // console.log("wtf-nestedObject", nestedObject)
     return JSON.stringify(nestedObject, null, 2);
-
-
 }
 
 async function keysToNestedObjectWithArrays(mappedDataPoints) {
     const nestedObject = {};
-    console.log('mappedDataPoints:===', mappedDataPoints);
+    // console.log('mappedDataPoints:===', mappedDataPoints);
 
     for (const [key, value] of Object.entries(mappedDataPoints)) {
         const keys = key.split('.'); // Split the key into parts
@@ -606,8 +510,9 @@ const getNestedValue = (dataToSend, fieldMappingKey) => {
     if (typeof fieldMappingKey !== "string") return "";
 
     return fieldMappingKey.split(".").reduce((currentValue, fieldMappingkey) => {
-        const fieldMappingkeyMatch = fieldMappingkey.match(/(\w+)\[(\d+)\]/);
+        const fieldMappingkeyMatch = fieldMappingkey.match(/(\w+)\[(\d+)\]/);  
         if (fieldMappingkeyMatch) {
+            
             const fieldMappingMatchKey = fieldMappingkeyMatch[1];
             const index = parseInt(fieldMappingkeyMatch[2], 10);
             return (
