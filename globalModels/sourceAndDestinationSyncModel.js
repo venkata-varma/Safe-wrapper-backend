@@ -46,8 +46,8 @@ class GlobalHTTPMethods {
             // console.log("response:===",response.data)
             return response.data
         } catch (error) {
-            console.log("CreateError:===", error.response.data)
-            return error
+            console.log("CreateError:===", error.response?.data)
+            // return error
         }
     }
 

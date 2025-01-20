@@ -331,6 +331,19 @@ function updatePayloadWithMappings(parsedRequestObject, dataMappingPaths, dateRa
         }
     });
 
+    parsedRequestObject = {
+        "Parameters": {
+            //"WorkOrderNumber":"POS4L20001", /*Search by work order number*/
+            /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
+            "Created": {
+                "From": "2024-12-16T00:00:00",
+                 "To": "2024-12-20T23:59:59"
+            }   
+    
+        },
+        "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
+    }
+
     return parsedRequestObject;
 }
 

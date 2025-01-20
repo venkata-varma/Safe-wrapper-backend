@@ -60,12 +60,21 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
     for (serviceObject of SPServices) {
         dataMappingPathKey = serviceObject?.dataMappingPath[0]
         primaryKeyColumn = serviceObject?.primaryKeyColumn[0]
+        let sourceRecords
+        // console.log('serviceObject:==', serviceObject)
+        if (serviceObject.serviceMethod === "post") {
+            sourceRecords = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
 
-        finalResultData = await preProcessServiceCall(serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails);
+        }
+        if (serviceObject.serviceMethod === "patch") {
+            sourceRecords = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "update-request")
+        }
+
+        finalResultData = await preProcessServiceCall(serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails, sourceRecords);
+        // console.log('finalResultData:==', finalResultData)
 
     }
     // finalResultData = Array.isArray(finalResultData) ? finalResultData : [finalResultData]
-    console.log('finalResultData:==', finalResultData)
     if (![null, undefined].includes(finalResultData)) {
         for (let eachResult of finalResultData) {
             await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.metrics?.destinationDataBaseName, eachResult, destinationSettingsData?.metrics?.sourceDataBaseName, "destination", eachResult.sourceReferenceId)
@@ -75,85 +84,54 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
     return startTestResponseObject
 }
 
-const preProcessServiceCall = async (serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails) => {
+const processServiceCallsOnSourceRecords = async (integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, finalResultData) => {
+    let prePareResult = []
+    if (sourceRecords.length > 0) {
+        for (let data of sourceRecords) {
+            let responseData = {}
+            serviceObject.dataToSend = { ...JSON.parse(data.responseObject), ...finalResultData };
+            // console.log('serviceObject.dataToSend:==', serviceObject.dataToSend)
+            serviceObject.referenceStatus = data.referenceStatus
+            requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
+            console.log('createRequestObject:===', requestObject)
+            let currentResponse = await processIntegrationService(
+                serviceObject,
+                integrationsMasterId,
+                sourceProvider,
+                authToken,
+                integrationDetails,
+                destinationSettingsData?.metrics?.destinationDataBaseName,
+                requestObject
+            );
+            // responseData = currentResponse[`${dataMappingPathKey}`]
+            // responseData.sourceReferenceId = data.referenceId
+            // prePareResult.push(responseData)
+            // console.log('currentResponse:===',currentResponse)
+            if (currentResponse[`${dataMappingPathKey}`] || currentResponse) {
+                responseData = currentResponse[`${dataMappingPathKey}`] || currentResponse
+                responseData.sourceReferenceId = data.referenceId;
+                prePareResult.push(responseData);
+            }
+        }
+        // console.log('prePareResult:===',prePareResult)
+    }
+    return prePareResult
+}
+
+const preProcessServiceCall = async (serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails, sourceRecords) => {
 
     let dataMappingPathKey = serviceObject?.dataMappingPath[0];
     let primaryKeyColumn = serviceObject?.primaryKeyColumn[0];
+
     if (finalResultData === null) {
-        if (serviceObject.serviceMethod === 'post') {
-            let prePareResult = []
-            let dataMappingPathKey = serviceObject.dataMappingPath[0]
-            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
-            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
-            // console.log('sourceData:===',sourceData)
-            if (sourceData.length > 0) {
-                for (let data of sourceData) {
-                    let responseData = {}
-                    serviceObject.dataToSend = { ...JSON.parse(data.responseObject), ...finalResultData };
-                    serviceObject.referenceStatus = data.referenceStatus
-                    requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
-                    console.log('createRequestObject:===', requestObject)
-                    let currentResponse = await processIntegrationService(
-                        serviceObject,
-                        integrationsMasterId,
-                        sourceProvider,
-                        authToken,
-                        integrationDetails,
-                        destinationSettingsData?.metrics?.destinationDataBaseName,
-                        requestObject
-                    );
-                    // responseData = currentResponse[`${dataMappingPathKey}`]
-                    // responseData.sourceReferenceId = data.referenceId
-                    // prePareResult.push(responseData)
-                    if (currentResponse[`${dataMappingPathKey}`]) {
-                        responseData = currentResponse[`${dataMappingPathKey}`];
-                        responseData.sourceReferenceId = data.referenceId;
-                        prePareResult.push(responseData);
-                    }
-
-                }
-            }
-            return prePareResult
-        }
-        else if (serviceObject.serviceMethod === 'patch') {
-            let prePareResult = []
-            let dataMappingPathKey = serviceObject.dataMappingPath[0]
-            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
-            const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "update-request")
-            // console.log('sourceData:===',sourceData)
-            if (sourceData.length > 0) {
-                for (let data of sourceData) {
-                    let responseData = {}
-                    serviceObject.dataToSend = JSON.parse(data.responseObject);
-                    serviceObject.referenceStatus = data.referenceStatus
-                    let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.metrics?.destinationDataBaseName, data?.sourceReferenceId)
-
-                    serviceObject.dependentData = JSON.parse(destinationRecords.responseObject)
-                    requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
-                    console.log('updateRequestObject:===', requestObject)
-
-                    let currentResponse = await processIntegrationService(
-                        serviceObject,
-                        integrationsMasterId,
-                        sourceProvider,
-                        authToken,
-                        integrationDetails,
-                        destinationSettingsData?.metrics?.destinationDataBaseName,
-                        requestObject
-                    );
-                    // postResponses.push({ sourceRecord: data, currentResponse, sourceReferenceId: data.sourceReferenceId });
-                    // responseData = currentResponse[`${dataMappingPathKey}`]
-                    // responseData.sourceReferenceId = data.referenceId
-                    // prePareResult.push(responseData)
-                    if (currentResponse[`${dataMappingPathKey}`]) {
-                        responseData = currentResponse[`${dataMappingPathKey}`];
-                        responseData.sourceReferenceId = data.referenceId;
-                        prePareResult.push(responseData);
-                    }
-                }
-            }
-            return prePareResult
-        }
+        let dataMappingPathKey = serviceObject.dataMappingPath[0]
+        let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
+        // const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
+        // console.log('sourceData:===',sourceData)
+        // console.log('serviceObject:==', serviceObject.serviceMethod)
+        serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
+        let serviceCallsResponse = await processServiceCallsOnSourceRecords(integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, serviceObject.dependentData)
+        return serviceCallsResponse
     }
     else if (await isMultiRecord(Array.isArray(responseData) ? responseData : [responseData])) {
         let prePareResult = []
@@ -176,18 +154,33 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
 
     else if (finalResultData !== null && finalResultData.length === 1) {
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
+
         let prePareResult = []
-        const result = await processIntegrationService(
-            serviceObject,
-            integrationsMasterId,
-            sourceProvider,
-            authToken,
-            integrationDetails,
-            destinationSettingsData
-        );
-        const responseData = result[`${dataMappingPathKey}`]
-        const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
-        return prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend, finalResultData))
+        if (serviceObject.serviceMethod === 'post') {
+            // let prePareResult = []
+            let dataMappingPathKey = serviceObject.dataMappingPath[0]
+            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
+            // const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
+            // console.log('sourceData:===',sourceData)
+            // console.log('serviceObject:==', serviceObject.serviceMethod)
+            let serviceCallsResponse = await processServiceCallsOnSourceRecords(integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, serviceObject.dependentData)
+            return serviceCallsResponse
+
+        }
+        else {
+            const result = await processIntegrationService(
+                serviceObject,
+                integrationsMasterId,
+                sourceProvider,
+                authToken,
+                integrationDetails,
+                destinationSettingsData
+            );
+            const responseData = result[`${dataMappingPathKey}`]
+            const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+            return prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend, finalResultData))
+        }
+
     }
     else if (finalResultData.length <= 0 && ![undefined, null].includes(finalResultData[0])) {
         let prePareResult = []
@@ -415,51 +408,51 @@ async function updatePayloadWithMappings(fieldMapping, destinationMappingSetting
             const statusKey = assignStatus(referenceStatus, statusSettings);
             mappedDataPoints[mappedKey] = statusKey;
         } else if (mappedKey.includes("[].")) {
-            
-                // Handle array keys (e.g., sales_invoice.invoice_lines[].description)
-                const [parentKey, arrayKey] = mappedKey.split("[].");
-                const parentKeys = parentKey.split(".");
-                let currentParent = mappedDataPoints;
-                for (const [idx, nestedKey] of parentKeys.entries()) {
-                    if (!currentParent[nestedKey]) {
-                        currentParent[nestedKey] = idx === parentKeys.length - 1 ? [] : {};
-                    }
-                    currentParent = currentParent[nestedKey];
+
+            // Handle array keys (e.g., sales_invoice.invoice_lines[].description)
+            const [parentKey, arrayKey] = mappedKey.split("[].");
+            const parentKeys = parentKey.split(".");
+            let currentParent = mappedDataPoints;
+            for (const [idx, nestedKey] of parentKeys.entries()) {
+                if (!currentParent[nestedKey]) {
+                    currentParent[nestedKey] = idx === parentKeys.length - 1 ? [] : {};
                 }
-                const sourceArray = getNestedValue(dataToSend, mappingKey.split("[].")[0]) || [];
-                sourceArray.forEach((sourceItem, index) => {
-                    const mappedItem = currentParent[index] || {};
-                    for (const [innerKey, innerMapping] of Object.entries(fieldMapping)) {
-                        if (innerKey.startsWith(`${parentKey}[].`)) {
-                            const innerFieldKey = innerKey.split("[].")[1];
-                            if (typeof innerMapping === "string" && !innerMapping.includes("[].")) {
-                                // Static string value (e.g., 'GB_NO_TAX')
-                                mappedItem[innerFieldKey] = innerMapping;
-                            } else {
-                                // Dynamic mapping from the source array
-                                const mappedValue = getNestedValue(sourceItem, innerMapping.split("[].")[1]) || "";
-                                mappedItem[innerFieldKey] = mappedValue;
-                            }
+                currentParent = currentParent[nestedKey];
+            }
+            const sourceArray = getNestedValue(dataToSend, mappingKey.split("[].")[0]) || [];
+            sourceArray.forEach((sourceItem, index) => {
+                const mappedItem = currentParent[index] || {};
+                for (const [innerKey, innerMapping] of Object.entries(fieldMapping)) {
+                    if (innerKey.startsWith(`${parentKey}[].`)) {
+                        const innerFieldKey = innerKey.split("[].")[1];
+                        if (typeof innerMapping === "string" && !innerMapping.includes("[].")) {
+                            // Static string value (e.g., 'GB_NO_TAX')
+                            mappedItem[innerFieldKey] = innerMapping;
+                        } else {
+                            // Dynamic mapping from the source array
+                            const mappedValue = getNestedValue(sourceItem, innerMapping.split("[].")[1]) || "";
+                            mappedItem[innerFieldKey] = mappedValue;
                         }
                     }
-                    currentParent[index] = mappedItem;
-                });
-            }
-            else if (typeof mappingKey === "object" && !Array.isArray(mappingKey) && mappingKey !== null) {
-                mappedDataPoints[mappedKey] = {};
-                for (const [subKey, modelKey] of Object.entries(mappingKey)) {
-                    mappedDataPoints[mappedKey][subKey] = modelKey ? getNestedValue(dataToSend, modelKey) : "";
                 }
-            } 
-            else if (typeof mappingKey === "string") {
-                const resolvedValue = getNestedValue(dataToSend, mappingKey);
-                mappedDataPoints[mappedKey] = Object.values(destinationMappingSettings).includes(mappingKey) 
-                    ? (resolvedValue || mappingKey) 
-                    : resolvedValue;
-            } else {
-                // Default behavior for other types
-                mappedDataPoints[mappedKey] = mappingKey;
+                currentParent[index] = mappedItem;
+            });
+        }
+        else if (typeof mappingKey === "object" && !Array.isArray(mappingKey) && mappingKey !== null) {
+            mappedDataPoints[mappedKey] = {};
+            for (const [subKey, modelKey] of Object.entries(mappingKey)) {
+                mappedDataPoints[mappedKey][subKey] = modelKey ? getNestedValue(dataToSend, modelKey) : "";
             }
+        }
+        else if (typeof mappingKey === "string") {
+            const resolvedValue = getNestedValue(dataToSend, mappingKey);
+            mappedDataPoints[mappedKey] = Object.values(destinationMappingSettings).includes(mappingKey)
+                ? (resolvedValue || mappingKey)
+                : resolvedValue;
+        } else {
+            // Default behavior for other types
+            mappedDataPoints[mappedKey] = mappingKey;
+        }
     }
     const nestedObject = await keysToNestedObjectWithArrays(mappedDataPoints);
     return JSON.stringify(nestedObject, null, 2);
@@ -510,9 +503,9 @@ const getNestedValue = (dataToSend, fieldMappingKey) => {
     if (typeof fieldMappingKey !== "string") return "";
 
     return fieldMappingKey.split(".").reduce((currentValue, fieldMappingkey) => {
-        const fieldMappingkeyMatch = fieldMappingkey.match(/(\w+)\[(\d+)\]/);  
+        const fieldMappingkeyMatch = fieldMappingkey.match(/(\w+)\[(\d+)\]/);
         if (fieldMappingkeyMatch) {
-            
+
             const fieldMappingMatchKey = fieldMappingkeyMatch[1];
             const index = parseInt(fieldMappingkeyMatch[2], 10);
             return (
