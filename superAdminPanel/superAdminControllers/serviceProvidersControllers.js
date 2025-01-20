@@ -8,47 +8,49 @@ const { validateServiceProviders } = require("../../utils/authUtils");
 const { default: mongoose } = require("mongoose");
 
 
-exports.validateServiceProviderExist = asyncWrapper(async(req,res,next)=>{
-    const {serviceProviderShortName, serviceProviderFullName} = req.body
-    const serviceProviderExist = await serviceProvisersListModel.find({$or:[{serviceProviderShortName:serviceProviderShortName},{serviceProviderFullName:serviceProviderFullName}]})
-    if(serviceProviderExist.length>0){
+exports.validateServiceProviderExist = asyncWrapper(async (req, res, next) => {
+    const { serviceProviderShortName, serviceProviderFullName } = req.body
+    const serviceProviderExist = await serviceProvisersListModel.find({ $or: [{ serviceProviderShortName: serviceProviderShortName }, { serviceProviderFullName: serviceProviderFullName }] })
+    if (serviceProviderExist.length > 0) {
         return res.status(customConstants.statusCodes.DATA_ALREADY_EXISTED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_EXIST,
         })
     }
-    else{
+    else {
         next()
     }
 })
 
-exports.createServiceproviders = asyncWrapper(async(req,res)=>{
-    const {logo,serviceProviderShortName,serviceProviderFullName,credentials,workOrderStatus,status = "active"} = req.body
+exports.createServiceproviders = asyncWrapper(async (req, res) => {
+    const { logo, serviceProviderShortName, serviceProviderFullName, credentials, workOrderStatus, status = "active" } = req.body
     let encryptCode
-    if(credentials && credentials !== null && Object.values(credentials).length > 0){
-        encryptCode = await encryptData(credentials)    }
-    else{
+    console.log('credentials:==', credentials)
+    if (credentials && credentials !== null && Object.values(credentials).length > 0) {
+        encryptCode = await encryptData(credentials)
+    }
+    else {
         encryptCode = null
     }
 
-    const addServiceProviders = await serviceProvisersListModel.create({...req.body, serviceProviders:serviceProviderShortName, testCredentials:encryptCode})
+    const addServiceProviders = await serviceProvisersListModel.create({ ...req.body, serviceProviders: serviceProviderShortName, testCredentials: encryptCode })
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ADD_SERVICE_PROVIDER,
-    }) 
+    })
 })
 
-exports.serviceProviderCheck = asyncWrapper(async(req,res,next)=>{
-    const {serviceProviderId} = req.params
+exports.serviceProviderCheck = asyncWrapper(async (req, res, next) => {
+    const { serviceProviderId } = req.params
 
     const validateserviceProvider = await serviceProvisersListModel.findById(serviceProviderId).lean()
-    if(!validateserviceProvider){
+    if (!validateserviceProvider) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_INVALID_SERVICE_PROVIDER,
         })
     }
-    else{
+    else {
         next()
     }
 })
@@ -60,37 +62,38 @@ exports.serviceProviderCheck = asyncWrapper(async(req,res,next)=>{
  */
 
 exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
-
     const { credentials } = req.body
-    let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
-    if (credentials.requestMethod === "body") {
-      if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
-          serviceProviderValidation.statusCode !== 200 || !serviceProviderValidation.responseData?.access_token) {
-        return res.status(serviceProviderValidation.statusCode).json({
-          status: serviceProviderValidation.status,
-          message: serviceProviderValidation.message
-        })
-      }
-      else {
-        next()
-      }
+
+    if (credentials !== undefined && credentials.requestMethod === "body") {
+        let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
+        if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
+            serviceProviderValidation.statusCode !== 200 || !serviceProviderValidation.responseData?.access_token) {
+            return res.status(serviceProviderValidation.statusCode).json({
+                status: serviceProviderValidation.status,
+                message: serviceProviderValidation.message
+            })
+        }
+        else {
+            next()
+        }
     }
-    else if (credentials.requestMethod === "headers") {
-      if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
-        serviceProviderValidation.statusCode !== 200) {
-        return res.status(serviceProviderValidation.statusCode).json({
-          status: serviceProviderValidation.status,
-          message: serviceProviderValidation.message
-        })
-      }
-      else {
-        next()
-      }
+    else if (credentials !== undefined && credentials.requestMethod === "headers") {
+        let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
+        if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
+            serviceProviderValidation.statusCode !== 200) {
+            return res.status(serviceProviderValidation.statusCode).json({
+                status: serviceProviderValidation.status,
+                message: serviceProviderValidation.message
+            })
+        }
+        else {
+            next()
+        }
     }
-    else{
+    else {
         next()
     }
-  })
+})
 
 /*
 exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
@@ -159,16 +162,16 @@ exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res,
  */
 
 exports.updateServiceProviderList = asyncWrapper(async (req, res) => {
-    const {credentials} = req.body
+    const { credentials } = req.body
     let encryptCode
-    if(credentials && credentials !== null && Object.values(credentials).length > 0){
+    if (credentials && credentials !== null && Object.values(credentials).length > 0) {
         encryptCode = await encryptData(req.body.credentials)
     }
-    else{
+    else {
         encryptCode = await serviceProvisersListModel.findById(req.params.serviceProviderId).testCredentials
     }
 
-    const updateServiceProviderList = await serviceProvisersListModel.findOneAndUpdate({ _id: req.params.serviceProviderId }, { $set: { testCredentials: encryptCode,...req.body } }, { new: true, runValidators: true })
+    const updateServiceProviderList = await serviceProvisersListModel.findOneAndUpdate({ _id: req.params.serviceProviderId }, { $set: { testCredentials: encryptCode, ...req.body } }, { new: true, runValidators: true })
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER_LIST,
@@ -180,15 +183,15 @@ exports.updateServiceProviderList = asyncWrapper(async (req, res) => {
 
 
 
-exports.getIndividualServiceProviderServiceDetails = asyncWrapper(async(req,res)=>{
-    const {serviceProviderId} = req.params
+exports.getIndividualServiceProviderServiceDetails = asyncWrapper(async (req, res) => {
+    const { serviceProviderId } = req.params
     const serviceProviderDetails = await serviceProvisersListModel.findById(serviceProviderId).lean()
-    const serviceProviderServices = await serviceProviderServicesModel.find({serviceProviderListId:serviceProviderId}).sort({ status:1,createdAt:-1})
+    const serviceProviderServices = await serviceProviderServicesModel.find({ serviceProviderListId: serviceProviderId }).sort({ status: 1, createdAt: -1 })
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER,
-        data:{serviceProviderDetails,serviceProviderServices}
-    }) 
+        data: { serviceProviderDetails, serviceProviderServices }
+    })
 })
 
 
@@ -200,30 +203,32 @@ exports.getAllServiceProvidersList = asyncWrapper(async (req, res) => {
     // const allServiceProviders = await serviceProvisersListModel.find({});
     //Sort the service providers with "active" first, followed by the remaining statuses.
     const allServiceProviders = await serviceProvisersListModel.aggregate([
-       { 
-        $addFields:{
-            sortOrder:{
-                $switch:{
-                    branches:[
-                        {case:{$eq:["$status","active"]},then:1},
-                        {case:{$eq:["$status","delete"]},then:2}
-                    ],
-                    default:3
+        {
+            $addFields: {
+                sortOrder: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$status", "active"] }, then: 1 },
+                            { case: { $eq: ["$status", "delete"] }, then: 2 }
+                        ],
+                        default: 3
+                    }
                 }
             }
+        },
+        {
+            $sort: {
+                sortOrder: 1,
+                createdAt: 1
+            }
+        },
+        {
+            $project: {
+                sortOrder: 0,
+                // status:1,
+                // createdAt:1
+            }
         }
-    },
-    {
-        $sort:{
-            sortOrder:1,
-            createdAt:1
-        }
-    },
-    {$project:{
-        sortOrder:0,
-        // status:1,
-        // createdAt:1
-    }}
     ])
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
@@ -241,16 +246,16 @@ exports.getAllServiceProvidersList = asyncWrapper(async (req, res) => {
  */
 exports.deleteServiceProviderList = asyncWrapper(async (req, res) => {
 
-    const {status} = req.body
-    if(status === 'delete'){
-        await serviceProvisersListModel.findByIdAndUpdate(req.params.serviceProviderId,{status:"deleted"},{new:true})
+    const { status } = req.body
+    if (status === 'delete') {
+        await serviceProvisersListModel.findByIdAndUpdate(req.params.serviceProviderId, { status: "deleted" }, { new: true })
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_DELETE_SERVICE_PROVIDER_LIST,
         })
     }
-    else if(status === 'active'){
-        const fieldMappingDetails = await serviceProvisersListModel.findByIdAndUpdate(req.params.serviceProviderId,{status:"active"},{new:true})
+    else if (status === 'active') {
+        const fieldMappingDetails = await serviceProvisersListModel.findByIdAndUpdate(req.params.serviceProviderId, { status: "active" }, { new: true })
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_ACTIVE_SERVICE_PROVIDER_LIST,
@@ -258,23 +263,23 @@ exports.deleteServiceProviderList = asyncWrapper(async (req, res) => {
     }
 })
 
-exports.serviceProviderExist = asyncWrapper(async(req,res,next)=>{
-    const {serviceProviderId} = req.params
-    const serviceProviderExist = await serviceProvisersListModel.findById({_id: new mongoose.Types.ObjectId(serviceProviderId)})
-    if(!serviceProviderExist){
+exports.serviceProviderExist = asyncWrapper(async (req, res, next) => {
+    const { serviceProviderId } = req.params
+    const serviceProviderExist = await serviceProvisersListModel.findById({ _id: new mongoose.Types.ObjectId(serviceProviderId) })
+    if (!serviceProviderExist) {
         return res.status(customConstants.statusCodes.DATA_ALREADY_EXISTED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_SERVICE_PROVIDER_INVALID,
         })
     }
-    else{
+    else {
         next()
     }
 })
 
-exports.updateSPServiceCategories = asyncWrapper(async(req,res)=>{
-    const {serviceProviderId} = req.params
-    await serviceProvisersListModel.findByIdAndUpdate(serviceProviderId,{categories:req.body.categories},{new:true,upsert:true})
+exports.updateSPServiceCategories = asyncWrapper(async (req, res) => {
+    const { serviceProviderId } = req.params
+    await serviceProvisersListModel.findByIdAndUpdate(serviceProviderId, { categories: req.body.categories }, { new: true, upsert: true })
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER_CATEGORIES,
