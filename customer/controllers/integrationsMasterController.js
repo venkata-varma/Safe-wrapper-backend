@@ -1337,6 +1337,10 @@ exports.startQAIntegrationMappings = asyncWrapper(async (req, res) => {
     sourcePullCount: 0,
     destinationPushCount: 0,
   }
+  let serviceProviderIntegrationDetails = await serviceProviderIntegrationsModel.findOne({serviceProviderIntegrationId:integrationsMasterDetails.serviceProviderIntegrationId})
+  await mongoose.connection.db.collection(serviceProviderIntegrationDetails?.metrics?.sourceDataBaseName).deleteMany({accountId:null,integrationsMasterId:null,integrationsCronId:null})
+  await mongoose.connection.db.collection(serviceProviderIntegrationDetails?.metrics?.destinationDataBaseName).deleteMany({accountId:null,integrationsMasterId:null,integrationsCronId:null})
+
   if (integrationsMasterDetails) {
     // const sourceTestResponse = await sourceIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ serviceProviderIntegrationId: integrationsMasterId, from: integrationsMasterDetails.from }))
     // const destinationTestResponse = await destinationIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ serviceProviderIntegrationId: integrationsMasterId, to: integrationsMasterDetails.to }))
