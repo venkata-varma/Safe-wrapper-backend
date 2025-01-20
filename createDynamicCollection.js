@@ -147,6 +147,7 @@ exports.GlobalServiceModelForDynamicCollection = async (collectionName, requestO
       const validatePayload = await validatePayloadWithExistingAndCreateOrUpdate(requestObj, dynamicModel, operationType, updatingDataBaseName, integrationDetails);
       console.log(validatePayload);
     }
+    return dynamicModel;
   } catch (error) {
 
     console.log("Error Occurred at GlobalServiceModelForDynamicCollection::", error);
@@ -206,7 +207,7 @@ async function createDynamicCollection(targetCollectionName) {
   );
 
   // console.log(`Dynamic collection ${targetCollectionName} initialized.`);
-  return DynamicModel;
+  return targetCollectionName;
 }
 
 const creteWOLifeCycle = async (referenceId, status, serviceProvider, accountId, integrationsMasterId) => {
