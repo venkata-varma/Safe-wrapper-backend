@@ -30,7 +30,7 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
     },
     serviceProvider: {
       type: String,
-      enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
+      // enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
       //   require: [true, "Role is required."],
       // default: "",
     },
