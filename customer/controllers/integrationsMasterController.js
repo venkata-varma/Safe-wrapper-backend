@@ -440,6 +440,10 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
       })
     }
     else {
+      if (credentials.data.hasOwnProperty('refresh_token') && credentials.data.refresh_token) {
+        console.log("it has own property-body")
+        req.body.serviceProviderValidation = serviceProviderValidation
+      }
       next()
     }
   }
@@ -452,6 +456,10 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
       })
     }
     else {
+      if (credentials.data.hasOwnProperty('refresh_token') && credentials.data.refresh_token) {
+        console.log("it has own property-headers")
+        req.body.serviceProviderValidation = serviceProviderValidation
+      }
       next()
     }
   }
@@ -515,10 +523,15 @@ Returns newly created Service provider record (From , To )
 */
 
 exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (req, res) => {
-
   const { serviceProvider, integrationsMasterId, credentials } =
     req.body;
 
+  var refreshTokenExpiresOn;
+  if (req.body.serviceProviderValidation) {
+    req.body.credentials.data.refresh_token = req.body.serviceProviderValidation.responseData.refresh_token;
+
+    refreshTokenExpiresOn = new Date(new Date().getTime() + req.body.serviceProviderValidation.responseData.refresh_token_expires_in * 1000);
+  }
 
   // Create a new service provider
   const serviceProviderDetails = await serviceProvidersModel.create({
@@ -526,7 +539,8 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
     credentials: encryptData(req.body.credentials),
     createdBy: req.user._id,
     userId: req.user._id,
-    accountId: req.user.accountId
+    accountId: req.user.accountId,
+    refreshTokenExpiresOn
   });
 
 
@@ -1329,7 +1343,7 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
 exports.startQAIntegrationMappings = asyncWrapper(async (req, res) => {
   const { integrationsMasterId } = req.params;
   // const integrationsMasterDetails = await serviceProviderIntegrationsModel.findOne({ _id: integrationsMasterId, status: "active" });
-  const integrationsMasterDetails = await serviceProvidersIntegrationWithServicesModel.findById({ _id: integrationsMasterId});
+  const integrationsMasterDetails = await serviceProvidersIntegrationWithServicesModel.findById({ _id: integrationsMasterId });
 
   let startTestResponseObject = {
     sourceAuthenticationStatus: false,
@@ -1337,9 +1351,9 @@ exports.startQAIntegrationMappings = asyncWrapper(async (req, res) => {
     sourcePullCount: 0,
     destinationPushCount: 0,
   }
-  let serviceProviderIntegrationDetails = await serviceProviderIntegrationsModel.findOne({serviceProviderIntegrationId:integrationsMasterDetails.serviceProviderIntegrationId})
-  await mongoose.connection.db.collection(serviceProviderIntegrationDetails?.metrics?.sourceDataBaseName).deleteMany({accountId:null,integrationsMasterId:null,integrationsCronId:null})
-  await mongoose.connection.db.collection(serviceProviderIntegrationDetails?.metrics?.destinationDataBaseName).deleteMany({accountId:null,integrationsMasterId:null,integrationsCronId:null})
+  let serviceProviderIntegrationDetails = await serviceProviderIntegrationsModel.findOne({ serviceProviderIntegrationId: integrationsMasterDetails.serviceProviderIntegrationId })
+  await mongoose.connection.db.collection(serviceProviderIntegrationDetails?.metrics?.sourceDataBaseName).deleteMany({ accountId: null, integrationsMasterId: null, integrationsCronId: null })
+  await mongoose.connection.db.collection(serviceProviderIntegrationDetails?.metrics?.destinationDataBaseName).deleteMany({ accountId: null, integrationsMasterId: null, integrationsCronId: null })
 
   if (integrationsMasterDetails) {
     // const sourceTestResponse = await sourceIntegrationOperationsServices(await serviceProvidersIntegrationWithServicesModel.find({ serviceProviderIntegrationId: integrationsMasterId, from: integrationsMasterDetails.from }))
@@ -1351,7 +1365,7 @@ exports.startQAIntegrationMappings = asyncWrapper(async (req, res) => {
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_CRON_MANUAL,
-      startTestResponseObject : {
+      startTestResponseObject: {
         sourceAuthenticationStatus: sourceTestResponse.sourceAuthenticationStatus,
         destinationAuthenticationStatus: destinationTestResponse.destinationAuthenticationStatus,
         sourcePullCount: sourceTestResponse.sourcePullCount,

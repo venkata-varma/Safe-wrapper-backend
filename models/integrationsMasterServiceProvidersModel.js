@@ -39,11 +39,6 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
       enum: ["new", "verified","active", "failed", "deleted"],
       default: "new",
     },
-    authType: {
-      type: String,
-      enum: ["BasicAuth", "BearerToken", "OAuth1.0", "OAuth2.0", "APIKEY"],
-      default: "BasicAuth",
-    },
     dataMappingPath:{
       type:Array,
       default:[]
@@ -59,6 +54,9 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
       ref: "users",
       default: null,
     },
+    refreshTokenExpiresOn:{
+      type:Date
+    }
   },
   { timestamps: true }
 );

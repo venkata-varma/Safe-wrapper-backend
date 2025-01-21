@@ -60,6 +60,9 @@ const serviceProviderListSchema = new mongoose.Schema({
         type: String,
         enum: ['active', 'deleted'],
         default: "active"
+    },
+    refreshTokenExpiresOn:{
+        type:Date
     }
 
 }, {
