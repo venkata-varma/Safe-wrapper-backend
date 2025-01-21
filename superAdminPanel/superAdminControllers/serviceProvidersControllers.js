@@ -65,46 +65,49 @@ exports.serviceProviderCheck = asyncWrapper(async (req, res, next) => {
  */
 
 exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
-    const { credentials } = req.body
+    const { credentials } = req.body;
 
     if (credentials !== undefined && credentials.requestMethod === "body") {
-        let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
-        if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
-            serviceProviderValidation.statusCode !== 200 || !serviceProviderValidation.responseData?.access_token) {
+        let serviceProviderValidation = await validateServiceProviders(req.body.credentials);
+        if (
+            serviceProviderValidation.status === "fail" || 
+            serviceProviderValidation === undefined ||
+            serviceProviderValidation.statusCode !== 200 
+            // || !serviceProviderValidation.responseData?.access_token
+        ) {
             return res.status(serviceProviderValidation.statusCode).json({
                 status: serviceProviderValidation.status,
                 message: serviceProviderValidation.message
-            })
-        }
-        else {
+            });
+        } else {
             if (credentials.data.hasOwnProperty('refresh_token') && credentials.data.refresh_token) {
-                console.log("it has own property-body")
-                req.body.serviceProviderValidation = serviceProviderValidation
+                console.log("it has own property-body");
+                req.body.serviceProviderValidation = serviceProviderValidation;
             }
-            next()
+            next();
         }
-    }
-    else if (credentials !== undefined && credentials.requestMethod === "headers") {
-        let serviceProviderValidation = await validateServiceProviders(req.body.credentials)
-        if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
-            serviceProviderValidation.statusCode !== 200) {
+    } else if (credentials !== undefined && credentials.requestMethod === "headers") {
+        let serviceProviderValidation = await validateServiceProviders(req.body.credentials);
+        if (
+            serviceProviderValidation.status === "fail" || 
+            serviceProviderValidation === undefined ||
+            serviceProviderValidation.statusCode !== 200
+        ) {
             return res.status(serviceProviderValidation.statusCode).json({
                 status: serviceProviderValidation.status,
                 message: serviceProviderValidation.message
-            })
-        }
-        else {
+            });
+        } else {
             if (credentials.data.hasOwnProperty('refresh_token') && credentials.data.refresh_token) {
-                console.log("it has own property-headers")
-                req.body.serviceProviderValidation = serviceProviderValidation
+                console.log("it has own property-headers");
+                req.body.serviceProviderValidation = serviceProviderValidation;
             }
-            next()
+            next();
         }
+    } else {
+        next();
     }
-    else {
-        next()
-    }
-})
+});
 
 /*
 exports.serviceProviderListCredentialsValidation = asyncWrapper(async (req, res, next) => {
