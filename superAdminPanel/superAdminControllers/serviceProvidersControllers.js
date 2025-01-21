@@ -26,17 +26,17 @@ exports.createServiceproviders = asyncWrapper(async (req, res) => {
     const { logo, serviceProviderShortName, serviceProviderFullName, credentials, workOrderStatus, status = "active" } = req.body
     let encryptCode
 
-    var refresh_token_expires_on;
+    var refreshTokenExpiresOn;
     if (credentials && credentials !== null && Object.values(credentials).length > 0) {
         credentials.data.refresh_token = req.body.serviceProviderValidation.responseData.refresh_token
         encryptCode = await encryptData(credentials)
-        refresh_token_expires_on = new Date(new Date().getTime() + req.body.serviceProviderValidation.responseData.refresh_token_expires_in * 1000);
+        refreshTokenExpiresOn = new Date(new Date().getTime() + req.body.serviceProviderValidation.responseData.refresh_token_expires_in * 1000);
     }
     else {
         encryptCode = null
     }
 
-    const addServiceProviders = await serviceProvisersListModel.create({...req.body, serviceProviders:serviceProviderShortName, testCredentials:encryptCode,refresh_token_expires_on })
+    const addServiceProviders = await serviceProvisersListModel.create({...req.body, serviceProviders:serviceProviderShortName, testCredentials:encryptCode,refreshTokenExpiresOn })
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ADD_SERVICE_PROVIDER,

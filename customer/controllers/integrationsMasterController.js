@@ -526,11 +526,11 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
   const { serviceProvider, integrationsMasterId, credentials } =
     req.body;
 
-  var refresh_token_expires_on;
+  var refreshTokenExpiresOn;
   if (req.body.serviceProviderValidation) {
     req.body.credentials.data.refresh_token = req.body.serviceProviderValidation.responseData.refresh_token;
 
-    refresh_token_expires_on = new Date(new Date().getTime() + req.body.serviceProviderValidation.responseData.refresh_token_expires_in * 1000);
+    refreshTokenExpiresOn = new Date(new Date().getTime() + req.body.serviceProviderValidation.responseData.refresh_token_expires_in * 1000);
   }
 
   // Create a new service provider
@@ -540,7 +540,7 @@ exports.createIntegrationMasterServiceProviderCredentials = asyncWrapper(async (
     createdBy: req.user._id,
     userId: req.user._id,
     accountId: req.user.accountId,
-    refresh_token_expires_on
+    refreshTokenExpiresOn
   });
 
 

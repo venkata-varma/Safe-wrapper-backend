@@ -54,7 +54,7 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
       ref: "users",
       default: null,
     },
-    refresh_token_expires_on:{
+    refreshTokenExpiresOn:{
       type:Date
     }
   },
