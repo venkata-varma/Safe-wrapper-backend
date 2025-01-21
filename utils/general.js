@@ -13,6 +13,7 @@ const serviceProviderCongiguration = require('../config/integrationsConfiguratio
 const { CPDAuthentication } = require("./serviceProvidersAuthentication");
 const { decryptData } = require("./encryptionAlgorithms");
 const { default: axios } = require("axios");
+const serviceProviderIntegrationsModel = require("../models/serviceProviderIntegrationsModel");
 
 var presentWeekSourceData = [];
 
@@ -264,6 +265,11 @@ const getStatusFieldMappings = async(integrationMasterId) => {
       "7":"CheckedOut",
       "8":"Rejected"
     }
+  }
+  else{
+    let statusFiledMappings = await serviceProviderIntegrationsModel.findOne({from: integrationMaster.from, to: integrationMaster.to})
+    requiredKeys = {}
+    statusFieldMappingKeys = statusFiledMappings?.settings?.mappingSettings
   }
   return {requiredKeys, statusFieldMappingKeys}
 }

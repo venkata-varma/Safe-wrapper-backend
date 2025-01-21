@@ -1,4 +1,4 @@
-const { default: mongoose } = require("mongoose")
+const mongoose  = require("mongoose")
 const workOrderLifeCycleModel = require("../models/workOrderLifeCycleModel")
 const CPDWorkordersModel = require("../models/CPDWorkordersModel")
 const DFWorkOrdersModel = require("../models/DFWorkOrdersModel")
@@ -7,7 +7,8 @@ const CYSWorkordersModel = require("../models/CYSWorkordersModel")
 const { sixWeekSales } = require('../utils/sixWeekSalesFunction')
 const { getCPDFullWorkOrderDetails } = require("./general")
 const moment = require('moment');
-
+const integrationsMasterModel = require("../models/integrationsMasterModel")
+const serviceProvidersIntegrationsModel = require('../models/serviceProviderIntegrationsModel')
 
 /**
  * 
@@ -23,7 +24,7 @@ const moment = require('moment');
  */
 
 
-exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuery, priorityQuery, fromDateQuery, toDateQuery, searchQuery, validPriorities, accountId) => {
+exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuery, priorityQuery, fromDateQuery, toDateQuery, searchQuery, validPriorities, accountId, operationType) => {
 
     let workOrderReports;
     if (priorityQuery && !validPriorities.includes(priorityQuery)) {
@@ -61,10 +62,10 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
             }
 
         ]);
-
+        let integrationDetails = await integrationsMasterModel.findById(integrationsQuery)
+        let sourceAndDestinationDataBaseNames = await serviceProvidersIntegrationsModel.findOne({ from: integrationDetails.from, to: integrationDetails.to })
         // Step 2: Fetch details from the appropriate model based on serviceProvider
         let workOrderDetailsPromises = workOrderReports.map(async (record) => {
-
             let workOrder = {};
             let priorityFilter = {}; // Empty filter by default
             let searchFilter;
@@ -78,8 +79,18 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                     // Define search query filter
                     searchFilter = searchQuery ? { $or: [{ "CPDWorkOrders.WorkOrderNumber": searchQuery }, { "CPDWorkOrders.WorkOrderId": searchQuery }] } : {};
                     const workOrderDetails = await CPDWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
-                    getWorkOrderDetails = workOrderDetails !== null ? await getCPDFullWorkOrderDetails(integrationsQuery, workOrderDetails): {}
-           
+                    getWorkOrderDetails = workOrderDetails !== null ? await getCPDFullWorkOrderDetails(integrationsQuery, workOrderDetails) :
+                        await getDynamicRecordDetails(
+                            integrationsQuery,
+                            record.serviceProvider,
+                            record.workOrderId,
+                            priorityFilter,
+                            searchFilter,
+                            sourceAndDestinationDataBaseNames?.metrics?.sourceDataBaseName,
+                            sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
+                            operationType
+                        )
+
                     workOrder.workOrderDetails = getWorkOrderDetails
                     workOrder.type = getWorkOrderDetails?.Type
                     workOrder.category = getWorkOrderDetails?.WorkType?.Name
@@ -89,14 +100,32 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                 case 'DF':
                     searchFilter = searchQuery ? { $or: [{ "DFWorkOrders.id": searchQuery }, { "DFWorkOrders.numberAlt": searchQuery }] } : {};
                     getWorkOrderDetails = await DFWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$DFWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
-                    workOrder.workOrderDetails = getWorkOrderDetails === null ? {} : getWorkOrderDetails.DFWorkOrders
+                    workOrder.workOrderDetails = getWorkOrderDetails === null ? await getDynamicRecordDetails(
+                        integrationsQuery,
+                        record.serviceProvider,
+                        record.workOrderId,
+                        priorityFilter,
+                        searchFilter,
+                        sourceAndDestinationDataBaseNames?.metrics?.sourceDataBaseName,
+                        sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
+                        operationType
+                    ) : getWorkOrderDetails.DFWorkOrders
                     workOrder.priority = getWorkOrderDetails === null ? "medium" : getWorkOrderDetails.priority
                     break;
                 case 'SNOW':
                     searchFilter = searchQuery ? { "SNOWWorkOrders.number": searchQuery } : {};
                     getWorkOrderDetails = await SNOWWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$SNOWWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter, }).lean();
-                    workOrder.workOrderDetails = getWorkOrderDetails === null ? {} : getWorkOrderDetails.SNOWWorkOrders
-                    workOrder.priority = getWorkOrderDetails.priority
+                    workOrder.workOrderDetails = getWorkOrderDetails === null ? await getDynamicRecordDetails(
+                        integrationsQuery,
+                        record.serviceProvider,
+                        record.workOrderId,
+                        priorityFilter,
+                        searchFilter,
+                        sourceAndDestinationDataBaseNames?.metrics?.sourceDataBaseName,
+                        sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
+                        operationType
+                    ) : getWorkOrderDetails.SNOWWorkOrders
+                    workOrder.priority = getWorkOrderDetails?.priority
                     break;
                 case 'CYS':
                     searchFilter = searchQuery ? { CYSWorkOrderId: searchQuery } : {};
@@ -112,12 +141,33 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                         }, ...priorityFilter, ...searchFilter
                     }).lean();
 
-                    workOrder.workOrderDetails = getWorkOrderDetails !== null ? getWorkOrderDetails.CYSWorkOrders : {}
+                    workOrder.workOrderDetails = getWorkOrderDetails !== null ? getWorkOrderDetails.CYSWorkOrders : await getDynamicRecordDetails(
+                        integrationsQuery,
+                        record.serviceProvider,
+                        record.workOrderId,
+                        priorityFilter,
+                        searchFilter,
+                        sourceAndDestinationDataBaseNames?.metrics?.sourceDataBaseName,
+                        sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
+                        operationType
+                    )
                     workOrder.priority = getWorkOrderDetails === null ? "medium" : getWorkOrderDetails.priority
                     break;
                 default:
                     // Handle unknown service provider
-                    throw new Error(`Unknown service provider: ${record.serviceProvider}`);
+                    // searchFilter = searchQuery ? { "SNOWWorkOrders.number": searchQuery } : {};
+                    getWorkOrderDetails = await getDynamicRecordDetails(
+                        record.serviceProvider,
+                        record.workOrderId,
+                        priorityFilter,
+                        searchFilter,
+                        sourceAndDestinationDataBaseNames?.metrics?.sourceDataBaseName,
+                        sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
+                        operationType
+                    )
+                    workOrder.workOrderDetails = getWorkOrderDetails
+                    workOrder.priority = getWorkOrderDetails?.priority
+                    // throw new Error(`Unknown service provider: ${record.serviceProvider}`);
             }
             if (workOrder !== null) {
                 return {
@@ -138,6 +188,15 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
         return workOrderDetails;
     }
 
+}
+
+const getDynamicRecordDetails = async(integrationsMasterId,serviceProvider, workOrderId, priorityFilter, searchFilter, sourceDataBaseName, destinationDataBaseName, operationType) => {
+    let workOrderDetails 
+    workOrderDetails = operationType === "source" ? 
+                        await mongoose.connection.db.collection(sourceDataBaseName).findOne({ referenceId: workOrderId, ...priorityFilter, ...searchFilter }) 
+                        :await mongoose.connection.db.collection(destinationDataBaseName).findOne({ referenceId: workOrderId, ...priorityFilter, ...searchFilter });
+        
+    return workOrderDetails
 }
 
 /**
@@ -347,6 +406,8 @@ exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, d
                 break;
             case 'CYS':
                 serviceProviderNewStatus = "Hot";
+            case 'Sage':
+                serviceProviderNewStatus = "PendingWoComplete";
                 break;
         }
 
@@ -422,13 +483,13 @@ exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, d
 
 exports.getWebHooksLogsSixWeekSalesData = async (getWebHookLogs) => {
     const sixWeekSalesData = sixWeekSales
-    const statusesEnum = ['received','initiated','sent','delivered','failed','deleted'];
+    const statusesEnum = ['received', 'initiated', 'sent', 'delivered', 'failed', 'deleted'];
 
     const processSalesData = (sixWeeksSalesData, getWebHookLogs) => {
         return sixWeeksSalesData.map(week => {
             const { fromDate, toDate } = week;
             const statusCounts = statusesEnum.map(status => ({ status, count: 0 }));
-    
+
             getWebHookLogs.forEach(hookLogs => {
                 hookLogs.webhookLogsDetails.forEach(item => {
                     const exceptionCreatedAt = new Date(item.createdAt);
@@ -442,7 +503,7 @@ exports.getWebHooksLogsSixWeekSalesData = async (getWebHookLogs) => {
                     }
                 });
             });
-    
+
             return {
                 weekStart: fromDate,
                 weekEnd: toDate,
@@ -450,7 +511,7 @@ exports.getWebHooksLogsSixWeekSalesData = async (getWebHookLogs) => {
             };
         });
     };
-    
+
 
     const result = processSalesData(sixWeekSalesData, getWebHookLogs);
 

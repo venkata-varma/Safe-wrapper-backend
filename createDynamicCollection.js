@@ -93,7 +93,7 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
     } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {
       // console.log('requestObject:==',requestObject)
       var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ referenceId: requestObject.referenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId },
-        { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request" } }, { new: true, runValidators: true })
+        { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request", updatedAt:new Date() } }, { new: true, runValidators: true })
       await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.from, integrationDetails.accountId, integrationDetails.integrationsMasterId)
       console.log('updateExistingRecord2:===')
       return
@@ -112,16 +112,16 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
     else if (!isExisting) {
       var createRecord = await mongoose.connection.db.collection(dynamicModel).insertOne(requestObject)
       await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.to, integrationDetails.accountId, integrationDetails.integrationsMasterId)
-      var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId }, { $set: { status: "completed" } }, { new: true, runValidators: true })
+      var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId }, { $set: { status: "completed", updatedAt:new Date() } }, { new: true, runValidators: true })
       return
       `Record created into dynamic model successfully`
     } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {
       // var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).findOneAndUpdate({ sourceReferenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId },
       //   { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request" }, { new: true, runValidators: true })
-      var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ destinationReferenceId: requestObject.referenceId, }, { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "completed", } }, { new: true, runValidators: true });
+      var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ destinationReferenceId: requestObject.referenceId, }, { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "completed",updatedAt:new Date() } }, { new: true, runValidators: true });
       await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.to, integrationDetails.accountId, integrationDetails.integrationsMasterId)
 
-      var updateSourceRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ referenceId: requestObject.sourceReferenceId, }, { $set: { status: "completed" } }, { new: true, runValidators: true })
+      var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, }, { $set: { status: "completed", updatedAt:new Date() } }, { new: true, runValidators: true })
       console.log('updateExistingRecord2:===')
       return
       'Record already exists and Rreference status is changed. so, record is updated with latest status'

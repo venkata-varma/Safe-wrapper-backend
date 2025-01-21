@@ -456,7 +456,8 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
 
   const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: "CPD" })
   const highPrioritycpdWorkOrders = await cpdWorkOrdersModel.find({ accountId, $or: [{ priority: 'high' }, { priority: 'medium' }] }).sort({ createdAt: -1 })
-  let sourceStatus = await CPDWorkordersModel.aggregate([
+  let sourceStatus
+  sourceStatus = await CPDWorkordersModel.aggregate([
     {
       $match: {
         accountId: new mongoose.Types.ObjectId(accountId),
@@ -476,6 +477,28 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
       }
     }
   ]);
+  if(sourceStatus.leagth <= 0){
+    sourceStatus = await mongoose.connection.db.collection('cpdoperations').aggregate([
+      {
+        $match: {
+          accountId: new mongoose.Types.ObjectId(accountId),
+        }
+      },
+      {
+        $group: {
+          _id: '$referenceStatus',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          status: '$_id',
+          count: 1
+        }
+      }
+    ]);
+  }
   let workOrderStates = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, sourceStatus);
 
   const integrationsExceptionsApiservices = await integrationsExceptionsModel.aggregate([

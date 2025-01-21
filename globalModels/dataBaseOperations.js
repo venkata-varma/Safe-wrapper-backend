@@ -12,7 +12,9 @@ exports.addRecordIntoDataBase = async (integrationDetails, serviceObject, dataMa
         referenceStatus: responseObject.Status,
         responseObject: JSON.stringify(responseObject),
         status: status,
-        priority: "high"
+        priority: "high",
+        createdAt:new Date(),
+        updatedAt: new Date()
     }
     
     GlobalServiceModelForDynamicCollection(`${insertingDataBaseName}`,

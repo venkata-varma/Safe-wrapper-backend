@@ -381,7 +381,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
  * @params "accountId"
  */
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
-    const integrationsQuery = req.query.integration;
+    const integrationsQuery = req.query.integration;  
     const accountId = req.params.accountId;
     var sourceWorkOrderLifeCycleRecords, destinationWorkOrderLifeCycleRecords;
     var sourceWorkOrderLifeCycleCounts, destinationWorkOrderLifeCycleCounts
@@ -475,7 +475,8 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             toDateQuery, 
             searchQuery, 
             validPriorities, 
-            accountId
+            accountId,
+            "source"
         );
 
         destinationWorkOrderLifeCycleRecords = await workOrderLifeCycleReports(
@@ -486,7 +487,8 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
             toDateQuery, 
             searchQuery, 
             validPriorities, 
-            accountId
+            accountId,
+            "destination"
         );
         
         const newAndUpdatedWorkOrdersCount =await mapNewUpdatedWorkOrdersCounts(accountReports[0].statusFieldMappingKeys, integrationSource, integrationDestination, fromDateQuery, toDateQuery, integrationsQuery, accountId, sourceWorkOrderLifeCycleRecords.length,destinationWorkOrderLifeCycleRecords.length)
