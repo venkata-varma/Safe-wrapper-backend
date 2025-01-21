@@ -30,7 +30,7 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
     },
     serviceProvider: {
       type: String,
-      enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
+      // enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
       //   require: [true, "Role is required."],
       // default: "",
     },
@@ -38,11 +38,6 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
       type: String,
       enum: ["new", "verified","active", "failed", "deleted"],
       default: "new",
-    },
-    authType: {
-      type: String,
-      enum: ["BasicAuth", "BearerToken", "OAuth1.0", "OAuth2.0", "APIKEY"],
-      default: "BasicAuth",
     },
     dataMappingPath:{
       type:Array,
@@ -60,7 +55,7 @@ const integrationsMasterServiceProvidersSchema = new mongoose.Schema(
       default: null,
     },
     refresh_token_expires_on:{
-      type:String
+      type:Date
     }
   },
   { timestamps: true }
