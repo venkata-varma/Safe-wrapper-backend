@@ -30,13 +30,13 @@ const integrationsMasterSchema = new mongoose.Schema(
     },
     from: {
       type: String,
-      enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS", null],
+      // enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS", null],
       //   require: [true, "Role is required."],
       default: null,
     },
     to: {
       type: String,
-      enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF", "CYS", null],
+      // enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF", "CYS", null],
     //   require: [true, "Role is required."],
         default: null,
     },

@@ -1073,9 +1073,9 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
         integrationExceptions,
         oneWeekCountStatistics: sourceWorkOrdersAndStatus.presentWeekData.reverse(),
         activityLog: activityLogOfIndividualIntegration,
-        sourceWorkOrders: sourceWorkOrdersAndStatus.sourceWorkOrders,
-        destinationWorkOrders: destinationWorkOrdersAndStatus.destinationWorkOrders,
-        statusMapping: { source: sourceWorkOrdersAndStatus.statuses, destination: destinationWorkOrdersAndStatus.statuses },
+        sourceWorkOrders: sourceWorkOrdersAndStatus?.sourceWorkOrders || [],
+        destinationWorkOrders: destinationWorkOrdersAndStatus?.destinationWorkOrders || [],
+        statusMapping: { source: sourceWorkOrdersAndStatus?.statuses || [], destination: destinationWorkOrdersAndStatus?.statuses || [] },
         autoDataSync
       },
     });

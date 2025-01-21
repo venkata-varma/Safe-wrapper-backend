@@ -27,13 +27,13 @@ const integrationsFieldMappingSchema = new mongoose.Schema(
     },
     from: {
       type: String,
-      enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
+      // enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
       //   require: [true, "Role is required."],
       default: "",
     },
     to: {
       type: String,
-      enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
+      // enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
       //   require: [true, "Role is required."],
       default: "",
     },
