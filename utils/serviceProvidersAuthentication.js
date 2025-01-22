@@ -13,7 +13,7 @@ const CPDAuthentication = async (client_id, client_secret, grant_type, baseUrl) 
         // console.log('tokenResponse.data:==',tokenResponse.data.access_token)
         return tokenResponse.data.access_token;
     } catch (error) {
-        console.log("CPD Auth Error=", error);
+        // console.log("CPD Auth Error=", error);
         return 'error';
     }
 }

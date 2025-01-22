@@ -426,32 +426,6 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
   }
   ]);
 
-  // for (let exceptionsCount of integrationsOfAccount) {
-  //   exceptionsCount.integrationsExceptionsCount = exceptionsCount.integrationsExceptions.length;
-  // }
-  /*
-    const activityLog = await CPDWorkordersModel.aggregate([
-      {
-        $match: { accountId: new mongoose.Types.ObjectId(accountId) }
-      },
-      {
-        $sort: { createdAt: -1 }
-      },
-      {
-        $lookup: {
-          "from": "integrationscrons",
-          "localField": "integrationsCronId",
-          "foreignField": "_id",
-          "as": "cronInfo"
-        }
-      },
-      { $unwind: "$cronInfo" },
-      {
-        $sort: { "cronInfo.createdAt": -1 }
-      }
-    ]);
-    console.log('activityLog:==',activityLog)
-    */
   const activityLog = await integrationCronsModel.find({ accountId }).sort({ createdAt: -1 }).limit(10)
 
   const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: "CPD" })
@@ -580,8 +554,6 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
       integrationsExceptionsApiservices
 
     },
-
-
   });
 
 });

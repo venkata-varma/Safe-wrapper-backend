@@ -1,4 +1,4 @@
-const mongoose  = require("mongoose")
+const mongoose = require("mongoose")
 const workOrderLifeCycleModel = require("../models/workOrderLifeCycleModel")
 const CPDWorkordersModel = require("../models/CPDWorkordersModel")
 const DFWorkOrdersModel = require("../models/DFWorkOrdersModel")
@@ -66,10 +66,13 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
         let sourceAndDestinationDataBaseNames = await serviceProvidersIntegrationsModel.findOne({ from: integrationDetails.from, to: integrationDetails.to })
         // Step 2: Fetch details from the appropriate model based on serviceProvider
         let workOrderDetailsPromises = workOrderReports.map(async (record) => {
-            let workOrder = {};
+            let workOrder = {
+                workOrderDetails:{}
+            };
             let priorityFilter = {}; // Empty filter by default
             let searchFilter;
             let getWorkOrderDetails
+            let workOrderRecord
             // Apply priorityQuery if it exists and is not 'all'
             if (priorityQuery && priorityQuery !== 'all') {
                 priorityFilter.priority = priorityQuery;
@@ -78,8 +81,8 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                 case 'CPD':
                     // Define search query filter
                     searchFilter = searchQuery ? { $or: [{ "CPDWorkOrders.WorkOrderNumber": searchQuery }, { "CPDWorkOrders.WorkOrderId": searchQuery }] } : {};
-                    const workOrderDetails = await CPDWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
-                    getWorkOrderDetails = workOrderDetails !== null ? await getCPDFullWorkOrderDetails(integrationsQuery, workOrderDetails) :
+                    workOrderRecord = await CPDWorkordersModel.findOne({ $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
+                    getWorkOrderDetails = workOrderRecord !== null ? await getCPDFullWorkOrderDetails(integrationsQuery, workOrderRecord) :
                         await getDynamicRecordDetails(
                             integrationsQuery,
                             record.serviceProvider,
@@ -90,17 +93,19 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                             sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
                             operationType
                         )
-
-                    workOrder.workOrderDetails = getWorkOrderDetails
-                    workOrder.type = getWorkOrderDetails?.Type
-                    workOrder.category = getWorkOrderDetails?.WorkType?.Name
-                    workOrder.priority = workOrderDetails?.priority
+                    if (getWorkOrderDetails?.responseObject) {
+                        getWorkOrderDetails = JSON.parse(getWorkOrderDetails?.responseObject)
+                    }
+                    workOrder.workOrderDetails = getWorkOrderDetails || {}
+                    workOrder.type = getWorkOrderDetails?.Type || null
+                    workOrder.category = getWorkOrderDetails?.WorkType?.Name || ""
+                    workOrder.priority = getWorkOrderDetails?.priority || "high"
 
                     break;
                 case 'DF':
                     searchFilter = searchQuery ? { $or: [{ "DFWorkOrders.id": searchQuery }, { "DFWorkOrders.numberAlt": searchQuery }] } : {};
-                    getWorkOrderDetails = await DFWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$DFWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
-                    workOrder.workOrderDetails = getWorkOrderDetails === null ? await getDynamicRecordDetails(
+                    workOrderRecord = await DFWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$DFWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter }).lean();
+                    getWorkOrderDetails = workOrderRecord === null ? await getDynamicRecordDetails(
                         integrationsQuery,
                         record.serviceProvider,
                         record.workOrderId,
@@ -109,13 +114,17 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                         sourceAndDestinationDataBaseNames?.metrics?.sourceDataBaseName,
                         sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
                         operationType
-                    ) : getWorkOrderDetails.DFWorkOrders
+                    ) : workOrderRecord.DFWorkOrders
+                    if (getWorkOrderDetails?.responseObject) {
+                        getWorkOrderDetails = JSON.parse(getWorkOrderDetails?.responseObject)
+                    }
+                    workOrder.workOrderDetails = getWorkOrderDetails || {}
                     workOrder.priority = getWorkOrderDetails === null ? "medium" : getWorkOrderDetails.priority
                     break;
                 case 'SNOW':
                     searchFilter = searchQuery ? { "SNOWWorkOrders.number": searchQuery } : {};
-                    getWorkOrderDetails = await SNOWWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$SNOWWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter, }).lean();
-                    workOrder.workOrderDetails = getWorkOrderDetails === null ? await getDynamicRecordDetails(
+                    workOrderRecord = await SNOWWorkOrdersModel.findOne({ $expr: { $eq: [{ $toString: "$SNOWWorkOrderId" }, record.workOrderId] }, ...priorityFilter, ...searchFilter, }).lean();
+                    getWorkOrderDetails = workOrderRecord === null ? await getDynamicRecordDetails(
                         integrationsQuery,
                         record.serviceProvider,
                         record.workOrderId,
@@ -124,12 +133,16 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                         sourceAndDestinationDataBaseNames?.metrics?.sourceDataBaseName,
                         sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
                         operationType
-                    ) : getWorkOrderDetails.SNOWWorkOrders
-                    workOrder.priority = getWorkOrderDetails?.priority
+                    ) : workOrderRecord.SNOWWorkOrders
+                    if (getWorkOrderDetails?.responseObject) {
+                        getWorkOrderDetails = JSON.parse(getWorkOrderDetails?.responseObject)
+                    }
+                    workOrder.workOrderDetails = getWorkOrderDetails || {}
+                    workOrder.priority = getWorkOrderDetails?.priority || "high"
                     break;
                 case 'CYS':
                     searchFilter = searchQuery ? { CYSWorkOrderId: searchQuery } : {};
-                    getWorkOrderDetails = await CYSWorkordersModel.findOne({
+                    workOrderRecord = await CYSWorkordersModel.findOne({
                         $expr: {
                             $eq: [{
                                 $convert: {
@@ -141,7 +154,7 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                         }, ...priorityFilter, ...searchFilter
                     }).lean();
 
-                    workOrder.workOrderDetails = getWorkOrderDetails !== null ? getWorkOrderDetails.CYSWorkOrders : await getDynamicRecordDetails(
+                    getWorkOrderDetails = workOrderRecord !== null ? workOrderRecord.CYSWorkOrders : await getDynamicRecordDetails(
                         integrationsQuery,
                         record.serviceProvider,
                         record.workOrderId,
@@ -151,12 +164,20 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                         sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
                         operationType
                     )
+                    if (getWorkOrderDetails?.responseObject) {
+                        getWorkOrderDetails = JSON.parse(getWorkOrderDetails?.responseObject)
+                        workOrder.workOrderDetails.estimate = getWorkOrderDetails || {}
+                    }
+                    else{
+                        workOrder.workOrderDetails = getWorkOrderDetails || {}
+                    }
                     workOrder.priority = getWorkOrderDetails === null ? "medium" : getWorkOrderDetails.priority
                     break;
                 default:
                     // Handle unknown service provider
                     // searchFilter = searchQuery ? { "SNOWWorkOrders.number": searchQuery } : {};
                     getWorkOrderDetails = await getDynamicRecordDetails(
+                        integrationsQuery,
                         record.serviceProvider,
                         record.workOrderId,
                         priorityFilter,
@@ -165,9 +186,12 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
                         sourceAndDestinationDataBaseNames?.metrics?.destinationDataBaseName,
                         operationType
                     )
-                    workOrder.workOrderDetails = getWorkOrderDetails
-                    workOrder.priority = getWorkOrderDetails?.priority
-                    // throw new Error(`Unknown service provider: ${record.serviceProvider}`);
+                    if (getWorkOrderDetails?.responseObject) {
+                        getWorkOrderDetails = JSON.parse(getWorkOrderDetails?.responseObject)
+                    }
+                    workOrder.workOrderDetails = getWorkOrderDetails || {}
+                    workOrder.priority = getWorkOrderDetails?.priority || "high"
+                // throw new Error(`Unknown service provider: ${record.serviceProvider}`);
             }
             if (workOrder !== null) {
                 return {
@@ -190,12 +214,15 @@ exports.workOrderLifeCycleReports = async (SourceOrDestination, integrationsQuer
 
 }
 
-const getDynamicRecordDetails = async(integrationsMasterId,serviceProvider, workOrderId, priorityFilter, searchFilter, sourceDataBaseName, destinationDataBaseName, operationType) => {
-    let workOrderDetails 
-    workOrderDetails = operationType === "source" ? 
-                        await mongoose.connection.db.collection(sourceDataBaseName).findOne({ referenceId: workOrderId, ...priorityFilter, ...searchFilter }) 
-                        :await mongoose.connection.db.collection(destinationDataBaseName).findOne({ referenceId: workOrderId, ...priorityFilter, ...searchFilter });
-        
+const getDynamicRecordDetails = async (integrationsMasterId, serviceProvider, workOrderId, priorityFilter, searchFilter, sourceDataBaseName, destinationDataBaseName, operationType) => {
+    let workOrderDetails
+    console.log('operationType:==',operationType)
+    console.log('destinationDataBaseName:==',destinationDataBaseName)
+
+    workOrderDetails = operationType === "source" ?
+        await mongoose.connection.db.collection(sourceDataBaseName).findOne({ referenceId: workOrderId, ...priorityFilter, ...searchFilter })
+        : await mongoose.connection.db.collection(destinationDataBaseName).findOne({ referenceId: workOrderId, ...priorityFilter, ...searchFilter });
+
     return workOrderDetails
 }
 

@@ -71,7 +71,6 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
         }
 
         finalResultData = await preProcessServiceCall(serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails, sourceRecords);
-        // console.log('finalResultData:==', finalResultData)
 
     }
     // finalResultData = Array.isArray(finalResultData) ? finalResultData : [finalResultData]
@@ -103,10 +102,6 @@ const processServiceCallsOnSourceRecords = async (integrationsMasterId, sourcePr
                 destinationSettingsData?.metrics?.destinationDataBaseName,
                 requestObject
             );
-            // responseData = currentResponse[`${dataMappingPathKey}`]
-            // responseData.sourceReferenceId = data.referenceId
-            // prePareResult.push(responseData)
-            // console.log('currentResponse:===',currentResponse)
             if ((dataMappingPathKey && currentResponse[`${dataMappingPathKey}`]) || currentResponse) {
                 responseData = currentResponse[`${dataMappingPathKey}`] || currentResponse
                 responseData.sourceReferenceId = data.referenceId;
@@ -126,9 +121,6 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
     if (finalResultData === null) {
         let dataMappingPathKey = serviceObject.dataMappingPath[0]
         let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
-        // const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
-        // console.log('sourceData:===',sourceData)
-        // console.log('serviceObject:==', serviceObject.serviceMethod)
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
         let serviceCallsResponse = await processServiceCallsOnSourceRecords(integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, serviceObject.dependentData)
         return serviceCallsResponse
@@ -139,12 +131,8 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
 
             for (eachResult of finalResultData) {
                 serviceObject.dependentData = { ...eachResult }
-                // let prePareResult = []
                 let dataMappingPathKey = serviceObject.dataMappingPath[0]
                 let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
-                // const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
-                // console.log('sourceData:===',sourceData)
-                // console.log('serviceObject:==', serviceObject.serviceMethod)
                 let serviceCallsResponse = await processServiceCallsOnSourceRecords(integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, serviceObject.dependentData)
                 return serviceCallsResponse
 
@@ -174,12 +162,8 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
 
         let prePareResult = []
         if (serviceObject.serviceMethod === 'post') {
-            // let prePareResult = []
             let dataMappingPathKey = serviceObject.dataMappingPath[0]
             let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
-            // const sourceData = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "initiated")
-            // console.log('sourceData:===',sourceData)
-            // console.log('serviceObject:==', serviceObject.serviceMethod)
             let serviceCallsResponse = await processServiceCallsOnSourceRecords(integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, serviceObject.dependentData)
             return serviceCallsResponse
 
@@ -195,7 +179,8 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
             );
             const responseData = result[`${dataMappingPathKey}`]
             const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
-            return prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend, finalResultData))
+            prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend));
+            return prePareResult;
         }
 
     }
@@ -212,7 +197,8 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
         );
         const responseData = result[`${dataMappingPathKey}`]
         const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
-        return prePareResult.push(Object.assign(finalResultData[0], responseToSend, finalResultData))
+        prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend))
+        return prePareResult
     }
     else {
         return finalResultData

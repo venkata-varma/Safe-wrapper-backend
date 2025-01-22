@@ -607,8 +607,10 @@ const getCPDFullWorkOrderDetails = async(integrationsMasterId, workOrderDetails)
   // Find integration credentails and then decrypt and pull CPD calls.
   encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials };
   decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-  const corrigoToken = await CPDAuthentication(decryptConfigCredentials.client_id, decryptConfigCredentials.client_secret, decryptConfigCredentials.grant_type, decryptConfigCredentials.baseUrl, integrationObject);
+  console.log('decryptConfigCredentials:===',decryptConfigCredentials)
 
+  const corrigoToken = await CPDAuthentication(decryptConfigCredentials?.client_id || decryptConfigCredentials?.data?.client_id, decryptConfigCredentials?.client_secret || decryptConfigCredentials?.data?.client_secret, decryptConfigCredentials?.grant_type || decryptConfigCredentials?.data?.grant_type, decryptConfigCredentials.baseUrl, integrationObject);
+  // console.log('corrigoToken:===',corrigoToken)
   let getCPDWorkOrderDetails = await axios.get(`${serviceProviderCongiguration.CPD.getWorkOrder.URL}messageId=${workOrderDetails.MessageId}&ids=${workOrderDetails.CPDWorkOrderId}`,
     {
         headers: { Authorization: `bearer ${corrigoToken}` }
@@ -618,7 +620,7 @@ const getCPDFullWorkOrderDetails = async(integrationsMasterId, workOrderDetails)
         return res.data.WorkOrders[0]
     })
     .catch(async (error) => {
-        console.log("ERROR:==", error)
+        // console.log("ERROR:==", error)
         // await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
     });
     return getCPDWorkOrderDetails

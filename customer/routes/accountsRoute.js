@@ -15,7 +15,7 @@ router.use(auth)
 router.patch('/delete-account/:accountId', accountsControllers.deleteAccount)
 router.patch('/update-account/:accountId',upload.single('logo'), accountsControllers.validateAccountForUpdate, accountsControllers.updateAccount)
 
-
+ 
 router.get('/get-account-integrations-information/:accountId', accountsControllers.validateAccountStatus, accountsControllers.getAccountIntegrationsInformation);
 router.get('/get-account-integrations-reports/:accountId', accountsControllers.validateAccountStatus, accountsControllers.getAccountIntegrationsReports )
 router.get('/get-work-order-life-cycle', accountsControllers.ValidateAccountAndIntegrationsStatus, accountsControllers.getWorkOrderLifeCycle)

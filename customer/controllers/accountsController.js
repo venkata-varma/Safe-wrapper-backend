@@ -16,17 +16,17 @@ const { sixWeekSales } = require('../../utils/sixWeekSalesFunction');
 const workOrderLifeCycleModel = require('../../models/workOrderLifeCycleModel');
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 const { getSourceAndDestinationWOLifeCycle, integationOfAccountWorkOrderReports, getCPDFullWorkOrderDetails } = require('../../utils/general')
-const { workOrderLifeCycleReports, sixWeeksSalesDetails, mapNewUpdatedCounts,  mapNewUpdatedWorkOrdersCounts} = require('../../utils/accountInsightUtils')
-const path=require('path');
+const { workOrderLifeCycleReports, sixWeeksSalesDetails, mapNewUpdatedCounts, mapNewUpdatedWorkOrdersCounts } = require('../../utils/accountInsightUtils')
+const path = require('path');
 const { preSignedUrlToUpload } = require('../../utils/fileUpload');
 
 
-exports.uploadImageToS3 = asyncWrapper(async(req,res)=>{
+exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
     const getImageUrl = await preSignedUrlToUpload(req.file)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_IMAGE_UPLOAD,
-        data:getImageUrl
+        data: getImageUrl
     })
 })
 
@@ -84,7 +84,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         const accountData = await accountsModel.create({
             ...req.body,
             // logo: req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : "" 
-            logo: req.file ? await preSignedUrlToUpload(req.file) : "" 
+            logo: req.file ? await preSignedUrlToUpload(req.file) : ""
         })
         const customId = new mongoose.Types.ObjectId();
 
@@ -129,7 +129,7 @@ exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
             message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS
         })
     }
-    if(!req.body.phone){
+    if (!req.body.phone) {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_ENTER_MOBILENUMBER,
@@ -149,24 +149,25 @@ exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
  * Update account details.
  */
 
-exports.updateAccount = asyncWrapper(async(req,res)=>{
+exports.updateAccount = asyncWrapper(async (req, res) => {
     const baseUrl = process.env.DOMAIN_NAME;
-    const {accountId} = req.params
+    const { accountId } = req.params
     const { accountName, companyName, phone, } = req.body
 
     // req.body.logo = req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : (await accountsModel.findById(accountId,{logo:1})).logo
-    req.body.logo = req.file ? await preSignedUrlToUpload(req.file) : (await accountsModel.findById(accountId,{logo:1})).logo
-    
-    const accountDetails = await accountsModel.findByIdAndUpdate(accountId,{
+    req.body.logo = req.file ? await preSignedUrlToUpload(req.file) : (await accountsModel.findById(accountId, { logo: 1 })).logo
+
+    const accountDetails = await accountsModel.findByIdAndUpdate(accountId, {
         ...req.body,
-    },{new : true});const updateUserDetails = await usersModel.findOneAndUpdate({accountId:new mongoose.Types.ObjectId(accountId),phone:phone},{
-        $set:{name: accountName}},{new : true})
+    }, { new: true }); const updateUserDetails = await usersModel.findOneAndUpdate({ accountId: new mongoose.Types.ObjectId(accountId), phone: phone }, {
+        $set: { name: accountName }
+    }, { new: true })
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_UPDATED,
         data: accountDetails
     })
-    
+
 })
 
 /**
@@ -219,11 +220,11 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
 
 exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
     const { accountId } = req.params
-    const accountInformation = await accountsModel.findById(accountId,{password:0});
+    const accountInformation = await accountsModel.findById(accountId, { password: 0 });
     const integrationExceptions = await integtationExceptionsModel.find({ accountId: accountId }).countDocuments();
     const integrationsActivitylogCount = await integrationCronsModel.find({ accountId: accountId }).countDocuments();
-    const accountSettings = await accountSettingsModel.findOne({accountId:accountId})
-    
+    const accountSettings = await accountSettingsModel.findOne({ accountId: accountId })
+
     let integrationsOfAccount = await integrationsMasterModel.aggregate([
         {
             $match: {
@@ -285,16 +286,16 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
             }
         },
         {
-            $lookup:{
-                from:"integrationsfieldmappings",
-                foreignField:"integrationsMasterId",
-                localField:"_id",
-                as:"integrationsFieldMappings"
+            $lookup: {
+                from: "integrationsfieldmappings",
+                foreignField: "integrationsMasterId",
+                localField: "_id",
+                as: "integrationsFieldMappings"
             }
         },
         {
-            $addFields:{
-                serviceName:"$integrationsFieldMappings.serviceName"
+            $addFields: {
+                serviceName: "$integrationsFieldMappings.serviceName"
             }
         },
         {
@@ -325,10 +326,11 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
             }
         }
     ]);
-    
+
 
     const workOrderReports = await integationOfAccountWorkOrderReports(integrationsOfAccount)
-    const failedCPDWorkOrders = await integrationsMasterModel.aggregate([
+    let failedCPDWorkOrders
+    failedCPDWorkOrders = await integrationsMasterModel.aggregate([
         {
             $match: {
                 accountId: new mongoose.Types.ObjectId(accountId)
@@ -361,6 +363,45 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
         }
     ]);
 
+    if (failedCPDWorkOrders.length <= 0) {
+        const integrationDetails = await integrationsMasterModel.aggregate([
+            {
+                $match: { accountId: new mongoose.Types.ObjectId(accountId) },
+            },
+            {
+                $lookup: {
+                    from: 'serviceproviderintegrations',
+                    localField: 'from',
+                    foreignField: 'from',
+                    as: 'dataBaseDetails',
+                },
+            },
+            {
+                $project: {
+                    sourceDataBaseName: { $arrayElemAt: ['$dataBaseDetails.metrics.sourceDataBaseName', 0] },
+                    integrationsMasterId: '$_id',
+                },
+            },
+        ]);
+        const { sourceDataBaseName, integrationsMasterId } = integrationDetails[0];
+        failedCPDWorkOrders = await mongoose.connection
+            .collection(sourceDataBaseName)
+            .aggregate([
+                {
+                    $match: {
+                        integrationsMasterId: integrationsMasterId,
+                        status: 'initiated',
+                    },
+                },
+            ])
+            .toArray();
+        failedCPDWorkOrders = failedCPDWorkOrders.map(order => ({
+            CPDWorkOrderDetails: JSON.parse(order.responseObject),
+            status: order.referenceStatus,
+            priority: order.priority
+        }));
+    }
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_INFORMATION,
@@ -381,7 +422,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
  * @params "accountId"
  */
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
-    const integrationsQuery = req.query.integration;  
+    const integrationsQuery = req.query.integration;
     const accountId = req.params.accountId;
     var sourceWorkOrderLifeCycleRecords, destinationWorkOrderLifeCycleRecords;
     var sourceWorkOrderLifeCycleCounts, destinationWorkOrderLifeCycleCounts
@@ -394,10 +435,10 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
 
     // Define valid priority values
     const validPriorities = ['all', 'high', 'medium', 'low'];
-    
+
     var accountReports = [];
     var sixWeeksSalesGraph = [];
-   if (integrationsQuery === 'null' || !integrationsQuery) {
+    if (integrationsQuery === 'null' || !integrationsQuery) {
         accountReports = [];
         sixWeeksSalesGraph = [];
     } else if (integrationsQuery) {
@@ -409,7 +450,7 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
                     $match: {
                         accountId: new mongoose.Types.ObjectId(req.params.accountId),
                         status: "active",
-                      _id:new mongoose.Types.ObjectId(integrationsQuery)
+                        _id: new mongoose.Types.ObjectId(integrationsQuery)
                     }
                 },
                 {
@@ -468,105 +509,105 @@ exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
         const integrationDestination = accountReports[0].to;
 
         sourceWorkOrderLifeCycleRecords = await workOrderLifeCycleReports(
-            integrationSource, 
-            integrationsQuery, 
-            priorityQuery, 
-            fromDateQuery, 
-            toDateQuery, 
-            searchQuery, 
-            validPriorities, 
+            integrationSource,
+            integrationsQuery,
+            priorityQuery,
+            fromDateQuery,
+            toDateQuery,
+            searchQuery,
+            validPriorities,
             accountId,
             "source"
         );
 
         destinationWorkOrderLifeCycleRecords = await workOrderLifeCycleReports(
-            integrationDestination, 
-            integrationsQuery, 
-            priorityQuery, 
-            fromDateQuery, 
-            toDateQuery, 
-            searchQuery, 
-            validPriorities, 
+            integrationDestination,
+            integrationsQuery,
+            priorityQuery,
+            fromDateQuery,
+            toDateQuery,
+            searchQuery,
+            validPriorities,
             accountId,
             "destination"
         );
-        
-        const newAndUpdatedWorkOrdersCount =await mapNewUpdatedWorkOrdersCounts(accountReports[0].statusFieldMappingKeys, integrationSource, integrationDestination, fromDateQuery, toDateQuery, integrationsQuery, accountId, sourceWorkOrderLifeCycleRecords.length,destinationWorkOrderLifeCycleRecords.length)
+
+        const newAndUpdatedWorkOrdersCount = await mapNewUpdatedWorkOrdersCounts(accountReports[0].statusFieldMappingKeys, integrationSource, integrationDestination, fromDateQuery, toDateQuery, integrationsQuery, accountId, sourceWorkOrderLifeCycleRecords.length, destinationWorkOrderLifeCycleRecords.length)
         // Add the new properties to each item in accountReports
         accountReports = accountReports.map(report => ({
             ...report,
             sourceWorkOrderLifeCycleRecords,
             destinationWorkOrderLifeCycleRecords,
-            
+
             ...newAndUpdatedWorkOrdersCount
         }));
     }
-//six weeks sales graph code-----------------------------------------------------------------------------------------------------------
-if(integrationsQuery){
-  
-    sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
-        {
-            $match: {
-                accountId: new mongoose.Types.ObjectId(req.params.accountId),
-                status: "active",
-                _id:new mongoose.Types.ObjectId(integrationsQuery)
-            }
-        },
-        {
-            $lookup: {
-                from: "integrationsexceptions",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "integrationExceptions"
-            }
-        },
-        {
-            $lookup: {
-                from: "integrationssettings",
-                localField: "_id",
-                foreignField: "integrationsMasterId",
-                as: "integrationSettings"
-            }
-        },
-        {
-            $unwind: "$integrationSettings"
-        },
-        {
-            $addFields: {
-                statusFieldMappingKeys: "$integrationSettings.statusFieldMappingKeys"
-            }
-        },
-        {
-            $project: {
-                integrationSettings: 0
-            }
-        },
-        
-    ])
+    //six weeks sales graph code-----------------------------------------------------------------------------------------------------------
+    if (integrationsQuery) {
 
-if(sixWeeksSalesGraph.length>0){
-    const integrationSource = sixWeeksSalesGraph[0].from;
-    const integrationDestination = sixWeeksSalesGraph[0].to;
-    sixWeekLifeCycleDocs=await sixWeeksSalesDetails(integrationSource,integrationDestination, integrationsQuery, accountId, sixWeeksSalesGraph[0].statusFieldMappingKeys ,sixWeeksSalesGraph[0].integrationExceptions) 
-    sixWeekLifeCycleDocs=await mapNewUpdatedCounts(sixWeekLifeCycleDocs, sixWeeksSalesGraph[0].statusFieldMappingKeys, integrationSource,integrationDestination, )
+        sixWeeksSalesGraph = await integrationsMasterModel.aggregate([
+            {
+                $match: {
+                    accountId: new mongoose.Types.ObjectId(req.params.accountId),
+                    status: "active",
+                    _id: new mongoose.Types.ObjectId(integrationsQuery)
+                }
+            },
+            {
+                $lookup: {
+                    from: "integrationsexceptions",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "integrationExceptions"
+                }
+            },
+            {
+                $lookup: {
+                    from: "integrationssettings",
+                    localField: "_id",
+                    foreignField: "integrationsMasterId",
+                    as: "integrationSettings"
+                }
+            },
+            {
+                $unwind: "$integrationSettings"
+            },
+            {
+                $addFields: {
+                    statusFieldMappingKeys: "$integrationSettings.statusFieldMappingKeys"
+                }
+            },
+            {
+                $project: {
+                    integrationSettings: 0
+                }
+            },
 
-      //destinationWorkOrderLifeCycleCounts=await sixWeeksSalesDetails(integrationDestination, integrationsQuery, accountId, sixWeeksSalesGraph[0].statusFieldMappingKeys)
-      sixWeeksSalesGraph = sixWeeksSalesGraph.map(report => ({
-        ...report,
-        sixWeekLifeCycleDocs,
+        ])
 
-    }));
+        if (sixWeeksSalesGraph.length > 0) {
+            const integrationSource = sixWeeksSalesGraph[0].from;
+            const integrationDestination = sixWeeksSalesGraph[0].to;
+            sixWeekLifeCycleDocs = await sixWeeksSalesDetails(integrationSource, integrationDestination, integrationsQuery, accountId, sixWeeksSalesGraph[0].statusFieldMappingKeys, sixWeeksSalesGraph[0].integrationExceptions)
+            sixWeekLifeCycleDocs = await mapNewUpdatedCounts(sixWeekLifeCycleDocs, sixWeeksSalesGraph[0].statusFieldMappingKeys, integrationSource, integrationDestination,)
 
-}
+            //destinationWorkOrderLifeCycleCounts=await sixWeeksSalesDetails(integrationDestination, integrationsQuery, accountId, sixWeeksSalesGraph[0].statusFieldMappingKeys)
+            sixWeeksSalesGraph = sixWeeksSalesGraph.map(report => ({
+                ...report,
+                sixWeekLifeCycleDocs,
 
-}
+            }));
+
+        }
+
+    }
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED,
         data: {
             accountReports,
 
-            sixWeeksSalesGraph: sixWeeksSalesGraph[0].sixWeekLifeCycleDocs
+            sixWeeksSalesGraph: sixWeeksSalesGraph[0]?.sixWeekLifeCycleDocs || []
         },
     });
 });
@@ -611,37 +652,37 @@ exports.getWorkOrderLifeCycle = asyncWrapper(async (req, res) => {
 
     let workOrderLifeCyclSourceAndDestinationeDetails = await getSourceAndDestinationWOLifeCycle(accountId, integrationsMasterId, integrationMaster.from, integrationMaster.to, workOrderId)
     if (workOrderLifeCyclSourceAndDestinationeDetails === "Invalid workorder id") {
-        
-    
+
+
         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
             status: customConstants.messages.MESSAGE_FAIL,
-            message:customConstants.messages.MESSAGE_WORKORDER_ID_INVALID,
+            message: customConstants.messages.MESSAGE_WORKORDER_ID_INVALID,
 
         })
     }
 
-        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
-            sourceWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderLifeCycleDetails,
-            destinationWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderLifeCycleDetails,
-            sourceWorkorders: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderDetails,
-            destinationWorkOrders: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderDetails
-        })
-    
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_WORK_ORDER_LIFE_CYCLE,
+        sourceWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderLifeCycleDetails,
+        destinationWorkOrderLifeCycleDetails: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderLifeCycleDetails,
+        sourceWorkorders: workOrderLifeCyclSourceAndDestinationeDetails.sourceWorkOrderDetails,
+        destinationWorkOrders: workOrderLifeCyclSourceAndDestinationeDetails.destinationWorkOrderDetails
+    })
+
 });
 /**
  * Get the individual CPD work order details.
  * getCPDFullWorkOrderDetails function retrives the work order detais from get CPD work order API.
  */
 
-exports.getIndividualWorkOrderDetails = asyncWrapper(async(req,res)=>{
-    const {accountId,integrationsMasterId, workOrderId} = req.query
-    const getCPDWorkOrderDetails = await CPDWorkordersModel.findOne({accountId:accountId, integrationsMasterId:integrationsMasterId,'CPDWorkOrders.WorkOrderNumber':workOrderId})
+exports.getIndividualWorkOrderDetails = asyncWrapper(async (req, res) => {
+    const { accountId, integrationsMasterId, workOrderId } = req.query
+    const getCPDWorkOrderDetails = await CPDWorkordersModel.findOne({ accountId: accountId, integrationsMasterId: integrationsMasterId, 'CPDWorkOrders.WorkOrderNumber': workOrderId })
     const getWorkOrderDetails = await getCPDFullWorkOrderDetails(integrationsMasterId, getCPDWorkOrderDetails)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_WORKORDERS,
-        data:getWorkOrderDetails
+        data: getWorkOrderDetails
     })
 })
