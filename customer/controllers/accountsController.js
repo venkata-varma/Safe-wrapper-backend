@@ -396,7 +396,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
             ])
             .toArray();
         failedCPDWorkOrders = failedCPDWorkOrders.map(order => ({
-            CPDWorkOrderDetails: JSON.parse(order.responseObject),
+            CPDWorkOrders: JSON.parse(order.responseObject),
             status: order.referenceStatus,
             priority: order.priority
         }));
