@@ -1,10 +1,10 @@
 const { GlobalServiceModelForDynamicCollection } = require("../createDynamicCollection")
 
 exports.addRecordIntoDataBase = async (integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, responseObject, updatingDataBaseName, status, operationType, sourceReferenceId) => {
-
+    
     let reqOBJ = {
         accountId: integrationDetails.accountId,
-        integrationsCronId: integrationDetails.integrationsMasterId,
+        integrationsCronId: integrationDetails.integrationsCronId,
         integrationsMasterId: integrationDetails.integrationsMasterId,
         referenceId:responseObject[`${primaryKeyColumn}`].toString(),
         sourceReferenceId: operationType === "source" ? responseObject[`${primaryKeyColumn}`].toString() : sourceReferenceId,

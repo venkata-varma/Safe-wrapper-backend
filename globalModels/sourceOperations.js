@@ -29,16 +29,16 @@ let startTestResponseObject = {
  * 3. Fetch source side data objects by calling API calls.  
  * 4. Insert into source side collections with new status and required data points. 
  */
-const sourceIntegrationOperationsServices = async (integrationObject) => {
+const sourceIntegrationOperationsServices = async (integrationObject, cronJobDetails) => {
     startTestResponseObject = {
         sourceAuthenticationStatus: false,
-        destinationAuthenticationStatus: false,
+        destinationAuthenticationStatus: false, 
         sourcePullCount: 0,
         destinationPushCount: 0,
     }
     for (const data of integrationObject) {
         sourceSettingsData = await serviceProviderIntegrationsModel.findOne({ from: data.from, to: data.to }).lean()
-        await SIMappingsByPrioritySorting(data);
+        await SIMappingsByPrioritySorting(data, cronJobDetails);
     }
     return startTestResponseObject
 };
@@ -47,9 +47,12 @@ const sourceIntegrationOperationsServices = async (integrationObject) => {
  * @param {*} data holds {}
  * Get list of mapings & sort by priority key. 
  */
-const SIMappingsByPrioritySorting = async (data) => {
+const SIMappingsByPrioritySorting = async (data, cronJobDetails) => {
     const authToken = await getServiceproviderAuthResponse(data.integrationsMasterId, data.from);
-    let integrationDetails = data
+    let integrationDetails = {
+        ...data._doc,
+        integrationsCronId: cronJobDetails._id
+    }
     // Sort services by priority and process them one by one
     const sortedServices = data.sourceIntegrationServices.sort((a, b) => a.priority - b.priority);
     await processSIServiceCalls(sortedServices, data.integrationsMasterId, data.from, authToken, integrationDetails);

@@ -50,7 +50,9 @@ const destinationIntegrationOperationsServices = async (integrationObject) => {
  */
 const processSIMappings = async (data) => {
     const authToken = await getServiceproviderAuthResponse(data.integrationsMasterId, data.to);
-    let integrationDetails = data
+    let integrationDetails = {
+        ...data._doc,
+    }
     const sortedServices = data.destinationIntegrationServices.sort((a, b) => a.priority - b.priority);
     await processSIServiceCalls(sortedServices, data.integrationsMasterId, data.to, authToken, integrationDetails);
 };
@@ -69,7 +71,6 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
         if (serviceObject.serviceMethod === "patch") {
             sourceRecords = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "update-request")
         }
-
         finalResultData = await preProcessServiceCall(serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails, sourceRecords);
 
     }
@@ -227,6 +228,7 @@ async function getSourceRecords(integrationDetails, databaseName, status) {
 
     const requestDataToBeSent = [];
     for await (const doc of records) {
+        integrationDetails.integrationsCronId = doc.integrationsCronId
         requestDataToBeSent.push(doc);
     }
     return requestDataToBeSent
