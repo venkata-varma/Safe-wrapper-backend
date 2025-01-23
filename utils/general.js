@@ -14,157 +14,158 @@ const { CPDAuthentication } = require("./serviceProvidersAuthentication");
 const { decryptData } = require("./encryptionAlgorithms");
 const { default: axios } = require("axios");
 const serviceProviderIntegrationsModel = require("../models/serviceProviderIntegrationsModel");
+const integrationsExceptionsModel = require("../models/integrationsExceptionsModel");
 
 var presentWeekSourceData = [];
 
-const getStatusOfWorkOrders = async (workOrderStatus,getStatus) =>{
-    
-    let allStatuses = workOrderStatus.map(status => {
-        const match = getStatus.find(item => item.status === status);
-        return {
-          status,
-          count: match ? match.count : 0
-        };
-      });
-      return allStatuses
-} 
+const getStatusOfWorkOrders = async (workOrderStatus, getStatus) => {
 
-const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvider, presentWeekData) => {
-    let serviceWorkOrdersAndStatus = {presentWeekData : dateAsset()};
-    let tempResultArray = new Array;
+  let allStatuses = workOrderStatus.map(status => {
+    const match = getStatus.find(item => item.status === status);
+    return {
+      status,
+      count: match ? match.count : 0
+    };
+  });
+  return allStatuses
+}
 
-    if(serviceProvider === "CPD"){
-        serviceWorkOrdersAndStatus.sourceWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({_id:-1}).limit(15);
-        // console.log('serviceWorkOrdersAndStatus.sourceWorkOrders:===',serviceWorkOrdersAndStatus.sourceWorkOrders)
-        if(serviceWorkOrdersAndStatus.sourceWorkOrders.length > 0){
-          let i=0;
-            for (let week of presentWeekData) {  
-                presentWeekSourceData = await CPDWorkordersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
-                week.sourceWorkOrdersCount = presentWeekSourceData.length > 0 ? presentWeekSourceData.length : 0;
-                serviceWorkOrdersAndStatus.presentWeekData[i] = week;
-                i++;
-            }
-        }
+const getServiceWorkOrdersAndStatus = async (integrationsMasterId, serviceProvider, presentWeekData) => {
+  let serviceWorkOrdersAndStatus = { presentWeekData: dateAsset() };
+  let tempResultArray = new Array;
 
-        const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
-        let sourceStatus = await CPDWorkordersModel.aggregate([
-          {
-            $match: {
-              integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
-            }
-          },
-          {
-            $group: {
-              _id: '$CPDWorkOrderStatus',
-              count: { $sum: 1 }
-            }
-          },
-          {
-            $project: {
-              _id: 0,
-              status: '$_id',
-              count: 1
-            }
-          }
-        ]);
-        serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,sourceStatus);
-        
-        return serviceWorkOrdersAndStatus;
-    }
-    else if(serviceProvider === "DF"){
-        serviceWorkOrdersAndStatus.destinationWorkOrders = await DFWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({_id:-1}).limit(15);
-        if(serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0){
-            for (let week of presentWeekData) {
-                presentWeekDestinationData = await DFWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
-                week.destinationWorkOrdersCount = presentWeekDestinationData.length >= 0 ? presentWeekDestinationData.length : 0;
-
-              }
-        }
-       
-        const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
-        let destinationStatus = await DFWorkOrdersModel.aggregate([
-          {
-            $match: {
-              integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
-            }
-          },
-          {
-            $group: {
-              _id: '$DFWorkOrderStatus',
-              count: { $sum: 1 }
-            }
-          },
-          {
-            $project: {
-              _id: 0,
-              status: '$_id',
-              count: 1
-            }
-          }
-        ]);
-        // const statuses = getDefaultStatus.workOrderStatus;
-        // serviceWorkOrdersAndStatus.destination = statuses.map(status => {
-        //   const match = destinationStatus.find(item => item.status === status);
-        //   return {
-        //     status,
-        //     count: match ? match.count : 0
-        //   };
-        // });
-        serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,destinationStatus);
-       return serviceWorkOrdersAndStatus;
-    }
-    else if(serviceProvider === "SNOW"){
-      serviceWorkOrdersAndStatus.destinationWorkOrders = await SNOWWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({_id:-1}).limit(15);
-      if(serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0){
-          for (let week of presentWeekData) {
-              presentWeekDestinationData = await SNOWWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
-              week.destinationWorkOrdersCount = presentWeekDestinationData.length >= 0 ? presentWeekDestinationData.length : 0;
-
-            }
+  if (serviceProvider === "CPD") {
+    serviceWorkOrdersAndStatus.sourceWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({ _id: -1 }).limit(15);
+    // console.log('serviceWorkOrdersAndStatus.sourceWorkOrders:===',serviceWorkOrdersAndStatus.sourceWorkOrders)
+    if (serviceWorkOrdersAndStatus.sourceWorkOrders.length > 0) {
+      let i = 0;
+      for (let week of presentWeekData) {
+        presentWeekSourceData = await CPDWorkordersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
+        week.sourceWorkOrdersCount = presentWeekSourceData.length > 0 ? presentWeekSourceData.length : 0;
+        serviceWorkOrdersAndStatus.presentWeekData[i] = week;
+        i++;
       }
-     
-      const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
-      let destinationStatus = await SNOWWorkOrdersModel.aggregate([
-        {
-          $match: {
-            integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
-          }
-        },
-        {
-          $group: {
-            _id: '$SNOWWorkOrderStatus',
-            count: { $sum: 1 }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            status: '$_id',
-            count: 1
-          }
-        }
-      ]);
-      // const statuses = getDefaultStatus.workOrderStatus;
-      // serviceWorkOrdersAndStatus.destination = statuses.map(status => {
-      //   const match = destinationStatus.find(item => item.status === status);
-      //   return {
-      //     status,
-      //     count: match ? match.count : 0
-      //   };
-      // });
-      serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,destinationStatus);
-     return serviceWorkOrdersAndStatus;
-  }
-  else if(serviceProvider === "CYS"){
-    serviceWorkOrdersAndStatus.destinationWorkOrders = await CYSWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({_id:-1}).limit(15);
-    if(serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0){
-        for (let week of presentWeekData) {
-            presentWeekDestinationData = await CYSWorkordersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
-            week.destinationWorkOrdersCount = presentWeekDestinationData.length >= 0 ? presentWeekDestinationData.length : 0;
-
-          }
     }
-   
+
+    const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
+    let sourceStatus = await CPDWorkordersModel.aggregate([
+      {
+        $match: {
+          integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+        }
+      },
+      {
+        $group: {
+          _id: '$CPDWorkOrderStatus',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          status: '$_id',
+          count: 1
+        }
+      }
+    ]);
+    serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, sourceStatus);
+
+    return serviceWorkOrdersAndStatus;
+  }
+  else if (serviceProvider === "DF") {
+    serviceWorkOrdersAndStatus.destinationWorkOrders = await DFWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({ _id: -1 }).limit(15);
+    if (serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0) {
+      for (let week of presentWeekData) {
+        presentWeekDestinationData = await DFWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
+        week.destinationWorkOrdersCount = presentWeekDestinationData.length >= 0 ? presentWeekDestinationData.length : 0;
+
+      }
+    }
+
+    const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
+    let destinationStatus = await DFWorkOrdersModel.aggregate([
+      {
+        $match: {
+          integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+        }
+      },
+      {
+        $group: {
+          _id: '$DFWorkOrderStatus',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          status: '$_id',
+          count: 1
+        }
+      }
+    ]);
+    // const statuses = getDefaultStatus.workOrderStatus;
+    // serviceWorkOrdersAndStatus.destination = statuses.map(status => {
+    //   const match = destinationStatus.find(item => item.status === status);
+    //   return {
+    //     status,
+    //     count: match ? match.count : 0
+    //   };
+    // });
+    serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, destinationStatus);
+    return serviceWorkOrdersAndStatus;
+  }
+  else if (serviceProvider === "SNOW") {
+    serviceWorkOrdersAndStatus.destinationWorkOrders = await SNOWWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({ _id: -1 }).limit(15);
+    if (serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0) {
+      for (let week of presentWeekData) {
+        presentWeekDestinationData = await SNOWWorkOrdersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
+        week.destinationWorkOrdersCount = presentWeekDestinationData.length >= 0 ? presentWeekDestinationData.length : 0;
+
+      }
+    }
+
+    const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
+    let destinationStatus = await SNOWWorkOrdersModel.aggregate([
+      {
+        $match: {
+          integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+        }
+      },
+      {
+        $group: {
+          _id: '$SNOWWorkOrderStatus',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          status: '$_id',
+          count: 1
+        }
+      }
+    ]);
+    // const statuses = getDefaultStatus.workOrderStatus;
+    // serviceWorkOrdersAndStatus.destination = statuses.map(status => {
+    //   const match = destinationStatus.find(item => item.status === status);
+    //   return {
+    //     status,
+    //     count: match ? match.count : 0
+    //   };
+    // });
+    serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, destinationStatus);
+    return serviceWorkOrdersAndStatus;
+  }
+  else if (serviceProvider === "CYS") {
+    serviceWorkOrdersAndStatus.destinationWorkOrders = await CYSWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({ _id: -1 }).limit(15);
+    if (serviceWorkOrdersAndStatus.destinationWorkOrders.length > 0) {
+      for (let week of presentWeekData) {
+        presentWeekDestinationData = await CYSWorkordersModel.find({ integrationsMasterId, createdAt: { $gte: new Date(week.fromDate), $lte: new Date(week.toDate) } });
+        week.destinationWorkOrdersCount = presentWeekDestinationData.length >= 0 ? presentWeekDestinationData.length : 0;
+
+      }
+    }
+
     const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
     let destinationStatus = await CYSWorkordersModel.aggregate([
       {
@@ -194,21 +195,21 @@ const getServiceWorkOrdersAndStatus = async(integrationsMasterId, serviceProvide
     //     count: match ? match.count : 0
     //   };
     // });
-    serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus,destinationStatus);
-   return serviceWorkOrdersAndStatus;
-}
+    serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, destinationStatus);
+    return serviceWorkOrdersAndStatus;
+  }
 
 
 }
 
 // Function to return default field mapping keys based of "from" .
-const defaultSatusMappingKeys = async (from,serviceMethod) => {
-  let statusMappingDetails = await serviceProviderServicesModel.find({serviceProvider:from, serviceMethod:serviceMethod})
+const defaultSatusMappingKeys = async (from, serviceMethod) => {
+  let statusMappingDetails = await serviceProviderServicesModel.find({ serviceProvider: from, serviceMethod: serviceMethod })
   return statusMappingDetails
 }
 
-const getDefaultDestinationStatusMappingkeys = async(to, serviceMethod) =>{
-  let defaultDestinationStatusMappingkeys = await serviceProviderServicesModel.find({serviceProvider:to, serviceMethod:serviceMethod})
+const getDefaultDestinationStatusMappingkeys = async (to, serviceMethod) => {
+  let defaultDestinationStatusMappingkeys = await serviceProviderServicesModel.find({ serviceProvider: to, serviceMethod: serviceMethod })
   return defaultDestinationStatusMappingkeys
 }
 
@@ -217,11 +218,11 @@ const getDefaultDestinationStatusMappingkeys = async(to, serviceMethod) =>{
  * @params integrationMasterId
  * Function to be in step-5 of "Create Integration" process
   */
-const getStatusFieldMappings = async(integrationMasterId) => {
+const getStatusFieldMappings = async (integrationMasterId) => {
   const integrationMaster = await integrationsMasterModel.findById(integrationMasterId);
   let statusFieldMappingKeys, requiredKeys
   if (integrationMaster.from === "CPD" && integrationMaster.to === "DF") {
-      requiredKeys = {
+    requiredKeys = {
       "numberAlt": "WorkOrderNumber",
       "budgetedProposedStatus": "NONE",
       "buildingId": "ServiceLocation.OccupantID",
@@ -258,20 +259,20 @@ const getStatusFieldMappings = async(integrationMasterId) => {
   else if (integrationMaster.from === "CPD" && integrationMaster.to === "SNOW") {
     requiredKeys = {}
     statusFieldMappingKeys = {
-      "1":"New",
-      "2":"Accepted",
-      "3":"Paused",
-      "6":"CheckedIn",
-      "7":"CheckedOut",
-      "8":"Rejected"
+      "1": "New",
+      "2": "Accepted",
+      "3": "Paused",
+      "6": "CheckedIn",
+      "7": "CheckedOut",
+      "8": "Rejected"
     }
   }
-  else{
-    let statusFiledMappings = await serviceProviderIntegrationsModel.findOne({from: integrationMaster.from, to: integrationMaster.to})
+  else {
+    let statusFiledMappings = await serviceProviderIntegrationsModel.findOne({ from: integrationMaster.from, to: integrationMaster.to })
     requiredKeys = {}
     statusFieldMappingKeys = statusFiledMappings?.settings?.mappingSettings
   }
-  return {requiredKeys, statusFieldMappingKeys}
+  return { requiredKeys, statusFieldMappingKeys }
 }
 
 
@@ -316,7 +317,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
     sourceWorkOrderDetails = await fetchWorkOrderDetails(CPDWorkordersModel, {
       accountId,
       integrationsMasterId,
-      $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },workOrderId]}
+      $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, workOrderId] }
     });
 
     if (sourceWorkOrderDetails) {
@@ -334,7 +335,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
           integrationsMasterId,
           'CYSWorkOrders.estimate.PONumber': sourceWorkOrderDetails.CPDWorkOrders.WorkOrderNumber,
         });
-      }else if(from === 'CPD' && to === 'SNOW'){
+      } else if (from === 'CPD' && to === 'SNOW') {
         destinationWorkOrderDetails = await fetchWorkOrderDetails(SNOWWorkOrdersModel, {
           accountId,
           integrationsMasterId,
@@ -343,7 +344,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
       }
 
       sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
-      destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.DFWorkOrderId || destinationWorkOrderDetails?.CYSWorkOrderId||destinationWorkOrderDetails?.SNOWWorkOrderId);
+      destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.DFWorkOrderId || destinationWorkOrderDetails?.CYSWorkOrderId || destinationWorkOrderDetails?.SNOWWorkOrderId);
     } else {
       //If Input work order Id is Number type and of from Destination side
       console.log('destination WorkorderID');
@@ -351,7 +352,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         destinationWorkOrderDetails = await fetchWorkOrderDetails(DFWorkOrdersModel, {
           accountId,
           integrationsMasterId,
-          $expr: { $eq: [{ $toString: "$DFWorkOrderId" },workOrderId]}  ,
+          $expr: { $eq: [{ $toString: "$DFWorkOrderId" }, workOrderId] },
         });
 
         if (!destinationWorkOrderDetails) {
@@ -370,7 +371,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         destinationWorkOrderDetails = await fetchWorkOrderDetails(CYSWorkordersModel, {
           accountId,
           integrationsMasterId,
-          $expr: { $eq: [{ $toString: "$CYSWorkOrderId" },workOrderId]}  ,
+          $expr: { $eq: [{ $toString: "$CYSWorkOrderId" }, workOrderId] },
         });
 
         if (!destinationWorkOrderDetails) {
@@ -385,7 +386,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
 
         sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
         destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(workOrderId);
-      }else if(from === 'CPD' && to === 'SNOW'){
+      } else if (from === 'CPD' && to === 'SNOW') {
         destinationWorkOrderDetails = await fetchWorkOrderDetails(SNOWWorkOrdersModel, {
           accountId,
           integrationsMasterId,
@@ -399,7 +400,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
         sourceWorkOrderDetails = await fetchWorkOrderDetails(CPDWorkordersModel, {
           accountId,
           integrationsMasterId,
-          $expr: { $eq: [{ $toString: "$CPDWorkOrderId" },destinationWorkOrderDetails.SNOWWorkOrders.order]} 
+          $expr: { $eq: [{ $toString: "$CPDWorkOrderId" }, destinationWorkOrderDetails.SNOWWorkOrders.order] }
         });
 
         sourceWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(sourceWorkOrderDetails.CPDWorkOrderId);
@@ -437,11 +438,11 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
       });
 
       destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.CYSWorkOrderId);
-    }else if(from === 'CPD' && to === 'SNOW'){
+    } else if (from === 'CPD' && to === 'SNOW') {
       destinationWorkOrderDetails = await fetchWorkOrderDetails(SNOWWorkOrdersModel, {
         accountId,
         integrationsMasterId,
-        'SNOWWorkOrders.user_input':workOrderId,
+        'SNOWWorkOrders.user_input': workOrderId,
       });
 
       destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.SNOWWorkOrderId);
@@ -456,17 +457,17 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
 };
 
 
-const getServiceProviderName = async(serviceProviderName) => {
-  if(serviceProviderName === 'CPD'){
+const getServiceProviderName = async (serviceProviderName) => {
+  if (serviceProviderName === 'CPD') {
     return "CorrigoPro"
   }
-  else if(serviceProviderName === 'DF'){
+  else if (serviceProviderName === 'DF') {
     return "MDS Builders"
   }
-  else if(serviceProviderName === 'SNOW'){
+  else if (serviceProviderName === 'SNOW') {
     return "Servicenow"
   }
-  else if(serviceProviderName === 'CYS'){
+  else if (serviceProviderName === 'CYS') {
     return "QSP Technologies"
   }
 }
@@ -483,111 +484,111 @@ const getServiceProviderName = async(serviceProviderName) => {
 const integationOfAccountWorkOrderReports = async (workOrderReport) => {
 
   workOrderReport.forEach((integration) => {
-      // Initialize group arrays with objects containing status and count
-      integration.sourceWorkOrderStatusGroup = [];
-      integration.destinationWorkOrderStatusGroup = [];
+    // Initialize group arrays with objects containing status and count
+    integration.sourceWorkOrderStatusGroup = [];
+    integration.destinationWorkOrderStatusGroup = [];
 
-      // Initialize the new fields
-      integration.sourceNewWorkOrdersCount = 0;
-      integration.sourceUpdatedWorkOrdersCount = 0;
-      integration.destinationNewWorkOrdersCount = 0;
-      integration.destinationUpdatedWorkOrdersCount = 0;
+    // Initialize the new fields
+    integration.sourceNewWorkOrdersCount = 0;
+    integration.sourceUpdatedWorkOrdersCount = 0;
+    integration.destinationNewWorkOrdersCount = 0;
+    integration.destinationUpdatedWorkOrdersCount = 0;
 
-      // Helper function to update status counts using reduce
-      function updateStatusGroup(workOrderStatusGroup, workOrdersLifeCycle, serviceProvider) {
-          return workOrdersLifeCycle.reduce((statusGroup, order) => {
-              const statusField = order.serviceProvider === serviceProvider ? order.workOrderStatus : null;
-              if (statusField) {
-                  let statusObj = statusGroup.find(item => item.status === statusField);
-                  if (statusObj) {
-                      statusObj.count += 1;
-                  } else {
-                    statusGroup.push({ status: statusField, count: 1 });
-                  }
-              }
-              return statusGroup;
-          }, workOrderStatusGroup);
+    // Helper function to update status counts using reduce
+    function updateStatusGroup(workOrderStatusGroup, workOrdersLifeCycle, serviceProvider) {
+      return workOrdersLifeCycle.reduce((statusGroup, order) => {
+        const statusField = order.serviceProvider === serviceProvider ? order.workOrderStatus : null;
+        if (statusField) {
+          let statusObj = statusGroup.find(item => item.status === statusField);
+          if (statusObj) {
+            statusObj.count += 1;
+          } else {
+            statusGroup.push({ status: statusField, count: 1 });
+          }
+        }
+        return statusGroup;
+      }, workOrderStatusGroup);
+    }
+
+    // Use map and reduce to populate sourceWorkOrderGroup and destinationWorkOrderGroup
+    integration.sourceWorkOrderStatusGroup = updateStatusGroup(
+      integration.sourceWorkOrderStatusGroup,
+      integration.workorderlifecycles,
+      integration.from
+    );
+
+    integration.destinationWorkOrderStatusGroup = updateStatusGroup(
+      integration.destinationWorkOrderStatusGroup,
+      integration.workorderlifecycles,
+      integration.to
+    );
+
+    // Remove the workorderlifecycles array
+    delete integration.workorderlifecycles;
+    if (integration.statusFieldMappingKeys) {
+      // Get the crucial status from statusFieldMappingKeys
+      var serviceProviderNewStatus;
+      switch (integration.from) {
+        case 'CPD':
+          serviceProviderNewStatus = "new";
+          break;
+        case 'DF':
+          serviceProviderNewStatus = "reported";
+          break;
+        case 'SNOW':
+          serviceProviderNewStatus = "1";
+          break;
+        case 'CYS':
+          serviceProviderNewStatus = "requested";
+          break;
       }
 
-      // Use map and reduce to populate sourceWorkOrderGroup and destinationWorkOrderGroup
-      integration.sourceWorkOrderStatusGroup = updateStatusGroup(
-          integration.sourceWorkOrderStatusGroup,
-          integration.workorderlifecycles,
-          integration.from
-      );
-
-      integration.destinationWorkOrderStatusGroup = updateStatusGroup(
-          integration.destinationWorkOrderStatusGroup,
-          integration.workorderlifecycles,
-          integration.to
-      );
-
-      // Remove the workorderlifecycles array
-      delete integration.workorderlifecycles;
-      if (integration.statusFieldMappingKeys) {
-          // Get the crucial status from statusFieldMappingKeys
-          var serviceProviderNewStatus;
-          switch (integration.from) {
-              case 'CPD':
-                  serviceProviderNewStatus = "new";
-                  break;
-              case 'DF':
-                  serviceProviderNewStatus = "reported";
-                  break;
-              case 'SNOW':
-                  serviceProviderNewStatus = "1";
-                  break;
-              case 'CYS':
-                  serviceProviderNewStatus = "requested";
-                  break;
-          }
-
-          var crucialSourceStatus, crucialDestinationStatus;
-          const statusMapping = integration.statusFieldMappingKeys;
-          for (let [key, value] of Object.entries(statusMapping)) {
-              if (value.toLowerCase() === serviceProviderNewStatus) {
-                  crucialSourceStatus = value;
-                  crucialDestinationStatus = key;
-              }
-          }
-
-
-          // Calculate sourceNewWorkOrdersCount and sourceUpdatedWorkOrders
-          integration.sourceWorkOrderStatusGroup.forEach(statusObj => {
-              if (statusObj.status === crucialSourceStatus) {
-                  integration.sourceNewWorkOrdersCount = statusObj.count;
-              } else {
-                  integration.sourceUpdatedWorkOrdersCount += statusObj.count;
-              }
-          });
-
-          // Calculate destinationNewWorkOrdersCount and destinationUpdatedWorkOrders
-          integration.destinationWorkOrderStatusGroup.forEach(statusObj => {
-              if (statusObj.status === crucialDestinationStatus) {
-                  integration.destinationNewWorkOrdersCount = statusObj.count;
-              } else {
-                  integration.destinationUpdatedWorkOrdersCount += statusObj.count;
-              }
-          });
+      var crucialSourceStatus, crucialDestinationStatus;
+      const statusMapping = integration.statusFieldMappingKeys;
+      for (let [key, value] of Object.entries(statusMapping)) {
+        if (value.toLowerCase() === serviceProviderNewStatus) {
+          crucialSourceStatus = value;
+          crucialDestinationStatus = key;
+        }
       }
+
+
+      // Calculate sourceNewWorkOrdersCount and sourceUpdatedWorkOrders
+      integration.sourceWorkOrderStatusGroup.forEach(statusObj => {
+        if (statusObj.status === crucialSourceStatus) {
+          integration.sourceNewWorkOrdersCount = statusObj.count;
+        } else {
+          integration.sourceUpdatedWorkOrdersCount += statusObj.count;
+        }
+      });
+
+      // Calculate destinationNewWorkOrdersCount and destinationUpdatedWorkOrders
+      integration.destinationWorkOrderStatusGroup.forEach(statusObj => {
+        if (statusObj.status === crucialDestinationStatus) {
+          integration.destinationNewWorkOrdersCount = statusObj.count;
+        } else {
+          integration.destinationUpdatedWorkOrdersCount += statusObj.count;
+        }
+      });
+    }
   })
   return workOrderReport;
 }
 
-const getAllStatusFromWorkOrderLifeCycleForEmailNotifications = async(accountId,integrationsMasterId,serviceProvider,fromDate,toDate)=>{
+const getAllStatusFromWorkOrderLifeCycleForEmailNotifications = async (accountId, integrationsMasterId, serviceProvider, fromDate, toDate) => {
   let workOrderStatusForEmail = await workOrderLifeCycleModel.aggregate([
     {
-      $match:{
-        accountId:accountId,
+      $match: {
+        accountId: accountId,
         integrationsMasterId: integrationsMasterId,
-        serviceProvider:serviceProvider,
-        createdAt:{$gte:new Date(fromDate), $lte:new Date(toDate)}
+        serviceProvider: serviceProvider,
+        createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) }
       }
     },
     {
-      $group:{
-        _id:"$workOrderStatus",
-        count: { $sum: 1 } 
+      $group: {
+        _id: "$workOrderStatus",
+        count: { $sum: 1 }
       }
     },
     {
@@ -601,30 +602,86 @@ const getAllStatusFromWorkOrderLifeCycleForEmailNotifications = async(accountId,
   return workOrderStatusForEmail
 }
 
-const getCPDFullWorkOrderDetails = async(integrationsMasterId, workOrderDetails) => {
+const getCPDFullWorkOrderDetails = async (integrationsMasterId, workOrderDetails) => {
 
-  const integrationObject = await integrationsMasterServiceProvidersModel.findOne({integrationsMasterId:integrationsMasterId, serviceProvider:"CPD"})
+  const integrationObject = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterId, serviceProvider: "CPD" })
   // Find integration credentails and then decrypt and pull CPD calls.
   encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials };
   decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-  console.log('decryptConfigCredentials:===',decryptConfigCredentials)
+  console.log('decryptConfigCredentials:===', decryptConfigCredentials)
 
   const corrigoToken = await CPDAuthentication(decryptConfigCredentials?.client_id || decryptConfigCredentials?.data?.client_id, decryptConfigCredentials?.client_secret || decryptConfigCredentials?.data?.client_secret, decryptConfigCredentials?.grant_type || decryptConfigCredentials?.data?.grant_type, decryptConfigCredentials.baseUrl, integrationObject);
   // console.log('corrigoToken:===',corrigoToken)
   let getCPDWorkOrderDetails = await axios.get(`${serviceProviderCongiguration.CPD.getWorkOrder.URL}messageId=${workOrderDetails.MessageId}&ids=${workOrderDetails.CPDWorkOrderId}`,
     {
-        headers: { Authorization: `bearer ${corrigoToken}` }
+      headers: { Authorization: `bearer ${corrigoToken}` }
     })
     .then(res => {
-        // console.log('response:==',res.data)
-        return res.data.WorkOrders[0]
+      // console.log('response:==',res.data)
+      return res.data.WorkOrders[0]
     })
     .catch(async (error) => {
-        // console.log("ERROR:==", error)
-        // await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
+      // console.log("ERROR:==", error)
+      // await exceptionLogs(integrationObject, error.response.status, error.response.data.Message, error.name, error.config.data, "cpd-get-workorder", CPDWorkOrderId, CPDWorkOrderNumber, DFWorkOrderId)
     });
-    return getCPDWorkOrderDetails
+  return getCPDWorkOrderDetails
 }
+
+const statisticsOfAccount = async (accountId, integration, twelveWeeksSales) => {
+    const sourceAndDestinationDatabaseNames = await serviceProviderIntegrationsModel.findOne({
+      from: integration.from, to: integration.to
+    });
+    let weekCPDWorkOrders
+    let weekDFWorkOrders
+    const sourceAndDestinationRecordsCounts = [];
+    for (let week of twelveWeeksSales) {
+      const formttedFromDate = new Date(new Date(week.fromDate).setDate(new Date(week.fromDate).getDate() + 1));
+      const formattedToDate = new Date(new Date(week.toDate).setDate(new Date(week.toDate).getDate() + 1));
+
+      weekCPDWorkOrders = await CPDWorkordersModel.countDocuments({
+        accountId: new mongoose.Types.ObjectId(accountId),
+        createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
+      });
+
+      weekDFWorkOrders = await DFWorkOrdersModel.countDocuments({
+        accountId: new mongoose.Types.ObjectId(accountId),
+        createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
+      });
+
+      const integrationsExceptions = await integrationsExceptionsModel.countDocuments({
+        accountId,
+        createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
+      });
+
+      if (weekCPDWorkOrders <= 0 && ![undefined, null].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)) {
+        weekCPDWorkOrders = await mongoose.connection.db
+          .collection(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
+          .countDocuments({
+            accountId: new mongoose.Types.ObjectId(accountId),
+            createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
+          });
+
+      }
+      if (weekDFWorkOrders <= 0 && ![undefined, null].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)) {
+        weekDFWorkOrders = await mongoose.connection.db
+          .collection(sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName)
+          .countDocuments({
+            accountId: new mongoose.Types.ObjectId(accountId),
+            createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
+          });
+      }
+
+      sourceAndDestinationRecordsCounts.push({
+          ...week,
+          CPDWorkOrderCount: weekCPDWorkOrders,
+          dfWorkOrderCount: weekDFWorkOrders,
+          integrationsExceptions
+      });
+    }
+    return sourceAndDestinationRecordsCounts;
+};
+
+
 
 module.exports = {
   getServiceWorkOrdersAndStatus,
@@ -636,5 +693,6 @@ module.exports = {
   integationOfAccountWorkOrderReports,
   getAllStatusFromWorkOrderLifeCycleForEmailNotifications,
   getCPDFullWorkOrderDetails,
-  getDefaultDestinationStatusMappingkeys
+  getDefaultDestinationStatusMappingkeys,
+  statisticsOfAccount
 }
