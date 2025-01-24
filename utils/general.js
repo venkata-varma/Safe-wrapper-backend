@@ -256,27 +256,29 @@ const getSourceAndDestinationDynamicRecords = async (integrationsMasterId, datab
     { $match: { integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId) } },
     { $sort: { _id: -1 } },
     { $limit: 15 },
-    {
-      $lookup: {
-        from: "IntegrationsCron",
-        localField: "integrationsCronId",
-        foreignField: "_id",
-        as: "integrationsCronData",
-      },
-    },
+    // {
+    //   $lookup: {
+    //     from: "integrationscrons",
+    //     localField: "integrationsCronId",
+    //     foreignField: "_id",
+    //     as: "integrationsCronId",
+    //   },
+    // },
+    { $unwind: { path: "$integrationsCronId" } }
   ]).toArray()
 
   let sourceAndDestinationWeeklyRecords = await mongoose.connection.db.collection(databaseName).aggregate([
     { $match: { integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId), createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } } },
     { $sort: { _id: -1 } },
-    {
-      $lookup: {
-        from: "IntegrationsCron",
-        localField: "integrationsCronId",
-        foreignField: "_id",
-        as: "integrationsCronData",
-      },
-    },
+    // {
+    //   $lookup: {
+    //     from: "integrationscrons",
+    //     localField: "integrationsCronId",
+    //     foreignField: "_id",
+    //     as: "integrationsCronId",
+    //   },
+    // },
+    { $unwind: { path: "$integrationsCronId" } }
   ]).toArray()
 
   let sourceAndDestinationStatusRecords = await mongoose.connection.db.collection(databaseName).aggregate([
