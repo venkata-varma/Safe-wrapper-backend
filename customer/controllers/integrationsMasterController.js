@@ -1004,8 +1004,8 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
    * destinationWorkOrdersAndStatus used to get the destination work orders, status mapping keys of work orders.
    */
 
-  let sourceWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.from, presentWeekData)
-  let destinationWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.to, presentWeekData)
+  let sourceWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.from, presentWeekData, "source")
+  let destinationWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.to, presentWeekData, "destination")
 
   let autoDataSync = await integrationsCronsModel.aggregate([
     {

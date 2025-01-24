@@ -30,13 +30,13 @@ const getStatusOfWorkOrders = async (workOrderStatus, getStatus) => {
   return allStatuses
 }
 
-const getServiceWorkOrdersAndStatus = async (integrationsMasterId, serviceProvider, presentWeekData) => {
-  let serviceWorkOrdersAndStatus = { presentWeekData: dateAsset() };
+const getServiceWorkOrdersAndStatus = async (integrationsMasterId, serviceProvider, presentWeekData, operationType) => {
+
+  let serviceWorkOrdersAndStatus = { presentWeekData: dateAsset(), sourceWorkOrders: [], destinationWorkOrders: [] };
   let tempResultArray = new Array;
 
   if (serviceProvider === "CPD") {
     serviceWorkOrdersAndStatus.sourceWorkOrders = await CPDWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({ _id: -1 }).limit(15);
-    // console.log('serviceWorkOrdersAndStatus.sourceWorkOrders:===',serviceWorkOrdersAndStatus.sourceWorkOrders)
     if (serviceWorkOrdersAndStatus.sourceWorkOrders.length > 0) {
       let i = 0;
       for (let week of presentWeekData) {
@@ -46,7 +46,6 @@ const getServiceWorkOrdersAndStatus = async (integrationsMasterId, serviceProvid
         i++;
       }
     }
-
     const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
     let sourceStatus = await CPDWorkordersModel.aggregate([
       {
@@ -70,7 +69,7 @@ const getServiceWorkOrdersAndStatus = async (integrationsMasterId, serviceProvid
     ]);
     serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, sourceStatus);
 
-    return serviceWorkOrdersAndStatus;
+    // return serviceWorkOrdersAndStatus;
   }
   else if (serviceProvider === "DF") {
     serviceWorkOrdersAndStatus.destinationWorkOrders = await DFWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({ _id: -1 }).limit(15);
@@ -103,16 +102,7 @@ const getServiceWorkOrdersAndStatus = async (integrationsMasterId, serviceProvid
         }
       }
     ]);
-    // const statuses = getDefaultStatus.workOrderStatus;
-    // serviceWorkOrdersAndStatus.destination = statuses.map(status => {
-    //   const match = destinationStatus.find(item => item.status === status);
-    //   return {
-    //     status,
-    //     count: match ? match.count : 0
-    //   };
-    // });
     serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, destinationStatus);
-    return serviceWorkOrdersAndStatus;
   }
   else if (serviceProvider === "SNOW") {
     serviceWorkOrdersAndStatus.destinationWorkOrders = await SNOWWorkOrdersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({ _id: -1 }).limit(15);
@@ -154,7 +144,8 @@ const getServiceWorkOrdersAndStatus = async (integrationsMasterId, serviceProvid
     //   };
     // });
     serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, destinationStatus);
-    return serviceWorkOrdersAndStatus;
+
+    // return serviceWorkOrdersAndStatus;
   }
   else if (serviceProvider === "CYS") {
     serviceWorkOrdersAndStatus.destinationWorkOrders = await CYSWorkordersModel.find({ integrationsMasterId }).populate("integrationsCronId").sort({ _id: -1 }).limit(15);
@@ -196,12 +187,124 @@ const getServiceWorkOrdersAndStatus = async (integrationsMasterId, serviceProvid
     //   };
     // });
     serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, destinationStatus);
-    return serviceWorkOrdersAndStatus;
+
+    // return serviceWorkOrdersAndStatus;
+  }
+  if (operationType === "source" && serviceWorkOrdersAndStatus?.sourceWorkOrders?.length <= 0) {
+    serviceWorkOrdersAndStatus = await getDynamicServiceWorkOrdersAndStatus(integrationsMasterId, serviceProvider, presentWeekData, operationType);
+  }
+  else if (operationType === "destination" && serviceWorkOrdersAndStatus?.destinationWorkOrders?.length <= 0) {
+    serviceWorkOrdersAndStatus = await getDynamicServiceWorkOrdersAndStatus(integrationsMasterId, serviceProvider, presentWeekData, operationType);
   }
 
 
+  return serviceWorkOrdersAndStatus
 }
 
+
+const getDynamicServiceWorkOrdersAndStatus = async (integrationsMasterId, serviceProvider, presentWeekData, operationType) => {
+  let serviceWorkOrdersAndStatus = { presentWeekData: dateAsset() };
+  const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId)
+  const sourceAndDestinationDatabaseNames = await serviceProviderIntegrationsModel.findOne({ from: integrationDetails.from, to: integrationDetails.to })
+  console.log("operationType:==", operationType)
+  if (![null, undefined].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName) && ![null, undefined].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)) {
+
+
+    // console.log('GetData:===', await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName))
+    serviceWorkOrdersAndStatus.dynamicSourceRecords = operationType === "source"
+      ? await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
+      : await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName)
+
+
+    if (serviceWorkOrdersAndStatus?.dynamicSourceRecords?.sourceAndDestinationRecords?.length > 0) {
+      let i = 0;
+      if (operationType === "source") {
+        console.log('Enter---Source')
+        let sourceAndDestinationResults = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
+        serviceWorkOrdersAndStatus.sourceWorkOrders = sourceAndDestinationResults.sourceAndDestinationRecords
+        for (let week of presentWeekData) {
+          let weeklyData = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName, week.fromDate, week.toDate)
+          presentWeekSourceData = weeklyData.sourceAndDestinationWeeklyRecords
+          week.sourceWorkOrdersCount = presentWeekSourceData.length > 0 ? presentWeekSourceData.length : 0;
+          serviceWorkOrdersAndStatus.presentWeekData[i] = week;
+          i++;
+        }
+      }
+      else if (operationType === "destination") {
+        console.log('Enter---destination')
+        let sourceAndDestinationResults = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
+        serviceWorkOrdersAndStatus.destinationWorkOrders = sourceAndDestinationResults.sourceAndDestinationRecords
+        for (let week of presentWeekData) {
+          let weeklyData = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName, week.fromDate, week.toDate)
+          presentWeekSourceData = weeklyData.sourceAndDestinationWeeklyRecords
+          week.destinationWorkOrdersCount = presentWeekSourceData.length > 0 ? presentWeekSourceData.length : 0;
+        }
+      }
+    }
+    const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: serviceProvider })
+    let sourceStatus = operationType === "source" ?
+      await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
+      : await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName)
+
+    serviceWorkOrdersAndStatus.statuses = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, sourceStatus.sourceAndDestinationStatusRecords);
+  }
+  return serviceWorkOrdersAndStatus;
+}
+
+const getSourceAndDestinationDynamicRecords = async (integrationsMasterId, databaseName, fromDate, toDate) => {
+  let sourceAndDestinationRecords = await mongoose.connection.db.collection(databaseName).aggregate([
+    { $match: { integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId) } },
+    { $sort: { _id: -1 } },
+    { $limit: 15 },
+    {
+      $lookup: {
+        from: "IntegrationsCron",
+        localField: "integrationsCronId",
+        foreignField: "_id",
+        as: "integrationsCronData",
+      },
+    },
+  ]).toArray()
+
+  let sourceAndDestinationWeeklyRecords = await mongoose.connection.db.collection(databaseName).aggregate([
+    { $match: { integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId), createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } } },
+    { $sort: { _id: -1 } },
+    {
+      $lookup: {
+        from: "IntegrationsCron",
+        localField: "integrationsCronId",
+        foreignField: "_id",
+        as: "integrationsCronData",
+      },
+    },
+  ]).toArray()
+
+  let sourceAndDestinationStatusRecords = await mongoose.connection.db.collection(databaseName).aggregate([
+    {
+      $match: {
+        integrationsMasterId: new mongoose.Types.ObjectId(integrationsMasterId),
+      }
+    },
+    {
+      $group: {
+        _id: '$referenceStatus',
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        status: '$_id',
+        count: 1
+      }
+    }
+  ]).toArray()
+  return {
+    sourceAndDestinationRecords: sourceAndDestinationRecords,
+    sourceAndDestinationWeeklyRecords: sourceAndDestinationWeeklyRecords,
+    sourceAndDestinationStatusRecords: sourceAndDestinationStatusRecords,
+  };
+}
 // Function to return default field mapping keys based of "from" .
 const defaultSatusMappingKeys = async (from, serviceMethod) => {
   let statusMappingDetails = await serviceProviderServicesModel.find({ serviceProvider: from, serviceMethod: serviceMethod })
@@ -628,57 +731,57 @@ const getCPDFullWorkOrderDetails = async (integrationsMasterId, workOrderDetails
 }
 
 const statisticsOfAccount = async (accountId, integration, twelveWeeksSales) => {
-    const sourceAndDestinationDatabaseNames = await serviceProviderIntegrationsModel.findOne({
-      from: integration.from, to: integration.to
+  const sourceAndDestinationDatabaseNames = await serviceProviderIntegrationsModel.findOne({
+    from: integration.from, to: integration.to
+  });
+  let weekCPDWorkOrders
+  let weekDFWorkOrders
+  const sourceAndDestinationRecordsCounts = [];
+  for (let week of twelveWeeksSales) {
+    const formttedFromDate = new Date(new Date(week.fromDate).setDate(new Date(week.fromDate).getDate() + 1));
+    const formattedToDate = new Date(new Date(week.toDate).setDate(new Date(week.toDate).getDate() + 1));
+
+    weekCPDWorkOrders = await CPDWorkordersModel.countDocuments({
+      accountId: new mongoose.Types.ObjectId(accountId),
+      createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
     });
-    let weekCPDWorkOrders
-    let weekDFWorkOrders
-    const sourceAndDestinationRecordsCounts = [];
-    for (let week of twelveWeeksSales) {
-      const formttedFromDate = new Date(new Date(week.fromDate).setDate(new Date(week.fromDate).getDate() + 1));
-      const formattedToDate = new Date(new Date(week.toDate).setDate(new Date(week.toDate).getDate() + 1));
 
-      weekCPDWorkOrders = await CPDWorkordersModel.countDocuments({
-        accountId: new mongoose.Types.ObjectId(accountId),
-        createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
-      });
+    weekDFWorkOrders = await DFWorkOrdersModel.countDocuments({
+      accountId: new mongoose.Types.ObjectId(accountId),
+      createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
+    });
 
-      weekDFWorkOrders = await DFWorkOrdersModel.countDocuments({
-        accountId: new mongoose.Types.ObjectId(accountId),
-        createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
-      });
+    const integrationsExceptions = await integrationsExceptionsModel.countDocuments({
+      accountId,
+      createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
+    });
 
-      const integrationsExceptions = await integrationsExceptionsModel.countDocuments({
-        accountId,
-        createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
-      });
+    if (weekCPDWorkOrders <= 0 && ![undefined, null].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)) {
+      weekCPDWorkOrders = await mongoose.connection.db
+        .collection(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
+        .countDocuments({
+          accountId: new mongoose.Types.ObjectId(accountId),
+          createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
+        });
 
-      if (weekCPDWorkOrders <= 0 && ![undefined, null].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)) {
-        weekCPDWorkOrders = await mongoose.connection.db
-          .collection(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
-          .countDocuments({
-            accountId: new mongoose.Types.ObjectId(accountId),
-            createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
-          });
-
-      }
-      if (weekDFWorkOrders <= 0 && ![undefined, null].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)) {
-        weekDFWorkOrders = await mongoose.connection.db
-          .collection(sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName)
-          .countDocuments({
-            accountId: new mongoose.Types.ObjectId(accountId),
-            createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
-          });
-      }
-
-      sourceAndDestinationRecordsCounts.push({
-          ...week,
-          CPDWorkOrderCount: weekCPDWorkOrders,
-          dfWorkOrderCount: weekDFWorkOrders,
-          integrationsExceptions
-      });
     }
-    return sourceAndDestinationRecordsCounts;
+    if (weekDFWorkOrders <= 0 && ![undefined, null].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)) {
+      weekDFWorkOrders = await mongoose.connection.db
+        .collection(sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName)
+        .countDocuments({
+          accountId: new mongoose.Types.ObjectId(accountId),
+          createdAt: { $gte: formttedFromDate, $lte: formattedToDate }
+        });
+    }
+
+    sourceAndDestinationRecordsCounts.push({
+      ...week,
+      CPDWorkOrderCount: weekCPDWorkOrders,
+      dfWorkOrderCount: weekDFWorkOrders,
+      integrationsExceptions
+    });
+  }
+  return sourceAndDestinationRecordsCounts;
 };
 
 
