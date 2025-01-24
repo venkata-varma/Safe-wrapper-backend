@@ -451,7 +451,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
       }
     }
   ]);
-  if (sourceStatus.leagth <= 0) {
+  if (sourceStatus.length <= 0) {
     sourceStatus = await mongoose.connection.db.collection('cpdoperations').aggregate([
       {
         $match: {
@@ -473,6 +473,7 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
       }
     ]);
   }
+  console.log('')
   let workOrderStates = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, sourceStatus);
 
   const integrationsExceptionsApiservices = await integrationsExceptionsModel.aggregate([
