@@ -471,9 +471,8 @@ exports.getAccountStatistics = asyncWrapper(async (req, res) => {
           count: 1
         }
       }
-    ]);
+    ]).toArray();
   }
-  console.log('')
   let workOrderStates = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, sourceStatus);
 
   const integrationsExceptionsApiservices = await integrationsExceptionsModel.aggregate([
