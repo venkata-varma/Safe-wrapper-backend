@@ -2,13 +2,14 @@ const { response } = require("express");
 const axios = require('axios');
 const { GlobalServiceModelForDynamicCollection } = require("../createDynamicCollection");
 const { addRecordIntoDataBase } = require("./dataBaseOperations");
-
+const { exceptionLogs } = require("../middleware/exceptionOperation");
+let sourceWOId = "", sourceWONumber = "", runnigWorkOrderId = "", destinationWONumber = ""
 class GlobalHTTPMethods {
     // Generic GET request handler with headers
-    static async handleGet(serviceObject, authToken, dataPointUrl, integrationDetails, settingsData) {
+    static async handleGet(integrationsServiceObject, authToken, dataPointUrl, integrationDetails, settingsData) {
         try {
-            let dataMappingPathKey = serviceObject.dataMappingPath[0]
-            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
+            let dataMappingPathKey = integrationsServiceObject.dataMappingPath[0]
+            let primaryKeyColumn = integrationsServiceObject.primaryKeyColumn[0]
             // const { dataPointUrl, primaryKeyColumn } = serviceObject
             if (!dataPointUrl) {
                 throw new Error("URL and data are required.");
@@ -18,20 +19,23 @@ class GlobalHTTPMethods {
                 // params,
                 headers: authToken, // Parse headers if provided
             });
-            // const responseData = response.data[dataMappingPathKey]
-            // const recordToInsert = Array.isArray(responseData) ? responseData[0] : responseData;
-            // await addRecordIntoDataBase(integrationDetails, serviceObject,dataMappingPathKey,primaryKeyColumn, settingsData?.sourceDataBaseName, recordToInsert, settingsData?.destinationDataBaseName, "initiated", "destination", sourceReferenceId);
-            return response.data
+           return response.data
         } catch (error) {
 
             // console.log('GetError:===',error)
+            // console.log('error.response.status:===',error.response.status)
+            // console.log('error.response.data:===',error.response.data?.Message)
+            // console.log('error.name:===',error.name)
+            // console.log('error.config.data:===',error.config.data)
+            // console.log('integrationsServiceObject.category:===',integrationsServiceObject)
+            await exceptionLogs(integrationDetails, error.response.status, error.response.data?.Message || "Request failed", error.name, error.config.data === undefined ? error.config.url : error.config.data  , integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = integrationsServiceObject?.destinationReferenceId || "", destinationWONumber = "")
             return error
             res.status(error.response?.status || 500).json({ error: error.message });
         }
     }
 
     // Generic POST request handler with headers
-    static async handlePost(integrationsServiceObject, authRequest, requestObject) {
+    static async handlePost(integrationsServiceObject, authRequest, requestObject, integrationDetails) {
         try {
 
             const { dataPointUrl, serviceMethod } = integrationsServiceObject;
@@ -46,7 +50,15 @@ class GlobalHTTPMethods {
             // console.log("response:===",response.data)
             return response.data
         } catch (error) {
-            console.log("CreateError:===", error.response?.data)
+            // console.log("CreateError:===", error)
+            console.log("CreateError:===", error)
+            // console.log('error.response.status:===',error.response.status)
+            // console.log('error.response.data:===',error.response.data?.Message)
+            // console.log('error.name:===',error.name)
+            // console.log('error.config.data:===',error.config.data)
+            // console.log('integrationsServiceObject.category:===',integrationsServiceObject)
+            
+            await exceptionLogs(integrationDetails, error.response.status, error.response.data?.Message || JSON.stringify(error.response.data), error.name, error.config.data, integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = "", destinationWONumber = "")
             // return error
         }
     }

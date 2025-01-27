@@ -92,6 +92,7 @@ const processServiceCallsOnSourceRecords = async (integrationsMasterId, sourcePr
             serviceObject.dataToSend = { ...JSON.parse(data.responseObject), ...finalResultData };
             // console.log('serviceObject.dataToSend:==', serviceObject.dataToSend)
             serviceObject.referenceStatus = data.referenceStatus
+            serviceObject.sourceReferenceId = data?.sourceReferenceId
             requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
             console.log('createRequestObject:===', requestObject)
             let currentResponse = await processIntegrationService(
@@ -103,7 +104,8 @@ const processServiceCallsOnSourceRecords = async (integrationsMasterId, sourcePr
                 destinationSettingsData?.metrics?.destinationDataBaseName,
                 requestObject
             );
-            if ((dataMappingPathKey && currentResponse[`${dataMappingPathKey}`]) || currentResponse) {
+            // console.log('currentResponse:==', typeof currentResponse)
+            if ((dataMappingPathKey && ![null, undefined].includes(currentResponse) && currentResponse[`${dataMappingPathKey}`]) || currentResponse) {
                 responseData = currentResponse[`${dataMappingPathKey}`] || currentResponse
                 responseData.sourceReferenceId = data.referenceId;
                 prePareResult.push(responseData);
@@ -134,6 +136,8 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
                 serviceObject.dependentData = { ...eachResult }
                 let dataMappingPathKey = serviceObject.dataMappingPath[0]
                 let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
+                serviceObject.sourceReferenceId = eachResult?.sourceReferenceId
+                serviceObject.destinationReferenceId = eachResult[`${primaryKeyColumn}`]
                 let serviceCallsResponse = await processServiceCallsOnSourceRecords(integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, serviceObject.dependentData)
                 return serviceCallsResponse
 
@@ -142,6 +146,8 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
         else {
             for (eachResult of finalResultData) {
                 serviceObject.dependentData = { ...eachResult }
+                serviceObject.sourceReferenceId = eachResult?.sourceReferenceId
+                serviceObject.destinationReferenceId = eachResult[`${primaryKeyColumn}`]
                 const result = await processIntegrationService(
                     serviceObject,
                     integrationsMasterId,
@@ -159,15 +165,17 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
     }
 
     else if (finalResultData !== null && finalResultData.length === 1) {
+        let dataMappingPathKey = serviceObject.dataMappingPath[0]
+        let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
+
+        serviceObject.sourceReferenceId = serviceObject.dependentData?.sourceReferenceId
+        serviceObject.destinationReferenceId = serviceObject.dependentData[`${primaryKeyColumn}`]
 
         let prePareResult = []
         if (serviceObject.serviceMethod === 'post') {
-            let dataMappingPathKey = serviceObject.dataMappingPath[0]
-            let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
             let serviceCallsResponse = await processServiceCallsOnSourceRecords(integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, serviceObject.dependentData)
             return serviceCallsResponse
-
         }
         else {
             const result = await processIntegrationService(
@@ -187,7 +195,11 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
     }
     else if (finalResultData.length <= 0 && ![undefined, null].includes(finalResultData[0])) {
         let prePareResult = []
+        let dataMappingPathKey = serviceObject.dataMappingPath[0]
+        let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
+        serviceObject.sourceReferenceId = serviceObject.dependentData?.sourceReferenceId
+        serviceObject.destinationReferenceId = serviceObject.dependentData[`${primaryKeyColumn}`]
         const result = await processIntegrationService(
             serviceObject,
             integrationsMasterId,

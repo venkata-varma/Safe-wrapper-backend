@@ -83,6 +83,8 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
   let newWOCount = 0
   if (operationType === "source") {
     if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
+      var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ referenceId: requestObject.referenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId },
+        { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, updatedAt:new Date() } }, { new: true, runValidators: true })
       console.log('sourceUpdateExistingRecord1:===',)
       return
       'Record already exists and Rreference status is unchanged. No changes made!'

@@ -13,7 +13,7 @@ const { validateServiceProviders, validateSPAuthentication } = require("./servic
 const { GlobalHTTPMethods } = require("./sourceAndDestinationSyncModel");
 const moment = require('moment');
 var sourceSettingsData
- 
+
 let startTestResponseObject = {
     sourceAuthenticationStatus: false,
     destinationAuthenticationStatus: false,
@@ -32,7 +32,7 @@ let startTestResponseObject = {
 const sourceIntegrationOperationsServices = async (integrationObject, cronJobDetails) => {
     startTestResponseObject = {
         sourceAuthenticationStatus: false,
-        destinationAuthenticationStatus: false, 
+        destinationAuthenticationStatus: false,
         sourcePullCount: 0,
         destinationPushCount: 0,
     }
@@ -77,14 +77,11 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
 }
 
 const preProcessServiceCall = async (serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails) => {
-    
     let dataMappingPathKey = serviceObject?.dataMappingPath[0];
     let primaryKeyColumn = serviceObject?.primaryKeyColumn[0];
-
     if (finalResultData === null) {
         const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId, integrationDetails);
         console.log('requestObject:==', requestObject)
-       
         const currentResponse = await processIntegrationService(
             serviceObject,
             integrationsMasterId,
@@ -94,13 +91,20 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
             sourceSettingsData,
             requestObject
         );
-        const responseData = currentResponse[`${dataMappingPathKey}`]
-        return responseData
+        if (dataMappingPathKey && ![null, undefined].includes(currentResponse)) {
+            const responseData = currentResponse[`${dataMappingPathKey}`]
+            return responseData
+        }
+
     }
-    else if (await isMultiRecord(finalResultData)) {
+    else if (
+        // await isMultiRecord(finalResultData)
+        await isMultiRecord(Array.isArray(finalResultData) ? finalResultData : [finalResultData])
+    ) {
         let prePareResult = []
         for (eachResult of finalResultData) {
             serviceObject.dependentData = eachResult
+            serviceObject.sourceReferenceId = eachResult[`${primaryKeyColumn}`]
             const result = await processIntegrationService(
                 serviceObject,
                 integrationsMasterId,
@@ -109,15 +113,20 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
                 integrationDetails,
                 sourceSettingsData
             );
-            const responseData = result[`${dataMappingPathKey}`]
-            const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
-            prePareResult.push(Object.assign(eachResult, responseToSend))
+            // console.log('currentResponse:==', typeof currentResponse)
+            if (dataMappingPathKey && ![null, undefined].includes(result)) {
+                const responseData = result[`${dataMappingPathKey}`]
+                const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+                prePareResult.push(Object.assign(eachResult, responseToSend))
+            }
+
         }
         return prePareResult
     }
 
-    else if (finalResultData !== null && finalResultData.length === 1) {
+    else if (![null, undefined].includes(finalResultData) && finalResultData.length === 1) {
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
+        serviceObject.sourceReferenceId = eachResult[`${primaryKeyColumn}`]
         let prePareResult = []
         const result = await processIntegrationService(
             serviceObject,
@@ -127,13 +136,17 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
             integrationDetails,
             sourceSettingsData
         );
-        const responseData = result[`${dataMappingPathKey}`]
-        const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
-        return prePareResult.push(Object.assign(finalResultData[0], responseToSend))
+        if (dataMappingPathKey && ![null, undefined].includes(result)) {
+            const responseData = result[`${dataMappingPathKey}`]
+            const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+            return prePareResult.push(Object.assign(finalResultData[0], responseToSend))
+        }
+
     }
-    else if (finalResultData.length <= 0 &&  ![undefined, null].includes(finalResultData[0])) {
+    else if (finalResultData.length <= 0 && ![undefined, null].includes(finalResultData[0])) {
         let prePareResult = []
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
+        serviceObject.sourceReferenceId = eachResult[`${primaryKeyColumn}`]
         const result = await processIntegrationService(
             serviceObject,
             integrationsMasterId,
@@ -142,11 +155,14 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
             integrationDetails,
             sourceSettingsData
         );
-        const responseData = result[`${dataMappingPathKey}`]
-        const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
-        return prePareResult.push(Object.assign(finalResultData[0], responseToSend))
+        if (dataMappingPathKey && ![null, undefined].includes(result)) {
+            const responseData = result[`${dataMappingPathKey}`]
+            const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+            return prePareResult.push(Object.assign(finalResultData[0], responseToSend))
+        }
+
     }
-    else{
+    else {
         return finalResultData
     }
 }
@@ -186,14 +202,14 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
 
 // Helper to modify the URL with dependent data (returns an array of URLs)
 const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataObject) => {
-    
+
     let dependentData = Array.isArray(dependentDataObject)
         ? [...dependentDataObject]
         : [dependentDataObject];
 
 
     let urls = [];
-    
+
     // Generate a URL for each object in dependentData
     dependentData.forEach(dataObject => {
         let modifiedUrl = url;
@@ -340,9 +356,8 @@ function updatePayloadWithMappings(parsedRequestObject, dataMappingPaths, dateRa
             /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
             "Created": {
                 "From": "2024-12-16T00:00:00",
-                 "To": "2024-12-20T23:59:59"
-            }   
-    
+                "To": "2024-12-20T23:59:59"
+            }
         },
         "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
     }
