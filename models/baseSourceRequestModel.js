@@ -1,6 +1,6 @@
 const { mongoose, schema } = require('mongoose')
 
-const baseSourceRequestModelSchema = mongoose.Schema(
+const baseSourceRequestModelSchema = new mongoose.Schema(
     {
         accountId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -21,12 +21,12 @@ const baseSourceRequestModelSchema = mongoose.Schema(
             default: null
         },
         referenceId: {
-            type: String, 
+            type: String,
             required: true,
         },
         referenceStatus: {
             type: String,
-            required:true,
+            required: true,
             default: null
         },
         responseObject: {
@@ -34,13 +34,13 @@ const baseSourceRequestModelSchema = mongoose.Schema(
             default: null
         },
         sourceReferenceId: {
-            type: String, 
-            default:null
+            type: String,
+            default: null
             // required: true,
         },
         destinationReferenceId: {
             type: String,
-            default:null
+            default: null
             // required: true,
         },
         // customFields: {
@@ -59,7 +59,7 @@ const baseSourceRequestModelSchema = mongoose.Schema(
         },
     }, { timestamps: true });
 
-
+baseSourceRequestModelSchema.index({ integrationsMasterId, referenceId, referenceStatus }, { unique: true })
 const baseSourceRequestModel = mongoose.model('basesourcerequest', baseSourceRequestModelSchema)
 
 
