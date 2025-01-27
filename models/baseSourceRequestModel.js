@@ -59,7 +59,7 @@ const baseSourceRequestModelSchema = new mongoose.Schema(
         },
     }, { timestamps: true });
 
-baseSourceRequestModelSchema.index({ integrationsMasterId, referenceId, referenceStatus }, { unique: true })
+baseSourceRequestModelSchema.index({ integrationsMasterId:1, referenceId:1, referenceStatus:1 }, { unique: true })
 const baseSourceRequestModel = mongoose.model('basesourcerequest', baseSourceRequestModelSchema)
 
 
