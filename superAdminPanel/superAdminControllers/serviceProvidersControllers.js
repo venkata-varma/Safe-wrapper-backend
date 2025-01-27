@@ -293,7 +293,7 @@ exports.serviceProviderExist = asyncWrapper(async (req, res, next) => {
 
 exports.updateSPServiceCategories = asyncWrapper(async (req, res) => {
     const { serviceProviderId } = req.params
-    await serviceProvisersListModel.findByIdAndUpdate(serviceProviderId, { categories: req.body.categories }, { new: true, upsert: true })
+    await serviceProvisersListModel.findByIdAndUpdate(serviceProviderId, { $addToSet: { categories: { $each: req.body.categories } } }, { new: true, upsert: true })
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_UPDATE_SERVICE_PROVIDER_CATEGORIES,
