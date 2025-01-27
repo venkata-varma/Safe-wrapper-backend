@@ -69,6 +69,7 @@ const mongoose = require("mongoose");
 const mongooseConnect = require("./config/dbConnection");
 const { baseSourceRequestModelSchema } = require('./models/baseSourceRequestModel');
 const workOrderLifeCycleModel = require("./models/workOrderLifeCycleModel");
+const integrationsCronsModel = require("./models/integrationsCronsModel");
 
 /**
  * 
@@ -79,6 +80,7 @@ const workOrderLifeCycleModel = require("./models/workOrderLifeCycleModel");
  */
 async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynamicModel, operationType, updatingDataBaseName, integrationDetails) {
   let isExisting = await mongoose.connection.db.collection(dynamicModel).findOne({ referenceId: requestObject.referenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId });
+  let newWOCount = 0
   if (operationType === "source") {
     if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
       console.log('sourceUpdateExistingRecord1:===',)
@@ -87,6 +89,10 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
     }
     else if (!isExisting) {
       var createRecord = await mongoose.connection.db.collection(dynamicModel).insertOne(requestObject)
+      // if(requestObject.referenceStatus === "New"){
+      //   newWOCount++
+      // }
+      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, { $inc:{pulledCount: 1} }, { new: true });
       await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.from, integrationDetails.accountId, integrationDetails.integrationsMasterId)
       return
       `Record created into dynamic model successfully`
@@ -113,6 +119,8 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
       var createRecord = await mongoose.connection.db.collection(dynamicModel).insertOne(requestObject)
       await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.to, integrationDetails.accountId, integrationDetails.integrationsMasterId)
       var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId }, { $set: { status: "completed", updatedAt:new Date() } }, { new: true, runValidators: true })
+      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, { $inc:{pushedCount: 1} }, { new: true });
+
       return
       `Record created into dynamic model successfully`
     } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {

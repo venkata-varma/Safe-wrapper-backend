@@ -34,6 +34,7 @@ const { default: axios } = require("axios");
 const DFConfigurations = require('../../config/integrationsConfiguration');
 const { getAllDFBuldingsData, searchDFBuildingsByStateAndCountry, searchDFBuildingByNameAndStreet } = require("../../middleware/findDFBuildingOperation");
 const accountSettingsModel = require('../../models/accountSettingsModel')
+const integrationsCronJobsModel = require('../../models/integrationsCronsModel')
 const { validateServiceProviders } = require("../../utils/authUtils")
 
 const moment = require('moment');
@@ -1003,8 +1004,8 @@ exports.getSingleIntegrationMasterDetails = asyncWrapper(async (req, res) => {
    * destinationWorkOrdersAndStatus used to get the destination work orders, status mapping keys of work orders.
    */
 
-  let sourceWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.from, presentWeekData)
-  let destinationWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.to, presentWeekData)
+  let sourceWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.from, presentWeekData, "source")
+  let destinationWorkOrdersAndStatus = await getServiceWorkOrdersAndStatus(integrationsMasterId, integrationDetails.to, presentWeekData, "destination")
 
   let autoDataSync = await integrationsCronsModel.aggregate([
     {
@@ -1324,8 +1325,15 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
 
   if (integrationsMasterDetails) {
-
-    await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId, from: integrationsMasterDetails.from }))
+    const cronJobDetails = await integrationsCronJobsModel.create(
+      {
+        cronJobType: 'manual',
+        accountId: integrationsMasterDetails.accountId,
+        serviceProvider: integrationsMasterDetails.serviceProvider,
+        integrationsMasterId: integrationsMasterDetails.integrationsMasterId
+      }
+    );
+    await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId, from: integrationsMasterDetails.from }),cronJobDetails)
     await destinationIntegrationOperationsServices(await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId, to: integrationsMasterDetails.to }))
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
