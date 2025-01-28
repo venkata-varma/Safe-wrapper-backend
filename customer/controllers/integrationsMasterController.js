@@ -1571,7 +1571,7 @@ exports.updateStatusFieldMappings = asyncWrapper(async (req, res) => {
  */
 exports.updateIntegrationMasterStatus = asyncWrapper(async (req, res) => {
   const integrationMasterId = req.params.integrationsMasterId;
-  const updateStatus = await integrationsMasterModel.findByIdAndUpdate(integrationMasterId, { $set: { status: req.body.status, updatedBy: req.user._id } }, { new: true });
+  const updateStatus = await integrationsMasterModel.findByIdAndUpdate(integrationMasterId, { $set: { status: req.body.status, updatedBy: req.user._id } }, { new: true, runValidators: true  });
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
       status: customConstants.messages.MESSAGE_SUCCESS,

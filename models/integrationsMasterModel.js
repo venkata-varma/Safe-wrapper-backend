@@ -42,7 +42,7 @@ const integrationsMasterSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["new","active", "deleted", "blocked", "offline"],
+      enum: ['new','active', 'deleted', 'blocked', 'offline'],
       default: "new",
     },
     stepCount: {

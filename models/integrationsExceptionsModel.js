@@ -60,7 +60,7 @@ const integrationsExceptionsSchema = new mongoose.Schema(
     },
     exceptionRequestObject: {
       type: mongoose.Schema.Types.Mixed,
-      default: {},
+      default: "",
     },
     dateCreated: {
       type: Date,

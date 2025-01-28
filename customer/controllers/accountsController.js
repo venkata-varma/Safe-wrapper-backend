@@ -422,7 +422,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
  * @params "accountId"
  */
 exports.getAccountIntegrationsReports = asyncWrapper(async (req, res) => {
-    const integrationsQuery = req.query.integration;
+    const integrationsQuery = req.query.integrationsMasterId;
     const accountId = req.params.accountId;
     var sourceWorkOrderLifeCycleRecords, destinationWorkOrderLifeCycleRecords;
     var sourceWorkOrderLifeCycleCounts, destinationWorkOrderLifeCycleCounts
