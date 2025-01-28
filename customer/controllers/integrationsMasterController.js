@@ -435,9 +435,10 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   if (credentials.requestMethod === "body") {
     if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
       serviceProviderValidation.statusCode !== 200 || (!serviceProviderValidation.responseData?.access_token && serviceProvider !== "CYS")) {
-      return res.status(serviceProviderValidation.statusCode).json({
+      return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
         status: serviceProviderValidation.status,
-        message: serviceProviderValidation.message
+        message: serviceProviderValidation.message,
+        data:serviceProviderValidation?.data
       })
     }
     else {
@@ -451,9 +452,10 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
   else if (credentials.requestMethod === "headers") {
     if (serviceProviderValidation.status === "fail" || serviceProviderValidation === undefined ||
       serviceProviderValidation.statusCode !== 200) {
-      return res.status(serviceProviderValidation.statusCode).json({
+      return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
         status: serviceProviderValidation.status,
-        message: serviceProviderValidation.message
+        message: serviceProviderValidation.message,
+        data:serviceProviderValidation?.data
       })
     }
     else {
