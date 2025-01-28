@@ -1443,7 +1443,7 @@ exports.getAllIntegrationExceptions = asyncWrapper(async (req, res) => {
 
   const { fromDate, toDate } = req.query
 
-  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt: { $gte: new Date(fromDate), $lte: setDate(new Date(toDate).getDate() +1) } }).populate('integrationsMasterId').sort({ _id: -1 })
+  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate).setDate(new Date(toDate).getDate() +1) } }).populate('integrationsMasterId').sort({ _id: -1 })
 
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
