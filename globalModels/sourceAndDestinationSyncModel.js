@@ -29,8 +29,7 @@ class GlobalHTTPMethods {
             // console.log('error.config.data:===',error.config.data)
             // console.log('integrationsServiceObject.category:===',integrationsServiceObject)
             await exceptionLogs(integrationDetails, error.response.status, error.response.data?.Message || "Request failed", error.name, error.config.data === undefined ? error.config.url : error.config.data  , integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = integrationsServiceObject?.destinationReferenceId || "", destinationWONumber = "")
-            return error
-            res.status(error.response?.status || 500).json({ error: error.message });
+            // return error
         }
     }
 
@@ -90,13 +89,13 @@ class GlobalHTTPMethods {
             if (!dataPointUrl || !requestObject) {
                 throw new Error("URL and data are required.");
             }
-
             const response = await axios.patch(dataPointUrl, requestObject, {
                 headers: authToken, // Parse headers if provided
             });
             return response.data
         } catch (error) {
             // console.log('PatchError:===',error)
+            await exceptionLogs(integrationDetails, error.response.status, error.response.data?.Message || JSON.stringify(error.response.data), error.name, error.config.data, integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = "", destinationWONumber = "")
             return error
         }
     }
