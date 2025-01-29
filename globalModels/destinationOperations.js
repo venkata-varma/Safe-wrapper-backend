@@ -72,11 +72,11 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
             sourceRecords = await getSourceRecords(integrationDetails, destinationSettingsData?.metrics?.sourceDataBaseName, "update-request")
         }
         finalResultData = await preProcessServiceCall(serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails, sourceRecords);
-
     }
     // finalResultData = Array.isArray(finalResultData) ? finalResultData : [finalResultData]
     if (![null, undefined].includes(finalResultData)) {
         for (let eachResult of finalResultData) {
+            // console.log('serviceObject:==', serviceObject)
             await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, destinationSettingsData?.metrics?.destinationDataBaseName, eachResult, destinationSettingsData?.metrics?.sourceDataBaseName, "destination", eachResult.sourceReferenceId)
             startTestResponseObject.destinationPushCount++
         }
@@ -87,12 +87,18 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
 const processServiceCallsOnSourceRecords = async (integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, finalResultData) => {
     let prePareResult = []
     if (sourceRecords.length > 0) {
+        // console.log('Enter-2222222222222222222')
         for (let data of sourceRecords) {
             let responseData = {}
             serviceObject.dataToSend = { ...JSON.parse(data.responseObject), ...finalResultData };
             // console.log('serviceObject.dataToSend:==', serviceObject.dataToSend)
             serviceObject.referenceStatus = data.referenceStatus
             serviceObject.sourceReferenceId = data?.sourceReferenceId
+            serviceObject.destinationReferenceId = data?.destinationReferenceId
+            if (serviceObject.serviceMethod === "patch") {
+                let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.metrics?.destinationDataBaseName, data?.sourceReferenceId)
+                serviceObject.dependentData = { ...serviceObject.dataToSend, ...JSON.parse(destinationRecords.responseObject) }
+            }
             requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
             console.log('createRequestObject:===', requestObject)
             let currentResponse = await processIntegrationService(
@@ -108,6 +114,7 @@ const processServiceCallsOnSourceRecords = async (integrationsMasterId, sourcePr
             if ((dataMappingPathKey && ![null, undefined].includes(currentResponse) && currentResponse[`${dataMappingPathKey}`]) || currentResponse) {
                 responseData = currentResponse[`${dataMappingPathKey}`] || currentResponse
                 responseData.sourceReferenceId = data.referenceId;
+                responseData.destinationReferenceId = data?.destinationReferenceId
                 prePareResult.push(responseData);
             }
         }
@@ -122,6 +129,7 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
     let primaryKeyColumn = serviceObject?.primaryKeyColumn[0];
     // console.log('finalResultData:===',finalResultData)
     if (finalResultData === null) {
+        // console.log('Enter-11111111111')
         let dataMappingPathKey = serviceObject.dataMappingPath[0]
         let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
@@ -130,8 +138,7 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
     }
     else if (await isMultiRecord(Array.isArray(finalResultData) ? finalResultData : [finalResultData])) {
         let prePareResult = []
-        if (serviceObject.serviceMethod === 'post') {
-
+        if (["post", "patch"].includes(serviceObject.serviceMethod)) {
             for (eachResult of finalResultData) {
                 serviceObject.dependentData = { ...eachResult }
                 let dataMappingPathKey = serviceObject.dataMappingPath[0]
@@ -140,14 +147,12 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
                 serviceObject.destinationReferenceId = eachResult[`${primaryKeyColumn}`]
                 let serviceCallsResponse = await processServiceCallsOnSourceRecords(integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, serviceObject.dependentData)
                 return serviceCallsResponse
-
             }
         }
         else {
             for (eachResult of finalResultData) {
                 serviceObject.dependentData = { ...eachResult }
-                serviceObject.sourceReferenceId = eachResult?.sourceReferenceId
-                serviceObject.destinationReferenceId = eachResult[`${primaryKeyColumn}`]
+                serviceObject.destinationReferenceId = eachResult?.destinationReferenceId
                 const result = await processIntegrationService(
                     serviceObject,
                     integrationsMasterId,
@@ -158,6 +163,8 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
                 );
                 const responseData = result[`${dataMappingPathKey}`]
                 const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+                responseToSend.sourceReferenceId = eachResult?.sourceReferenceId
+                responseToSend.destinationReferenceId = responseToSend[`${primaryKeyColumn}`]
                 prePareResult.push(Object.assign(eachResult, responseToSend))
             }
         }
@@ -168,12 +175,8 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
         let dataMappingPathKey = serviceObject.dataMappingPath[0]
         let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
-
-        serviceObject.sourceReferenceId = serviceObject.dependentData?.sourceReferenceId
-        serviceObject.destinationReferenceId = serviceObject.dependentData[`${primaryKeyColumn}`]
-
         let prePareResult = []
-        if (serviceObject.serviceMethod === 'post') {
+        if (["post", "patch"].includes(serviceObject.serviceMethod)) {
             let serviceCallsResponse = await processServiceCallsOnSourceRecords(integrationsMasterId, sourceProvider, serviceObject, integrationDetails, authToken, sourceRecords, dataMappingPathKey, primaryKeyColumn, serviceObject.dependentData)
             return serviceCallsResponse
         }
@@ -188,6 +191,8 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
             );
             const responseData = result[`${dataMappingPathKey}`]
             const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+            responseToSend.sourceReferenceId = serviceObject.dependentData?.sourceReferenceId
+            responseToSend.destinationReferenceId = responseToSend[`${primaryKeyColumn}`]
             prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend));
             return prePareResult;
         }
@@ -210,6 +215,7 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
         );
         const responseData = result[`${dataMappingPathKey}`]
         const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+        responseData.destinationReferenceId = serviceObject.dependentData[`${primaryKeyColumn}`]
         prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend))
         return prePareResult
     }
@@ -247,6 +253,8 @@ async function getSourceRecords(integrationDetails, databaseName, status) {
 }
 
 const getDestinationRecords = async (integrationDetails, database, sourceReferenceId) => {
+    // console.log('Enter-2222222222222')
+
     const destinationRecords = await mongoose.connection.db
         .collection(`${database}`)
         .find({
@@ -254,9 +262,14 @@ const getDestinationRecords = async (integrationDetails, database, sourceReferen
             accountId: integrationDetails.accountId,
             sourceReferenceId: sourceReferenceId
         }).toArray()
+    // console.log('destinationRecords:===', destinationRecords)
 
-
-    return destinationRecords[0]
+    const requestDataToBeSent = [];
+    for await (const doc of destinationRecords) {
+        requestDataToBeSent.push(doc);
+    }
+    // console.log('requestDataToBeSent:===', requestDataToBeSent)
+    return requestDataToBeSent[0]
 }
 
 // Function to process a single service
@@ -353,7 +366,7 @@ async function getServiceproviderAuthResponse(integrationMasterId, sourceService
 
     const authResponse = await validateSPAuthentication(serviceProviderDetails.credentials || serviceProviderDetails.testCredentials).then(async (validationResult) => {
         // console.log('validationResult:==',validationResult)
-        if (validationResult.responseData.hasOwnProperty('refresh_token')) {
+        if (validationResult.responseData?.hasOwnProperty('refresh_token')) {
 
             refresh_token_expires_on = new Date(new Date().getTime() + validationResult.responseData.refresh_token_expires_in * 1000);
             let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: serviceProviderDetails.credentials || serviceProviderDetails?.testCredentials };

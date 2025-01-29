@@ -26,6 +26,6 @@ exports.validateSPAuthentication = async (bodyData) => {
         };
     } catch (error) {
         console.log('ERORRR:===',error)
-        return {statusCode:error.response.status, status: customConstants.messages.MESSAGE_FAIL, message:customConstants.messages.MESSAGE_VALIDATE_SERVICEPROVIDER_FAILED };
+        return {statusCode:error.response?.status, status: customConstants.messages.MESSAGE_FAIL, message:customConstants.messages.MESSAGE_VALIDATE_SERVICEPROVIDER_FAILED };
     }
 };  

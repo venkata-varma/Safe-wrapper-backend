@@ -57,7 +57,7 @@ class GlobalHTTPMethods {
             // console.log('error.config.data:===',error.config.data)
             // console.log('integrationsServiceObject.category:===',integrationsServiceObject)
             
-            await exceptionLogs(integrationDetails, error.response.status, error.response.data?.Message || JSON.stringify(error.response.data), error.name, error.config.data, integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = "", destinationWONumber = "")
+            await exceptionLogs(integrationDetails, error.response?.status, error.response?.data?.Message || JSON.stringify(error.response.data), error.name, error.config.data, integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = "", destinationWONumber = "")
             // return error
         }
     }

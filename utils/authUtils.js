@@ -22,24 +22,6 @@ exports.basicAuth = async (username, password, url) => {
     }
 }
 
-/*
-exports.checkOAuth = async ({baseUrl,clientId, secreteKey, grantType = 'client_credentials'}) => {
-    try {
-        const authResponse = await axios.post(
-            `${baseUrl}`,
-            // `client_id=${clientId}&client_secret=${secreteKey}&grant_type=${grantType}`
-
-        );
-        
-        return {status: "success", ...authResponse.data};
-    } catch (error) {
-        if(error.response.status == 400) {
-            return {status: "fail", message: "Invalid Credentials"}
-        }
-    }
-}
-    */
-
 exports.validateServiceProviders = async (bodyData) => {
     let createConfig = {
         method: bodyData.serviceMethod,
