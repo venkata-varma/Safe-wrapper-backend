@@ -232,10 +232,10 @@ const getDynamicServiceWorkOrdersAndStatus = async (integrationsMasterId, servic
       }
       else if (operationType === "destination") {
         console.log('Enter---destination')
-        let sourceAndDestinationResults = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
+        let sourceAndDestinationResults = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName)
         serviceWorkOrdersAndStatus.destinationWorkOrders = sourceAndDestinationResults.sourceAndDestinationRecords
         for (let week of presentWeekData) {
-          let weeklyData = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName, week.fromDate, week.toDate)
+          let weeklyData = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName, week.fromDate, week.toDate)
           presentWeekSourceData = weeklyData.sourceAndDestinationWeeklyRecords
           week.destinationWorkOrdersCount = presentWeekSourceData.length > 0 ? presentWeekSourceData.length : 0;
         }

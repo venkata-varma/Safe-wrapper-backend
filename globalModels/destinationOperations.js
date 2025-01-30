@@ -161,11 +161,13 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
                     integrationDetails,
                     destinationSettingsData
                 );
-                const responseData = result[`${dataMappingPathKey}`]
-                const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
-                responseToSend.sourceReferenceId = eachResult?.sourceReferenceId
-                responseToSend.destinationReferenceId = responseToSend[`${primaryKeyColumn}`]
-                prePareResult.push(Object.assign(eachResult, responseToSend))
+                if ((dataMappingPathKey && ![null, undefined].includes(result) && result[`${dataMappingPathKey}`]) || result) {
+                    const responseData = result[`${dataMappingPathKey}`]
+                    const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+                    responseToSend.sourceReferenceId = eachResult?.sourceReferenceId
+                    responseToSend.destinationReferenceId = responseToSend[`${primaryKeyColumn}`]
+                    prePareResult.push(Object.assign(eachResult, responseToSend))
+                }
             }
         }
         return prePareResult
@@ -189,12 +191,15 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
                 integrationDetails,
                 destinationSettingsData
             );
-            const responseData = result[`${dataMappingPathKey}`]
-            const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
-            responseToSend.sourceReferenceId = serviceObject.dependentData?.sourceReferenceId
-            responseToSend.destinationReferenceId = responseToSend[`${primaryKeyColumn}`]
-            prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend));
-            return prePareResult;
+            if ((dataMappingPathKey && ![null, undefined].includes(result) && result[`${dataMappingPathKey}`]) || result) {
+                const responseData = result[`${dataMappingPathKey}`]
+                const responseToSend = Array.isArray(responseData) ? responseData[0] : responseData;
+                responseToSend.sourceReferenceId = serviceObject.dependentData?.sourceReferenceId
+                responseToSend.destinationReferenceId = responseToSend[`${primaryKeyColumn}`]
+                prePareResult.push(Object.assign(serviceObject.dependentData, responseToSend));
+                return prePareResult;
+            }
+
         }
 
     }

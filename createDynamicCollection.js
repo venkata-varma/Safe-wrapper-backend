@@ -84,7 +84,7 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
   if (operationType === "source") {
     if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
       var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ referenceId: requestObject.referenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId },
-        { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, updatedAt:new Date() } }, { new: true, runValidators: true })
+        { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, updatedAt: new Date() } }, { new: true, runValidators: true })
       console.log('sourceUpdateExistingRecord1:===',)
       return
       'Record already exists and Rreference status is unchanged. No changes made!'
@@ -94,15 +94,15 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
       // if(requestObject.referenceStatus === "New"){
       //   newWOCount++
       // }
-      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, { $inc:{pulledCount: 1}, serviceProvider:integrationDetails.from }, { new: true });
-      await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.from, integrationDetails.accountId, integrationDetails.integrationsMasterId)
+      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, { $inc: { pulledCount: 1 }, serviceProvider: integrationDetails.from }, { new: true });
+      await creteWOLifeCycle(requestObject.referenceId, requestObject.referenceStatus, integrationDetails.from, integrationDetails.accountId, integrationDetails.integrationsMasterId)
       return
       `Record created into dynamic model successfully`
     } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {
       // console.log('requestObject:==',requestObject)
       var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ referenceId: requestObject.referenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId },
-        { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request", updatedAt:new Date() } }, { new: true, runValidators: true })
-      await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.from, integrationDetails.accountId, integrationDetails.integrationsMasterId)
+        { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request", updatedAt: new Date() } }, { new: true, runValidators: true })
+      await creteWOLifeCycle(requestObject.referenceId, requestObject.referenceStatus, integrationDetails.from, integrationDetails.accountId, integrationDetails.integrationsMasterId)
       console.log('updateExistingRecord2:===')
       return
       'Record already exists and Rreference status is changed. so, record is updated with latest status'
@@ -110,7 +110,7 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
     }
   }
   else if (operationType === "destination") {
-  console.log("dynamicModel:===",dynamicModel)
+    console.log("dynamicModel:===", dynamicModel)
 
     if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
       console.log('destinationUpdateExistingRecord1:===',)
@@ -119,20 +119,18 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
     }
     else if (!isExisting) {
       var createRecord = await mongoose.connection.db.collection(dynamicModel).insertOne(requestObject)
-      await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.to, integrationDetails.accountId, integrationDetails.integrationsMasterId)
-      var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId }, { $set: {destinationReferenceId:requestObject.referenceId, status: "completed", updatedAt:new Date() } }, { new: true, runValidators: true })
-      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, { $inc:{pushedCount: 1},  serviceProvider:integrationDetails.to }, { new: true });
+      await creteWOLifeCycle(requestObject.referenceId, requestObject.referenceStatus, integrationDetails.to, integrationDetails.accountId, integrationDetails.integrationsMasterId)
+      var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId }, { $set: { destinationReferenceId: requestObject.referenceId, status: "completed", updatedAt: new Date() } }, { new: true, runValidators: true })
+      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, { $inc: { pushedCount: 1 }, serviceProvider: integrationDetails.to }, { new: true });
 
       return
       `Record created into dynamic model successfully`
     } else if (isExisting && (isExisting.referenceStatus !== requestObject.referenceStatus)) {
-      // var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).findOneAndUpdate({ sourceReferenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId },
-      //   { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "completed" }, { new: true, runValidators: true })
-      var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ destinationReferenceId: requestObject.referenceId, }, { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "completed",updatedAt:new Date() } }, { new: true, runValidators: true });
-      await creteWOLifeCycle (requestObject.referenceId, requestObject.referenceStatus, integrationDetails.to, integrationDetails.accountId, integrationDetails.integrationsMasterId)
-
-      var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, }, { $set: { status: "completed", updatedAt:new Date() } }, { new: true, runValidators: true })
-      console.log('updateExistingRecord2:===')
+      var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ destinationReferenceId: requestObject.referenceId, }, { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "completed", updatedAt: new Date() } }, { new: true, runValidators: true });
+      await creteWOLifeCycle(requestObject.referenceId, requestObject.referenceStatus, integrationDetails.to, integrationDetails.accountId, integrationDetails.integrationsMasterId)
+      
+      var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId }, { $set: { status: "completed", updatedAt: new Date() } }, { new: true, runValidators: true })
+      console.log('destinationupdateExistingRecord2:===', )
       return
       'Record already exists and Rreference status is changed. so, record is updated with latest status'
 

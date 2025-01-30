@@ -14,7 +14,6 @@ class GlobalHTTPMethods {
             if (!dataPointUrl) {
                 throw new Error("URL and data are required.");
             }
-
             const response = await axios.get(dataPointUrl, {
                 // params,
                 headers: authToken, // Parse headers if provided
@@ -28,7 +27,7 @@ class GlobalHTTPMethods {
             // console.log('error.name:===',error.name)
             // console.log('error.config.data:===',error.config.data)
             // console.log('integrationsServiceObject.category:===',integrationsServiceObject)
-            await exceptionLogs(integrationDetails, error.response.status, error.response.data?.Message || "Request failed", error.name, error.config.data === undefined ? error.config.url : error.config.data  , integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = integrationsServiceObject?.destinationReferenceId || "", destinationWONumber = "")
+            await exceptionLogs(integrationDetails, error.response?.status, error.response?.data?.Message || "Request failed", error.name, error.config.data === undefined ? error.config.url : error.config.data  , integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = integrationsServiceObject?.destinationReferenceId || "", destinationWONumber = "")
             // return error
         }
     }
@@ -95,7 +94,7 @@ class GlobalHTTPMethods {
             return response.data
         } catch (error) {
             // console.log('PatchError:===',error)
-            await exceptionLogs(integrationDetails, error.response.status, error.response.data?.Message || JSON.stringify(error.response.data), error.name, error.config.data, integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = "", destinationWONumber = "")
+            await exceptionLogs(integrationDetails, error.response?.status, error.response?.data?.Message || JSON.stringify(error.response.data), error.name, error.config?.data, integrationsServiceObject?.category, sourceWOId = integrationsServiceObject?.sourceReferenceId || "", sourceWONumber = "", runnigWorkOrderId = "", destinationWONumber = "")
             return error
         }
     }
