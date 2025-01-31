@@ -20,7 +20,7 @@ const integrationsExceptionsSchema = new mongoose.Schema(
     },
     CPDWorkOrderId: {
       type: String,
-      deafult: 0,
+      default: 0,
     },
     CPDWorkOrderNumber: {
       type: String,
