@@ -383,23 +383,26 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
                 },
             },
         ]);
-        const { sourceDataBaseName, integrationsMasterId } = integrationDetails[0];
-        failedCPDWorkOrders = await mongoose.connection
-            .collection(sourceDataBaseName)
-            .aggregate([
-                {
-                    $match: {
-                        integrationsMasterId: integrationsMasterId,
-                        status: 'initiated',
+        if (![null, undefined].includes(integrationDetails[0])) {
+            const { sourceDataBaseName, integrationsMasterId } = integrationDetails[0];
+            failedCPDWorkOrders = await mongoose.connection
+                .collection(sourceDataBaseName)
+                .aggregate([
+                    {
+                        $match: {
+                            integrationsMasterId: integrationsMasterId,
+                            status: 'initiated',
+                        },
                     },
-                },
-            ])
-            .toArray();
-        failedCPDWorkOrders = failedCPDWorkOrders.map(order => ({
-            CPDWorkOrders: JSON.parse(order.responseObject),
-            status: order.referenceStatus,
-            priority: order.priority
-        }));
+                ])
+                .toArray();
+            failedCPDWorkOrders = failedCPDWorkOrders.map(order => ({
+                CPDWorkOrders: JSON.parse(order.responseObject),
+                status: order.referenceStatus,
+                priority: order.priority
+            }));
+        }
+
     }
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
