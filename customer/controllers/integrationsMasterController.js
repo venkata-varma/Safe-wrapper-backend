@@ -1397,7 +1397,7 @@ exports.startQAIntegrationMappings = asyncWrapper(async (req, res) => {
 */
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
   const { accountId } = req.params
-  const verifyAccountStatus = await accountsModel.findById(accountId)
+  const verifyAccountStatus = await accountsModel.findById({_id: new mongoose.Types.ObjectId(accountId)})
   console.log('verifyAccountStatus')
   if (verifyAccountStatus.status === 'deleted') {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({

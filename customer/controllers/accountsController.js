@@ -198,7 +198,7 @@ exports.deleteAccount = asyncWrapper(async (req, res) => {
 */
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
-    const verifyAccountStatus = await accountsModel.findById(accountId)
+    const verifyAccountStatus = await accountsModel.findById({_id: new mongoose.Types.ObjectId(accountId)})
     const reqAccountType = req.user.accountId.accountType
     // console.log('verifyAccountStatus:===',verifyAccountStatus)
     if (!verifyAccountStatus || verifyAccountStatus.status !== 'active' && reqAccountType === 'customer') {

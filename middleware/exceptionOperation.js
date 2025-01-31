@@ -17,8 +17,8 @@ exports.exceptionLogs = async(integrationObject, status, exceptionMessage, excep
     })
     */
     await integrationsExceptionsModel.create({
-        integrationsMasterId: integrationObject?.integrationsMasterId,
-        accountId: integrationObject.accountId,
+        integrationsMasterId: integrationObject?.integrationsMasterId || null,
+        accountId: integrationObject?.accountId || null,
         sourceWOId: sourceWOId,
         sourceWONumber: sourceWONumber,
         destinationWONumber: destinationWONumber,
