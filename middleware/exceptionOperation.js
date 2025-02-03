@@ -17,10 +17,9 @@ exports.exceptionLogs = async(integrationObject, status, exceptionMessage, excep
     })
     */
    console.log('integrationObject:===',integrationObject)
-   if(![undefined].includes(integrationObject?.integrationsMasterId) && ![undefined].includes(integrationObject?.accountId) )
     await integrationsExceptionsModel.create({
-        integrationsMasterId: integrationObject?.integrationsMasterId || null,
-        accountId: integrationObject?.accountId || null,
+        integrationsMasterId: integrationObject?.integrationsMasterId === undefined ? null : integrationObject?.integrationsMasterId,
+        accountId: integrationObject?.accountId === undefined ? null : integrationObject?.accountId,
         sourceWOId: sourceWOId,
         sourceWONumber: sourceWONumber,
         destinationWONumber: destinationWONumber,
