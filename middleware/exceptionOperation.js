@@ -16,6 +16,7 @@ exports.exceptionLogs = async(integrationObject, status, exceptionMessage, excep
         integrationsApiServices: integrationsApiServices
     })
     */
+   if(![undefined].includes(integrationObject?.integrationsMasterId) && ![undefined].includes(integrationObject?.accountId) )
     await integrationsExceptionsModel.create({
         integrationsMasterId: integrationObject?.integrationsMasterId || null,
         accountId: integrationObject?.accountId || null,
