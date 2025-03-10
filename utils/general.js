@@ -375,7 +375,7 @@ const getStatusFieldMappings = async (integrationMasterId) => {
   else {
     let statusFiledMappings = await serviceProviderIntegrationsModel.findOne({ from: integrationMaster.from, to: integrationMaster.to })
     requiredKeys = {}
-    statusFieldMappingKeys = statusFiledMappings?.settings?.mappingSettings
+    statusFieldMappingKeys = statusFiledMappings?.settings?.statusSettings
   }
   return { requiredKeys, statusFieldMappingKeys }
 }
