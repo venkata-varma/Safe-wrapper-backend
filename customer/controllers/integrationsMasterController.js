@@ -1344,7 +1344,10 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
           console.log('No matching integrationsMasterDetails type found.');
       }
 
-
+      return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_CRON_MANUAL,
+      });
     } else {
       const cronJobDetails = await integrationsCronJobsModel.create(
         {
