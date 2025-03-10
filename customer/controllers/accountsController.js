@@ -384,7 +384,7 @@ exports.getAccountIntegrationsInformation = asyncWrapper(async (req, res) => {
                 },
             },
         ]);
-        if (![null, undefined].includes(integrationDetails[0])) {
+        if (![null, undefined].includes(integrationDetails[0]) && ![null, undefined].includes(integrationDetails[0].sourceDataBaseName)) {
             const { sourceDataBaseName, integrationsMasterId } = integrationDetails[0];
             failedCPDWorkOrders = await mongoose.connection
                 .collection(sourceDataBaseName)
