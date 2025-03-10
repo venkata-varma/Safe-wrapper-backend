@@ -133,6 +133,18 @@ exports.getImages = asyncWrapper(async (req, res) => {
     {
       name: "DEVRABBIT-IMAGE",
       url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/assets/devRabbit_logo.png'
+    },
+    {
+      name: "nuvolo",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/uploads/1741586749752-nuvolo-logo.png'
+    },
+    {
+      name: "NS",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/uploads/1741586963181-NetSuite-Logo (1).jpg'
+    },
+    {
+      name: "infor",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/uploads/1741587591171-infor-global-solutions-1024x512-20190225.jpg'
     }
   ]
 
@@ -166,8 +178,16 @@ exports.getImages = asyncWrapper(async (req, res) => {
       url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/servicechannel_png.png'
     },
     {
-      name: "AM",
-      url: 'https://prod-isync-imgs.s3.ap-southeast-1.amazonaws.com/prod-isync-markedLogos/Acumatica_png.png'
+      name: "nuvolo",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/uploads/1741586812941-nuvolo_marked_logo.jpg'
+    },
+    {
+      name: "NS",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/uploads/1741587500047-netsuite_marked_logo.jpg'
+    },
+    {
+      name: "infor",
+      url: 'https://dev-isync-images.s3.us-west-1.amazonaws.com/uploads/1741587673854-infor-marked.jpg'
     }
   ]
 
