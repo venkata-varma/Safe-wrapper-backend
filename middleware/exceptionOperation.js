@@ -19,8 +19,8 @@ exports.exceptionLogs = async(integrationObject, status, exceptionMessage, excep
     */
    console.log('integrationObject:===',integrationObject)
     await integrationsExceptionsModel.create({
-        integrationsMasterId: integrationObject.integrationsMasterId === undefined ? null : mongoose.Types.ObjectId(integrationObject.integrationsMasterId),
-        accountId: integrationObject.accountId === undefined ? null : mongoose.Types.ObjectId(integrationObject.accountId),
+        integrationsMasterId: integrationObject.integrationsMasterId === undefined ? null : integrationObject.integrationsMasterId,
+        accountId: integrationObject.accountId === undefined ? null : integrationObject.accountId,
         sourceWOId: sourceWOId,
         sourceWONumber: sourceWONumber,
         destinationWONumber: destinationWONumber,
