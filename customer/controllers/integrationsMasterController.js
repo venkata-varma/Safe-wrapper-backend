@@ -438,7 +438,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
       return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
         status: serviceProviderValidation.status,
         message: serviceProviderValidation.message,
-        data:serviceProviderValidation?.data
+        data: serviceProviderValidation?.data
       })
     }
     else {
@@ -455,7 +455,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
       return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
         status: serviceProviderValidation.status,
         message: serviceProviderValidation.message,
-        data:serviceProviderValidation?.data
+        data: serviceProviderValidation?.data
       })
     }
     else {
@@ -1327,21 +1327,41 @@ exports.pullLatestWorkOrders = asyncWrapper(async (req, res) => {
   const integrationsMasterDetails = await integrationsMasterModel.findOne({ _id: integrationsMasterId, status: "active" });
 
   if (integrationsMasterDetails) {
-    const cronJobDetails = await integrationsCronJobsModel.create(
-      {
-        cronJobType: 'manual',
-        accountId: integrationsMasterDetails.accountId,
-        serviceProvider: integrationsMasterDetails.serviceProvider,
-        integrationsMasterId: integrationsMasterDetails.integrationsMasterId
-      }
-    );
-    await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId, from: integrationsMasterDetails.from }),cronJobDetails)
-    await destinationIntegrationOperationsServices(await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId, to: integrationsMasterDetails.to }))
+    if (integrationsMasterDetails.from === "CPD" && integrationsMasterDetails.to === "DF") {
+      let fromCredentials, toCredentials;
 
-    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-      status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_CRON_MANUAL,
-    });
+      switch (integrationsMasterDetails.from) {
+        case 'CPD':
+          fromCredentials = await integrationsMasterServiceProvidersModel.findOne({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, serviceProvider: "CPD" }).lean();
+          await CPDOperations.getCPDWorkOrders(fromCredentials, "manual");
+
+          if (integrationsMasterDetails.to === 'DF') {
+            toCredentials = await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterDetails.integrationsMasterId, to: "DF" }).lean();
+            await DFOperations.DFCreateWorkorders(toCredentials, "manual");
+          }
+          break;
+        default:
+          console.log('No matching integrationsMasterDetails type found.');
+      }
+
+
+    } else {
+      const cronJobDetails = await integrationsCronJobsModel.create(
+        {
+          cronJobType: 'manual',
+          accountId: integrationsMasterDetails.accountId,
+          serviceProvider: integrationsMasterDetails.serviceProvider,
+          integrationsMasterId: integrationsMasterDetails.integrationsMasterId
+        }
+      );
+      await sourceIntegrationOperationsServices(await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId, from: integrationsMasterDetails.from }), cronJobDetails)
+      await destinationIntegrationOperationsServices(await integrationsFieldMappingModel.find({ integrationsMasterId: integrationsMasterId, to: integrationsMasterDetails.to }))
+
+      return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_CRON_MANUAL,
+      });
+    }
   } else {
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
@@ -1397,8 +1417,8 @@ exports.startQAIntegrationMappings = asyncWrapper(async (req, res) => {
 */
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
   const { accountId } = req.params
-  console.log('accountId:===',accountId)
-  const verifyAccountStatus = await accountsModel.findById({_id: new mongoose.Types.ObjectId(accountId)})
+  console.log('accountId:===', accountId)
+  const verifyAccountStatus = await accountsModel.findById({ _id: new mongoose.Types.ObjectId(accountId) })
   if (!verifyAccountStatus || verifyAccountStatus.status === 'deleted') {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
@@ -1445,7 +1465,7 @@ exports.getAllIntegrationExceptions = asyncWrapper(async (req, res) => {
 
   const { fromDate, toDate } = req.query
 
-  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate).setDate(new Date(toDate).getDate() +1) } }).populate('integrationsMasterId').sort({ _id: -1 })
+  const integrationExceptions = await integrationsExceptionsModel.find({ accountId: req.params.accountId, createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate).setDate(new Date(toDate).getDate() + 1) } }).populate('integrationsMasterId').sort({ _id: -1 })
 
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -1573,7 +1593,7 @@ exports.updateStatusFieldMappings = asyncWrapper(async (req, res) => {
  */
 exports.updateIntegrationMasterStatus = asyncWrapper(async (req, res) => {
   const integrationMasterId = req.params.integrationsMasterId;
-  const updateStatus = await integrationsMasterModel.findByIdAndUpdate(integrationMasterId, { $set: { status: req.body.status, updatedBy: req.user._id } }, { new: true, runValidators: true  });
+  const updateStatus = await integrationsMasterModel.findByIdAndUpdate(integrationMasterId, { $set: { status: req.body.status, updatedBy: req.user._id } }, { new: true, runValidators: true });
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
       status: customConstants.messages.MESSAGE_SUCCESS,
