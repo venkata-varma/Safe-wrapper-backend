@@ -67,7 +67,7 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
         finalResultData = await preProcessServiceCall(serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails);
     }
 
-    if (finalResultData.length > 0) {
+    if (![null, undefined].includes(finalResultData) && finalResultData.length > 0) {
         for (let eachResult of finalResultData) {
             startTestResponseObject.sourcePullCount++
             await preProcessSourceSet(integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, sourceSettingsData?.metrics?.sourceDataBaseName, eachResult, sourceSettingsData?.metrics?.destinationDataBaseName, "source", eachResult[`${primaryKeyColumn}`])
@@ -79,6 +79,7 @@ const processSIServiceCalls = async (SPServices, integrationsMasterId, sourcePro
 const preProcessServiceCall = async (serviceObject, finalResultData, integrationsMasterId, sourceProvider, authToken, integrationDetails) => {
     let dataMappingPathKey = serviceObject?.dataMappingPath[0];
     let primaryKeyColumn = serviceObject?.primaryKeyColumn[0];
+    console.log('finalResultData:===',finalResultData)
     if (finalResultData === null) {
         const requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject.serviceProviderServiceId, integrationDetails);
         console.log('requestObject:==', requestObject)
@@ -143,7 +144,7 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
         }
 
     }
-    else if (finalResultData.length <= 0 && ![undefined, null].includes(finalResultData[0])) {
+    else if (![null, undefined].includes(finalResultData) && finalResultData.length <= 0 && ![undefined, null].includes(finalResultData[0])) {
         let prePareResult = []
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
         serviceObject.sourceReferenceId = eachResult[`${primaryKeyColumn}`]

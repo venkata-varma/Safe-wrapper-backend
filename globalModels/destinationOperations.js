@@ -173,7 +173,7 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
         return prePareResult
     }
 
-    else if (finalResultData !== null && finalResultData.length === 1) {
+    else if (![null, undefined].includes(finalResultData) && finalResultData.length === 1) {
         let dataMappingPathKey = serviceObject.dataMappingPath[0]
         let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
         serviceObject.dependentData = Array.isArray(finalResultData) ? finalResultData[0] : finalResultData
@@ -203,7 +203,7 @@ const preProcessServiceCall = async (serviceObject, finalResultData, integration
         }
 
     }
-    else if (finalResultData.length <= 0 && ![undefined, null].includes(finalResultData[0])) {
+    else if (![null, undefined].includes(finalResultData) && finalResultData.length <= 0 && ![undefined, null].includes(finalResultData[0])) {
         let prePareResult = []
         let dataMappingPathKey = serviceObject.dataMappingPath[0]
         let primaryKeyColumn = serviceObject.primaryKeyColumn[0]
