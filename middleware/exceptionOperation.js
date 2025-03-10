@@ -2,7 +2,7 @@ const { default: mongoose } = require("mongoose")
 const integrationsExceptionsModel = require("../models/integrationsExceptionsModel")
 
 
-exports.exceptionLogs = async(integrationObject, status, exceptionMessage, exceptionTitle, exceptionErrorObject, integrationsApiServices, sourceWOId, sourceWONumber, runnigWorkOrderId, destinationWONumber) => {
+exports.exceptionLogs = async (integrationObject, status, exceptionMessage, exceptionTitle, exceptionErrorObject, integrationsApiServices, sourceWOId, sourceWONumber, runnigWorkOrderId, destinationWONumber) => {
     /*
     await integrationsExceptionsModel.create({
         integrationsMasterId: integrationObject.integrationsMasterId,
@@ -17,10 +17,13 @@ exports.exceptionLogs = async(integrationObject, status, exceptionMessage, excep
         integrationsApiServices: integrationsApiServices
     })
     */
-   console.log('integrationObject:===',integrationObject)
+    console.log('integrationObject:===', integrationObject)
+    const validObjectId = (id) => {
+        return mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : null;
+    };
     await integrationsExceptionsModel.create({
-        integrationsMasterId: integrationObject.integrationsMasterId === undefined ? null : integrationObject.integrationsMasterId,
-        accountId: integrationObject.accountId === undefined ? null : integrationObject.accountId,
+        integrationsMasterId: validObjectId(integrationObject.integrationsMasterId),
+        accountId: validObjectId(integrationObject.accountId),
         sourceWOId: sourceWOId,
         sourceWONumber: sourceWONumber,
         destinationWONumber: destinationWONumber,
@@ -31,4 +34,5 @@ exports.exceptionLogs = async(integrationObject, status, exceptionMessage, excep
         exceptionRequestObject: exceptionErrorObject,
         integrationsApiServices: integrationsApiServices
     })
+
 }

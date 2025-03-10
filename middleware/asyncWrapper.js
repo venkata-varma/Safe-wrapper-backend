@@ -13,6 +13,7 @@ const asyncWrapper = (fn) => {
           ...(res.req?.query ?? {}),
           ...(res.req?.body ?? {}),
         };
+        console.log('integrationDetails:===',integrationDetails)
         exceptionLogs(integrationDetails, error.statusCode || 500, error.message, error.name, res.req?.body || {}, res.req?.url.split('/')[1])
         if(error.name == "TokenExpiredError") {
           res.status(customConstants.statusCodes.UNAUTHORIZED).json({status: customConstants.messages.MESSAGE_EXPIRED, message: customConstants.messages.MESSAGE_SESSION_EXPIRED})
