@@ -103,6 +103,7 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
       var updateExistingRecord = await mongoose.connection.db.collection(dynamicModel).updateOne({ referenceId: requestObject.referenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId },
         { $set: { referenceStatus: requestObject.referenceStatus, responseObject: requestObject.responseObject, status: "update-request", updatedAt: new Date() } }, { new: true, runValidators: true })
       await creteWOLifeCycle(requestObject.referenceId, requestObject.referenceStatus, integrationDetails.from, integrationDetails.accountId, integrationDetails.integrationsMasterId)
+      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, {serviceProvider: integrationDetails.to , status:"completed"}, { new: true });
       console.log('updateExistingRecord2:===')
       return
       'Record already exists and Rreference status is changed. so, record is updated with latest status'
@@ -113,7 +114,7 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
     console.log("dynamicModel:===", dynamicModel)
 
     if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
-      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, { $inc: { pushedCount: 1 }, serviceProvider: integrationDetails.to , status:"completed"}, { new: true });
+      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, {serviceProvider: integrationDetails.to , status:"completed"}, { new: true });
       var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId }, { $set: { destinationReferenceId: requestObject.referenceId, status: "completed", updatedAt: new Date() } }, { new: true, runValidators: true })
       console.log('destinationUpdateExistingRecord1:===',)
       return
