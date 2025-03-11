@@ -97,11 +97,13 @@ const processServiceCallsOnSourceRecords = async (integrationsMasterId, sourcePr
             serviceObject.destinationReferenceId = data?.destinationReferenceId
             if (serviceObject.serviceMethod === "patch") {
                 let destinationRecords = await getDestinationRecords(integrationDetails, destinationSettingsData?.metrics?.destinationDataBaseName, data?.sourceReferenceId)
-                serviceObject.dependentData = { ...serviceObject.dataToSend, ...JSON.parse(destinationRecords.responseObject) }
+                
+                if(![undefined,null].includes(destinationRecords))
+                    serviceObject.dependentData = { ...serviceObject.dataToSend, ...JSON.parse(destinationRecords?.responseObject) }
             }
-            requestObject = await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails);
+            requestObject = ![undefined,null].includes(serviceObject.dependentData) ? await getRequestPayload(integrationsMasterId, sourceProvider, serviceObject, integrationDetails):{}
             console.log('createRequestObject:===', requestObject)
-            let currentResponse = await processIntegrationService(
+            let currentResponse = requestObject != {} ? await processIntegrationService(
                 serviceObject,
                 integrationsMasterId,
                 sourceProvider,
@@ -109,7 +111,7 @@ const processServiceCallsOnSourceRecords = async (integrationsMasterId, sourcePr
                 integrationDetails,
                 destinationSettingsData?.metrics?.destinationDataBaseName,
                 requestObject
-            );
+            ): null
             // console.log('currentResponse:==', typeof currentResponse)
             if ((dataMappingPathKey && ![null, undefined].includes(currentResponse) && currentResponse[`${dataMappingPathKey}`]) || currentResponse) {
                 responseData = currentResponse[`${dataMappingPathKey}`] || currentResponse
@@ -236,7 +238,10 @@ const isMultiRecord = async (finalResultData) => {
 const preProcessSourceSet = async (integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, operationType, sourceReferenceId) => {
 
     if (currentResponse !== undefined) {
-        await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, "completed", operationType, sourceReferenceId)
+        let destinationStatusSettings = await serviceProviderIntegrationsModel.findOne({from:integrationDetails.from,to:integrationDetails.to}).lean()
+        let WO_Status = currentResponse[`${destinationStatusSettings.settings.statusSettings.destinationStatusKey}`]
+        console.log('Destination-WO_status:===',WO_Status)
+        await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, "completed", operationType, sourceReferenceId,WO_Status)
     }
 }
 
@@ -289,12 +294,12 @@ const processIntegrationService = async (serviceObject, integrationsMasterId, so
         case 'get':
             const getUrl = await modifyUrlsWithDependentData(serviceObject.dataPointUrl, serviceObject.primaryKeyColumn, serviceObject.dependentData);
 
-            responseData = await GlobalHTTPMethods.handleGet(serviceObject, authToken, getUrl[0], integrationDetails, dataBaseName); // Passing modified URL for GET
+            responseData = getUrl.length > 0 ? await GlobalHTTPMethods.handleGet(serviceObject, authToken, getUrl[0], integrationDetails, dataBaseName) : null // Passing modified URL for GET
             break;
         case 'patch':
             const urls = await modifyUrlsWithDependentData(serviceObject.dataPointUrl, serviceObject.primaryKeyColumn, serviceObject.dependentData);
 
-            responseData = await GlobalHTTPMethods.handlePatch(serviceObject, authToken, urls[0], integrationDetails, dataBaseName, requestObject); // Passing modified URL for GET
+            responseData = urls.length > 0 ? await GlobalHTTPMethods.handlePatch(serviceObject, authToken, urls[0], integrationDetails, dataBaseName, requestObject) : null // Passing modified URL for GET
             break;
 
         default:
@@ -318,12 +323,13 @@ const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataO
     }
 
     let urls = [];
-
+    // console.log('dependentData:==',dependentData)
     // Generate a URL for each object in dependentData
-    dependentData.forEach(dataObject => {
+    dependentData[0] != null ? dependentData.forEach(dataObject => {
         let modifiedUrl = url;
-
-        primaryKeyColumn.forEach((key) => {
+        const variablesToReplaceInUrl = url.match(/{{(.*?)}}/g).map(m => m.replace(/{{|}}/g, ''));
+        
+        variablesToReplaceInUrl.forEach((key) => {
             const placeholder = `{{${key}}}`;
             let value;
             if (key === 'messageId') {
@@ -341,7 +347,7 @@ const modifyUrlsWithDependentData = async (url, primaryKeyColumn, dependentDataO
 
         console.log('Modified URL for work order:', modifiedUrl); // Debugging output for modified URL
         urls.push(modifiedUrl); // Push the generated URL to the array
-    });
+    }):null
 
     return urls; // Return the array of modified URLs
 };

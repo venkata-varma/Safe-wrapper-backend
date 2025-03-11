@@ -1,6 +1,6 @@
 const { GlobalServiceModelForDynamicCollection } = require("../createDynamicCollection")
 
-exports.addRecordIntoDataBase = async (integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, responseObject, updatingDataBaseName, status, operationType, sourceReferenceId) => {
+exports.addRecordIntoDataBase = async (integrationDetails, serviceObject, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, responseObject, updatingDataBaseName, status, operationType, sourceReferenceId, WO_Status) => {
     // console.log('serviceObject:===',serviceObject?.destinationReferenceId)
     let reqOBJ = {
         accountId: integrationDetails.accountId,
@@ -8,8 +8,8 @@ exports.addRecordIntoDataBase = async (integrationDetails, serviceObject, dataMa
         integrationsMasterId: integrationDetails.integrationsMasterId,
         referenceId:serviceObject?.serviceMethod === "post" ||  operationType === "source" ? responseObject[`${primaryKeyColumn}`].toString(): responseObject?.destinationReferenceId.toString(),
         sourceReferenceId: operationType === "source" ? responseObject[`${primaryKeyColumn}`].toString() : sourceReferenceId.toString(),
-        destinationReferenceId: operationType === "destination" ? responseObject[`${primaryKeyColumn}`].toString() : "",
-        referenceStatus: responseObject.Status,
+        destinationReferenceId: operationType === "destination" ? responseObject[`${primaryKeyColumn}`]?.toString() : "",
+        referenceStatus: WO_Status,
         responseObject: JSON.stringify(responseObject),
         status: status,
         priority: "high",

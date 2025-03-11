@@ -81,7 +81,7 @@ class GlobalHTTPMethods {
     }
 
     // Generic PATCH request handler with headers
-    static async handlePatch(serviceObject, authToken, dataPointUrl, integrationDetails, dataBaseName, requestObject) {
+    static async handlePatch(integrationsServiceObject, authToken, dataPointUrl, integrationDetails, dataBaseName, requestObject) {
         try {
             let dataMappingPathKey = serviceObject.dataMappingPath[0]
 

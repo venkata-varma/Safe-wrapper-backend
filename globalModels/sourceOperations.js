@@ -175,7 +175,10 @@ const isMultiRecord = async (finalResultData) => {
 const preProcessSourceSet = async (integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, operationType, sourceReferenceId) => {
 
     if (currentResponse !== undefined) {
-        await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, "initiated", operationType, sourceReferenceId)
+        let sourceStatusSettings = await serviceProviderIntegrationsModel.findOne({from:integrationDetails.from,to:integrationDetails.to}).lean()
+        let WO_Status = currentResponse[`${sourceStatusSettings.settings.statusSettings.sourceStatusKey}`]
+
+        await addRecordIntoDataBase(integrationDetails, services, dataMappingPathKey, primaryKeyColumn, insertingDataBaseName, currentResponse, updatingDataBaseName, "initiated", operationType, sourceReferenceId,WO_Status)
     }
 }
 
@@ -351,18 +354,18 @@ function updatePayloadWithMappings(parsedRequestObject, dataMappingPaths, dateRa
         }
     });
 
-    parsedRequestObject = {
-        "Parameters": {
-            //"WorkOrderNumber":"POS4L20001", /*Search by work order number*/
-            /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
-            "Created": {
-                "From": "2024-12-16T00:00:00",
-                "To": "2024-12-20T23:59:59"
-            }
-        },
-        "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
-    }
-
+    // parsedRequestObject = {
+    //     "Parameters": {
+    //         //"WorkOrderNumber":"POS4L20001", /*Search by work order number*/
+    //         /* Search by'Created', 'AcknowledgeBy', 'OnSiteBy', 'DueDate', 'LastUpdate'*/
+    //         "Created": {
+    //             "From": "2024-12-16T00:00:00",
+    //             "To": "2024-12-20T23:59:59"
+    //         }
+    //     },
+    //     "MessageId": "f6b492c9-ee7d-4e1b-a9a8-29f50f0b6d3a"
+    // }
+    console.log('parsedRequestObject:===',parsedRequestObject)
     return parsedRequestObject;
 }
 
