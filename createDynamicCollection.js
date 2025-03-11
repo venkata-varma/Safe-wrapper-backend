@@ -113,6 +113,8 @@ async function validatePayloadWithExistingAndCreateOrUpdate(requestObject, dynam
     console.log("dynamicModel:===", dynamicModel)
 
     if (isExisting && (isExisting.referenceStatus === requestObject.referenceStatus)) {
+      await integrationsCronsModel.findByIdAndUpdate(requestObject.integrationsCronId, { $inc: { pushedCount: 1 }, serviceProvider: integrationDetails.to , status:"completed"}, { new: true });
+      var updateSourceRecord = await mongoose.connection.db.collection(updatingDataBaseName).updateOne({ referenceId: requestObject.sourceReferenceId, accountId: requestObject.accountId, integrationsMasterId: requestObject.integrationsMasterId }, { $set: { destinationReferenceId: requestObject.referenceId, status: "completed", updatedAt: new Date() } }, { new: true, runValidators: true })
       console.log('destinationUpdateExistingRecord1:===',)
       return
       'Record already exists and Rreference status is unchanged. No changes made!'
