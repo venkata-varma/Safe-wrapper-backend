@@ -313,23 +313,38 @@ exports.sixWeeksSalesDetails = async (source, destination, integrationsQuery, ac
  * souce and destination records and creates new variables for every week 
  */
 exports.mapNewUpdatedCounts = async (sixWeekLifeCycleDocs, statusFieldMappingKeys, source, destination) => {
-    // console.log("statusFieldMappingKeys", statusFieldMappingKeys);
 
     var serviceProviderNewStatus;
     switch (source) {
         case 'CPD':
-            serviceProviderNewStatus = "new";
-            break;
-        case 'DF':
-            serviceProviderNewStatus = "reported";
-            break;
-        case 'SNOW':
-            serviceProviderNewStatus = "1";
-            break;
-        case 'CYS':
-            serviceProviderNewStatus = "requested";
-            break;
+                serviceProviderNewStatus = "new";
+                break;
+            case 'DF':
+                serviceProviderNewStatus = "reported";
+                break;
+            case 'SNOW':
+                serviceProviderNewStatus = "1";
+                break;
+            case 'CYS':
+                serviceProviderNewStatus = "Hot";
+            case 'Sage':
+                serviceProviderNewStatus = "PendingWoComplete";
+                break;
+                case "nuvolo":
+                    serviceProviderNewStatus = "new";
+                    break;
+                    case "infor":
+                        serviceProviderNewStatus = "1";
+                        break;
+                        case "NS":
+                            serviceProviderNewStatus = "1";
+                            break;
+                            
+                            
     }
+
+    // let [crucialDestinationStatus,crucialSourceStatus ]=Object.entries(statusFieldMappingKeys)[0];
+
 
     var crucialSourceStatus, crucialDestinationStatus;
     for (let [key, value] of Object.entries(statusFieldMappingKeys)) {
@@ -436,21 +451,35 @@ exports.mapNewUpdatedWorkOrdersCounts = async (statusFieldMappingKeys, source, d
             case 'Sage':
                 serviceProviderNewStatus = "PendingWoComplete";
                 break;
+                case "nuvolo":
+                    serviceProviderNewStatus = "new";
+                    break;
+                    case "infor":
+                        serviceProviderNewStatus = "1";
+                        break;
+                        case "NS":
+                            serviceProviderNewStatus = "1";
+                            break;
+
         }
 
         var crucialSourceStatus, crucialDestinationStatus;
+        // let [crucialDestinationStatus,crucialSourceStatus ]=Object.entries(statusFieldMappingKeys)[0];
+        
         for (let [key, value] of Object.entries(statusFieldMappingKeys)) {
-
+    
             if (value.toLowerCase() === serviceProviderNewStatus) {
-                console.log("value, ", value)
+             
                 crucialSourceStatus = value;
                 crucialDestinationStatus = key;
             }
         }
+
         //  console.log("crucialSourceStatus, crucialDestinationStatus;", crucialSourceStatus, crucialDestinationStatus)
         workOrderReports.forEach((record) => {
             if (record.serviceProvider === source) {
-                // console.log("button, source", record.workOrderStatus.toLowerCase())
+
+
                 if (record.workOrderStatus.toLowerCase() === crucialSourceStatus.toLowerCase()) {
                     sourceNewWorkOrdersCount++;
                 } else {
