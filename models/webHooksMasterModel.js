@@ -13,12 +13,7 @@ const webHooksSchema = new mongoose.Schema({
         index : true,
         default: null,
     },
-    integrationsMasterId : { 
-        type : mongoose.Schema.Types.ObjectId,
-        ref : "integrationsMaster",
-        index : true,
-        default : null
-    },
+   
     name:{
         type:String,
         default:""

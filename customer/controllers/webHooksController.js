@@ -1,53 +1,59 @@
-// const asyncWrapper = require("../../middleware/asyncWrapper");
-// const webHooksModel = require("../../models/webHooksMasterModel");
-// const customConstants = require('../../config/constants.json')
-// const integrationsMasterModel = require('../../models/integrationsMasterModel')
-// const jwt = require('jsonwebtoken');
-// const { encryptData, decryptData } = require("../../utils/encryptionAlgorithms");
-// const webHooksMasterModel = require("../../models/webHooksMasterModel");
-// const webHookLogsModel = require("../../models/webHookLogs");
-// const { default: mongoose } = require("mongoose");
-// const moment = require('moment');
-// const { stringify } = require('flatted');
-// const { getWebHooksLogsSixWeekSalesData } = require("../../utils/accountInsightUtils");
+const asyncWrapper = require("../../middleware/asyncWrapper");
+const webHooksModel = require("../../models/webHooksMasterModel");
+const customConstants = require('../../config/constants.json')
+const integrationsMasterModel = require('../../models/integrationsMasterModel')
+const jwt = require('jsonwebtoken');
+const { encryptData, decryptData } = require("../../utils/encryptionAlgorithms");
+const webHooksMasterModel = require("../../models/webHooksMasterModel");
+const webHookLogsModel = require("../../models/webHookLogs");
+const { default: mongoose } = require("mongoose");
+const moment = require('moment');
+const { stringify } = require('flatted');
+const accountsModel = require("../../models/accountsModel");
+const webhookExceptionsModel=require('../../models/webhookExceptionsModel')
 
-// /**
-//  * Create webhook for an integration.
-//  * Initially validate the account whether it is in active or not.
-//  * Same validation for integration.
-//  * If both the conditions satisfied then webhook will be created or else returns the validation errors. 
-//  */
 
-// exports.createWebHook = asyncWrapper(async (req, res) => {
-//     const { accountId, integrationsMasterId, authenticationCode } = req.body
+/**
+ * Middleware function for Create webhook functionality
+ * Middleware is to check the status of Respective account 
+ * If middleware is passed, control is passed to its next function
+ */
+exports.validateAccountStatusToCreateWebHook=asyncWrapper(async(req,res, next)=>{
+    const {accountId}=req.body;
+    const accountDetails = await accountsModel.findOne({ accountId: accountId, });
+    if(!accountDetails||accountDetails.status!=="active"){
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED
+        });  
+    }else{
+        next()
+    }
+})
 
-//     const encryptedWebHookAuthCode = encryptData({ authenticationCode: authenticationCode })
 
-//     const IntegrationMasterDetails = await integrationsMasterModel.findOne({ accountId: accountId, _id: integrationsMasterId }).populate('accountId')
+/**
+ * Create webhook for an integration.
+ * Initially validate the account whether it is in active or not.
+ * Same validation for integration.
+ * If both the conditions satisfied then webhook will be created or else returns the validation errors. 
+ */
 
-//     if (IntegrationMasterDetails.accountId.status !== "active") {
-//         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-//             status: customConstants.messages.MESSAGE_FAIL,
-//             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED
-//         });
-//     }
-//     if (IntegrationMasterDetails.status !== "active") {
-//         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-//             status: customConstants.messages.MESSAGE_FAIL,
-//             message: customConstants.messages.MESSAGE_INTEGRATION_ID_NOT_ACTIVE
-//         });
-//     }
-//     else {
-//         await webHooksModel.create({ ...req.body, authenticationCode: encryptedWebHookAuthCode })
-//         return res
-//             .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-//             .json({
-//                 status: customConstants.messages.MESSAGE_SUCCESS,
-//                 message: customConstants.messages.MESSAGE_ADD_WEBHOOK
-//             });
-//     }
+exports.createWebHook = asyncWrapper(async (req, res) => {
+    const { accountId, authenticationCode } = req.body
 
-// })
+    const encryptedWebHookAuthCode = encryptData({ authenticationCode: authenticationCode })
+
+        await webHooksModel.create({ ...req.body, authenticationCode: encryptedWebHookAuthCode })
+        return res
+            .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+            .json({
+                status: customConstants.messages.MESSAGE_SUCCESS,
+                message: customConstants.messages.MESSAGE_ADD_WEBHOOK
+            });
+    
+
+})
 
 // /**
 //  * This middleware verifies the account and integration exist.
@@ -520,108 +526,240 @@
 //     }
 // })
 
-// /**
-//  * Generates the webhook URL and authentication token for webhook.
-//  */
-// exports.generateWebhookToken = asyncWrapper(async (req, res) => {
-//     const { accountId } = req.query
-//     const randomNumber = Math.floor(10000 + Math.random() * 90000)
-//     let webHookUrl = `${process.env.DOMAIN_NAME}webhook/${randomNumber}/${accountId}`
-//     let webHookAuthenticationCode = jwt.sign({ accountId: accountId }, 'secret')
-//     const encryptedWebHookAuthCode = encryptData({ authenticationCode: webHookAuthenticationCode })
-//     return res
-//         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-//         .json({
-//             status: customConstants.messages.MESSAGE_SUCCESS,
-//             message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_WEBHOOK,
-//             data: {
-//                 webHookUrl: webHookUrl,
-//                 authenticationCode: encryptedWebHookAuthCode
-//             }
-//         });
-// })
+/**
+ * Generates the webhook URL and authentication token for webhook.
+ */
+exports.generateWebhookToken = asyncWrapper(async (req, res) => {
+    const { accountId } = req.query
+    const randomNumber = Math.floor(10000 + Math.random() * 90000)
+    let webHookUrl = `${process.env.DOMAIN_NAME}/api/webhook/${randomNumber}/${accountId}`
+    let webHookAuthenticationCode = jwt.sign({ accountId: accountId }, 'secret')
+    const encryptedWebHookAuthCode = encryptData({ authenticationCode: webHookAuthenticationCode })
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_WEBHOOK,
+            data: {
+                webHookUrl: webHookUrl,
+                authenticationCode: encryptedWebHookAuthCode
+            }
+        });
+})
 
-// /**
-//  * Validates the webhook data for webhook log.
-//  */
-// exports.validateWebHookData = asyncWrapper(async (req, res, next) => {
-//     const token = req.headers.authorization.split(' ')[1]
-//     const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token }).populate('accountId integrationsMasterId').lean()
-//     // console.log('webHookDetails:===',webHookDetails)
-//     if (!webHookDetails) {
+/**
+ * 
+ */
+const createWebhookException=async(accountId,sourceWONumber,sourceWOId,destinationWONumber,runnigWorkOrderId,networkCode,exceptionTitle,exceptionMessage,exceptionRequestObject)=>{
+    await webhookExceptionsModel.create({
+        accountId,
+        sourceWONumber,
+        sourceWOId,
+        destinationWONumber,
+        runnigWorkOrderId,
+        networkCode,
+        exceptionTitle,
+        exceptionMessage,
+        exceptionRequestObject
+    })
+}
+
+
+/**
+ * Validates the webhook data for webhook log.
+ */
+exports.validateWebHookData = asyncWrapper(async (req, res, next) => {
+    const token = req.headers.authorization
+
+console.log("req.orignal",req.originalUrl)
+    
+//     if(!token){
+// await createWebhookException()
+                                                                                             /*We could send accountId in additional meta data. So, we need to re-think to create Exception in this case 
+                                                                                              based on how they send that AccountId 
+                                                                                              */ 
 //         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
 //             status: customConstants.messages.MESSAGE_FAIL,
 //             message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND
 //         });
 //     }
-//     if (webHookDetails.status !== "active") {
-//         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-//             status: customConstants.messages.MESSAGE_FAIL,
-//             message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND
-//         });
-//     }
-//     if (!webHookDetails.accountId || webHookDetails.accountId.status !== "active") {
-//         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-//             status: customConstants.messages.MESSAGE_FAIL,
-//             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED
-//         });
-//     }
-//     if (!webHookDetails.integrationsMasterId || webHookDetails.integrationsMasterId.status !== "active") {
-//         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-//             status: customConstants.messages.MESSAGE_FAIL,
-//             message: customConstants.messages.MESSAGE_INTEGRATION_ID_NOT_ACTIVE
-//         });
-//     }
-//     else {
-//         next()
-//     }
-// })
+
+
+
+
+    const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token }).populate('accountId').lean()
+ 
+    if (!webHookDetails || webHookDetails.status !== "active") {
+        await createWebhookException(
+            webHookDetails.accountId._id,
+            customConstants.statusCodes.BAD_REQUEST ,
+            customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+            customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+            {}
+        )
+
+    }
+ 
+    if (!webHookDetails.accountId || webHookDetails.accountId.status !== "active") {
+        await createWebhookException(
+            webHookDetails.accountId._id || "from Additonal meta data",
+            customConstants.statusCodes.BAD_REQUEST ,
+            customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+            customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+            {}
+        )
+
+
+    }
+   
+if(token!==webHookDetails.authenticationCode){
+    await createWebhookException(
+        webHookDetails.accountId._id ,
+        customConstants.statusCodes.BAD_REQUEST ,
+        customConstants.messages.MESSAGE_API_KEY_MISMATCH,
+        customConstants.messages.MESSAGE_API_KEY_MISMATCH,
+        {}
+    )
+}
+
+
+    else {
+        req.body.webHookDetails=webHookDetails
+        next()
+    }
+})
 
 // /**
 //  * Create webhook log by validating token.
 //  */
 
-// exports.createWebHookLog = asyncWrapper(async (req, res) => {
-//     const { dataObject, primaryHookId } = req.body
-//     const token = req.headers.authorization.split(' ')[1]
-//     const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token })
-//     await webHookLogsModel.create({
-//         accountId: webHookDetails.accountId,
-//         integrationsMasterId: webHookDetails.integrationsMasterId,
-//         webHookId: webHookDetails._id,
-//         dataObject: dataObject,
-//         primaryHookId: primaryHookId
-//     })
-//     return res
-//         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-//         .json({
-//             status: customConstants.messages.MESSAGE_SUCCESS,
-//             message: customConstants.messages.MESSAGE_CREATE_WEBHOOK_LOG
+exports.createWebHookLog = asyncWrapper(async (req, res) => {
+    const webHookDetails= req.body.webHookDetails
+
+
+    await webHookLogsModel.create({
+        accountId: webHookDetails.accountId,
+
+        webHookId: webHookDetails._id,
+        dataObject: req.body,
+
+    })
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_CREATE_WEBHOOK_LOG
+        });
+})
+
+
+
+
+/**
+ * Validates the webhook data for webhook log.
+ */
+exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
+    const token = req.headers.authorization
+
+console.log("req.orignal",req.originalUrl)
+    
+//     if(!token){
+// await createWebhookException()
+                                                                                             /*We could send accountId in additional meta data. So, we need to re-think to create Exception in this case 
+                                                                                              based on how they send that AccountId 
+                                                                                              */ 
+//         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+//             status: customConstants.messages.MESSAGE_FAIL,
+//             message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND
 //         });
-// })
+//     }
 
 
-// /**
-//  * Create CPD test webhook log.
-//  */
 
-// exports.CPDTestWebHookLog = asyncWrapper(async (req, res) => {
-//     // const token = req.headers.authorization.split(' ')[1]
-//     // const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token })
-//     const sanitizedDataObject = req.body;
 
-//     // Create a new log entry in the database
-//     await webHookLogsModel.create({
-//         webHookId: new mongoose.Types.ObjectId('674d78c44924d5d293cf53ae'),
-//         dataObject: sanitizedDataObject, 
-//     });
-//     return res
-//         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-//         .json({
-//             status: customConstants.messages.MESSAGE_SUCCESS,
-//             message: customConstants.messages.MESSAGE_CREATE_WEBHOOK_LOG
-//         });
-// })
+    const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: token }).populate('accountId').lean()
+ 
+    if (!webHookDetails || webHookDetails.status !== "active") {
+        await createWebhookException(
+            webHookDetails.accountId._id,
+            "",
+            "",
+            "",
+            "",
+            customConstants.statusCodes.BAD_REQUEST ,
+            customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+            customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+            {}
+        )
+
+    }
+ 
+    if (!webHookDetails.accountId || webHookDetails.accountId.status !== "active") {
+        await createWebhookException(
+            webHookDetails.accountId._id || "from Additonal meta data",
+            "",
+            "",
+            "",
+            "",
+            customConstants.statusCodes.BAD_REQUEST ,
+            customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+            customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+            {}
+        )
+
+
+    }
+   
+if(token!== decryptData(webHookDetails.authenticationCode,process.env.CRYPTO_KEY).authenticationCode  ){
+    await createWebhookException(
+        webHookDetails.accountId._id ,
+        "",
+            "",
+            "",
+            "",
+        customConstants.statusCodes.BAD_REQUEST ,
+        customConstants.messages.MESSAGE_API_KEY_MISMATCH,
+        customConstants.messages.MESSAGE_API_KEY_MISMATCH,
+        {}
+    )
+}
+
+
+    else {
+        req.body.webHookDetails=webHookDetails
+        next()
+    }
+})
+
+
+
+
+
+
+/**
+ * 
+ */
+
+exports.receiveWebhookData = asyncWrapper(async (req, res) => {
+
+    const webHookDetails = req.body.webHookDetails;
+
+    // Create a new log entry in the database
+    await webHookLogsModel.create({
+        webHookId: webHookDetails._id,
+        dataObject: sanitizedDataObject, 
+    });
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_CREATE_WEBHOOK_LOG
+        });
+})
+
+
+
+
 // /**
 //  * Get the webhook logs reports by filters.
 //  */
@@ -708,3 +846,8 @@
 //             data: webHookLogsReports
 //         });
 // });
+
+
+
+
+

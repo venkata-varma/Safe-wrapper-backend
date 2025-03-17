@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
-const integrationsExceptionsSchema = new mongoose.Schema(
+const webhookExceptionsSchema = new mongoose.Schema(
   {
-    integrationsExceptionId: {
+    webhookExceptionId: {
       type: mongoose.Schema.Types.ObjectId,
       default: null,
     },
@@ -12,20 +12,8 @@ const integrationsExceptionsSchema = new mongoose.Schema(
       index: true,
       default: null,
     },
-    integrationsMasterId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "integrationsMaster",
-      index: true,
-      default: null,
-    },
-    CPDWorkOrderId: {
-      type: String,
-      default: 0,
-    },
-    CPDWorkOrderNumber: {
-      type: String,
-      default: "",
-    },
+    
+   
     sourceWONumber: {
       type: String,
       default: "",
@@ -70,12 +58,12 @@ const integrationsExceptionsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-integrationsExceptionsSchema.pre("save", function (next) {
-  this.integrationsExceptionId = this._id;
+webhookExceptionsSchema.pre("save", function (next) {
+  this.webhookExceptionId = this._id;
   next();
 });
 
 module.exports = mongoose.model(
-  "integrationsexceptions",
-  integrationsExceptionsSchema
+  "webhookexceptions",
+  webhookExceptionsSchema
 );
