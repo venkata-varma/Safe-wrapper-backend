@@ -7,22 +7,10 @@ const sessionsModel = require('../../models/sessionsModel');
 const { hashPwd, comparePassword, twelveWeeksSales } = require('../../utils/helpers');
 const accountsModel = require('../../models/accountsModel');
 const mongoose = require('mongoose')
-const cpdWorkOrdersModel = require('../../models/CPDWorkordersModel')
-const integrationMasterModel = require('../../models/integrationsMasterModel')
-const integrationMasterServiceProviderModel = require('../../models/integrationsMasterServiceProvidersModel')
-const integrationFieldMappingModel = require('../../models/integrationsFieldMappingModel');
-const integrationSettingsModel = require('../../models/integrationsSettingsModel')
-const integrationCronsModel = require('../../models/integrationsCronsModel');
-const CPDWorkordersModel = require('../../models/CPDWorkordersModel');
-const integrationsExceptionModel = require('../../models/integrationsExceptionsModel')
-const dfWorkOrdersModel = require('../../models/DFWorkOrdersModel')
-const serviceProviderListModel = require('../../models/serviceProviderList')
+
 const { validateUserMobileEmailData, validatePhoneNumber } = require('../../utils/userLoginValidation');
-const { getStatusOfWorkOrders, statisticsOfAccount } = require('../../utils/general');
-const integrationsExceptionsModel = require('../../models/integrationsExceptionsModel');
-const integrationsMasterModel = require('../../models/integrationsMasterModel');
+
 const accountSettingsModel = require('../../models/accountSettingsModel');
-const serviceProviderIntegrationsModel = require('../../models/serviceProviderIntegrationsModel');
 
 /*
 Miidleware function to controller, "createUser"
@@ -230,7 +218,7 @@ Funtion to check
 If returns True, moves to "next" function , "loginUser"
 */
 exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
-  console.log("Rweq", req.body)
+  
   const { mobileEmail, password } = req.body;
 
   if (!mobileEmail || !password) {
@@ -318,8 +306,8 @@ exports.loginUser = asyncWrapper(async (req, res) => {
   const sesssionDetails = await sessionsModel.create(req.body);
   user_details.sesssionDetails = sesssionDetails;
 
-  //Count number of integrations for respective account
-  const integrationsCount = await integrationMasterModel.find({ accountId: user.accountId, status: 'active' });
+
+
   //const accountUpdateIntegrationsCount = await accountsModel.findByIdAndUpdate(user.accountId, { $set: { noOfIntegrations: integrationsCount.length } }, { new: true })
   user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
   user_details.accountSettings = await accountSettingsModel.findOne({ accountId: user.accountId })
@@ -334,240 +322,6 @@ exports.loginUser = asyncWrapper(async (req, res) => {
 
 });
 
-
-/*
-  Function to scan and provide all possible data and statistics of respective- logged in Account
-  Retunrs data of a account- 
-    1. Number of Integrations
-    2. Integration details 
-    3. Latest Cron-logs with their respective dumped and pulled records
-    4. Sales report of last 12 weeks 
-    5. High-priority work-orders
-    6. List of users associated with the account
-    7. Account details
-*/
-exports.getAccountStatistics = asyncWrapper(async (req, res) => {
-  const accountId = req.params.accountId;
-  const accountDetails = await accountsModel.findById(accountId, { password: 0 }).lean();
-  let sourceStatus
-
-  const users = await usersModel.find({ accountId }, { password: 0 });
-
-  // const integrationsOfAccount = await integrationMasterModel.find({ accountId, status: 'active' });
-
-  const integrationsOfAccount = await integrationMasterModel.aggregate([
-    {
-      $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
-        status: 'active'
-      }
-    },
-    {
-      $lookup: {
-        "from": "integrationsmasterserviceproviders",
-        "localField": "_id",
-        "foreignField": "integrationsMasterId",
-        "as": "integrationsMasterServiceProviders"
-      }
-    },
-    {
-      $lookup: {
-        "from": "integrationsfieldmappings",
-        "localField": "_id",
-        "foreignField": "integrationsMasterId",
-        "as": "integrationsFieldMappings"
-      }
-    },
-    {
-      $lookup: {
-        "from": "integrationssettings",
-        "localField": "_id",
-        "foreignField": "integrationsMasterId",
-        "as": "integrationsSettings"
-      }
-    }, {
-      $lookup: {
-        "from": "integrationsexceptions",
-        "localField": "_id",
-        "foreignField": "integrationsMasterId",
-        "as": "integrationsExceptions"
-      }
-    },
-    {
-      $addFields: {
-        integrationsExceptionsCount: { $size: "$integrationsExceptions" }
-      }
-    },
-    {
-      $lookup: {
-        from: "serviceproviderintegrations",
-        let: { fromField: "$from", toField: "$to" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$from", "$$fromField"] },
-                  { $eq: ["$to", "$$toField"] }
-                ]
-              }
-            }
-          },
-          {
-            $project: { services: 1 }
-          }
-        ],
-        as: "services"
-      }
-    },
-    {
-      $addFields: {
-        services: { $arrayElemAt: ["$services.services", 0] }
-      }
-    }
-  ]);
-
-  const activityLog = await integrationCronsModel.find({ accountId }).sort({ createdAt: -1 }).limit(10)
-
-  const getDefaultStatus = await serviceProviderListModel.findOne({ serviceProviders: "CPD" })
-  const highPrioritycpdWorkOrders = await cpdWorkOrdersModel.find({ accountId, $or: [{ priority: 'high' }, { priority: 'medium' }] }).sort({ createdAt: -1 })
-  sourceStatus = await CPDWorkordersModel.aggregate([
-    {
-      $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
-      }
-    },
-    {
-      $group: {
-        _id: '$CPDWorkOrderStatus',
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        status: '$_id',
-        count: 1
-      }
-    }
-  ]);
-  if (sourceStatus.length <= 0) {
-    sourceStatus = await mongoose.connection.db.collection('cpdoperations').aggregate([
-      {
-        $match: {
-          accountId: new mongoose.Types.ObjectId(accountId),
-        }
-      },
-      {
-        $group: {
-          _id: '$referenceStatus',
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $project: {
-          _id: 0,
-          status: '$_id',
-          count: 1
-        }
-      }
-    ]).toArray();
-  }
-  let workOrderStates = await getStatusOfWorkOrders(getDefaultStatus.workOrderStatus, sourceStatus);
-
-  const integrationsExceptionsApiservices = await integrationsExceptionsModel.aggregate([
-    {
-      $match: {
-        accountId: new mongoose.Types.ObjectId(accountId)
-      }
-    },
-    {
-      $group:
-      {
-        _id: '$integrationsApiServices',
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-  let sourceAndDestinationDatabaseNames
-  const getIntegrationsOfAccount = await integrationsMasterModel.find({ accountId: accountId, status:"active" });
-  let totalSourceWorkOrdersCount = 0, totalDestinationWorkOrdersCount = 0;
-  
-  // Get all source and destination work orders
-  const getAllWorkOrdersCount = async (accountId, integration, operationType) => {
-    let workOrdersCount = 0
-    sourceAndDestinationDatabaseNames = await serviceProviderIntegrationsModel.findOne({ from: integration.from, to: integration.to })
-    if (integration.from === "CPD") {
-      workOrdersCount += await cpdWorkOrdersModel.countDocuments({ accountId: new mongoose.Types.ObjectId(accountId) })
-    } else if (integration.to === "DF") {
-      workOrdersCount += await dfWorkOrdersModel.countDocuments({ accountId: new mongoose.Types.ObjectId(accountId) })
-    }
-    if (workOrdersCount === 0 && ![undefined, null].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)) {
-      workOrdersCount += operationType === "source" ? await mongoose.connection.db.collection(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName).countDocuments({
-        accountId: new mongoose.Types.ObjectId(accountId)
-      })
-        : await mongoose.connection.db.collection(sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName).countDocuments({
-          accountId: new mongoose.Types.ObjectId(accountId)
-        })
-
-    }
-    return workOrdersCount
-  }
- 
-  const sourceAndDestinationRecordsCounts = [];
-  // Loop each integration to get all work orders related to account
-  for (let integration of getIntegrationsOfAccount) {
-    let sourceCounts = await getAllWorkOrdersCount(accountId, integration, "source");
-    let destinationCounts = await getAllWorkOrdersCount(accountId, integration, "destination");
-    let sourceCountsAndDestinationCountsForGraph = await statisticsOfAccount(accountId, integration, twelveWeeksSales);
-    sourceAndDestinationRecordsCounts.push( ...sourceCountsAndDestinationCountsForGraph );
-
-    totalSourceWorkOrdersCount += sourceCounts;
-    totalDestinationWorkOrdersCount += destinationCounts;
-  }
-  const exceptionsCount = await integrationsExceptionModel.find({ accountId: accountId }).countDocuments()
-  accountDetails.insightsWorkOrdersCount = {
-    sourceWorkOrdersCount: totalSourceWorkOrdersCount,
-    destinationWorkOrdersCount: totalDestinationWorkOrdersCount,
-    exceptionsCount: exceptionsCount
-  }
-  /*
-  for (let week of twelveWeekSales) {
-    let formttedFromDate = new Date(new Date(week.fromDate).setDate(new Date(week.fromDate).getDate() + 1))
-    let formattedToDate = new Date(new Date(week.toDate).setDate(new Date(week.toDate).getDate() + 1))
-
-    let weekCPDWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
-    let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
-    let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
-
-    // let weekCPDWorkOrders = await cpdWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
-    // let weekDFWorkOrders = await dfWorkOrdersModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
-    // let integrationsExceptions = await integrationsExceptionModel.find({ accountId, createdAt: { $gte: formttedFromDate, $lte: formattedToDate } }).countDocuments()
-
-    week.CPDWorkOrderCount = weekCPDWorkOrders;
-    week.dfWorkOrderCount = weekDFWorkOrders;
-    week.integrationsExceptions = integrationsExceptions;
-  }
-    */
-
-  // console.log("twelveWeekSalesResult:===",twelveWeekSalesResult)
-  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_DASHBOARD_STATISTICS_RECEIVED,
-    data: {
-      accountDetails,
-      users,
-      workOrderStates,
-      highPrioritycpdWorkOrders,
-      activityLog,
-      twelveWeekSales: sourceAndDestinationRecordsCounts,
-      integrationsOfAccount,
-      integrationsExceptionsApiservices
-
-    },
-  });
-
-});
 
 /*
 Miidleware function to validate user and password

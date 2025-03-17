@@ -78,7 +78,7 @@ const accountsSchema = new mongoose.Schema({
     status:{
         type:String,
         enum:['active','in-progress','deleted', 'blocked'],
-        default:"in-progress"
+        default:"active"
     },
 },{timestamps:true});
 

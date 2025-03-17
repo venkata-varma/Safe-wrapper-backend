@@ -12,8 +12,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use('/devapps/Integration-assets', express.static(path.join(__dirname, '..', 'devapps', 'Integration-assets')));
-
 
 // Database Connection
 mongooseConnect.DbConnect();
@@ -22,43 +20,26 @@ mongooseConnect.DbConnect();
 // Routes  
 const accountsRoute = require('./customer/routes/accountsRoute');
 const usersRoute = require('./customer/routes/usersRoute');
-const integrationsRoute = require('./customer/routes/integrationsMasterRoute');
-const conditionalRoute = require('./customer/routes/conditionalRoute')
-const errorcontroller = require('./customer/controllers/errorcontroller');
-const webHooksRoute = require('./customer/routes/webHooksRoute')
-//super-admin-routes
-const superAdminAccountRoute = require('./superAdminPanel/superAdminRoutes/superAdminAccountsRoute')
-const superAdminUsersRoute = require('./superAdminPanel/superAdminRoutes/superAdminUsersRoute')
-const serviceProvidersRoute = require('./superAdminPanel/superAdminRoutes/serviceProvidersOperations')
-const serviceproviderServicesRoute = require('./superAdminPanel/superAdminRoutes/serviceProviderServicesRoute')
 
-const serviceProviderAuthValidation = require('./src/routes/serviceProviderAutheticationStatus')
+const errorcontroller = require('./customer/controllers/errorcontroller');
+//const webHooksRoute = require('./customer/routes/webHooksRoute')
+
+
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
 
 app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
-app.use('/api/integrations', integrationsRoute);
-app.use('/api/conditions', conditionalRoute);
-app.use('/api/webhook',webHooksRoute)
-app.use('/api/super-admin/accounts', superAdminAccountRoute);
-app.use('/api/super-admin/users', superAdminUsersRoute);
-app.use('/api/super-admin/service-provider',serviceProvidersRoute)
-app.use('/api/super-admin/service-provider-services',serviceproviderServicesRoute)
-app.use('/api/check-authentication-status',serviceProviderAuthValidation)
 
-const integrationsSchedules = require('./customer/controllers/schedulerController');
-const DFintegrations = require('./middleware/DFOperations');
+//app.use('/api/webhook',webHooksRoute)
 
-integrationsSchedules.integrationsScheduleCronJobsForEachMinute()
-DFintegrations.DFCreateWorkorders()
 
 // Error Handling Middleware (optional)
 app.use(errorcontroller);
 //insertGlobalConstants()
 
-app.listen(8090, () => {
-    console.log("Server is working on port 8090");
+app.listen(process.env.PORT, () => {
+    console.log(`Server is working on port ${process.env.PORT}`);
 });
 
 module.exports = app;

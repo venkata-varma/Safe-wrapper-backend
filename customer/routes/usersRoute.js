@@ -9,7 +9,6 @@ router.post('/create-user',usersControllers.validateUserRegistration, usersContr
 // router.post('/update-user',usersControllers.validateUserRegistration, usersControllers.createUser)
 router.post('/login',usersControllers.validateLoginProcess, usersControllers.loginUser)
 router.use(auth)
-router.get('/get-account-statistics/:accountId', usersControllers.getAccountStatistics)
 
 /*
 Following are routes to Admin user to update status on its users
