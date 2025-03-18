@@ -625,7 +625,7 @@ await webhookExceptionsModel.create({
 
         await webhookExceptionsModel.create({
             accountId,
-            webhookMasterId: webHookDetails ? webHookDetails._id : "",
+            webhookMasterId: webHookDetails._id,
             networkCode:customConstants.statusCodes.BAD_REQUEST,
             exceptionTitle:customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
             exceptionMessage:customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
@@ -644,7 +644,7 @@ await webhookExceptionsModel.create({
 
         await webhookExceptionsModel.create({
             accountId,
-            webhookMasterId: webHookDetails ? webHookDetails._id: "",
+            webhookMasterId: webHookDetails._id,
             networkCode:customConstants.statusCodes.BAD_REQUEST,
             exceptionTitle:customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
             exceptionMessage:customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
@@ -676,7 +676,7 @@ await webhookExceptionsModel.create({
 
         await webhookExceptionsModel.create({
             accountId,
-            webhookMasterId: webHookDetails ? webHookDetails._id: "",
+            webhookMasterId:webHookDetails._id,
             networkCode:customConstants.statusCodes.UNAUTHORIZED,
             exceptionTitle:customConstants.messages.MESSAGE_API_KEY_MISMATCH,
             exceptionMessage:customConstants.messages.MESSAGE_API_KEY_MISMATCH,
@@ -694,7 +694,7 @@ await webhookExceptionsModel.create({
     if (decodeJwt.accountId !== accountId) {
         await webhookExceptionsModel.create({
             accountId,
-            webhookMasterId: webHookDetails ? webHookDetails._id : "",
+            webhookMasterId: webHookDetails._id,
             networkCode:customConstants.statusCodes.UNAUTHORIZED,
             exceptionTitle:customConstants.messages.MESSAGE_JWT_MALFORMED,
             exceptionMessage:customConstants.messages.MESSAGE_JWT_MALFORMED,
