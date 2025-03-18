@@ -542,7 +542,7 @@ exports.generateWebhookToken = asyncWrapper(async (req, res) => {
   const randomNumber = Math.floor(10000 + Math.random() * 90000);
   let webHookUrl = `${process.env.DOMAIN_NAME}/api/webhook/${randomNumber}/${accountId}`;
   let webHookAuthenticationCode = jwt.sign({ accountId: accountId }, process.env.JWT_SECRET);
-// console.log("webHookAuthenticationCode", webHookAuthenticationCode)
+console.log("webHookAuthenticationCode", webHookAuthenticationCode)
   const encryptedWebHookAuthCode = encryptData({
     authenticationCode: webHookAuthenticationCode,
   });
