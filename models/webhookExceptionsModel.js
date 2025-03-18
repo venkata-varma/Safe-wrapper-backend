@@ -16,8 +16,8 @@ const webhookExceptionsSchema = new mongoose.Schema(
      casting ObjectId to String issue 
      */
     webhookMasterId: {
-      type: String,
-      //ref: "webhooksmastermodel",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "webhooksmastermodel",
     
       default:null
     },
