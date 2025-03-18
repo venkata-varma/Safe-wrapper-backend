@@ -73,11 +73,12 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         })
     }
     else {
+
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            // logo: req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : "" 
-            logo: req.file ? await preSignedUrlToUpload(req.file) : ""
+
+          //  logo: req.file ? await preSignedUrlToUpload(req.file) : ""
         })
         const customId = new mongoose.Types.ObjectId();
 
