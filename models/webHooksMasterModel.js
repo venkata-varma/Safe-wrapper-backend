@@ -26,6 +26,10 @@ const webHooksSchema = new mongoose.Schema({
         type:String,
         default:""
     },
+    randomNumber:{
+        type:Number,
+        required:[true,"Designated random number is mandatory"]
+    },
     requestObject:{
         type: mongoose.Schema.Types.Mixed,
         default:{}
@@ -50,4 +54,4 @@ webHooksSchema.pre('save',function(next){
     next()
 })
 
-module.exports = mongoose.model('webhooksmodel',webHooksSchema)
+module.exports = mongoose.model('webhooksmastermodel',webHooksSchema)

@@ -12,15 +12,10 @@ const webHooksLogsSchema = new mongoose.Schema({
         index : true,
         default: null,
     },
-    integrationsMasterId : { 
-        type : mongoose.Schema.Types.ObjectId,
-        ref : "integrationsMaster",
-        index : true,
-        default : null
-    },
-    webHookId:{
+    
+    webHookMasterId:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"webhooksmodel",
+        ref:"webhooksmastermodels",
         index:true,
         default:null
     },
