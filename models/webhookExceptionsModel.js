@@ -22,22 +22,7 @@ const webhookExceptionsSchema = new mongoose.Schema(
       default:null
     },
 
-    sourceWONumber: {
-      type: String,
-      default: "",
-    },
-    sourceWOId: {
-      type: String,
-      default: "",
-    },
-    destinationWONumber: {
-      type: String,
-      default: "",
-    },
-    runnigWorkOrderId: {
-      type: String,
-      default: "",
-    },
+  
     networkCode: {
       type: Number,
       default: 200,
@@ -46,10 +31,7 @@ const webhookExceptionsSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    integrationsApiServices: {
-      type: String,
-      default: "",
-    },
+    
     exceptionMessage: {
       type: mongoose.Schema.Types.Mixed,
       default: "",

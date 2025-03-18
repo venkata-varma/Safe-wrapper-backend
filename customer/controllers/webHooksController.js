@@ -601,18 +601,15 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
   
     // If no token is present
     if (!token) {
-      await createWebhookException(
-        accountId,
-        "",
-        "",
-        "",
-        "",
-        "",
-        customConstants.statusCodes.UNAUTHORIZED,
-        customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
-        customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
-        {}
-      );
+
+await webhookExceptionsModel.create({
+    accountId,
+    networkCode:customConstants.statusCodes.UNAUTHORIZED,
+    exceptionTitle:customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
+    exceptionMessage:customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
+})
+
+
       // Return response and stop further execution
       return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
         status: customConstants.messages.MESSAGE_FAIL,
@@ -625,18 +622,17 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
   
     // If webhook details are not found or status is not 'active'
     if (!webHookDetails || webHookDetails.status !== "active") {
-      await createWebhookException(
-        accountId,
-        webHookDetails ? webHookDetails._id.toString() : "",
-        "",
-        "",
-        "",
-        "",
-        customConstants.statusCodes.BAD_REQUEST,
-        customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
-        customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
-        {}
-      );
+
+        await webhookExceptionsModel.create({
+            accountId,
+            webhookMasterId: webHookDetails ? webHookDetails._id.toString() : "",
+            networkCode:customConstants.statusCodes.BAD_REQUEST,
+            exceptionTitle:customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+            exceptionMessage:customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+        })
+        
+        
+
       // Return response and stop further execution
       return res.status(customConstants.statusCodes.BAD_REQUEST).json({
         status: customConstants.messages.MESSAGE_FAIL,
@@ -645,18 +641,17 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
     }
   
     if (!webHookDetails.accountId || webHookDetails.accountId.status !== "active") {
-      await createWebhookException(
-        webHookDetails.accountId._id || accountId,
-        webHookDetails._id,
-        "",
-        "",
-        "",
-        "",
-        customConstants.statusCodes.BAD_REQUEST,
-        customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
-        customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
-        {}
-      );
+
+        await webhookExceptionsModel.create({
+            accountId,
+            webhookMasterId: webHookDetails ? webHookDetails._id.toString() : "",
+            networkCode:customConstants.statusCodes.BAD_REQUEST,
+            exceptionTitle:customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+            exceptionMessage:customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+        })
+
+
+
       // Return response and stop further execution
       return res.status(customConstants.statusCodes.BAD_REQUEST).json({
         status: customConstants.messages.MESSAGE_FAIL,
@@ -677,18 +672,16 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
   
     // If token doesn't match
     if (token !== decryptAuthenticatedCode.authenticationCode) {
-      await createWebhookException(
-        webHookDetails.accountId._id,
-        webHookDetails._id,
-        "",
-        "",
-        "",
-        "",
-        customConstants.statusCodes.UNAUTHORIZED,
-        customConstants.messages.MESSAGE_API_KEY_MISMATCH,
-        customConstants.messages.MESSAGE_API_KEY_MISMATCH,
-        {}
-      );
+
+
+        await webhookExceptionsModel.create({
+            accountId,
+            webhookMasterId: webHookDetails ? webHookDetails._id.toString() : "",
+            networkCode:customConstants.statusCodes.UNAUTHORIZED,
+            exceptionTitle:customConstants.messages.MESSAGE_API_KEY_MISMATCH,
+            exceptionMessage:customConstants.messages.MESSAGE_API_KEY_MISMATCH,
+        })
+
       // Return response and stop further execution
       return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
         status: customConstants.messages.MESSAGE_FAIL,
@@ -697,21 +690,17 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
     }
   
     let decodeJwt = await jwt.verify(decryptAuthenticatedCode.authenticationCode, "secret");
-
-    // If decoded JWT accountId doesn't match
+        // If decoded JWT accountId doesn't match
     if (decodeJwt.accountId !== accountId) {
-      await createWebhookException(
-        webHookDetails.accountId._id,
-        webHookDetails._id,
-        "",
-        "",
-        "",
-        "",
-        customConstants.statusCodes.UNAUTHORIZED,
-        customConstants.messages.MESSAGE_JWT_MALFORMED,
-        customConstants.messages.MESSAGE_JWT_MALFORMED,
-        {}
-      );
+        await webhookExceptionsModel.create({
+            accountId,
+            webhookMasterId: webHookDetails ? webHookDetails._id.toString() : "",
+            networkCode:customConstants.statusCodes.UNAUTHORIZED,
+            exceptionTitle:customConstants.messages.MESSAGE_JWT_MALFORMED,
+            exceptionMessage:customConstants.messages.MESSAGE_JWT_MALFORMED,
+        })
+
+
       // Return response and stop further execution
       return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
         status: customConstants.messages.MESSAGE_FAIL,
