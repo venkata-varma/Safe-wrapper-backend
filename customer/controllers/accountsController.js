@@ -78,7 +78,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         const accountData = await accountsModel.create({
             ...req.body,
 
-          //  logo: req.file ? await preSignedUrlToUpload(req.file) : ""
+           logo: req.file ? await preSignedUrlToUpload(req.file) : ""
         })
         const customId = new mongoose.Types.ObjectId();
 

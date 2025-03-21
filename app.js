@@ -38,8 +38,8 @@ app.use('/api/webhook',webHooksRoute)
 app.use(errorcontroller);
 //insertGlobalConstants()
 
-app.listen(process.env.PORT, () => {
-    console.log(`Server is working on port ${process.env.PORT}`);
+app.listen(8201, () => {
+    console.log(`Server is working on port 8201`);
 });
 
 module.exports = app;

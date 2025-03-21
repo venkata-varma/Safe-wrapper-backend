@@ -20,7 +20,7 @@ const {
 
 
 
-router.post('/:randomNumber/:accountId', validateWebHookReceiveData,receiveWebhookData)
+router.post('/:accountId', validateWebHookReceiveData,receiveWebhookData)
 
 
 const auth = require('../../middleware/authentication')
@@ -34,7 +34,7 @@ router.post('/create-webhook',auth,validateAccountStatusToCreateWebHook ,createW
 
 // router.get('/get-all-webhooks',validateIntegrationForWebHook, getAllWebHooks)
 // router.get('/get-single-webhook',validateIntegrationForWebHook,getIndividualWebHook)
- router.get('/generate-webhook',auth,generateWebhookToken)
+ 
 // router.get('/get-webhook-logs-reports',validateIntegrationForWebHook, getWebHookLogsReports)
 
 

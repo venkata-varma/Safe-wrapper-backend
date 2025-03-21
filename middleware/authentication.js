@@ -46,6 +46,7 @@ const auth = asyncWrapper(async (req, _res, next) => {
       userId: payload.userId,
       accessToken: token,
     });
+    console.log("sessionObject", sessionObject)
     console.log(sessionObject.status === "open", "sessionObject");
 
     if (!user.userId || user.userId === "") {

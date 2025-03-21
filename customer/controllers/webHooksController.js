@@ -45,15 +45,19 @@ exports.validateAccountStatusToCreateWebHook = asyncWrapper(
  */
 
 exports.createWebHook = asyncWrapper(async (req, res) => {
-  const { accountId, authenticationCode } = req.body;
+  const { accountId } = req.body;
+
+  let webHookUrl = `${process.env.DOMAIN_NAME}/api/webhook/${accountId}`;
+  let webHookAuthenticationCode =`Bearer ${jwt.sign({ accountId: accountId }, process.env.JWT_SECRET)}`
 
   const encryptedWebHookAuthCode = encryptData({
-    authenticationCode: authenticationCode,
+    authenticationCode: webHookAuthenticationCode,
   });
 
   await webHooksModel.create({
     ...req.body,
-    authenticationCode: encryptedWebHookAuthCode,
+    webHookUrl,
+   authenticationCode: encryptedWebHookAuthCode,
   });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -534,30 +538,7 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
 //     }
 // })
 
-/**
- * Generates the webhook URL and authentication token for webhook.
- */
-exports.generateWebhookToken = asyncWrapper(async (req, res) => {
-  const { accountId } = req.query;
-  const randomNumber = Math.floor(10000 + Math.random() * 90000);
-  let webHookUrl = `${process.env.DOMAIN_NAME}/api/webhook/${randomNumber}/${accountId}`;
-  let webHookAuthenticationCode = jwt.sign({ accountId: accountId }, process.env.JWT_SECRET);
-console.log("webHookAuthenticationCode", webHookAuthenticationCode)
-  const encryptedWebHookAuthCode = encryptData({
-    authenticationCode: webHookAuthenticationCode,
-  });
-  return res
-    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-    .json({
-      status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_WEBHOOK,
-      data: {
-        webHookUrl: webHookUrl,
-        randomNumber,
-        authenticationCode: encryptedWebHookAuthCode,
-      },
-    });
-});
+
 
 /**
  *
@@ -587,9 +568,9 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
   let token = req.headers.authorization;
 
   const splitUrlToGetParams = req.originalUrl.split("/");
-  let randomNumber = splitUrlToGetParams[splitUrlToGetParams.length - 2];
-  let accountId = splitUrlToGetParams[splitUrlToGetParams.length - 1];
 
+  let accountId = splitUrlToGetParams[splitUrlToGetParams.length - 1];
+  console.log("accountId", accountId)
   // If no token is present
   if (!token) {
 
@@ -684,7 +665,7 @@ let encryptReceivedToken=await encryptData({
   }
 
   let decodeJwt = await jwt.verify(
-    decryptAuthenticatedCode.authenticationCode,
+    decryptAuthenticatedCode.authenticationCode.slice(7),
     process.env.JWT_SECRET
   );
   // If decoded JWT accountId doesn't match
