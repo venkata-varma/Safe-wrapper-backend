@@ -46,10 +46,13 @@ exports.validateAccountStatusToCreateWebHook = asyncWrapper(
 
 exports.createWebHook = asyncWrapper(async (req, res) => {
   const { accountId } = req.body;
-  const randomNumber = Math.floor(10000 + Math.random() * 90000)
+  const randomNumber = Math.floor(10000 + Math.random() * 90000);
 
   let webHookUrl = `${process.env.DOMAIN_NAME}api/webhook/${randomNumber}/${accountId}`;
-  let webHookAuthenticationCode =`Bearer ${jwt.sign({ accountId: accountId }, process.env.JWT_SECRET)}`
+  let webHookAuthenticationCode = `Bearer ${jwt.sign(
+    { accountId: accountId },
+    process.env.JWT_SECRET
+  )}`;
 
   const encryptedWebHookAuthCode = encryptData({
     authenticationCode: webHookAuthenticationCode,
@@ -58,7 +61,7 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
   await webHooksModel.create({
     ...req.body,
     webHookUrl,
-   authenticationCode: encryptedWebHookAuthCode,
+    authenticationCode: encryptedWebHookAuthCode,
   });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -539,8 +542,6 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
 //     }
 // })
 
-
-
 /**
  *
  */
@@ -566,40 +567,18 @@ const createWebhookException = async (
  * Validates the webhook data for webhook log.
  */
 exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
-  let bearerToken = req.headers.authorization.split(' ')[1];
-  let token = req.headers.authorization
-
   const splitUrlToGetParams = req.originalUrl.split("/");
 
   let accountId = splitUrlToGetParams[splitUrlToGetParams.length - 1];
-  console.log("accountId", accountId)
-  console.log('token:===',token)
-
-  if(!['Bearer'].includes(req.headers.authorization.split(' ')[0])){
+  if (!req.headers.authorization) {
     await createWebhookException(
-      accountId, 
+      accountId,
       null,
       customConstants.statusCodes.UNAUTHORIZED,
-      customConstants.messages.MESSAGE_INVALID_WEBHOOK_TOKEN,
-      customConstants.messages.MESSAGE_INVALID_WEBHOOK_TOKEN,
+      customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
+      customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
       {}
-    )
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message:
-        customConstants.messages.MESSAGE_INVALID_WEBHOOK_TOKEN,
-    });
-  }
-  // If no token is present
-  else if (bearerToken === "") {
-    await createWebhookException(
-        accountId, 
-        null,
-        customConstants.statusCodes.UNAUTHORIZED,
-        customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
-        customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
-        {}
-    )
+    );
 
     // Return response and stop further execution
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
@@ -608,25 +587,68 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
         customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
     });
   }
-//Encrypt received token to find webhook master
-let encryptReceivedToken=await encryptData({
+
+
+  let bearerToken = req.headers.authorization.split(" ")[1];
+  let token = req.headers.authorization;
+
+
+  console.log("accountId", accountId);
+  console.log("token:===", token);
+
+  if (!["Bearer"].includes(req.headers.authorization.split(" ")[0])) {
+    await createWebhookException(
+      accountId,
+      null,
+      customConstants.statusCodes.UNAUTHORIZED,
+      customConstants.messages.MESSAGE_INVALID_WEBHOOK_TOKEN,
+      customConstants.messages.MESSAGE_INVALID_WEBHOOK_TOKEN,
+      {}
+    );
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_INVALID_WEBHOOK_TOKEN,
+    });
+  }
+  // If no token is present
+  else if (bearerToken === "") {
+    await createWebhookException(
+      accountId,
+      null,
+      customConstants.statusCodes.UNAUTHORIZED,
+      customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
+      customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
+      {}
+    );
+
+    // Return response and stop further execution
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message:
+        customConstants.messages.MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS,
+    });
+  }
+  //Encrypt received token to find webhook master
+  let encryptReceivedToken = await encryptData({
     authenticationCode: token,
-})
-console.log('encryptReceivedToken:===',encryptReceivedToken)
-  const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: encryptReceivedToken}).populate("accountId") .lean(); /*Test case :- What if a certain Random number is generated twice after long time.
+  });
+  console.log("encryptReceivedToken:===", encryptReceivedToken);
+  const webHookDetails = await webHooksMasterModel
+    .findOne({ authenticationCode: encryptReceivedToken })
+    .populate("accountId")
+    .lean(); /*Test case :- What if a certain Random number is generated twice after long time.
                                                                                                                         Should we need to look for complex generator?           */
 
   // If webhook details are not found or status is not 'active'
   if (!webHookDetails || webHookDetails.status !== "active") {
-
     await createWebhookException(
-        accountId, 
-        webHookDetails?webHookDetails._id:null,
-        customConstants.statusCodes.BAD_REQUEST,
-        customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
-        customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
-        {}
-    )
+      accountId,
+      webHookDetails ? webHookDetails._id : null,
+      customConstants.statusCodes.BAD_REQUEST,
+      customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+      customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+      {}
+    );
 
     // Return response and stop further execution
     return res.status(customConstants.statusCodes.BAD_REQUEST).json({
@@ -635,15 +657,18 @@ console.log('encryptReceivedToken:===',encryptReceivedToken)
     });
   }
 
-  if (!webHookDetails.accountId || webHookDetails.accountId.status !== "active") {
+  if (
+    !webHookDetails.accountId ||
+    webHookDetails.accountId.status !== "active"
+  ) {
     await createWebhookException(
-        accountId, 
-        webHookDetails?webHookDetails._id:null,
-        customConstants.statusCodes.BAD_REQUEST,
-        customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
-        customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
-        {}
-    )
+      accountId,
+      webHookDetails ? webHookDetails._id : null,
+      customConstants.statusCodes.BAD_REQUEST,
+      customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+      customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+      {}
+    );
 
     // Return response and stop further execution
     return res.status(customConstants.statusCodes.BAD_REQUEST).json({
@@ -664,16 +689,14 @@ console.log('encryptReceivedToken:===',encryptReceivedToken)
 
   // If token doesn't match
   if (token !== decryptAuthenticatedCode.authenticationCode) {
-
     await createWebhookException(
-        accountId, 
-        webHookDetails?webHookDetails._id:null,
-        customConstants.statusCodes.UNAUTHORIZED,
-        customConstants.messages.MESSAGE_API_KEY_MISMATCH,
-        customConstants.messages.MESSAGE_API_KEY_MISMATCH,
-        {}
-    )
-
+      accountId,
+      webHookDetails ? webHookDetails._id : null,
+      customConstants.statusCodes.UNAUTHORIZED,
+      customConstants.messages.MESSAGE_API_KEY_MISMATCH,
+      customConstants.messages.MESSAGE_API_KEY_MISMATCH,
+      {}
+    );
 
     // Return response and stop further execution
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
@@ -688,16 +711,14 @@ console.log('encryptReceivedToken:===',encryptReceivedToken)
   );
   // If decoded JWT accountId doesn't match
   if (decodeJwt.accountId !== accountId) {
-
     await createWebhookException(
-        accountId, 
-        webHookDetails?webHookDetails._id:null,
-        customConstants.statusCodes.UNAUTHORIZED,
-        customConstants.messages.MESSAGE_JWT_MALFORMED,
-        customConstants.messages.MESSAGE_JWT_MALFORMED,
-        {}
-    )
-
+      accountId,
+      webHookDetails ? webHookDetails._id : null,
+      customConstants.statusCodes.UNAUTHORIZED,
+      customConstants.messages.MESSAGE_JWT_MALFORMED,
+      customConstants.messages.MESSAGE_JWT_MALFORMED,
+      {}
+    );
 
     // Return response and stop further execution
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
@@ -717,7 +738,6 @@ console.log('encryptReceivedToken:===',encryptReceivedToken)
  */
 
 exports.receiveWebhookData = asyncWrapper(async (req, res) => {
-
   const webHookDetails = req.webHookDetails;
 
   // Create a new log entry in the database
@@ -820,98 +840,101 @@ exports.receiveWebhookData = asyncWrapper(async (req, res) => {
 //         });
 // });
 
-
-
 exports.decryptString = asyncWrapper(async (req, res) => {
-  const {  encryptedString } = req.body
+  const { encryptedString } = req.body;
   const encrypted = {
     iv: process.env.CRYPTO_IV,
-    encryptedData: encryptedString
+    encryptedData: encryptedString,
   };
-  const decryptedResult = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND,
-    data: {
-      decryptedResult
-    }
-  });
-  
+  const decryptedResult = JSON.parse(
+    await decryptData(encrypted, process.env.CRYPTO_KEY)
+  );
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message:
+        customConstants.messages.MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND,
+      data: {
+        decryptedResult,
+      },
+    });
+});
 
-})
+exports.validateWebhookStatus = asyncWrapper(async (req, res, next) => {
+  let individualWebhookDetails = await webHooksMasterModel
+    .findOne({ _id: req.params.webhookId })
+    .populate("accountId", "-password");
 
-exports.validateWebhookStatus=asyncWrapper(async(req,res,next)=>{
-  let individualWebhookDetails=await webHooksMasterModel.findOne({_id:req.params.webhookId}).populate('accountId', '-password');
-
-  if(!individualWebhookDetails.accountId ||individualWebhookDetails.accountId.status!=='active'){
+  if (
+    !individualWebhookDetails.accountId ||
+    individualWebhookDetails.accountId.status !== "active"
+  ) {
     // Return response and stop further execution
     return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-     status: customConstants.messages.MESSAGE_FAIL,
-     message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
-   });
-     }
-   
-
-
-
-  if(!individualWebhookDetails ||individualWebhookDetails.status!=='active'){
-    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
       status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
-     
+      message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
     });
   }
 
-
-req.individualWebhookDetails=individualWebhookDetails
-  next()
-})
-
-
-exports.getIndividualWebhookDetails=asyncWrapper(async(req,res)=>{
-let individualWebhookDetails=req.individualWebhookDetails;
-
-
-return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-  status: customConstants.messages.MESSAGE_SUCCESS,
-  message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_WEBHOOK,
-
-  data:{
-    individualWebhookDetails
+  if (
+    !individualWebhookDetails ||
+    individualWebhookDetails.status !== "active"
+  ) {
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+    });
   }
+
+  req.individualWebhookDetails = individualWebhookDetails;
+  next();
 });
-  
-})
 
+exports.getIndividualWebhookDetails = asyncWrapper(async (req, res) => {
+  let individualWebhookDetails = req.individualWebhookDetails;
 
-exports.validateAccountStatus=asyncWrapper(async(req,res,next)=>{
-  const accountDetails=await accountsModel.findById(req.params.accountId).lean();
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_WEBHOOK,
 
-  if(!accountDetails ||accountDetails.status!=='active'){
+      data: {
+        individualWebhookDetails,
+      },
+    });
+});
+
+exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
+  const accountDetails = await accountsModel
+    .findById(req.params.accountId)
+    .lean();
+
+  if (!accountDetails || accountDetails.status !== "active") {
     // Return response and stop further execution
     return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-     status: customConstants.messages.MESSAGE_FAIL,
-     message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
-   });
-     }
-
-     next()
-})
-
-
-exports.getAllWebhooksOfAccount=asyncWrapper(async(req,res)=>{
-
-let getAllWebhooksOfAccount=await webHooksMasterModel.find({accountId:req.params.accountId}).lean();
-
-return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-  status: customConstants.messages.MESSAGE_SUCCESS,
-  message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
-
-  data:{
-    getAllWebhooksOfAccount
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+    });
   }
+
+  next();
 });
-  
 
+exports.getAllWebhooksOfAccount = asyncWrapper(async (req, res) => {
+  let getAllWebhooksOfAccount = await webHooksMasterModel
+    .find({ accountId: req.params.accountId })
+    .lean();
 
-})
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
+
+      data: {
+        getAllWebhooksOfAccount,
+      },
+    });
+});
