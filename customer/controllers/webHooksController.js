@@ -574,8 +574,24 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
   let accountId = splitUrlToGetParams[splitUrlToGetParams.length - 1];
   console.log("accountId", accountId)
   console.log('token:===',token)
+
+  if(!['Bearer'].includes(req.headers.authorization.split(' ')[0])){
+    await createWebhookException(
+      accountId, 
+      null,
+      customConstants.statusCodes.UNAUTHORIZED,
+      customConstants.messages.MESSAGE_INVALID_WEBHOOK_TOKEN,
+      customConstants.messages.MESSAGE_INVALID_WEBHOOK_TOKEN,
+      {}
+    )
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message:
+        customConstants.messages.MESSAGE_INVALID_WEBHOOK_TOKEN,
+    });
+  }
   // If no token is present
-  if (bearerToken === "") {
+  else if (bearerToken === "") {
     await createWebhookException(
         accountId, 
         null,

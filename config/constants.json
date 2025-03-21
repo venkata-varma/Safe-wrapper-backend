@@ -120,7 +120,8 @@
     "MESSAGE_MISSING_IDS":"accountId and IntegrationsMasterId required.",
     "MESSAGE_WEBHOOK_OFFLINE":"Webhook deactivated succesfully.",
     "MESSAGE_VALIDATE_SERVICEPROVIDER_SUCCESS":"The service provider has been successfully validated.",
-    "MESSAGE_VALIDATE_SERVICEPROVIDER_FAILED":"Invalid Credentials/Service Method."
+    "MESSAGE_VALIDATE_SERVICEPROVIDER_FAILED":"Invalid Credentials/Service Method.",
+    "MESSAGE_INVALID_WEBHOOK_TOKEN":"Invalid webhook token."
 
   },
   "statusCodes": {
