@@ -46,8 +46,9 @@ exports.validateAccountStatusToCreateWebHook = asyncWrapper(
 
 exports.createWebHook = asyncWrapper(async (req, res) => {
   const { accountId } = req.body;
+  const randomNumber = Math.floor(10000 + Math.random() * 90000)
 
-  let webHookUrl = `${process.env.DOMAIN_NAME}/api/webhook/${accountId}`;
+  let webHookUrl = `${process.env.DOMAIN_NAME}api/webhook/${randomNumber}/${accountId}`;
   let webHookAuthenticationCode =`Bearer ${jwt.sign({ accountId: accountId }, process.env.JWT_SECRET)}`
 
   const encryptedWebHookAuthCode = encryptData({
@@ -565,15 +566,16 @@ const createWebhookException = async (
  * Validates the webhook data for webhook log.
  */
 exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
-  let token = req.headers.authorization;
+  let bearerToken = req.headers.authorization.split(' ')[1];
+  let token = req.headers.authorization
 
   const splitUrlToGetParams = req.originalUrl.split("/");
 
   let accountId = splitUrlToGetParams[splitUrlToGetParams.length - 1];
   console.log("accountId", accountId)
+  console.log('token:===',token)
   // If no token is present
-  if (!token) {
-
+  if (bearerToken === "") {
     await createWebhookException(
         accountId, 
         null,
@@ -594,7 +596,7 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
 let encryptReceivedToken=await encryptData({
     authenticationCode: token,
 })
-
+console.log('encryptReceivedToken:===',encryptReceivedToken)
   const webHookDetails = await webHooksMasterModel.findOne({ authenticationCode: encryptReceivedToken}).populate("accountId") .lean(); /*Test case :- What if a certain Random number is generated twice after long time.
                                                                                                                         Should we need to look for complex generator?           */
 
