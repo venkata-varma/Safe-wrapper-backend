@@ -819,3 +819,99 @@ exports.receiveWebhookData = asyncWrapper(async (req, res) => {
 //             data: webHookLogsReports
 //         });
 // });
+
+
+
+exports.decryptString = asyncWrapper(async (req, res) => {
+  const {  encryptedString } = req.body
+  const encrypted = {
+    iv: process.env.CRYPTO_IV,
+    encryptedData: encryptedString
+  };
+  const decryptedResult = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND,
+    data: {
+      decryptedResult
+    }
+  });
+  
+
+})
+
+exports.validateWebhookStatus=asyncWrapper(async(req,res,next)=>{
+  let individualWebhookDetails=await webHooksMasterModel.findOne({_id:req.params.webhookId}).populate('accountId', '-password');
+
+  if(!individualWebhookDetails.accountId ||individualWebhookDetails.accountId.status!=='active'){
+    // Return response and stop further execution
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+     status: customConstants.messages.MESSAGE_FAIL,
+     message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+   });
+     }
+   
+
+
+
+  if(!individualWebhookDetails ||individualWebhookDetails.status!=='active'){
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_WEBHOOK_NOT_FOUND,
+     
+    });
+  }
+
+
+req.individualWebhookDetails=individualWebhookDetails
+  next()
+})
+
+
+exports.getIndividualWebhookDetails=asyncWrapper(async(req,res)=>{
+let individualWebhookDetails=req.individualWebhookDetails;
+
+
+return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+  status: customConstants.messages.MESSAGE_SUCCESS,
+  message: customConstants.messages.MESSAGE_GET_INDIVIDUAL_WEBHOOK,
+
+  data:{
+    individualWebhookDetails
+  }
+});
+  
+})
+
+
+exports.validateAccountStatus=asyncWrapper(async(req,res,next)=>{
+  const accountDetails=await accountsModel.findById(req.params.accountId).lean();
+
+  if(!accountDetails ||accountDetails.status!=='active'){
+    // Return response and stop further execution
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+     status: customConstants.messages.MESSAGE_FAIL,
+     message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+   });
+     }
+
+     next()
+})
+
+
+exports.getAllWebhooksOfAccount=asyncWrapper(async(req,res)=>{
+
+let getAllWebhooksOfAccount=await webHooksMasterModel.find({accountId:req.params.accountId}).lean();
+
+return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+  status: customConstants.messages.MESSAGE_SUCCESS,
+  message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
+
+  data:{
+    getAllWebhooksOfAccount
+  }
+});
+  
+
+
+})
