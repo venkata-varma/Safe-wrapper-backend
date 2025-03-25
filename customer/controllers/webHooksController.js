@@ -8,7 +8,7 @@ const {
   decryptData,
 } = require("../../utils/encryptionAlgorithms");
 const webHooksMasterModel = require("../../models/webHooksMasterModel");
-const webHookLogsModel = require("../../models/webHookLogs");
+const webhookMetaPayloadModel = require("../../models/webHookMetaPayloads");
 const { default: mongoose } = require("mongoose");
 const moment = require("moment");
 const { stringify } = require("flatted");
@@ -741,10 +741,10 @@ exports.receiveWebhookData = asyncWrapper(async (req, res) => {
   const webHookDetails = req.webHookDetails;
 
   // Create a new log entry in the database
-  await webHookLogsModel.create({
+  await webhookMetaPayloadModel.create({
     accountId: webHookDetails.accountId._id,
     webHookMasterId: webHookDetails._id,
-    dataObject: req.body,
+    dataPoint: req.body,
   });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
