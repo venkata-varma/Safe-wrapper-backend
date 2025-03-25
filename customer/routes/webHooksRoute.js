@@ -38,7 +38,7 @@ router.post(
 
 router.post("/decrypt-string",  decryptString);
 router.get(
-  "/get-individual-webhook-details/:webhookId",
+  "/get-individual-webhook-details/:webHookMasterId",
   validateWebhookStatus,
   getIndividualWebhookDetails
 );

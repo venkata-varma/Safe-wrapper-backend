@@ -864,7 +864,7 @@ exports.decryptString = asyncWrapper(async (req, res) => {
 
 exports.validateWebhookStatus = asyncWrapper(async (req, res, next) => {
   let individualWebhookDetails = await webHooksMasterModel
-    .findOne({ _id: req.params.webhookId })
+    .findOne({ _id: req.params.webHookMasterId })
     .populate("accountId", "-password");
 
   if (
