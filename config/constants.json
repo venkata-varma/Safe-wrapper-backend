@@ -29,6 +29,7 @@
     "MESSAGE_USER_DETAILS": "User details found successfully.",
     "MESSAGE_ALL_USERS_DETAILS": "All Users details found successfully.",
     "MESSAGE_USER_DELETED": "User deleted successfully.",
+    "MESSAGE_USER_ACTIVATED": "User activated successfully.",
     "MESSAGE_ACCOUNT_DELETED": "Account deleted successfully.",
     "MESSAGE_ACCOUNT_INTEGRATION_INFORMATION":"Account-Integrations information provided successfully.",
     "MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED":"Account-Integrations reports by filters provided successfully.",
@@ -121,7 +122,10 @@
     "MESSAGE_WEBHOOK_OFFLINE":"Webhook deactivated succesfully.",
     "MESSAGE_VALIDATE_SERVICEPROVIDER_SUCCESS":"The service provider has been successfully validated.",
     "MESSAGE_VALIDATE_SERVICEPROVIDER_FAILED":"Invalid Credentials/Service Method.",
-    "MESSAGE_INVALID_WEBHOOK_TOKEN":"Invalid webhook token."
+    "MESSAGE_INVALID_WEBHOOK_TOKEN":"Invalid webhook token.",
+    "MESSAGE_SESSION_NO_ACCESS_TO_ADD_USER": "You don't have access to add the user.Please contact super-admin for this action.",
+    "MESSAGE_SESSION_NO_ACCESS_TO_DELETE_USER": "You don't have access to delete the user.Please contact super-admin for this action."
+
 
   },
   "statusCodes": {

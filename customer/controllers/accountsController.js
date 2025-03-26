@@ -77,6 +77,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
+            role:"super-admin",
 
            logo: req.file ? await preSignedUrlToUpload(req.file) : ""
         })
@@ -92,6 +93,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             companyName: companyName,
             phone: phone,
             email: email,
+            role:"super-admin",
         });
         await accountSettingsModel.create({
             accountId: accountData._id,

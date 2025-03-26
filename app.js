@@ -23,14 +23,12 @@ const usersRoute = require('./customer/routes/usersRoute');
 
 const errorcontroller = require('./customer/controllers/errorcontroller');
 const webHooksRoute = require('./customer/routes/webHooksRoute')
-const integrationsRoute = require('./customer/routes/integrationsMasterRoute');
 
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
 
 app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
-app.use('/api/integrations', integrationsRoute);
 app.use('/api/webhook',webHooksRoute)
 
 

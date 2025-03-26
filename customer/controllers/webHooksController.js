@@ -1,7 +1,6 @@
 const asyncWrapper = require("../../middleware/asyncWrapper");
 const webHooksModel = require("../../models/webHooksMasterModel");
 const customConstants = require("../../config/constants.json");
-const integrationsMasterModel = require("../../models/integrationsMasterModel");
 const jwt = require("jsonwebtoken");
 const {
   encryptData,

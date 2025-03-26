@@ -11,6 +11,7 @@ const mongoose = require('mongoose')
 const { validateUserMobileEmailData, validatePhoneNumber } = require('../../utils/userLoginValidation');
 
 const accountSettingsModel = require('../../models/accountSettingsModel');
+const { deleteAccount } = require('./accountsController');
 
 /*
 Miidleware function to controller, "createUser"
@@ -20,7 +21,7 @@ If returns True, moves to "next" function , "createUser"
 */
 exports.validateUserRegistration = asyncWrapper(async (req, res, next) => {
   const { name, email, phone, role, password } = req.body
-  if (!name || !email || !role || !phone || !password) {
+  if (!name || !email || !phone || !password) {
     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
@@ -30,6 +31,12 @@ exports.validateUserRegistration = asyncWrapper(async (req, res, next) => {
     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
+    });
+  }
+  if (req.user.role !== 'super-admin') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_SESSION_NO_ACCESS_TO_ADD_USER,
     });
   }
   else {
@@ -60,9 +67,10 @@ exports.createUser = asyncWrapper(async (req, res) => {
     const userData = await usersModel.create({
       ...req.body,
       _id: customId,
+      role:"admin",
       userId: customId,
-      createdBy: req.body.createdBy //Super-admin user among set 0f 4 -5 users
-      //accountId:req.user.accountId
+      createdBy: req.body.createdBy, //Super-admin user among set 0f 4 -5 users
+      accountId:req.user.accountId || null
 
     })
     delete userData._doc.password;
@@ -95,6 +103,12 @@ exports.middlewareToDeleteUser = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_USER_ALREADY_DELETED,
     });
   }
+  if (req.user.role !== 'super-admin') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_SESSION_NO_ACCESS_TO_DELETE_USER,
+    });
+  }
   next()
 }
 
@@ -108,15 +122,33 @@ exports.middlewareToDeleteUser = asyncWrapper(async (req, res, next) => {
    *If successful, returns updated record.
 
 */
-exports.deleteUser = asyncWrapper(async (req, res) => {
-  const deactivateUser = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'deleted', updatedBy: req.user_id } }, { new: true });
-  delete deactivateUser.password;
+exports.updateUserStatus = asyncWrapper(async (req, res) => {
+  // const deactivateUser = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'deleted', updatedBy: req.user_id } }, { new: true });
+  // delete deactivateUser.password;
+  let userDetails
+  const { status } = req.body
+    if (status === 'delete') {
+      userDetails = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'deleted', updatedBy: req.user_id } }, { new: true });
+      delete userDetails.password
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_USER_DELETED,
+        })
+    }
+    else if (status === 'active') {
+        userDetails = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'active', updatedBy: req.user_id } }, { new: true });
+      delete userDetails.password
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_USER_ACTIVATED,
+        })
+    }
   // Return success response
-  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_USER_DELETED,
-    data: deactivateUser,
-  });
+  // return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+  //   status: customConstants.messages.MESSAGE_SUCCESS,
+  //   message: customConstants.messages.MESSAGE_USER_DELETED,
+  //   data: deactivateUser,
+  // });
 })
 
 /**
@@ -141,7 +173,15 @@ exports.getUserDetails = asyncWrapper(async (req, res) => {
  * 
  */
 exports.getAllUsers = asyncWrapper(async (req, res) => {
-  const users = await usersModel.find({ accountId: req.params.accountId }, { password: 0 });
+  // const users = await usersModel.find({ accountId: req.params.accountId, role:{$eq:req.user.role === "super-admin"} }, { password: 0 });
+  const users = await usersModel.find(
+    { 
+      accountId: req.params.accountId, 
+      role: req.user.role === "super-admin" ? { $in: ["super-admin","admin"] } : { $ne: "admin" }
+    }, 
+    { password: 0 }
+  );
+  
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_ALL_USERS_DETAILS,
@@ -149,7 +189,6 @@ exports.getAllUsers = asyncWrapper(async (req, res) => {
       users
     },
   });
-
 })
 
 
@@ -332,7 +371,7 @@ Funtion to check
 If returns True, moves to "next" function , "updatePassword"
 */
 exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
-  console.log("Rweq", req.body)
+  // console.log("Rweq", req.body)
   const { userId } = req.params
   const { currentPassword, newPassword } = req.body;
 
@@ -344,12 +383,12 @@ exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
     });
   }
-  if (user.accountId.status === 'in-progress') {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_IN_PROGRESS,
-    });
-  }
+  // if (user.accountId.status === 'in-progress') {
+  //   return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+  //     status: customConstants.messages.MESSAGE_FAIL,
+  //     message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_IN_PROGRESS,
+  //   });
+  // }
   if (user.accountId.status === 'deleted' || user.status === 'deleted') {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
@@ -357,6 +396,8 @@ exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
     });
   }
 
+  console.log(currentPassword, "comparePasswordResult");
+  console.log(user.password, "user.password");
   // Compare password 
   const comparePasswordResult = await comparePassword(currentPassword, user.password);
   console.log(comparePasswordResult, "comparePasswordResult");

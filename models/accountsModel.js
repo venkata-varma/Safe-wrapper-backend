@@ -31,6 +31,10 @@ const accountsSchema = new mongoose.Schema({
         type:String,
         default:""
     },
+    role:{
+        type:String,
+        default:"super-admin"
+    },
     phone:{
         type:String,
         required:[true, 'Mobile number is required.'],

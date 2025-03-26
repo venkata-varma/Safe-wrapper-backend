@@ -22,6 +22,10 @@ const usersSchema = new mongoose.Schema({
         required:[true, 'Password is required.'],
         default:""
     },
+    role:{
+        type:String,
+        default:""
+    },
     phone:{
         type:String,
         required:[true, 'Mobile number is required.'],
