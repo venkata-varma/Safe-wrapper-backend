@@ -2,46 +2,45 @@ const mongoose = require('mongoose')
 
 const webHookMetaPayloads = new mongoose.Schema({
     webHookMetaPayloadId: {
-        type:mongoose.Schema.Types.ObjectId,
-        index:true,
+        type: mongoose.Schema.Types.ObjectId,
+        index: true,
         // default:null
     },
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "accounts",
-        index : true,
+        index: true,
         // default: null,
     },
-    
-    webHookMasterId:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"webhooksmastermodels",
-        index:true,
+    webHookMasterId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "webhookmasters",
+        index: true,
         // default:null
     },
-    lastPullDate:{
-        type:Date,
-        default:null
+    lastPullDate: {
+        type: Date,
+        default: null
     },
-    dataPoint:{
-        type:mongoose.Schema.Types.Mixed,
-        dataType:String,
-        default:{}
+    dataPoint: {
+        type: mongoose.Schema.Types.Mixed,
+        dataType: String,
+        default: {}
     },
-    status:{
-        type:String,
-        enum:['received','in-progress','executed','execution-failed','deleted'],
-        default:"received"
+    status: {
+        type: String,
+        enum: ['received', 'in-progress', 'executed', 'execution-failed', 'deleted'],
+        default: "received"
     },
-    primaryHookId:{
-        type:String,
+    primaryHookId: {
+        type: String,
         // unique:true,
-        default:""
+        default: ""
     }
-},{timestamps:true})
+}, { timestamps: true })
 
-webHookMetaPayloads.pre('save',function(next){
+webHookMetaPayloads.pre('save', function (next) {
     this.webHookMetaPayloadId = this._id
     next()
 })
-module.exports = mongoose.model('webhookmetapayloads',webHookMetaPayloads)
+module.exports = mongoose.model('webhookmetapayloads', webHookMetaPayloads)

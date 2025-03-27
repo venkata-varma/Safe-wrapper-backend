@@ -18,7 +18,8 @@ const {
   getIndividualWebhookDetails,
   validateWebhookStatus,
   validateAccountStatus,
-  getAllWebhooksOfAccount
+  getAllWebhooksOfAccount,
+  validateWebhookandAccount,updateWebhookSettings
 } = require("../controllers/webHooksController");
 
 router.post(
@@ -37,6 +38,8 @@ router.post(
 );
 
 router.post("/decrypt-string",  decryptString);
+router.patch('/update-webhook-settings/:webhookMasterId',validateWebhookandAccount,updateWebhookSettings)
+
 router.get(
   "/get-individual-webhook-details/:webHookMasterId",
   validateWebhookStatus,

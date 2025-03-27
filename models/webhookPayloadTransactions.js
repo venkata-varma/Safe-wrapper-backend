@@ -2,56 +2,57 @@ const mongoose = require('mongoose')
 
 
 const webhookPayloadTransactions = new mongoose.Schema({
-    webhookTransactionId:{
+    webhookTransactionId: {
         type: mongoose.Schema.Types.ObjectId,
         // default :null
     },
-    webhookMasterId:{
+    webhookMasterId: {
         type: mongoose.Schema.Types.ObjectId,
-        index:true,
+        index: true,
+        ref:"webhookmasters",
         // default:null
     },
-    webHookMetaPayloadId:{
-        type:mongoose.Schema.Types.ObjectId,
-        index:true,
-        // default:null
-    },
-    accountId:{
+    webHookMetaPayloadId: {
         type: mongoose.Schema.Types.ObjectId,
-        index:true,
+        index: true,
         // default:null
     },
-    serialNumber:{
-        type:String,
-        index:true,
-        default:""
+    accountId: {
+        type: mongoose.Schema.Types.ObjectId,
+        index: true,
+        // default:null
     },
-    transactionDeliveryType:{
+    serialNumber: {
+        type: String,
+        index: true,
+        default: ""
+    },
+    transactionDeliveryType: {
         type: String,  // push API or FTP
-        default:""
+        default: ""
     },
-    transactionMode:{
+    transactionMode: {
         type: String, //normal or audit
         default: null
     },
-    transactionType:{
+    transactionType: {
         type: String, // transaction whitelist statuses
-        default:""
+        default: ""
     },
-    transactionObjProperties:{
+    transactionObjProperties: {
         type: mongoose.Schema.Types.Mixed,
-        default:{}
+        default: {}
     },
-    status:{
-        type:String,
-        default:""
+    status: {
+        type: String,
+        default: ""
     },
 
-},{timestamps:true});
+}, { timestamps: true });
 
-webhookPayloadTransactions.pre('save', function(next){
+webhookPayloadTransactions.pre('save', function (next) {
     this.webhookTransactionId = this._id;
     next()
 })
 
-module.exports = mongoose.model('webhookpayloadtransactions',webhookPayloadTransactions)
+module.exports = mongoose.model('webhookpayloadtransactions', webhookPayloadTransactions)

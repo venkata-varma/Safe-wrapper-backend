@@ -124,9 +124,11 @@
     "MESSAGE_VALIDATE_SERVICEPROVIDER_FAILED":"Invalid Credentials/Service Method.",
     "MESSAGE_INVALID_WEBHOOK_TOKEN":"Invalid webhook token.",
     "MESSAGE_SESSION_NO_ACCESS_TO_ADD_USER": "You don't have access to add the user.Please contact super-admin for this action.",
-    "MESSAGE_SESSION_NO_ACCESS_TO_DELETE_USER": "You don't have access to delete the user.Please contact super-admin for this action."
-
-
+    "MESSAGE_SESSION_NO_ACCESS_TO_DELETE_USER": "You don't have access to delete the user.Please contact super-admin for this action.",
+    "MESSAGE_WEBOOK_ALREADY_DELETED": "Webhook doesn't exist / inactive.",
+    "MESSAGE_WEBOOK_SETTINGS_CREATED": "Webhook settings added succesfully.",
+    "MESSAGE_WEBOOK_SETTINGS_UPDATED": "Webhook settings updated succesfully.",
+    "MESSAGE_WEBOOK_GET_SETTINGS": "Webhook settings."
   },
   "statusCodes": {
     "FORBIDDEN": 403,

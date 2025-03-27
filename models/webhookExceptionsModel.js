@@ -17,12 +17,10 @@ const webhookExceptionsSchema = new mongoose.Schema(
      */
     webhookMasterId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "webhooksmastermodel",
-    
-      default:null
-    },
+      ref: "webhookmasters",
 
-  
+      default: null
+    },
     networkCode: {
       type: Number,
       default: 200,
@@ -31,7 +29,6 @@ const webhookExceptionsSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    
     exceptionMessage: {
       type: mongoose.Schema.Types.Mixed,
       default: "",

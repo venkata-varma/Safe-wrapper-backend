@@ -7,6 +7,7 @@ const webhookPayloadHeaders = new mongoose.Schema({
     },
     webhookMasterId: {
         type: mongoose.Schema.Types.ObjectId,
+        ref:"webhookmasters",
         index: true
     },
     webHookMetaPayloadId: {
@@ -69,9 +70,9 @@ const webhookPayloadHeaders = new mongoose.Schema({
     },
 }, { timestamps: true })
 
-webhookPayloadHeaders.pre('save', function(next) {
+webhookPayloadHeaders.pre('save', function (next) {
     this.webhookPayloadHeaderId = this._id
     next()
 })
 
-module.exports = mongoose.model('webhookpayloadheaders',webhookPayloadHeaders)
+module.exports = mongoose.model('webhookpayloadheaders', webhookPayloadHeaders)

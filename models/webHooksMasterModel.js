@@ -14,6 +14,12 @@ const webHookMastersSchema = new mongoose.Schema(
       index: true,
       default: null,
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      index: true,
+      default: null,
+    },
     location: {
       type: String,
       default: "",
@@ -21,17 +27,17 @@ const webHookMastersSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, "Webhook name is required"],
-     
+
     },
     webHookUrl: {
       type: String,
-     
-      required:[true, "Webhook URL code is mandatory"]
+
+      required: [true, "Webhook URL code is mandatory"]
     },
     authenticationCode: {
       type: String,
-      required:[true, "Authentication code is mandatory"],
-      unique:[true, "Authentication code must be unique"]
+      required: [true, "Authentication code is mandatory"],
+      unique: [true, "Authentication code must be unique"]
     },
 
     requestObject: {
@@ -51,6 +57,27 @@ const webHookMastersSchema = new mongoose.Schema(
       enum: ["active", "offline", "delete"],
       default: "active",
     },
+    webhookSettings: {
+      periodType: {
+        type: String,
+        enum: ["each second", "once each minute", "once each hour", "once each day", "once each month"],
+        required: [true, 'periodType required'],
+        default: ""
+      },
+      currentStatus: {
+        type: String,
+        enum: ['start', 'stop'],
+        default: "stop"
+      },
+      interval: {
+        type: Number,
+        default: 1
+      },
+      expiresOn: {
+        type: Date,
+        default: new Date()
+      }
+    }
   },
   { timestamps: true }
 );

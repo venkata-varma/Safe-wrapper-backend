@@ -58,10 +58,19 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
     authenticationCode: webHookAuthenticationCode,
   });
 
+  const defaultWebhookSettings = {
+    periodType: "once each hour", 
+    currentStatus: "stop",
+    interval: 1,
+    expiresOn: new Date()
+  };
+
   await webHooksModel.create({
     ...req.body,
+    userId:req.user._id,
     webHookUrl,
     authenticationCode: encryptedWebHookAuthCode,
+    webhookSettings:defaultWebhookSettings
   });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -1178,4 +1187,40 @@ exports.getAllWebhooksOfAccount = asyncWrapper(async (req, res) => {
                 overallStatusesCount: getOverallStatuses[0]?.statuses || []
             }
         });
+})
+
+
+
+exports.validateWebhookandAccount = asyncWrapper(async(req,res,next)=>{
+  const {webhookMasterId} = req.params;
+
+  const webhookDetails = await webHooksMasterModel.findById(webhookMasterId).populate('accountId').lean();
+  if(!webhookDetails && webhookDetails?.status !== 'active'){
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_WEBOOK_ALREADY_DELETED,
+    });
+  }
+  if(!webhookDetails?.accountId && webhookDetails?.accountId?.status !== 'active'){
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+    });
+  }
+  else
+    next()
+});
+
+exports.updateWebhookSettings = asyncWrapper(async(req,res)=>{
+  const {webhookMasterId} = req.params;
+
+  await webHooksMasterModel.findByIdAndUpdate(webhookMasterId,{
+    $set: Object.fromEntries(
+      Object.entries(req.body).map(([key, value])=>[`webhookSettings.${key}`,value])
+    )
+  },{new:true, upsert:true});
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status:customConstants.messages.MESSAGE_SUCCESS,
+    message:customConstants.messages.MESSAGE_WEBOOK_SETTINGS_UPDATED
+  })
 })
