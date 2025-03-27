@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const webHooksSchema = new mongoose.Schema(
+const webHookMastersSchema = new mongoose.Schema(
   {
     webHookMasterId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -55,8 +55,8 @@ const webHooksSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-webHooksSchema.pre("save", function (next) {
+webHookMastersSchema.pre("save", function (next) {
   (this.webHookMasterId = this._id), next();
 });
 
-module.exports = mongoose.model("webhooksmastermodel", webHooksSchema);
+module.exports = mongoose.model("webhookmasters", webHookMastersSchema);

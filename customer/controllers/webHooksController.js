@@ -38,7 +38,7 @@ exports.validateAccountStatusToCreateWebHook = asyncWrapper(
 );
 
 /**
- * Create webhook for an integration.
+ * Create webhook.
  * Initially validate the account whether it is in active or not.
  * Same validation for integration.
  * If both the conditions satisfied then webhook will be created or else returns the validation errors.
