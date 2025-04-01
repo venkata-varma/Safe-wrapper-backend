@@ -57,6 +57,10 @@ const webHookMastersSchema = new mongoose.Schema(
       enum: ["active", "offline", "delete"],
       default: "active",
     },
+    lastPullDate:{
+      type:Date,
+      default:null
+    },
     webhookSettings: {
       periodType: {
         type: String,

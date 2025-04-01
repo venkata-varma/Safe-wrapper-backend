@@ -22,26 +22,37 @@ const webhookPayloadTransactions = new mongoose.Schema({
         index: true,
         // default:null
     },
+    pickupGroupId: {
+        type:Number,
+        default:0
+    },
     serialNumber: {
+        type:String,
+        default:""
+    },
+    retrievedOn: {
         type: String,
-        index: true,
-        default: ""
+        default:""
     },
-    transactionDeliveryType: {
-        type: String,  // push API or FTP
-        default: ""
+    transactionDateTime: {
+        type: String,
+        default:""
     },
-    transactionMode: {
-        type: String, //normal or audit
-        default: null
+    userName:  {
+        type: String,
+        default:""
     },
-    transactionType: {
-        type: String, // transaction whitelist statuses
-        default: ""
+    transactionType:  {
+        type: String,
+        default:""
     },
-    transactionObjProperties: {
-        type: mongoose.Schema.Types.Mixed,
-        default: {}
+    amount:  {
+        type: Number,
+        default:0
+    },
+    denominations:{
+        type: Array,
+        default:[]
     },
     status: {
         type: String,

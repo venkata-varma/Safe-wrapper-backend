@@ -21,19 +21,19 @@ const webhookPayloadHeaders = new mongoose.Schema({
         // default:null
     },
     pickupGroupId: {
-        type: String,
-        default: ""
+        type: Number,
+        default: 0
     },
     serialNumber: {
         type: String,
         default: ""
     },
     retrievedOn: {
-        type: Date,
+        type: String,
         default: ""
     },
     transactionDateTime: {
-        type: Date,
+        type: String,
         default: ""
     },
     userName: {
@@ -41,30 +41,6 @@ const webhookPayloadHeaders = new mongoose.Schema({
         default: ""
     },
     transactionType: {
-        type: String,
-        default: ""
-    },
-    amount: {
-        type: String,
-        default: ""
-    },
-    doorName: {
-        type: String,
-        default: ""
-    },
-    denominations: {
-        type: String,
-        default: ""
-    },
-    register: {
-        type: String,
-        default: ""
-    },
-    changePurchaseNumber: {
-        type: String,
-        default: ""
-    },
-    depositReferenceNumber: {
         type: String,
         default: ""
     },

@@ -754,6 +754,7 @@ exports.receiveWebhookData = asyncWrapper(async (req, res) => {
     accountId: webHookDetails.accountId._id,
     webHookMasterId: webHookDetails._id,
     dataPoint: req.body,
+    lastPullDate: new Date()
   });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
