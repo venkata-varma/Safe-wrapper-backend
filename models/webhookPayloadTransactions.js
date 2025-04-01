@@ -10,17 +10,18 @@ const webhookPayloadTransactions = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         index: true,
         ref:"webhookmasters",
-        // default:null
+        default:null
     },
-    webHookMetaPayloadId: {
+    webhookMetaPayloadId: {
         type: mongoose.Schema.Types.ObjectId,
         index: true,
-        // default:null
+        default:null
     },
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
         index: true,
-        // default:null
+        ref:"accounts",
+        default:null
     },
     pickupGroupId: {
         type:Number,
@@ -54,9 +55,13 @@ const webhookPayloadTransactions = new mongoose.Schema({
         type: Array,
         default:[]
     },
+    location:{
+        type: String,
+        default:""
+    },
     status: {
         type: String,
-        default: ""
+        default: "active "
     },
 
 }, { timestamps: true });

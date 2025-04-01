@@ -14,6 +14,8 @@ const { stringify } = require("flatted");
 const accountsModel = require("../../models/accountsModel");
 const webhookExceptionsModel = require("../../models/webhookExceptionsModel");
 const { getWebHooksLogsSixWeekSalesData } = require("../../utils/accountInsightUtils");
+const webhookPayloadTransactions = require("../../models/webhookPayloadTransactions");
+const webhookPayloadHeaders = require("../../models/webhookPayloadHeaders");
 
 /**
  * Middleware function for Create webhook functionality
@@ -59,7 +61,7 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
   });
 
   const defaultWebhookSettings = {
-    periodType: "once each hour", 
+    periodType: "once each hour",
     currentStatus: "stop",
     interval: 1,
     expiresOn: new Date()
@@ -67,10 +69,10 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
 
   await webHooksModel.create({
     ...req.body,
-    userId:req.user._id,
+    userId: req.user._id,
     webHookUrl,
     authenticationCode: encryptedWebHookAuthCode,
-    webhookSettings:defaultWebhookSettings
+    webhookSettings: defaultWebhookSettings
   });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -752,7 +754,7 @@ exports.receiveWebhookData = asyncWrapper(async (req, res) => {
   // Create a new log entry in the database
   await webhookMetaPayloadModel.create({
     accountId: webHookDetails.accountId._id,
-    webHookMasterId: webHookDetails._id,
+    webhookMasterId: webHookDetails._id,
     dataPoint: req.body,
     lastPullDate: new Date()
   });
@@ -873,7 +875,7 @@ exports.decryptString = asyncWrapper(async (req, res) => {
 
 exports.validateWebhookStatus = asyncWrapper(async (req, res, next) => {
   let individualWebhookDetails = await webHooksMasterModel
-    .findOne({ _id: req.params.webHookMasterId })
+    .findOne({ _id: req.params.webhookMasterId })
     .populate("accountId", "-password");
 
   if (
@@ -951,258 +953,258 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
 
 
 exports.getAllWebhooksOfAccount = asyncWrapper(async (req, res) => {
-    const { accountId } = req.params
-    // const getAllWebHooks = await webHooksModel.find({accountId,integrationsMasterId}).sort({_id:-1})
+  const { accountId } = req.params
+  // const getAllWebHooks = await webHooksModel.find({accountId,integrationsMasterId}).sort({_id:-1})
 
-    const statusesEnum = ['received','in-progress','executed','execution-failed','deleted'];
-    const getAllWebHooks = await webHooksModel.aggregate([
-        {
-            $match: {
-                accountId: new mongoose.Types.ObjectId(accountId),
-            }
+  const statusesEnum = ['received', 'in-progress', 'executed', 'execution-failed', 'deleted'];
+  const getAllWebHooks = await webHooksModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+      }
+    },
+    {
+      $lookup: {
+        from: "webhookmetapayloads",
+        foreignField: "webhookMasterId",
+        localField: "_id",
+        as: "webhookLogsDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$webhookLogsDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: {
+          webhookMasterId: "$_id",
+          status: "$webhookLogsDetails.status"
         },
-        {
-            $lookup: {
-                from: "webhookmetapayloads",
-                foreignField: "webHookMasterId",
-                localField: "_id",
-                as: "webhookLogsDetails"
-            }
-        },
-        {
-            $unwind: {
-                path: "$webhookLogsDetails",
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $group: {
-                _id: {
-                  webHookMasterId: "$_id",
-                  status: "$webhookLogsDetails.status"
-                },
-                count: { $sum: 1 },
-                webHookDetails: { $first: "$$ROOT" }
-            }
-        },
-        {
-            $group: {
-                _id: "$_id.webHookMasterId",
-                webHookDetails: { $first: "$webHookDetails" },
-                statuses: {
-                    $push: {
-                        status: "$_id.status",
-                        count: "$count"
-                    }
+        count: { $sum: 1 },
+        webHookDetails: { $first: "$$ROOT" }
+      }
+    },
+    {
+      $group: {
+        _id: "$_id.webhookMasterId",
+        webHookDetails: { $first: "$webHookDetails" },
+        statuses: {
+          $push: {
+            status: "$_id.status",
+            count: "$count"
+          }
+        }
+      }
+    },
+    {
+      $addFields: {
+        statuses: {
+          $map: {
+            input: statusesEnum,
+            as: "statusEnum",
+            in: {
+              status: "$$statusEnum",
+              count: {
+                $reduce: {
+                  input: "$statuses",
+                  initialValue: 0,
+                  in: {
+                    $cond: [
+                      { $eq: ["$$this.status", "$$statusEnum"] },
+                      { $add: ["$$value", "$$this.count"] },
+                      "$$value"
+                    ]
+                  }
                 }
+              }
             }
-        },
-        {
-            $addFields: {
-                statuses: {
-                    $map: {
-                        input: statusesEnum,
-                        as: "statusEnum",
-                        in: {
-                            status: "$$statusEnum",
-                            count: {
-                                $reduce: {
-                                    input: "$statuses",
-                                    initialValue: 0,
-                                    in: {
-                                        $cond: [
-                                            { $eq: ["$$this.status", "$$statusEnum"] },
-                                            { $add: ["$$value", "$$this.count"] },
-                                            "$$value"
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    }
+          }
+        }
+      }
+    },
+    {
+      $addFields: {
+        "webHookDetails.webhookLogsDetails": "$$REMOVE", // Remove the `webhookLogsDetails` field
+        "webHookDetails.statuses": "$statuses"
+      }
+    },
+    {
+      $replaceRoot: {
+        newRoot: "$webHookDetails"
+      }
+    }
+    /*
+    {
+        $project: {
+            // webHookDetails: {
+            //     _id: 1,
+            //     webHookId: "$webHookDetails._id",
+            //     accountId: "$webHookDetails.accountId",
+            //     integrationsMasterId: "$webHookDetails.integrationsMasterId",
+            //     webHookName: "$webHookDetails.webHookName",
+            //     webHookUrl: "$webHookDetails.webHookUrl",
+            //     authenticationCode: "$webHookDetails.authenticationCode",
+            //     status: "$webHookDetails.status",
+            //     createdAt: "$webHookDetails.createdAt",
+            //     updatedAt: "$webHookDetails.updatedAt",
+            //     requestObject: "$webHookDetails.requestObject"
+            // },
+            webHookDetails: 1,
+            // statuses: 1,
+            _id: 0
+        }
+    }
+        */
+  ]);
+
+  const getWebHookLogs = await webHooksModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+      }
+    },
+    {
+      $lookup: {
+        from: "webhookmetapayloads",
+        foreignField: "webhookMasterId",
+        localField: "_id",
+        as: "webhookLogsDetails"
+      }
+    }
+  ]);
+  const getPast6WeeksStatuses = await getWebHooksLogsSixWeekSalesData(getWebHookLogs)
+
+  const getOverallStatuses = await webHooksModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+      }
+    },
+    {
+      $lookup: {
+        from: "webhookmetapayloads",
+        foreignField: "webhookMasterId",
+        localField: "_id",
+        as: "webhookLogsDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$webhookLogsDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: "$webhookLogsDetails.status",
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $addFields: {
+        status: "$_id",
+        count: "$count",
+        _id: 0
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        statuses: { $push: { status: "$status", count: "$count" } }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        mergedStatuses: {
+          /*
+          $map: {
+              input: statusesEnum,
+              as: "status",
+              in: {
+                  status: "$$status",
+                  count: {
+                      $ifNull: [
+                          {
+                              $arrayElemAt: [
+                                  {
+                                      $filter: {
+                                          input: "$statuses",
+                                          as: "item",
+                                          cond: [ {$eq: ["$$item.status", "$$status"]},
+                                          { $add: ["$$value", "$$this.count"] },
+                                          "$$value"
+                                       ]
+                                      }
+                                  },
+                                  0
+                              ]
+                          },
+                          { count: 0 }
+                      ]
+                  }
+              }
+          }
+              */
+          $map: {
+            input: statusesEnum,
+            as: "statusEnum",
+            in: {
+              status: "$$statusEnum",
+              count: {
+                $reduce: {
+                  input: "$statuses",
+                  initialValue: 0,
+                  in: {
+                    $cond: [
+                      { $eq: ["$$this.status", "$$statusEnum"] },
+                      { $add: ["$$value", "$$this.count"] },
+                      "$$value"
+                    ]
+                  }
                 }
+              }
             }
-        },
-        {
-            $addFields: {
-                "webHookDetails.webhookLogsDetails": "$$REMOVE", // Remove the `webhookLogsDetails` field
-                "webHookDetails.statuses": "$statuses"
-            }
-        },
-        {
-            $replaceRoot: {
-                newRoot: "$webHookDetails"
-            }
+          }
         }
-        /*
-        {
-            $project: {
-                // webHookDetails: {
-                //     _id: 1,
-                //     webHookId: "$webHookDetails._id",
-                //     accountId: "$webHookDetails.accountId",
-                //     integrationsMasterId: "$webHookDetails.integrationsMasterId",
-                //     webHookName: "$webHookDetails.webHookName",
-                //     webHookUrl: "$webHookDetails.webHookUrl",
-                //     authenticationCode: "$webHookDetails.authenticationCode",
-                //     status: "$webHookDetails.status",
-                //     createdAt: "$webHookDetails.createdAt",
-                //     updatedAt: "$webHookDetails.updatedAt",
-                //     requestObject: "$webHookDetails.requestObject"
-                // },
-                webHookDetails: 1,
-                // statuses: 1,
-                _id: 0
-            }
-        }
-            */
-    ]);
+      }
+    },
+    {
+      $project: {
+        statuses: "$mergedStatuses"
+      }
+    }
+  ]);
 
-    const getWebHookLogs = await webHooksModel.aggregate([
-        {
-            $match: {
-                accountId: new mongoose.Types.ObjectId(accountId),
-            }
-        },
-        {
-            $lookup: {
-                from: "webhookmetapayloads",
-                foreignField: "webHookMasterId",
-                localField: "_id",
-                as: "webhookLogsDetails"
-            }
-        }
-    ]);
-    const getPast6WeeksStatuses = await getWebHooksLogsSixWeekSalesData(getWebHookLogs)
-
-    const getOverallStatuses = await webHooksModel.aggregate([
-        {
-            $match: {
-                accountId: new mongoose.Types.ObjectId(accountId),
-            }
-        },
-        {
-            $lookup: {
-                from: "webhookmetapayloads",
-                foreignField: "webHookMasterId",
-                localField: "_id",
-                as: "webhookLogsDetails"
-            }
-        },
-        {
-            $unwind: {
-                path: "$webhookLogsDetails",
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $group: {
-                _id: "$webhookLogsDetails.status",
-                count: { $sum: 1 }
-            }
-        },
-        {
-            $addFields: {
-                status: "$_id",
-                count: "$count",
-                _id: 0
-            }
-        },
-        {
-            $group: {
-                _id: null,
-                statuses: { $push: { status: "$status", count: "$count" } }
-            }
-        },
-        {
-            $project: {
-                _id: 0,
-                mergedStatuses: {
-                    /*
-                    $map: {
-                        input: statusesEnum,
-                        as: "status",
-                        in: {
-                            status: "$$status",
-                            count: {
-                                $ifNull: [
-                                    {
-                                        $arrayElemAt: [
-                                            {
-                                                $filter: {
-                                                    input: "$statuses",
-                                                    as: "item",
-                                                    cond: [ {$eq: ["$$item.status", "$$status"]},
-                                                    { $add: ["$$value", "$$this.count"] },
-                                                    "$$value"
-                                                 ]
-                                                }
-                                            },
-                                            0
-                                        ]
-                                    },
-                                    { count: 0 }
-                                ]
-                            }
-                        }
-                    }
-                        */
-                    $map: {
-                        input: statusesEnum,
-                        as: "statusEnum",
-                        in: {
-                            status: "$$statusEnum",
-                            count: {
-                                $reduce: {
-                                    input: "$statuses",
-                                    initialValue: 0,
-                                    in: {
-                                        $cond: [
-                                            { $eq: ["$$this.status", "$$statusEnum"] },
-                                            { $add: ["$$value", "$$this.count"] },
-                                            "$$value"
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        {
-            $project: {
-                statuses: "$mergedStatuses"
-            }
-        }
-    ]);
-
-    return res
-        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-        .json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
-            data: {
-                webHooks: getAllWebHooks,
-                pastSixWeeksData: getPast6WeeksStatuses,
-                overallStatusesCount: getOverallStatuses[0]?.statuses || []
-            }
-        });
+  return res
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
+      data: {
+        webHooks: getAllWebHooks,
+        pastSixWeeksData: getPast6WeeksStatuses,
+        overallStatusesCount: getOverallStatuses[0]?.statuses || []
+      }
+    });
 })
 
 
 
-exports.validateWebhookandAccount = asyncWrapper(async(req,res,next)=>{
-  const {webhookMasterId} = req.params;
+exports.validateWebhookandAccount = asyncWrapper(async (req, res, next) => {
+  const { webhookMasterId } = req.params;
 
   const webhookDetails = await webHooksMasterModel.findById(webhookMasterId).populate('accountId').lean();
-  if(!webhookDetails && webhookDetails?.status !== 'active'){
+  if (!webhookDetails && webhookDetails?.status !== 'active') {
     return res.status(customConstants.statusCodes.BAD_REQUEST).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_WEBOOK_ALREADY_DELETED,
     });
   }
-  if(!webhookDetails?.accountId && webhookDetails?.accountId?.status !== 'active'){
+  if (!webhookDetails?.accountId && webhookDetails?.accountId?.status !== 'active') {
     return res.status(customConstants.statusCodes.BAD_REQUEST).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
@@ -1212,16 +1214,121 @@ exports.validateWebhookandAccount = asyncWrapper(async(req,res,next)=>{
     next()
 });
 
-exports.updateWebhookSettings = asyncWrapper(async(req,res)=>{
-  const {webhookMasterId} = req.params;
+exports.updateWebhookSettings = asyncWrapper(async (req, res) => {
+  const { webhookMasterId } = req.params;
 
-  await webHooksMasterModel.findByIdAndUpdate(webhookMasterId,{
+  await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, {
     $set: Object.fromEntries(
-      Object.entries(req.body).map(([key, value])=>[`webhookSettings.${key}`,value])
+      Object.entries(req.body).map(([key, value]) => [`webhookSettings.${key}`, value])
     )
-  },{new:true, upsert:true});
+  }, { new: true, upsert: true });
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status:customConstants.messages.MESSAGE_SUCCESS,
-    message:customConstants.messages.MESSAGE_WEBOOK_SETTINGS_UPDATED
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_SETTINGS_UPDATED
+  })
+})
+
+
+exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
+  const { accountId } = req.params
+
+  const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
+    {
+      $match: { accountId: new mongoose.Types.ObjectId(accountId) }
+    },
+    {
+      $group: {
+        _id: {
+          serialNumber: "$serialNumber",
+          transactionType: "$transactionType"
+        },
+        totalAmount: { $sum: "$amount" },
+        transactionData: { $push: "$$ROOT" },
+        location: { $first: "$location" },
+        userName: { $first: "$userName" },
+        webhookTransactionId: { $first: "$webhookTransactionId" },
+        webhookMasterId: { $first: "$webhookMasterId" },
+        webhookMetaPayloadId: { $first: "$webhookMetaPayloadId" },
+        accountId: { $first: "$accountId" },
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        transactionDetails: {
+          $push: {
+            serialNumber: "$_id.serialNumber",
+            transactionType: "$_id.transactionType",
+            totalAmount: "$totalAmount",
+            location: "$location",
+            userName:"$userName",
+            webhookTransactionId: "$webhookTransactionId",
+            webhookMasterId: "$webhookMasterId",
+            webhookMetaPayloadId: "$webhookMetaPayloadId",
+            accountId: "$accountId",
+            transactionData: "$transactionData",
+          }
+        },
+        grandTotal: { $sum: "$totalAmount" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        transactionDetails: 1,
+        grandTotal: 1
+      }
+    }
+  ]);
+  const webhookTransactionHeadersDetails = await webhookPayloadHeaders.aggregate([
+    {
+      $match: { accountId: new mongoose.Types.ObjectId(accountId) }
+    },
+    {
+      $group: {
+        _id: {
+          serialNumber: "$serialNumber",
+          transactionType: "$transactionType"
+        },
+        transactionHeaderData: { $push: "$$ROOT" },
+        transactionDateTime: {$first:"$transactionDateTime"},
+        location: { $first: "$location" },
+        userName: { $first: "$userName" },
+        webhookPayloadHeaderId: { $first: "$webhookPayloadHeaderId" },
+        webhookMasterId: { $first: "$webhookMasterId" },
+        webhookMetaPayloadId: { $first: "$webhookMetaPayloadId" },
+        accountId: { $first: "$accountId" },
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        transactionHeaderDetails: {
+          $push: {
+            serialNumber: "$_id.serialNumber",
+            transactionType: "$_id.transactionType",
+            transactionDateTime:"$transactionDateTime",
+            location: "$location",
+            userName:"$userName",
+            webhookPayloadHeaderId: "$webhookPayloadHeaderId",
+            webhookMasterId: "$webhookMasterId",
+            webhookMetaPayloadId: "$webhookMetaPayloadId",
+            accountId: "$accountId",
+            transactionHeaderData: "$transactionHeaderData",
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        transactionHeaderDetails: 1,
+      }
+    }
+  ]);
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+    data:{webhookTransactionDetails, webhookTransactionHeadersDetails}
   })
 })

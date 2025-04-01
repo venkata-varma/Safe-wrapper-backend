@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
-const webHookMetaPayloads = new mongoose.Schema({
-    webHookMetaPayloadId: {
+const webhookMetaPayloads = new mongoose.Schema({
+    webhookMetaPayloadId: {
         type: mongoose.Schema.Types.ObjectId,
         index: true,
         // default:null
@@ -12,7 +12,7 @@ const webHookMetaPayloads = new mongoose.Schema({
         index: true,
         // default: null,
     },
-    webHookMasterId: {
+    webhookMasterId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "webhookmasters",
         index: true,
@@ -39,8 +39,8 @@ const webHookMetaPayloads = new mongoose.Schema({
     }
 }, { timestamps: true })
 
-webHookMetaPayloads.pre('save', function (next) {
-    this.webHookMetaPayloadId = this._id
+webhookMetaPayloads.pre('save', function (next) {
+    this.webhookMetaPayloadId = this._id
     next()
 })
-module.exports = mongoose.model('webhookmetapayloads', webHookMetaPayloads)
+module.exports = mongoose.model('webhookmetapayloads', webhookMetaPayloads)

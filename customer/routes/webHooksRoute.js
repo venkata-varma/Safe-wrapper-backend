@@ -19,7 +19,8 @@ const {
   validateWebhookStatus,
   validateAccountStatus,
   getAllWebhooksOfAccount,
-  validateWebhookandAccount,updateWebhookSettings
+  validateWebhookandAccount,updateWebhookSettings,
+  getAllWebhookTransactionsOfAccount,
 } = require("../controllers/webHooksController");
 
 router.post(
@@ -41,12 +42,15 @@ router.post("/decrypt-string",  decryptString);
 router.patch('/update-webhook-settings/:webhookMasterId',validateWebhookandAccount,updateWebhookSettings)
 
 router.get(
-  "/get-individual-webhook-details/:webHookMasterId",
+  "/get-individual-webhook-details/:webhookMasterId",
   validateWebhookStatus,
   getIndividualWebhookDetails
 );
 
 router.get('/get-all-webhook-details/:accountId', validateAccountStatus,getAllWebhooksOfAccount)
+
+router.get('/get-webhook-transactions/:accountId',getAllWebhookTransactionsOfAccount)
+
 // router.patch('/update-webhook',validateIntegrationForWebHook, updateWebHook)
 // router.patch('/update-webhook-status',validateIntegrationForWebHook, updateWebHookStatus)
 

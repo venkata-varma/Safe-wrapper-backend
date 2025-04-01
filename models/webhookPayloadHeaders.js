@@ -10,7 +10,7 @@ const webhookPayloadHeaders = new mongoose.Schema({
         ref:"webhookmasters",
         index: true
     },
-    webHookMetaPayloadId: {
+    webhookMetaPayloadId: {
         type: mongoose.Schema.Types.ObjectId,
         index: true,
         // default:null
@@ -44,6 +44,10 @@ const webhookPayloadHeaders = new mongoose.Schema({
         type: String,
         default: ""
     },
+    location:{
+        type:String,
+        default:""
+    }
 }, { timestamps: true })
 
 webhookPayloadHeaders.pre('save', function (next) {

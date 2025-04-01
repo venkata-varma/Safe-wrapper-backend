@@ -283,7 +283,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
     });
   }
-  if (!req.originalUrl.includes("super-admin") && user.accountId.accountType !== 'customer') {
+  if (!["admin","super-admin"].includes(user.role)) {
     return res.status(customConstants.statusCodes.FORBIDDEN).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_ONLY_CUSTOMER_ENTRY,

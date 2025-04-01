@@ -128,7 +128,8 @@
     "MESSAGE_WEBOOK_ALREADY_DELETED": "Webhook doesn't exist / inactive.",
     "MESSAGE_WEBOOK_SETTINGS_CREATED": "Webhook settings added succesfully.",
     "MESSAGE_WEBOOK_SETTINGS_UPDATED": "Webhook settings updated succesfully.",
-    "MESSAGE_WEBOOK_GET_SETTINGS": "Webhook settings."
+    "MESSAGE_WEBOOK_GET_SETTINGS": "Webhook settings.",
+    "MESSAGE_WEBOOK_GET_TRANSACTIONS": "Webhook transactions."
   },
   "statusCodes": {
     "FORBIDDEN": 403,

@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
-const webHookMastersSchema = new mongoose.Schema(
+const webhookMastersSchema = new mongoose.Schema(
   {
-    webHookMasterId: {
+    webhookMasterId: {
       type: mongoose.Schema.Types.ObjectId,
       index: true,
       default: null,
@@ -86,8 +86,8 @@ const webHookMastersSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-webHookMastersSchema.pre("save", function (next) {
-  (this.webHookMasterId = this._id), next();
+webhookMastersSchema.pre("save", function (next) {
+  (this.webhookMasterId = this._id), next();
 });
 
-module.exports = mongoose.model("webhookmasters", webHookMastersSchema);
+module.exports = mongoose.model("webhookmasters", webhookMastersSchema);

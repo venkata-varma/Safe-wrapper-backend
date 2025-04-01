@@ -17,8 +17,6 @@ exports.webhookScheduleCronJobs= asyncWrapper( async ()=> {
     schedule.scheduleJob(job_each_second, async () => {
       const webhookMasterSettingsDetails = await webHooksMasterModel.find({ 'webhookSettings.periodType': 'each second', 'webhookSettings.currentStatus' : "start" }).lean();
       if (webhookMasterSettingsDetails.length > 0) {
-      console.log('Cron triggered')
-
         for (const webhook of webhookMasterSettingsDetails) {
           await schedulerwebhookCronJobs(webhook) 
           

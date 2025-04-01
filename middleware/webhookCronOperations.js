@@ -1,4 +1,7 @@
 const webHookMetaPayloads = require("../models/webHookMetaPayloads");
+const webhookPayloadHeaders = require("../models/webhookPayloadHeaders");
+const webhookPayloadTransactions = require("../models/webhookPayloadTransactions");
+const webHooksMasterModel = require("../models/webHooksMasterModel");
 
 
 
@@ -24,9 +27,8 @@ exports.schedulerwebhookCronJobs = async(webhook) => {
         }
 
         if (Math.round(scheduleTime) >= scheduleInterval) {
-            console.log('scheduleTime:===')
             if ( webhook?.status === 'active') {
-                const webhookMetaPayloadsDetails = await webHookMetaPayloads.find({$and:[{createdAt:{$gte :lastPullTime}},{createdAt:{$lte:currentTime}}]})
+                await webhookMetaPayloadsOperations(await webHookMetaPayloads.find({$and:[{createdAt:{$gte :lastPullTime}},{createdAt:{$lte:currentTime}}]})) 
             }
         }
         else{
@@ -36,3 +38,45 @@ exports.schedulerwebhookCronJobs = async(webhook) => {
         console.error('Error in schedulerIntegrationCronJobs:', error);
     }
 }
+
+const webhookMetaPayloadsOperations = async (webHookMetaPayloads) =>{
+    for(let data of webHookMetaPayloads){
+        await webhookMetaPayloadTransactions (data?.dataPoint, data?.webhookMasterId, data?.webhookMetaPayloadId, data?.accountId)
+    }
+    
+}
+
+const webhookMetaPayloadTransactions = async(dataPoint,webhookMasterId, webhookMetaPayloadId, accountId) => {
+    for(let transaction of dataPoint?.Transactions){
+        await webhookPayloadTransactions.create({
+            webhookMasterId: webhookMasterId,
+            webhookMetaPayloadId: webhookMetaPayloadId,
+            accountId: accountId,
+            pickupGroupId: transaction?.PickupGroupId,
+            serialNumber: transaction?.SerialNumber,
+            retrievedOn: transaction?.RetrievedOn,
+            transactionDateTime: transaction?.TransactionDateTime,
+            userName: transaction?.UserName,
+            transactionType: transaction?.TransactionType,
+            amount: transaction?.Amount,
+            denominations: transaction?.Denominations,
+            location: dataPoint?.Metadata?.LocationInformation[0]?.Location,
+        });
+
+        await webhookPayloadHeaders.create({
+            webhookMasterId: webhookMasterId,
+            webhookMetaPayloadId: webhookMetaPayloadId,
+            accountId: accountId,
+            pickupGroupId: transaction?.PickupGroupId,
+            serialNumber: transaction?.SerialNumber,
+            retrievedOn: transaction?.RetrievedOn,
+            transactionDateTime: transaction?.TransactionDateTime,
+            userName: transaction?.UserName,
+            transactionType: transaction?.TransactionType,
+            location: dataPoint?.Metadata?.LocationInformation[0]?.Location,
+        })
+    }
+    await webHooksMasterModel.findByIdAndUpdate(webhookMasterId,{$set:{lastPullDate:new Date()}},{new:true})
+    console.log('Exit')
+}
+

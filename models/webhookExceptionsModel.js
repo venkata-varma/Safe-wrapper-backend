@@ -12,7 +12,7 @@ const webhookExceptionsSchema = new mongoose.Schema(
       index: true,
       default: null,
     },
-    /*Type : ObjectId for webHookMasterId is giving issues as some cases where Token is not received or Webhook details not found, we could give "Empty string " then , getting 
+    /*Type : ObjectId for webhookMasterId is giving issues as some cases where Token is not received or Webhook details not found, we could give "Empty string " then , getting 
      casting ObjectId to String issue 
      */
     webhookMasterId: {
