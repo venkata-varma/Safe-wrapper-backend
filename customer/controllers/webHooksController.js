@@ -1397,6 +1397,6 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
-    data: webhookPayloadHeadersData?.[0] || []
+    data: webhookPayloadHeadersData?.[0] || {}
   })
 })
