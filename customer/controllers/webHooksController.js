@@ -750,12 +750,13 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
 
 exports.receiveWebhookData = asyncWrapper(async (req, res) => {
   const webHookDetails = req.webHookDetails;
-
+  
   // Create a new log entry in the database
   await webhookMetaPayloadModel.create({
     accountId: webHookDetails.accountId._id,
     webhookMasterId: webHookDetails._id,
     dataPoint: req.body,
+    primaryHookId: req.body?.Metadata?.LocationInformation?.[0]?.[webHookDetails?.primaryHookId]
   });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
