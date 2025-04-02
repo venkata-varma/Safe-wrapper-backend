@@ -1263,31 +1263,59 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   if (transactionTypesArray.length > 0) {
     matchConditions.transactionType = { $in: transactionTypesArray };
   }
-
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
     { $match: matchConditions },
+    { $unwind: { path: "$denominations", preserveNullAndEmptyArrays: true } },
     {
       $group: {
         _id: {
           serialNumber: "$serialNumber",
-          transactionType: "$transactionType"
+          transactionType: "$transactionType",
+          unitValue: "$denominations.UnitValue",
+          currency: "$denominations.Currency"
         },
-        totalAmount: { $sum: "$amount" },
+        count: { $sum: "$denominations.Count" }, // Sum the counts correctly
+        totalAmount: { 
+          $sum: { $multiply: ["$denominations.UnitValue", "$denominations.Count"] } 
+        },
         webhookTransactionId: { $first: "$webhookTransactionId" },
         webhookMasterId: { $first: "$webhookMasterId" },
         webhookMetaPayloadId: { $first: "$webhookMetaPayloadId" },
         accountId: { $first: "$accountId" },
         location: { $first: "$location" },
         userName: { $first: "$userName" },
-        transactionDateTime: { $first: "$transactionDateTime" },
-        denominations: { $first: "$Denominations" },
-        transactionData: { $push: "$$ROOT" }
+        transactionDateTime: { $first: "$transactionDateTime" }
       }
     },
+  
+    {
+      $group: {
+        _id: {
+          serialNumber: "$_id.serialNumber",
+          transactionType: "$_id.transactionType"
+        },
+        totalAmount: { $sum: "$totalAmount" }, // Sum totalAmount correctly
+        location: { $first: "$location" },
+        userName: { $first: "$userName" },
+        webhookTransactionId: { $first: "$webhookTransactionId" },
+        webhookMasterId: { $first: "$webhookMasterId" },
+        webhookMetaPayloadId: { $first: "$webhookMetaPayloadId" },
+        accountId: { $first: "$accountId" },
+        transactionDateTime: { $first: "$transactionDateTime" },
+        denominations: {
+          $push: {
+            UnitValue: "$_id.unitValue",
+            Currency: "$_id.currency",
+            Count: "$count"
+          }
+        }
+      }
+    },
+  
     {
       $group: {
         _id: null,
-        transactionDetails: {
+        transactionDetails: { 
           $push: {
             serialNumber: "$_id.serialNumber",
             transactionType: "$_id.transactionType",
@@ -1299,13 +1327,13 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
             webhookMetaPayloadId: "$webhookMetaPayloadId",
             accountId: "$accountId",
             transactionDateTime: "$transactionDateTime",
-            denominations: "$denominations",
-            transactionData: "$transactionData"
+            denominations: "$denominations"
           }
         },
-        grandTotal: { $sum: "$totalAmount" }
+        grandTotal: { $sum: "$totalAmount" } // Sum all transactions correctly
       }
     },
+  
     {
       $project: {
         _id: 0,
@@ -1314,6 +1342,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
+
 
   /*
   const webhookTransactionHeadersDetails = await webhookPayloadHeaders.aggregate([
@@ -1361,6 +1390,9 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
     }
   ]);
   */
+  
+ 
+  
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
