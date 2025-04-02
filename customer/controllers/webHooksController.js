@@ -756,7 +756,6 @@ exports.receiveWebhookData = asyncWrapper(async (req, res) => {
     accountId: webHookDetails.accountId._id,
     webhookMasterId: webHookDetails._id,
     dataPoint: req.body,
-    lastPullDate: new Date()
   });
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -1230,12 +1229,42 @@ exports.updateWebhookSettings = asyncWrapper(async (req, res) => {
 
 
 exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
-  const { accountId } = req.params
+  const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
+
+  console.log("serialNumbers:===", serialNumbers);
+
+  const serialNumbersArray =
+    serialNumbers === "all"
+      ? []
+      : serialNumbers
+        ? serialNumbers.split(",")
+        : serialNumbers;
+
+  const transactionTypesArray =
+    transactionTypes === "all"
+      ? []
+      : transactionTypes
+        ? transactionTypes.split(",")
+        : transactionTypes;
+
+  console.log("serialNumbersArray:===", serialNumbersArray);
+  console.log("transactionTypesArray:===", transactionTypesArray);
+
+  const matchConditions = {
+    accountId: new mongoose.Types.ObjectId(accountId),
+    createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) }
+  };
+
+  if (serialNumbersArray.length > 0) {
+    matchConditions.serialNumber = { $in: serialNumbersArray };
+  }
+
+  if (transactionTypesArray.length > 0) {
+    matchConditions.transactionType = { $in: transactionTypesArray };
+  }
 
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
-    {
-      $match: { accountId: new mongoose.Types.ObjectId(accountId) }
-    },
+    { $match: matchConditions },
     {
       $group: {
         _id: {
@@ -1243,13 +1272,15 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
           transactionType: "$transactionType"
         },
         totalAmount: { $sum: "$amount" },
-        transactionData: { $push: "$$ROOT" },
-        location: { $first: "$location" },
-        userName: { $first: "$userName" },
         webhookTransactionId: { $first: "$webhookTransactionId" },
         webhookMasterId: { $first: "$webhookMasterId" },
         webhookMetaPayloadId: { $first: "$webhookMetaPayloadId" },
         accountId: { $first: "$accountId" },
+        location: { $first: "$location" },
+        userName: { $first: "$userName" },
+        transactionDateTime: { $first: "$transactionDateTime" },
+        denominations: { $first: "$Denominations" },
+        transactionData: { $push: "$$ROOT" }
       }
     },
     {
@@ -1261,12 +1292,14 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
             transactionType: "$_id.transactionType",
             totalAmount: "$totalAmount",
             location: "$location",
-            userName:"$userName",
+            userName: "$userName",
             webhookTransactionId: "$webhookTransactionId",
             webhookMasterId: "$webhookMasterId",
             webhookMetaPayloadId: "$webhookMetaPayloadId",
             accountId: "$accountId",
-            transactionData: "$transactionData",
+            transactionDateTime: "$transactionDateTime",
+            denominations: "$denominations",
+            transactionData: "$transactionData"
           }
         },
         grandTotal: { $sum: "$totalAmount" }
@@ -1280,10 +1313,10 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
+
+  /*
   const webhookTransactionHeadersDetails = await webhookPayloadHeaders.aggregate([
-    {
-      $match: { accountId: new mongoose.Types.ObjectId(accountId) }
-    },
+    { $match: matchConditions },
     {
       $group: {
         _id: {
@@ -1326,9 +1359,44 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
+  */
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
-    data:{webhookTransactionDetails, webhookTransactionHeadersDetails}
+    data: {
+      webhookTransactionDetails,
+      // webhookTransactionHeadersDetails
+    }
+  })
+})
+
+
+exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
+  const { accountId } = req.params
+  const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        serialNumbers: { $addToSet: "$serialNumber" },
+        transactionTypes: { $addToSet: "$transactionType" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        serialNumbers: 1,
+        transactionTypes: 1,
+      },
+    },
+  ]);
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
+    data: webhookPayloadHeadersData?.[0]
   })
 })

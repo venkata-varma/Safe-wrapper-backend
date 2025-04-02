@@ -5,7 +5,7 @@ const webHooksMasterModel = require("../models/webHooksMasterModel");
 
 
 
-exports.schedulerwebhookCronJobs = async(webhook) => {
+exports.schedulerwebhookCronJobs = async (webhook) => {
     try {
         let schedulePeriodType = webhook?.webhookSettings?.periodType;
         let scheduleInterval = webhook?.webhookSettings?.interval;
@@ -17,7 +17,7 @@ exports.schedulerwebhookCronJobs = async(webhook) => {
             scheduleTime = (currentTime - lastPullTime) / 1000;
         } else if (schedulePeriodType === 'once each minute') {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60);
-            console.log('scheduleTime:===',scheduleTime)
+            console.log('scheduleTime:===', scheduleTime)
         } else if (schedulePeriodType === 'once each hour') {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60);
         } else if (schedulePeriodType === 'once each day') {
@@ -27,11 +27,11 @@ exports.schedulerwebhookCronJobs = async(webhook) => {
         }
 
         if (Math.round(scheduleTime) >= scheduleInterval) {
-            if ( webhook?.status === 'active') {
-                await webhookMetaPayloadsOperations(await webHookMetaPayloads.find({$and:[{createdAt:{$gte :lastPullTime}},{createdAt:{$lte:currentTime}}]})) 
+            if (webhook?.status === 'active') {
+                await webhookMetaPayloadsOperations(await webHookMetaPayloads.find({ $and: [{ createdAt: { $gte: lastPullTime } }, { createdAt: { $lte: currentTime } }] }))
             }
         }
-        else{
+        else {
             console.log('ScheduleTime is less than scheduleInterval')
         }
     } catch (error) {
@@ -39,15 +39,16 @@ exports.schedulerwebhookCronJobs = async(webhook) => {
     }
 }
 
-const webhookMetaPayloadsOperations = async (webHookMetaPayloads) =>{
-    for(let data of webHookMetaPayloads){
-        await webhookMetaPayloadTransactions (data?.dataPoint, data?.webhookMasterId, data?.webhookMetaPayloadId, data?.accountId)
+const webhookMetaPayloadsOperations = async (webHookMetaPayloads) => {
+    for (let data of webHookMetaPayloads) {
+        await webhookMetaPayloadTransactions(data?.dataPoint, data?.webhookMasterId, data?.webhookMetaPayloadId, data?.accountId)
     }
-    
+
 }
 
-const webhookMetaPayloadTransactions = async(dataPoint,webhookMasterId, webhookMetaPayloadId, accountId) => {
-    for(let transaction of dataPoint?.Transactions){
+const webhookMetaPayloadTransactions = async (dataPoint, webhookMasterId, webhookMetaPayloadId, accountId) => {
+    for (let transaction of dataPoint?.Transactions) {
+        await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "in-progress" } })
         await webhookPayloadTransactions.create({
             webhookMasterId: webhookMasterId,
             webhookMetaPayloadId: webhookMetaPayloadId,
@@ -75,8 +76,9 @@ const webhookMetaPayloadTransactions = async(dataPoint,webhookMasterId, webhookM
             transactionType: transaction?.TransactionType,
             location: dataPoint?.Metadata?.LocationInformation[0]?.Location,
         })
+        await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "executed" } })
     }
-    await webHooksMasterModel.findByIdAndUpdate(webhookMasterId,{$set:{lastPullDate:new Date()}},{new:true})
+    await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, { $set: { lastPullDate: new Date() } }, { new: true })
     console.log('Exit')
 }
 
