@@ -157,7 +157,7 @@ exports.updateUserStatus = asyncWrapper(async (req, res) => {
  
  */
 exports.getUserDetails = asyncWrapper(async (req, res) => {
-  const user = await usersModel.findById(req.params.userId, { password: 0 }).lean()
+  const user = await usersModel.findById(new mongoose.Types.ObjectId(req.params.userId), { password: 0 }).lean()
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -360,6 +360,56 @@ exports.loginUser = asyncWrapper(async (req, res) => {
 
 
 });
+
+/*
+If middleware returns True, this function create session with valid JWT token
+Mandatory fields -> Phone and Password 
+*/
+exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
+  const { mobileEmail, password } = req.body;
+  let user_details = {};
+  // Find user by email or phone
+  const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }, { _id: 0, password: 0 });
+  // const respectiveAccount = await accountsModel.findOne({ _id: user.accountId }, { password: 0 });
+  const userData = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] });
+
+  user_details.userDetails = user.toObject();
+
+  // Generate JWT token
+  const jwtToken = await userData.getJWTToken();
+  const jwtTokenExpires = await userData.getJWTTokenExpireDate(jwtToken);
+
+  // Create session
+  req.body.accessToken = jwtToken;
+  req.body.expirationTime = jwtTokenExpires.exp;
+  req.body.userId = userData._id;
+  req.body.accountId = userData.accountId;
+
+  const sesssionDetails = await sessionsModel.create(req.body);
+  user_details.sesssionDetails = sesssionDetails;
+
+
+
+  //const accountUpdateIntegrationsCount = await accountsModel.findByIdAndUpdate(user.accountId, { $set: { noOfIntegrations: integrationsCount.length } }, { new: true })
+  user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
+  user_details.accountSettings = await accountSettingsModel.findOne({ accountId: user.accountId })
+
+  // Return success response
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_USER_LOGIN,
+    data:{
+      access_token:sesssionDetails.accessToken,
+      expirationTime:sesssionDetails.expirationTime,
+    }
+  });
+
+
+});
+
+
+
+
 
 
 /*

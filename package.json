@@ -23,12 +23,15 @@
     "fs": "^0.0.1-security",
     "human-to-cron": "^0.3.1",
     "joi": "^17.13.1",
+    "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
     "mongoose": "^8.4.0",
     "multer": "^1.4.5-lts.1",
     "node-schedule": "^2.1.1",
     "path": "^0.12.7",
-    "querystring": "^0.2.1"
+    "querystring": "^0.2.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   }
 }

@@ -1,0 +1,153 @@
+openapi: 3.0.0
+info:
+  title: "Express API for Integrations hub- Devrabbit"
+  version: "1.0.0"
+  description: "This is a REST API application made with Express. It retrieves data from JSONPlaceholder."
+  license:
+    name: "Licensed Under MIT"
+    url: "https://spdx.org/licenses/MIT.html"
+  contact:
+    name: "Devrabbit"
+    url: "https://hub.dev.isyncrabbit.com/auth/login"
+
+servers:
+
+  - url: "http://localhost:8201"
+    description: "Local Development Server"
+
+components:
+  securitySchemes:
+    Authorization:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+     
+
+  schemas:  # This should be properly indented
+    User:  # The User schema should be correctly nested under schemas
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: "Unique identifier for the user."
+          nullable: true
+        accountId:
+          type: string
+          format: uuid
+          description: "Reference to the account the user belongs to."
+          nullable: true
+        name:
+          type: string
+          description: "Full name of the user."
+          default: ""
+        password:
+          type: string
+          description: "Hashed password of the user."
+          default: ""
+        role:
+          type: string
+          enum: ["super-admin", "admin", "manager", "support"]
+          description: "Role assigned to the user."
+          default: "admin"
+        phone:
+          type: string
+          description: "User's phone number."
+          pattern: "^[0-9]+$"
+          minLength: 10
+          maxLength: 15
+          default: ""
+        email:
+          type: string
+          format: email
+          description: "User's email address."
+          default: ""
+        status:
+          type: string
+          enum: ["active", "deleted", "blocked"]
+          description: "Current status of the user."
+          default: "active"
+        createdBy:
+          type: string
+          format: uuid
+          description: "Reference to the user who created this record."
+          nullable: true
+        updatedBy:
+          type: string
+          format: uuid
+          description: "Reference to the user who last updated this record."
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: "Timestamp when the user was created."
+        updatedAt:
+          type: string
+          format: date-time
+          description: "Timestamp when the user was last updated."
+
+paths:
+  /api/users/user-login:
+    post:
+      tags:
+        - Users
+      summary: "User login"
+      description: "With valid credentials, users can log in. A successful session lasts 1 hour."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mobileEmail:
+                  type: string
+                  description: "User's mobile number or email"
+                  example: "0000000000"
+                password:
+                  type: string
+                  format: password
+                  description: "User's password"
+                  example: "0000000001"
+      responses:
+        '200':
+          description: "Login successfull."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: "JWT token for authorization"
+                  expirationTime:
+                    type: string
+                    description: "Expiration time of JWT token"
+        '401':
+          description: "Unauthorized - Invalid Password."
+      security: []  # No authentication required for login
+
+  /api/users/get-user-details/:userId:
+    get:
+      tags:
+        - Users
+      summary: "Get user profile"
+      description: "Returns user profile data. Requires authentication."
+      security:
+        - Authorization: []  # Requires Authorization header with token
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: "The ID of the user to retrieve"
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "User profile retrieved successfully"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: "Unauthorized - Missing or invalid token"
