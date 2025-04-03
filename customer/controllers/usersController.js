@@ -157,7 +157,8 @@ exports.updateUserStatus = asyncWrapper(async (req, res) => {
  
  */
 exports.getUserDetails = asyncWrapper(async (req, res) => {
-  const user = await usersModel.findById(new mongoose.Types.ObjectId(req.params.userId), { password: 0 }).lean()
+  
+  const user = await usersModel.findOne({_id:req.params.userId}, { password: 0 }).lean()
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -261,7 +262,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
   const { mobileEmail, password } = req.body;
 
   if (!mobileEmail || !password) {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_FIELDS_MANDATORY,
     });

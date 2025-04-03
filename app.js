@@ -45,21 +45,12 @@ const yaml = require('js-yaml');
 let swaggerjsdoc=require('swagger-jsdoc')
 let swaggerexpressui=require('swagger-ui-express')
 let fs=require('fs')
-const customCss = `
-  .swagger-ui .auth-wrapper .auth-container::before {
-    content: "Please insert the word 'Bearer' followed by a space and the token returned by login.";
-    display: block;
-    color: red;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-`;
 
+app.use(express.static(path.join(__dirname, 'swaggerDocumentationFiles')));
+ //const swaggerDocument = yaml.load(fs.readFileSync(path.join(__dirname, 'swagger.yaml'), 'utf8'));
+ const swaggerDocument = yaml.load(fs.readFileSync(path.join(__dirname, 'swaggerDocumentationFiles', 'swagger.yaml'), 'utf8'));
 
- const swaggerDocument = yaml.load(fs.readFileSync(path.join(__dirname, 'swagger.yaml'), 'utf8'));
-
-
-app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocument, { customCss }));
+app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocument, { customCssUrl: "/swagger-custom.css"  }));
 
 
 // End of swagger configuration

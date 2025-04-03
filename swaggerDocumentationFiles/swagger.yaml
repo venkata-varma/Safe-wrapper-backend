@@ -40,6 +40,7 @@ components:
         name:
           type: string
           description: "Full name of the user."
+          example : "Devrabbit client"
           default: ""
         password:
           type: string
@@ -56,11 +57,13 @@ components:
           pattern: "^[0-9]+$"
           minLength: 10
           maxLength: 15
+          example : "0000000000"
           default: ""
         email:
           type: string
           format: email
           description: "User's email address."
+          example : "nine123@devrabbit.com"
           default: ""
         status:
           type: string
@@ -90,9 +93,9 @@ paths:
   /api/users/user-login:
     post:
       tags:
-        - Users
-      summary: "User login"
-      description: "With valid credentials, users can log in. A successful session lasts 1 hour."
+        - Authorize
+      summary: "Copy access_token from response - Click Authorize button -place access_token in input box to authorize."
+      description: "With valid credentials,A User can log in. A successful session lasts 1 hour."
       requestBody:
         required: true
         content:
@@ -109,29 +112,58 @@ paths:
                   format: password
                   description: "User's password"
                   example: "0000000001"
-      responses:
-        '200':
-          description: "Login successfull."
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  accessToken:
-                    type: string
-                    description: "JWT token for authorization"
-                  expirationTime:
-                    type: string
-                    description: "Expiration time of JWT token"
-        '401':
-          description: "Unauthorized - Invalid Password."
+      # responses:
+      #   '200':
+      #     description: "Login successfull."
+      #     content:
+      #       application/json:
+      #         schema:
+      #           type: object
+      #           properties:
+      #             accessToken:
+      #               type: string
+      #               description: "JWT token for authorization"
+      #             expirationTime:
+      #               type: string
+      #               description: "Expiration time of JWT token"
+      #   '401':
+      #     description: "Unauthorized - Invalid Password."
+      #     content:
+      #       application/json:
+      #         schema:
+      #           type: object
+      #           properties:
+      #             status:
+      #               type: string
+      #               example: "fail"
+      #               description: "Indicates the failure status"
+      #             message:
+      #               type: string
+      #               example: "Invalid Password."
+      #               description: "Error message explaining the issue"
+      #   '400':
+      #     description: "Missing fields in payload to raise the request"
+      #     content:
+      #       application/json:
+      #         schema:
+      #           type: object
+      #           properties:
+      #             status:
+      #               type: string
+      #               example: "fail"
+      #               description: "Indicates the failure status"
+      #             message:
+      #               type: string
+      #               example: "Mobile-Email and Password fields are mandatory."
+      #               description: "Mobile-Email and Password fields are mandatory."
+                       
       security: []  # No authentication required for login
 
-  /api/users/get-user-details/:userId:
+  /api/users/get-user-details/{userId}:
     get:
       tags:
         - Users
-      summary: "Get user profile"
+      summary: "Get user details"
       description: "Returns user profile data. Requires authentication."
       security:
         - Authorization: []  # Requires Authorization header with token
@@ -142,12 +174,25 @@ paths:
           description: "The ID of the user to retrieve"
           schema:
             type: string
-      responses:
-        '200':
-          description: "User profile retrieved successfully"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-        '401':
-          description: "Unauthorized - Missing or invalid token"
+      # responses:
+      #   '200':
+      #     description: "User profile retrieved successfully"
+      #     content:
+      #       application/json:
+      #         schema:
+      #           $ref: '#/components/schemas/User'
+      #   '401':
+      #     description: "Unauthorized - Invalid Password."
+      #     content:
+      #       application/json:
+      #         schema:
+      #           type: object
+      #           properties:
+      #             status:
+      #               type: string
+      #               example: "fail"
+      #               description: "Indicates the failure status"
+      #             message:
+      #               type: string
+      #               example: "Authentication failed. We required access token."
+      #               description: "Error message explaining the issue"

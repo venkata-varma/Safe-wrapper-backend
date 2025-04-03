@@ -108,6 +108,7 @@
     "MESSAGE_GET_SINGLE_CONDITION":"Condition Details.",
     "MESSAGE_ADD_WEBHOOK":"Webhook added succesfully.",
     "MESSAGE_UPDATE_WEBHOOK":"Webhook updated succesfully.",
+    "MESSAGE_USERID_PARAMS_MISSING":"UserId is mandatory in path params.",
     "MESSAGE_GET_ALL_WEBHOOK":"All webhook details.",
     "MESSAGE_WEBHOOK_NOT_FOUND":"Respective webhook details not found / inactive.",
     "MESSAGE_GET_INDIVIDUAL_WEBHOOK":"Webhook details.",

@@ -1,0 +1,53 @@
+/* Add a warning message above the auth input */
+.swagger-ui .auth-wrapper .auth-container::before {
+    content: "Please insert the word 'Bearer' followed by a space and the token returned by login.";
+    display: block;
+    color: red;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* Increase the height of API endpoint box */
+.swagger-ui .opblock-summary {
+    min-height: 45px; /* Adjust as needed */
+    font-size: 28px !important;  /* Adjust as needed */
+   }
+
+/* Increase padding of the green endpoint box */
+.swagger-ui .opblock.opblock-get {
+    padding: 10px;
+}
+
+/* General style for all API endpoint boxes */
+.swagger-ui .opblock {
+    padding: 10px !important; /* Reduces the inner space */
+    margin: 5px !important;  /* Reduces space between sections */
+    line-height: 1.2 !important; /* Adjusts the spacing between lines */
+    box-sizing: border-box; /* Ensures padding is included in total width */
+}
+
+.swagger-ui .opblock-summary-path {
+    font-size: 18px !important;  /* Adjust as needed */
+    font-weight: bold !important;
+    color: #333; /* Adjust color if needed */
+}
+
+
+/* Increase font size of the summary text */
+.swagger-ui .opblock-summary-description {
+    font-size: 16px !important;  /* Adjust as needed */
+}
+
+Increase font size of the whole endpoint block
+.swagger-ui .opblock {
+    font-size: 18px !important;
+}
+
+
+/* Ensure the summary appears on the next line */
+.swagger-ui .opblock-summary-description {
+    display: block !important;
+    width: 100%;
+    margin-top: 5px;  /* Adjust spacing as needed */
+    font-size: 16px !important; /* Adjust font size if necessary */
+}
