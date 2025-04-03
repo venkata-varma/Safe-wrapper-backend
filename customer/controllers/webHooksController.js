@@ -750,7 +750,7 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
 
 exports.receiveWebhookData = asyncWrapper(async (req, res) => {
   const webHookDetails = req.webHookDetails;
-  
+
   // Create a new log entry in the database
   await webhookMetaPayloadModel.create({
     accountId: webHookDetails.accountId._id,
@@ -1275,8 +1275,8 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
           currency: "$denominations.Currency"
         },
         count: { $sum: "$denominations.Count" }, // Sum the counts correctly
-        totalAmount: { 
-          $sum: { $multiply: ["$denominations.UnitValue", "$denominations.Count"] } 
+        totalAmount: {
+          $sum: { $multiply: ["$denominations.UnitValue", "$denominations.Count"] }
         },
         webhookTransactionId: { $first: "$webhookTransactionId" },
         webhookMasterId: { $first: "$webhookMasterId" },
@@ -1287,7 +1287,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
         transactionDateTime: { $first: "$transactionDateTime" }
       }
     },
-  
+
     {
       $group: {
         _id: {
@@ -1311,11 +1311,11 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
         }
       }
     },
-  
+
     {
       $group: {
         _id: null,
-        transactionDetails: { 
+        transactionDetails: {
           $push: {
             serialNumber: "$_id.serialNumber",
             transactionType: "$_id.transactionType",
@@ -1333,7 +1333,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
         grandTotal: { $sum: "$totalAmount" } // Sum all transactions correctly
       }
     },
-  
+
     {
       $project: {
         _id: 0,
@@ -1390,9 +1390,9 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
     }
   ]);
   */
-  
- 
-  
+
+
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
@@ -1427,9 +1427,311 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
       },
     },
   ]);
+  const listOfWebhooks = await webHooksMasterModel.find({accountId:accountId})
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
-    data: webhookPayloadHeadersData?.[0] || {}
+    data: {
+      webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
+      listOfWebhooks: listOfWebhooks
+    }
   })
+})
+
+
+
+exports.getDashboardStatasticsOfAccount = asyncWrapper(async (req, res) => {
+  const { accountId } = req.params
+  const lastSixMonthsDataForGraph = await webhookPayloadTransactions.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+        createdAt: {
+          $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
+          $lte: new Date()
+        }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          serialNumber: "$serialNumber",
+          transactionType: "$transactionType",
+        },
+        totalAmount: { $sum: "$amount" }
+
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        serialNumbers: { $addToSet: "$_id.serialNumber" },
+        transactionTypes: { $addToSet: "$_id.transactionType" },
+        totalAmount: { $sum: "$totalAmount" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        serialNumbersCount: { $size: "$serialNumbers" },
+        transactionTypesCount: { $size: "$transactionTypes" },
+        totalAmount: 1
+      }
+    }
+  ]);
+
+  const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
+
+  let webhookPayloadStatusDetails = await webhookMetaPayloadModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+        createdAt: {
+          $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
+          $lte: new Date()
+        }
+      }
+    },
+    {
+      $lookup: {
+        from: "webhookpayloadtransactions",
+        foreignField: "accountId",
+        localField: "accountId",
+        as: "webhooktransactionsresults"
+      }
+    },
+    {
+      $unwind: {
+        path: "$webhooktransactionsresults",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $match: {
+        "webhooktransactionsresults.userName": { $ne: "", $exists: true }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        serialNumbers: { $addToSet: "$webhooktransactionsresults.serialNumber" },
+        transactionTypes: { $addToSet: "$webhooktransactionsresults.transactionType" },
+        users: { $addToSet: "$webhooktransactionsresults.userName" },
+        locations: { $addToSet: "$webhooktransactionsresults.location" }
+      }
+    },
+    {
+      $lookup: {
+        from: "webhookmetapayloads",
+        pipeline: [
+          {
+            $match: { accountId: new mongoose.Types.ObjectId(accountId) }
+          },
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 }
+            }
+          }
+        ],
+        as: "statusCountsData"
+      }
+    },
+    {
+      $addFields: {
+        statusCounts: {
+          $map: {
+            input: predefinedStatuses,
+            as: "status",
+            in: {
+              status: "$$status",
+              count: {
+                $ifNull: [
+                  {
+                    $getField: {
+                      field: "count",
+                      input: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: "$statusCountsData",
+                              as: "s",
+                              cond: { $eq: ["$$s._id", "$$status"] }
+                            }
+                          },
+                          0
+                        ]
+                      }
+                    }
+                  },
+                  0
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        serialNumbersCount: { $size: { $ifNull: ["$serialNumbers", []] } },
+        transactionTypesCount: { $size: { $ifNull: ["$transactionTypes", []] } },
+        usersCount: { $size: { $ifNull: ["$users", []] } },
+        locationsCount: { $size: { $ifNull: ["$locations", []] } },
+        statusCounts: 1
+      }
+    }
+  ]);
+
+  const webhookPayloadDenominationsData = await webhookPayloadHeaders.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+      },
+    },
+    {
+      $lookup: {
+        from: "webhookpayloadtransactions",
+        localField: "webhookMasterId",
+        foreignField: "webhookMasterId",
+        as: "webhookTransactions",
+      },
+    },
+    {
+      $addFields: {
+        webhookTransactions: {
+          $filter: {
+            input: "$webhookTransactions",
+            as: "txn",
+            cond: {
+              $and: [
+                { $eq: ["$$txn.serialNumber", "$serialNumber"] },
+                { $eq: ["$$txn.transactionType", "$transactionType"] }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      $unwind: {
+        path: "$webhookTransactions",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $unwind: {
+        path: "$webhookTransactions.denominations",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: {
+          serialNumber: "$webhookTransactions.serialNumber",
+          transactionType: "$webhookTransactions.transactionType",
+          unitValue: "$webhookTransactions.denominations.UnitValue",
+          currency: "$webhookTransactions.denominations.Currency"
+        },
+        totalCount: { $sum: { $ifNull: ["$webhookTransactions.denominations.Count", 0] } },
+        totalAmount: {
+          $sum: { $multiply: ["$webhookTransactions.denominations.UnitValue", "$webhookTransactions.denominations.Count"] }
+        },
+      }
+    },
+    {
+      $group: {
+        _id: {
+          serialNumber: "$_id.serialNumber",
+          transactionType: "$_id.transactionType"
+        },
+        denominations: {
+          $push: {
+            UnitValue: "$_id.unitValue",
+            Count: "$totalCount",
+            Currency: "$_id.currency"
+          }
+        },
+        totalAmount: { $sum: "$totalAmount" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        serialNumber: "$_id.serialNumber",
+        transactionType: "$_id.transactionType",
+        denominations: {
+          $ifNull: ["$denominations", []]
+        },
+        totalAmount: "$totalAmount"
+      }
+    }
+  ]);
+
+
+  const webhookTransactionsDetails = await webhookPayloadTransactions.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+        createdAt: {
+          $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
+          $lte: new Date()
+        }
+      }
+    },
+    { $unwind: { path: "$denominations", preserveNullAndEmptyArrays: true } },
+    {
+      $group: {
+        _id: "$serialNumber",
+        count: { $sum: 1 },
+        totalAmount: {
+          $sum: { $multiply: ["$denominations.UnitValue", "$denominations.Count"] }
+        },
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        transactionDetails: {
+          $push: {
+            serialNumber: "$_id", count: "$count", totalAmount: "$totalAmount"
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        transactionDetails: 1
+      }
+    }
+  ])
+
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATASTICS,
+    data: {
+      lastSixMonthsDataForGraph,
+      webhookPayloadStatusDetails,
+      webhookPayloadDenominationsData,
+      webhookTransactionsDetails
+    }
+  })
+})
+
+
+exports.getListOfMachines = asyncWrapper(async(req,res)=>{
+  const {accountId, webhookMasterId} = req.query
+  const listOfMachines = await webhookPayloadHeaders.find({accountId:accountId, webhookMasterId:webhookMasterId})
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATASTICS,
+    data: listOfMachines
+  })
+})
+
+
+exports.getDetailedMachineReports = asyncWrapper(async(req,res)=>{
+  
 })
