@@ -94,8 +94,11 @@ paths:
     post:
       tags:
         - Authorize
-      summary: "Copy access_token from response - Click Authorize button -place access_token in input box to authorize."
-      description: "With valid credentials,A User can log in. A successful session lasts 1 hour."
+      summary:  "1. Copy access_token from response\n 2. Click Authorize button\n 3. Place access_token in input box to authorize."
+      description: |
+          1. Copy `access_token` from response  
+          2. Click the **Authorize** button  
+          3. Place `access_token` in the input box to authorize.
       requestBody:
         required: true
         content:

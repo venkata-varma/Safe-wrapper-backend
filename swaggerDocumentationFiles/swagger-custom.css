@@ -36,6 +36,7 @@
 /* Increase font size of the summary text */
 .swagger-ui .opblock-summary-description {
     font-size: 16px !important;  /* Adjust as needed */
+    padding: 10px
 }
 
 Increase font size of the whole endpoint block
@@ -50,4 +51,12 @@ Increase font size of the whole endpoint block
     width: 100%;
     margin-top: 5px;  /* Adjust spacing as needed */
     font-size: 16px !important; /* Adjust font size if necessary */
+}
+
+
+
+.swagger-ui  .description {
+    font-size: 18px !important; /* Increase font size */
+    line-height: 5.8 !important; /* Increase spacing between lines */
+    margin-bottom: 15px !important; /* Add spacing at the bottom */
 }
