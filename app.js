@@ -32,7 +32,7 @@ app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/webhook',webHooksRoute)
 
-webhookCrons.webhookScheduleCronJobs()
+// webhookCrons.webhookScheduleCronJobs()
 
 // Error Handling Middleware (optional)
 app.use(errorcontroller);
