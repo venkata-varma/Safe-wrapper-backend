@@ -1733,5 +1733,25 @@ exports.getListOfMachines = asyncWrapper(async(req,res)=>{
 
 
 exports.getDetailedMachineReports = asyncWrapper(async(req,res)=>{
+  const {accountId} = req.query
+
+  const machineDetails = await webhookPayloadHeaders.find({accountId:accountId})
+
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status:customConstants.messages.MESSAGE_SUCCESS,
+    message:customConstants.messages.MESSAGE_WEBOOK_GET_MACHINE_REPORTS,
+    data:machineDetails
+  })
+
+})
+
+exports.getSingleMachineDetails = asyncWrapper(async(req,res)=>{
+  const {serialNumber, accountId, webhookMasterId} = req.query
+  const singleMachineReport = await webhookPayloadTransactions.find({accountId:accountId,webhookMasterId:webhookMasterId,serialNumber:serialNumber})
   
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status:customConstants.messages.MESSAGE_SUCCESS,
+    message:customConstants.messages.MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS,
+    data:singleMachineReport
+  })
 })

@@ -24,7 +24,8 @@ const {
   getAllWebhookPayoadHeadersOfAccount,
   getDashboardStatasticsOfAccount,
   getListOfMachines,
-  getDetailedMachineReports
+  getDetailedMachineReports,
+  getSingleMachineDetails
 } = require("../controllers/webHooksController");
 
 router.post(
@@ -58,6 +59,7 @@ router.get('/get-webhook-payload-headers/:accountId',getAllWebhookPayoadHeadersO
 router.get('/get-dashboard-statastics/:accountId',getDashboardStatasticsOfAccount)
 router.get('/get-list-of-machines',getListOfMachines)
 router.get('/get-detailed-machine-report',getDetailedMachineReports)
+router.get('/get-single-machine-details',getSingleMachineDetails)
 // router.patch('/update-webhook',validateIntegrationForWebHook, updateWebHook)
 // router.patch('/update-webhook-status',validateIntegrationForWebHook, updateWebHookStatus)
 
