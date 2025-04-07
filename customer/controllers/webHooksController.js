@@ -1732,7 +1732,7 @@ exports.getListOfMachines = asyncWrapper(async(req,res)=>{
 })
 
 
-exports.getDetailedMachineReports = asyncWrapper(async(req,res)=>{
+exports.getAllMachineReports = asyncWrapper(async(req,res)=>{
   const {accountId} = req.query
 
   const machineDetails = await webhookPayloadHeaders.find({accountId:accountId})
