@@ -162,6 +162,155 @@ paths:
                        
       security: []  # No authentication required for login
 
+
+  /api/accounts/create-account:
+    post:
+      tags:
+        - Accounts
+      summary: "Create account for first-time visitor"
+      description: |
+          - Provide the required account details  
+          - Upload a profile logo (PNG, JPG)  
+          - The image will be stored in S3, and the URL will be saved  
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                accountName:
+                  type: string
+                  description: "Name of the account"
+                  example: "fourtwo"
+                companyName:
+                  type: string
+                  description: "Company name"
+                  example: "fourtwo"
+                phone:
+                  type: string
+                  description: "User's phone number"
+                  example: "9550007949"
+                email:
+                  type: string
+                  format: email
+                  description: "User's email"
+                  example: "nine@devrabbit.com"
+                password:
+                  type: string
+                  format: password
+                  description: "User's password"
+                  example: "9550007949"
+                address:
+                  type: string
+                  description: "Street address"
+                  example: "3910 S. IH 35 Suite 205"
+                city:
+                  type: string
+                  description: "City"
+                  example: "Austin, TX 78704"
+                state:
+                  type: string
+                  description: "State"
+                  example: "Texas"
+                country:
+                  type: string
+                  description: "Country"
+                  example: "USA"
+                pincode:
+                  type: string
+                  description: "Zip code"
+                  example: "78704"
+                accountType:
+                  type: string
+                  description: "Type of account (customer, admin, etc.)"
+                  example: "customer"
+                timeZone:
+                  type: string
+                  description: "User's time zone"
+                  example: "IST"
+                logo:
+                  type: string
+                  format: binary
+                  description: "Upload profile logo (PNG, JPG)"
+
+  /api/users/create-user:
+   post:
+    tags:
+      - Users
+    summary: "Provision for super-admin of an account to create a user within the same account. Limit is 4 users per account."
+    description: |
+      This endpoint allows the super-admin of an account to create a new user within the same account.  
+      - A maximum of 4 users can be created per account.  
+      - The `name`, `email`, `phone`, and `password` fields are mandatory.  
+      
+
+    security:
+      - Authorization: []  # Requires Authorization header with token
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: "Full name of the user"
+                example: "John Doe"
+              email:
+                type: string
+                format: email
+                description: "User's email address"
+                example: "john.doe@example.com"
+              phone:
+                type: string
+                description: "User's phone number"
+                example: "1234567890"
+              password:
+                type: string
+                format: password
+                description: "User's password"
+                example: "SecureP@ssw0rd"
+              companyName:
+                type: string
+                description: "Name of the company"
+                example: "Tech Corp"
+              address:
+                type: string
+                description: "User's address"
+                example: "123 Main St"
+              city:
+                type: string
+                description: "City name"
+                example: "Austin"
+              state:
+                type: string
+                description: "State name"
+                example: "Texas"
+              country:
+                type: string
+                description: "Country name"
+                example: "USA"
+              pincode:
+                type: string
+                description: "Postal code"
+                example: "78704"
+              accountType:
+                type: string
+                description: "Type of account (e.g., customer, admin)"
+                example: "customer"
+              timeZone:
+                type: string
+                description: "User's time zone"
+                example: "IST"
+            required:
+              - name
+              - email
+              - phone
+              - password
+
+
   /api/users/get-user-details/{userId}:
     get:
       tags:
@@ -199,3 +348,143 @@ paths:
       #               type: string
       #               example: "Authentication failed. We required access token."
       #               description: "Error message explaining the issue"
+
+  /api/users/update-password/{userId}:
+   patch:
+     tags:
+      - Users
+     summary: "Update user password"
+     description: |
+       Allows an authenticated user to update their password.  
+       - The user must provide their **current password** and the **new password**.  
+       - Both **currentPassword** and **newPassword** fields are **mandatory**.  
+       Requires authentication via `Authorization` header.
+     security:
+        - Authorization: []  # Requires Authorization header with token
+     parameters:
+        - name: userId
+          in: path
+          required: true
+          description: "The ID of the user whose password is to be updated"
+          schema:
+            type: string
+     requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                  description: "**Mandatory** - The current password of the user"
+                  example: "0000000001"
+                newPassword:
+                  type: string
+                  format: password
+                  description: "**Mandatory** - The new password to be set"
+                  example: "0000000001"
+
+  /api/users/update-user-details/{userId}:
+   patch:
+     tags:
+      - Users
+     summary: "Update user details"
+     description: |
+       Allows an authenticated user to update their details.  
+       - All fields are **optional**, and the user can update any field they wish.  
+       - Requires authentication via the `Authorization` header.
+     security:
+        - Authorization: []  # Requires Authorization header with token
+     parameters:
+        - name: userId
+          in: path
+          required: true
+          description: "The ID of the user whose details are to be updated"
+          schema:
+            type: string
+     requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: "User's name"
+                  example: "fourtwo-2"
+                companyName:
+                  type: string
+                  description: "User's company name"
+                  example: "fourtwo"
+                phone:
+                  type: string
+                  description: "User's phone number"
+                  example: "0000000000"
+                email:
+                  type: string
+                  format: email
+                  description: "User's email address"
+                  example: "nine123@devrabbit.com"
+
+
+  /api/users/update-user-status/{userId}:
+   patch:
+     tags:
+      - Users
+     summary: "To update user status - Only super-admin users are allowed"
+     description: |
+       Allows a **super-admin** to update a user's status.  
+       - The **status** field must be either **active** or **deleted**.  
+       - Only **super-admin** users have permission to perform this action.  
+       Requires authentication via `Authorization` header.
+     security:
+        - Authorization: []  # Requires Authorization header with token
+     parameters:
+        - name: userId
+          in: path
+          required: true
+          description: "The ID of the user whose status is to be updated"
+          schema:
+            type: string
+     requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  description: "**Mandatory** - The status to be updated"
+                  enum: ["active", "deleted"]
+                  example: "deleted / active"
+
+  /api/users/get-all-users/{accountId}:
+   get:
+     tags:
+      - Users
+     summary: "Get all users under an account - Only super-admin users are allowed"
+     description: |
+       Retrieves all users associated with a specific `accountId`.  
+       - Only **super-admin** users have permission to access this endpoint.  
+       Requires authentication via `Authorization` header.
+     security:
+        - Authorization: []  # Requires Authorization header with token
+     parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: "The ID of the account whose users are to be fetched"
+          schema:
+            type: string
+                 
+
+                 

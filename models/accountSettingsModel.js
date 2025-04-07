@@ -12,7 +12,7 @@ const accountSettingsSchema = mongoose.Schema({
         index: true,
         default: null
     },
-    noOfIntegrations: {
+    noOfWebhooks: {
         type: Number,
         default: 2
     },
