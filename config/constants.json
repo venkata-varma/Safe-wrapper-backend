@@ -131,7 +131,7 @@
     "MESSAGE_WEBOOK_GET_SETTINGS": "Webhook settings.",
     "MESSAGE_WEBOOK_GET_TRANSACTIONS": "Webhook transactions.",
     "MESSAGE_WEBHOOK_PAYLOAD_HEADERS": "Webhook payload headers.",
-    "MESSAGE_WEBOOK_GET_DASHBOARD_STATASTICS": "Webhook statistics.",
+    "MESSAGE_WEBOOK_GET_DASHBOARD_STATISTICS": "Webhook statistics.",
     "MESSAGE_WEBOOK_GET_MACHINE_REPORTS": "All machine details.",
     "MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS": "Machine details."
 

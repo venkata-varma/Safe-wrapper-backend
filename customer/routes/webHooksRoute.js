@@ -22,7 +22,7 @@ const {
   validateWebhookandAccount,updateWebhookSettings,
   getAllWebhookTransactionsOfAccount,
   getAllWebhookPayoadHeadersOfAccount,
-  getDashboardStatasticsOfAccount,
+  getDashboardStatisticsOfAccount,
   getListOfMachines,
   getAllMachineReports,
   getSingleMachineDetails
@@ -56,7 +56,7 @@ router.get('/get-all-webhook-details/:accountId', validateAccountStatus,getAllWe
 
 router.get('/get-webhook-transactions',getAllWebhookTransactionsOfAccount)
 router.get('/get-webhook-payload-headers/:accountId',getAllWebhookPayoadHeadersOfAccount)
-router.get('/get-dashboard-statastics/:accountId',getDashboardStatasticsOfAccount)
+router.get('/get-dashboard-statistics/:accountId',getDashboardStatisticsOfAccount)
 router.get('/get-list-of-machines',getListOfMachines)
 router.get('/get-all-machine-reports',getAllMachineReports)
 router.get('/get-single-machine-details',getSingleMachineDetails)

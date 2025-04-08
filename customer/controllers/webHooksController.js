@@ -1441,7 +1441,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
 
 
 
-exports.getDashboardStatasticsOfAccount = asyncWrapper(async (req, res) => {
+exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
   const lastSixMonthsDataForGraph = await webhookPayloadTransactions.aggregate([
     {
@@ -1889,7 +1889,7 @@ exports.getDashboardStatasticsOfAccount = asyncWrapper(async (req, res) => {
   
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATASTICS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATISTICS,
     data: {
       lastSixMonthsDataForGraph,
       payloadSummary,
