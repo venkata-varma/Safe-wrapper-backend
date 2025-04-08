@@ -1,19 +1,27 @@
 openapi: 3.0.0
 info:
-  title: "Express API for Integrations hub- Devrabbit"
+  title: "Safe Wrapper REST API Documentation"
   version: "1.0.0"
-  description: "This is a REST API application made with Express. It retrieves data from JSONPlaceholder."
-  license:
-    name: "Licensed Under MIT"
-    url: "https://spdx.org/licenses/MIT.html"
+  description: |
+    This is a REST API application developed with Express.
+
+    ## Recommendations:
+    - Ensure that all API requests include the necessary authentication headers if required.
+    - Use the `Try it out` feature in Swagger UI to interact with the API and test different request parameters.
+
   contact:
     name: "Devrabbit"
-    url: "https://hub.dev.isyncrabbit.com/auth/login"
+    url: "https://lhswweb.dev.devrabbit.co/login"
+    Email: "akram.shaik@devrabbit.com"
 
 servers:
+  - url: "https://lhswapi.dev.devrabbit.co"
+    description: "Development Server"
 
   - url: "http://localhost:8201"
-    description: "Local Development Server"
+    description: "Local Server"
+
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
 components:
   securitySchemes:
@@ -21,10 +29,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-     
 
-  schemas:  # This should be properly indented
-    User:  # The User schema should be correctly nested under schemas
+  #-----------------------------------------------------------------------------------------------------------------------------------
+  schemas: # This should be properly indented
+    User: # The User schema should be correctly nested under schem
       type: object
       properties:
         userId:
@@ -40,7 +48,7 @@ components:
         name:
           type: string
           description: "Full name of the user."
-          example : "Devrabbit client"
+          example: "Devrabbit client"
           default: ""
         password:
           type: string
@@ -57,14 +65,16 @@ components:
           pattern: "^[0-9]+$"
           minLength: 10
           maxLength: 15
-          example : "0000000000"
+          example: "0000000000"
           default: ""
+          unique: [true, "Phone number has to be unique"]
         email:
           type: string
           format: email
           description: "User's email address."
-          example : "nine123@devrabbit.com"
+          example: "nine123@devrabbit.com"
           default: ""
+          unique: [true, "Email has to be unique"]
         status:
           type: string
           enum: ["active", "deleted", "blocked"]
@@ -88,17 +98,184 @@ components:
           type: string
           format: date-time
           description: "Timestamp when the user was last updated."
+      required:
+        - name
+        - password
+        - phone
+        - email
+        - password
+
+    Account:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+          description: "Unique identifier for the account."
+        accountName:
+          type: string
+          description: "Name of the account."
+          required: true
+        accountType:
+          type: string
+          enum: ["customer", "super-admin"]
+          description: "Type of the account."
+        companyName:
+          type: string
+          description: "Company name associated with the account."
+        logo:
+          type: string
+          description: "URL of the company's logo."
+        role:
+          type: string
+          description: "Role of the account, default is 'super-admin'."
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 15
+          pattern: "^[0-9]+$"
+          description: "Mobile number of the account."
+          unique: [true, "Phone number has to be unique"]
+        email:
+          type: string
+          format: email
+          description: "Email address of the account."
+          unique: [true, "Email has to be unique"]
+        password:
+          type: string
+          description: "Hashed password of the account."
+        address:
+          type: string
+          description: "Address of the account holder."
+        city:
+          type: string
+          description: "City of the account holder."
+        state:
+          type: string
+          description: "State of the account holder."
+        country:
+          type: string
+          description: "Country of the account holder."
+        pincode:
+          type: string
+          description: "Pincode of the account holder."
+        status:
+          type: string
+          enum: ["active", "in-progress", "deleted", "blocked"]
+          description: "Status of the account."
+        createdAt:
+          type: string
+          format: date-time
+          description: "Timestamp when the account was created."
+        updatedAt:
+          type: string
+          format: date-time
+          description: "Timestamp when the account was last updated."
+      required:
+        - accountName
+        - accountType
+        - companyName
+        - phone
+        - email
+        - password
+        - city
+        - state
+        - country
+        - pincode
+
+    WebhookMasters:
+      type: object
+      properties:
+       webhookMasterId:
+        type: string
+        format: uuid
+        example: "60d5ec49c3b2a72e4c8b4567"
+       accountId:
+        type: string
+        format: uuid
+        example: "60d5ec49c3b2a72e4c8b4568"
+       userId:
+        type: string
+        format: uuid
+        example: "60d5ec49c3b2a72e4c8b4569"
+       location:
+        type: string
+        example: "New York"
+       name:
+        type: string
+        example: "OrderWebhook"
+       webHookUrl:
+        type: string
+        format: uri
+        example: "https://api.example.com/webhook"
+       authenticationCode:
+        type: string
+        unique: true
+        example: "auth-123456"
+       requestObject:
+        type: object
+        example: { "event": "order_created", "data": { "orderId": "12345" } }
+       primaryHookId:
+        type: string
+        example: "primary-001"
+       comments:
+        type: string
+        example: "Webhook for order processing"
+       status:
+        type: string
+        enum:
+        - active
+        - offline
+        - deleted
+        example: "active"
+       lastPullDate:
+        type: string
+        format: date-time
+        example: "2024-07-23T10:30:00Z"
+       webhookSettings:
+        type: object
+        properties:
+         periodType:
+          type: string
+          enum:
+            - each second
+            - once each minute
+            - once each hour
+            - once each day
+            - once each month
+          example: "once each day"
+         currentStatus:
+          type: string
+          enum:
+            - start
+            - stop
+          example: "stop"
+         interval:
+          type: integer
+          example: 1
+         expiresOn:
+          type: string
+          format: date-time
+          example: "2025-01-01T00:00:00Z"
+      required:
+       - accountId
+       - name
+       - webHookUrl
+       - authenticationCode
+       - webhookSettings
+
+#-----------------------------------------------------------------------------------------------------------------------------------
 
 paths:
   /api/users/user-login:
     post:
       tags:
         - Authorize
-      summary:  "1. Copy access_token from response\n 2. Click Authorize button\n 3. Place access_token in input box to authorize."
+      summary: "1. Copy access_token from response || 2. Click Authorize button   ||  3. Place access_token in input box to authorize."
       description: |
-          1. Copy `access_token` from response  
-          2. Click the **Authorize** button  
-          3. Place `access_token` in the input box to authorize.
+        - Copy `access_token` from response  
+        - Click the **Authorize** button  
+        - Place `access_token` in the input box to authorize.
       requestBody:
         required: true
         content:
@@ -159,24 +336,24 @@ paths:
       #               type: string
       #               example: "Mobile-Email and Password fields are mandatory."
       #               description: "Mobile-Email and Password fields are mandatory."
-                       
-      security: []  # No authentication required for login
 
+      security: [] # No authentication required for login
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
   /api/accounts/create-account:
     post:
       tags:
         - Accounts
       summary: "Create account for first-time visitor"
       description: |
-          - Provide the required account details  
-          - Upload a profile logo (PNG, JPG)  
-          - The image will be stored in S3, and the URL will be saved  
+        - Provide the required account details  
+        - Upload a profile logo (Image of any format) , if desired
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
+              $ref: "#/components/schemas/Account"
               type: object
               properties:
                 accountName:
@@ -232,93 +409,70 @@ paths:
                 logo:
                   type: string
                   format: binary
-                  description: "Upload profile logo (PNG, JPG)"
+                  description: "Upload profile logo (Image of any format)"
+
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/users/create-user:
-   post:
-    tags:
-      - Users
-    summary: "Provision for super-admin of an account to create a user within the same account. Limit is 4 users per account."
-    description: |
-      This endpoint allows the super-admin of an account to create a new user within the same account.  
-      - A maximum of 4 users can be created per account.  
-      - The `name`, `email`, `phone`, and `password` fields are mandatory.  
-      
+    post:
+      tags:
+        - Users
+      summary: "Provision for super-admin of an account to create a user within the same account."
+      description: |
+        - This endpoint allows the super-admin of an account to create a new user within the same account.  
+        - The `name`, `email`, `phone`, and `password` fields are mandatory.
 
-    security:
-      - Authorization: []  # Requires Authorization header with token
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              name:
-                type: string
-                description: "Full name of the user"
-                example: "John Doe"
-              email:
-                type: string
-                format: email
-                description: "User's email address"
-                example: "john.doe@example.com"
-              phone:
-                type: string
-                description: "User's phone number"
-                example: "1234567890"
-              password:
-                type: string
-                format: password
-                description: "User's password"
-                example: "SecureP@ssw0rd"
-              companyName:
-                type: string
-                description: "Name of the company"
-                example: "Tech Corp"
-              address:
-                type: string
-                description: "User's address"
-                example: "123 Main St"
-              city:
-                type: string
-                description: "City name"
-                example: "Austin"
-              state:
-                type: string
-                description: "State name"
-                example: "Texas"
-              country:
-                type: string
-                description: "Country name"
-                example: "USA"
-              pincode:
-                type: string
-                description: "Postal code"
-                example: "78704"
-              accountType:
-                type: string
-                description: "Type of account (e.g., customer, admin)"
-                example: "customer"
-              timeZone:
-                type: string
-                description: "User's time zone"
-                example: "IST"
-            required:
-              - name
-              - email
-              - phone
-              - password
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: "Full name of the user"
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  description: "User's email address"
+                  example: "john.doe@example.com"
+                phone:
+                  type: string
+                  description: "User's phone number"
+                  example: "1234567890"
+                password:
+                  type: string
+                  format: password
+                  description: "User's password"
+                  example: "SecureP@ssw0rd"
+                createdBy:
+                  type: string
+                  format: uuid
+                  description: "Unique identifier for the user."
+                  nullable: true
+              required:
+                - name
+                - email
+                - phone
+                - password
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/users/get-user-details/{userId}:
     get:
       tags:
         - Users
       summary: "Get user details"
-      description: "Returns user profile data. Requires authentication."
+      description: |
+        - Returns user profile data. Requires authentication."
+        - Requires authentication via the `Authorization` header.
       security:
-        - Authorization: []  # Requires Authorization header with token
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: userId
           in: path
@@ -349,26 +503,28 @@ paths:
       #               example: "Authentication failed. We required access token."
       #               description: "Error message explaining the issue"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
+
   /api/users/update-password/{userId}:
-   patch:
-     tags:
-      - Users
-     summary: "Update user password"
-     description: |
-       Allows an authenticated user to update their password.  
-       - The user must provide their **current password** and the **new password**.  
-       - Both **currentPassword** and **newPassword** fields are **mandatory**.  
-       Requires authentication via `Authorization` header.
-     security:
-        - Authorization: []  # Requires Authorization header with token
-     parameters:
+    patch:
+      tags:
+        - Users
+      summary: "Update user password"
+      description: |
+        - Allows an authenticated user to update their password.  
+        - The user must provide their **current password** and the **new password**.  
+        - Both **currentPassword** and **newPassword** fields are **mandatory**.  
+        - Requires authentication via `Authorization` header.
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      parameters:
         - name: userId
           in: path
           required: true
           description: "The ID of the user whose password is to be updated"
           schema:
             type: string
-     requestBody:
+      requestBody:
         required: true
         content:
           application/json:
@@ -389,25 +545,27 @@ paths:
                   description: "**Mandatory** - The new password to be set"
                   example: "0000000001"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
+
   /api/users/update-user-details/{userId}:
-   patch:
-     tags:
-      - Users
-     summary: "Update user details"
-     description: |
-       Allows an authenticated user to update their details.  
-       - All fields are **optional**, and the user can update any field they wish.  
-       - Requires authentication via the `Authorization` header.
-     security:
-        - Authorization: []  # Requires Authorization header with token
-     parameters:
+    patch:
+      tags:
+        - Users
+      summary: "Update user details"
+      description: |
+        - Allows an authenticated user to update their details.  
+        - All fields are **optional**, and the user can update any field they wish.  
+        - Requires authentication via the `Authorization` header.
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      parameters:
         - name: userId
           in: path
           required: true
           description: "The ID of the user whose details are to be updated"
           schema:
             type: string
-     requestBody:
+      requestBody:
         required: false
         content:
           multipart/form-data:
@@ -432,30 +590,32 @@ paths:
                   description: "User's email address"
                   example: "nine123@devrabbit.com"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/users/update-user-status/{userId}:
-   patch:
-     tags:
-      - Users
-     summary: "To update user status - Only super-admin users are allowed"
-     description: |
-       Allows a **super-admin** to update a user's status.  
-       - The **status** field must be either **active** or **deleted**.  
-       - Only **super-admin** users have permission to perform this action.  
-       Requires authentication via `Authorization` header.
-     security:
-        - Authorization: []  # Requires Authorization header with token
-     parameters:
+    patch:
+      tags:
+        - Users
+      summary: "To update user status - Only super-admin users are allowed"
+
+      description: |
+        - The **status** field must be either **active** or **deleted**.  
+        - Only **super-admin** users have permission to perform this action.  
+        - Requires authentication via `Authorization` header.
+
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      parameters:
         - name: userId
           in: path
           required: true
           description: "The ID of the user whose status is to be updated"
           schema:
             type: string
-     requestBody:
+      requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
@@ -467,42 +627,47 @@ paths:
                   enum: ["active", "deleted"]
                   example: "deleted / active"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
+
   /api/users/get-all-users/{accountId}:
-   get:
-     tags:
-      - Users
-     summary: "Get all users under an account - Only super-admin users are allowed"
-     description: |
-       Retrieves all users associated with a specific `accountId`.  
-       - Only **super-admin** users have permission to access this endpoint.  
-       Requires authentication via `Authorization` header.
-     security:
-        - Authorization: []  # Requires Authorization header with token
-     parameters:
+    get:
+      tags:
+        - Users
+      summary: "Get all users under an account - Only super-admin users are allowed"
+      description: |
+        - Retrieves all users associated with a specific `accountId`.  
+        - Only **super-admin** users have permission to access this endpoint.  
+        - Requires authentication via `Authorization` header.
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      parameters:
         - name: accountId
           in: path
           required: true
           description: "The ID of the account whose users are to be fetched"
           schema:
             type: string
-                 
+
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/webhook/create-webhook:
     post:
       tags:
         - Webhooks
-      summary:  "Get a dedicated HTTPS POST URL with encrypted security token"
+      summary: "Get a dedicated HTTPS POST URL with encrypted security token"
       description: |
-          1. The `accountId` and `name` fields are **mandatory**.  
-          2. Use this API to get a dedicated **PUSH API** webhook URL to receive real-time updates.  
-          3. The generated webhook URL can be used to subscribe to events and receive data automatically.  
+        - The `accountId` and `name` fields are **mandatory**.  
+        - Use this API to get a dedicated **PUSH API** webhook URL to receive real-time updates.  
+        - The generated webhook URL can be used to subscribe to events and receive data automatically.  
+        - Requires authentication via the `Authorization` header.
       security:
-        - Authorization: []  # Requires Authorization header with token
+        - Authorization: [] # Requires Authorization header with token
       requestBody:
         required: true
         content:
           application/json:
             schema:
+              $ref: "#/components/schemas/WebhookMasters"
               type: object
               required:
                 - accountId
@@ -528,18 +693,20 @@ paths:
                   type: object
                   description: "Optional - Request payload object"
                   example: {}
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/webhook/get-individual-webhook-details/{webhookMasterId}:
-   get:
+    get:
       tags:
         - Webhooks
-      summary:  "Get details of an individual webhook by its unique ID"
+      summary: "Get details of an individual webhook by its unique ID"
       description: |
-          1. This API retrieves the details of a specific webhook using its unique `webhookMasterId`.  
-          2. The response includes webhook metadata, such as name, status, and registered events.  
-          3. Use this endpoint to verify webhook configurations or troubleshoot issues.  
+        - This API retrieves the details of a specific webhook using its unique `webhookMasterId`.  
+        - The response includes webhook metadata, such as name, status, and registered events.  
+        - Use this endpoint to verify webhook configurations or troubleshoot issues.  
+        - Requires authentication via the `Authorization` header.
       security:
-        - Authorization: []  # Requires Authorization header with token
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: webhookMasterId
           in: path
@@ -548,20 +715,23 @@ paths:
             type: string
           description: "Unique identifier of the webhook"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
+
   /api/webhook/update-webhook-settings/{webhookMasterId}:
     patch:
       tags:
         - Webhooks
       summary: "Update webhook settings by its unique ID"
       description: |
-          1. This API allows updating the webhook settings using its unique `webhookMasterId`.  
-          2. Users can update one or more of the following webhook settings:  
-             - `periodType`: Defines the frequency of webhook execution.  
-             - `interval`: Specifies the time interval between webhook executions.  
-             - `expiresOn`: Sets the expiration date and time for the webhook.  
-          3. Only the fields provided in the request body will be updated; others will remain unchanged.  
+        - This API allows updating the webhook settings using its unique `webhookMasterId`.  
+        - Users can update one or more of the following webhook settings:  
+           - `periodType`: Defines the frequency of webhook execution.  
+           - `interval`: Specifies the time interval between webhook executions.  
+           - `expiresOn`: Sets the expiration date and time for the webhook.  
+        - Only the fields provided in the request body will be updated; others will remain unchanged.
+        - Requires authentication via the `Authorization` header.
       security:
-        - Authorization: []  # Requires Authorization header with token
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: webhookMasterId
           in: path
@@ -589,18 +759,19 @@ paths:
                   example: "2038-07-12T10:33:50.973+00:00"
                   description: "Sets the expiration date and time for the webhook"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/webhook/get-all-webhook-details/{accountId}:
-   get:
+    get:
       tags:
         - Webhooks
-      summary:  "Get details of all the webhook URLs registered under an account"
+      summary: "Get details of all the webhook URLs registered under an account"
       description: |
-          1. This API retrieves all webhook details associated with a given `accountId`.  
-          2. The response includes metadata such as webhook name, status, registered events, and delivery settings.  
-          3. Use this endpoint to list and manage all webhooks under a specific account.  
+        - This API retrieves all webhook details associated with a given `accountId`.  
+        - The response includes metadata such as webhook name, status, registered events, and delivery settings.  
+        - Requires authentication via the `Authorization` header.
       security:
-        - Authorization: []  # Requires Authorization header with token
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: accountId
           in: path
@@ -609,21 +780,22 @@ paths:
             type: string
           description: "Unique identifier of the account for which webhooks are registered"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/webhook/get-webhook-transactions:
-   get:
+    get:
       tags:
         - Webhooks
-      summary:  "Get details of all the transaction records received on single or multiple serial numbers based on desired filters"
+      summary: "Get details of all the transaction records received on single or multiple serial numbers based on desired filters"
       description: |
-          1. This API retrieves all webhook transactions for a given `accountId` based on the applied filters.
-          2. Users can filter results using:
-             - `serialNumbers`: A comma-separated list of one or more serial numbers.
-             - `transactionTypes`: A comma-separated list of transaction types.
-             - `fromDate` and `toDate`: A date range to filter transactions.
-          3. On clicking submit, the response includes important statistical data for analysis.
+        - This API retrieves all webhook transactions for a given `accountId` based on the applied filters.
+        - Users can filter results using:
+           - `serialNumbers`: A comma-separated list of one or more serial numbers.
+           - `transactionTypes`: A comma-separated list of transaction types.
+           - `fromDate` and `toDate`: A date range to filter transactions.
+        - Requires authentication via the `Authorization` header.
       security:
-        - Authorization: []  # Requires Authorization header with token
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: accountId
           in: query
@@ -662,17 +834,19 @@ paths:
             format: date
           description: "End date (YYYY-MM-DD) for filtering transactions"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/webhook/get-webhook-payload-headers/{accountId}:
     get:
       tags:
         - Webhooks
-      summary:  "Get details of serial numbers of machines registered under an account and transaction types of received transactions."
+      summary: "Get details of serial numbers of machines registered under an account and transaction types of received transactions."
       description: |
-        1. This API provides a list of serial numbers of machines registered under a specific `accountId`.  
-        2. Additionally, it retrieves all transaction types associated with these machines that have been recorded through webhooks.
+        - This API provides a list of serial numbers of machines registered under a specific `accountId`.  
+        - Additionally, it retrieves all transaction types associated with these machines that have been recorded through webhooks.
+        - Requires authentication via the `Authorization` header.
       security:
-        - Authorization: []  # Requires Authorization header with token
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: accountId
           in: path
@@ -681,6 +855,7 @@ paths:
             type: string
           description: "Unique identifier of the account for which webhooks are registered"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/webhook/get-dashboard-statastics/{accountId}:
     get:
@@ -688,12 +863,14 @@ paths:
         - Webhooks
       summary: "Retrieve statistical data for transactions and denominations over the last six months."
       description: |
-        1. This API provides various statistical insights related to webhook transactions for a given `accountId`.  
-        2. The response includes 
-             (i).Statistics of transactions over last six months.
-             (ii).Top  5 Users.
-             (iii). Latest transactions. 
-        - Authorization: []  # Requires Authorization header with token
+        - This API provides various statistical insights related to webhook transactions for a given `accountId`.  
+        - The response includes 
+             - `Statistics of transactions over last six months.`
+             - `Top  5 Users.`
+             - `Latest transactions.`
+        - Requires authentication via the `Authorization` header.
+      security:
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: accountId
           in: path
@@ -702,14 +879,18 @@ paths:
             type: string
           description: "Unique identifier of the account for which webhooks are registered"
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
+
   /api/webhook/get-list-of-machines:
     get:
       tags:
         - Webhooks
       summary: "Get the list of machines registered under an account for a specific webhook."
       description: |
-        1. This API retrieves a list of machines registered under a given `accountId` and a webhook master.  
-
+        - This API retrieves a list of machines registered under a given `accountId` and a webhook master.
+        - Requires authentication via the `Authorization` header.
+      security:
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: accountId
           in: query
@@ -724,6 +905,7 @@ paths:
             type: string
           description: "Unique identifier of the webhook under which machines are listed."
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
 
   /api/webhook/get-all-machine-reports:
     get:
@@ -731,10 +913,11 @@ paths:
         - Webhooks
       summary: "Retrieve statistical insights for machines registered under an account."
       description: |
-        1. This API provides statistical insights about machines associated with a given `accountId`.  
-        2. The response includes aggregated data such as machine status, usage trends, and transaction summaries.  
-        3. Use this endpoint to analyze machine performance and activity under a specific account.  
-
+        - This API provides statistical insights about machines associated with a given `accountId`.  
+        - The response includes aggregated data such as machine status, usage trends, and transaction summaries.
+        - Requires authentication via the `Authorization` header.
+      security:
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: accountId
           in: query
@@ -743,16 +926,20 @@ paths:
             type: string
           description: "Unique identifier of the account for which machine reports are retrieved."
 
+  #-----------------------------------------------------------------------------------------------------------------------------------
+
   /api/webhook/get-single-machine-details:
     get:
       tags:
         - Webhooks
       summary: "Retrieve statistical insights for an individual machine registered under an account."
       description: |
-        1. This API provides detailed insights about a specific machine associated with a given `accountId`.  
-        2. By providing mandatory query parameters such as `serialNumber`, `accountId`, and `webhookMasterId`, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
-        3. Use this endpoint to analyze a machine's operational history, cash flow, and status within the registered account.  
+        - This API provides detailed insights about a specific machine associated with a given `accountId`.  
+        - By providing mandatory query parameters such as `serialNumber`, `accountId`, and `webhookMasterId`, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
+        - Requires authentication via the `Authorization` header.
 
+      security:
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: accountId
           in: query
@@ -772,3 +959,80 @@ paths:
           schema:
             type: string
           description: "Unique identifier of the webhook under which the machine is listed."
+      responses:
+       200:
+        description: "Single machine details."
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                _id:
+                  type: string
+                  example: "67eceef889c3a34af5486760"
+                webhookMasterId:
+                  type: string
+                  example: "67eb8490233046c701342349"
+                webhookMetaPayloadId:
+                  type: string
+                  example: "67eb8588233046c70134244c"
+                accountId:
+                  type: string
+                  example: "67eb81cb45715d3e5b678ebb"
+                pickupGroupId:
+                  type: integer
+                  example: 566758091
+                serialNumber:
+                  type: string
+                  example: "QA00577"
+                retrievedOn:
+                  type: string
+                  format: date-time
+                  example: "2025-03-27T17:33:05.4670000Z"
+                transactionDateTime:
+                  type: string
+                  format: date-time
+                  example: "2025-03-27T09:57:05"
+                userName:
+                  type: string
+                  example: "TITAN"
+                transactionType:
+                  type: string
+                  example: "CashIn"
+                amount:
+                  type: number
+                  example: 25
+                denominations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      UnitValue:
+                        type: number
+                        example: 5
+                      Count:
+                        type: integer
+                        example: 1
+                      Currency:
+                        type: string
+                        example: "USD"
+                location:
+                  type: string
+                  example: "Opal"
+                status:
+                  type: string
+                  example: "active"
+                createdAt:
+                  type: string
+                  format: date-time
+                  example: "2025-04-02T18:02:00.120Z"
+                updatedAt:
+                  type: string
+                  format: date-time
+                  example: "2025-04-02T08:02:00.120Z"
+                webhookTransactionId:
+                  type: string
+                  example: "67eceef889c3a34af5486760"
+                __v:
+                  type: integer
+                  example: 0
