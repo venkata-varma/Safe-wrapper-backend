@@ -10,7 +10,7 @@ info:
     - Use the `Try it out` feature in Swagger UI to interact with the API and test different request parameters.
 
   contact:
-    name: "Devrabbit"
+    name: "Devrabbit- Safe_wrapper"
     url: "https://lhswweb.dev.devrabbit.co/login"
     Email: "akram.shaik@devrabbit.com"
 
@@ -480,28 +480,66 @@ paths:
           description: "The ID of the user to retrieve"
           schema:
             type: string
-      # responses:
-      #   '200':
-      #     description: "User profile retrieved successfully"
-      #     content:
-      #       application/json:
-      #         schema:
-      #           $ref: '#/components/schemas/User'
-      #   '401':
-      #     description: "Unauthorized - Invalid Password."
-      #     content:
-      #       application/json:
-      #         schema:
-      #           type: object
-      #           properties:
-      #             status:
-      #               type: string
-      #               example: "fail"
-      #               description: "Indicates the failure status"
-      #             message:
-      #               type: string
-      #               example: "Authentication failed. We required access token."
-      #               description: "Error message explaining the issue"
+      responses:
+       200:
+        description: "User details retrieved successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: "success"
+                message:
+                  type: string
+                  example: "User details found successfully."
+                data:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                      example: "67e3a990e6b6323f811b95e9"
+                    userId:
+                      type: string
+                      example: "67e3a990e6b6323f811b95e9"
+                    accountId:
+                      type: string
+                      example: "67dd4ce3d698258734c22300"
+                    name:
+                      type: string
+                      example: "fourtwo"
+                    role:
+                      type: string
+                      example: "admin"
+                    phone:
+                      type: string
+                      example: "0000000000"
+                    email:
+                      type: string
+                      example: "nine123@devrabbit.com"
+                    status:
+                      type: string
+                      example: "active"
+                    createdBy:
+                      type: string
+                      nullable: true
+                      example: null
+                    updatedBy:
+                      type: string
+                      nullable: true
+                      example: null
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: "2025-03-26T07:15:28.300Z"
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      example: "2025-03-26T07:51:59.203Z"
+                    __v:
+                      type: integer
+                      example: 0
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -714,6 +752,152 @@ paths:
           schema:
             type: string
           description: "Unique identifier of the webhook"
+      responses:
+        '200':
+          description: Successfully retrieved webhook details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Webhook details.
+                  data:
+                    type: object
+                    properties:
+                      individualWebhookDetails:
+                        type: object
+                        properties:
+                          webhookSettings:
+                            type: object
+                            properties:
+                              periodType:
+                                type: string
+                                example: once each hour
+                              currentStatus:
+                                type: string
+                                example: stop
+                              interval:
+                                type: integer
+                                example: 1
+                              expiresOn:
+                                type: string
+                                format: date-time
+                                example: 2025-03-27T10:31:35.404Z
+                          webhookMasterId:
+                            type: string
+                            nullable: true
+                            example: null
+                          _id:
+                            type: string
+                            example: 67e5290765ae64d5acb60a88
+                          webHookMasterId:
+                            type: string
+                            example: 67e5290765ae64d5acb60a88
+                          accountId:
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                                example: super-admin
+                              _id:
+                                type: string
+                                example: 67dd4ce3d698258734c22300
+                              accountId:
+                                type: string
+                                example: 67dd4ce3d698258734c22300
+                              noOfIntegrations:
+                                type: integer
+                                example: 2
+                              accountName:
+                                type: string
+                                example: safe_testaccount
+                              accountType:
+                                type: string
+                                example: customer
+                              companyName:
+                                type: string
+                                example: safe_testaccount
+                              logo:
+                                type: string
+                                example: ""
+                              phone:
+                                type: string
+                                example: 1234567890
+                              email:
+                                type: string
+                                example: safe@gmail.com
+                              address:
+                                type: string
+                                example: aa
+                              city:
+                                type: string
+                                example: HYD
+                              state:
+                                type: string
+                                example: Telangana
+                              country:
+                                type: string
+                                example: India
+                              pincode:
+                                type: string
+                                example: 00000
+                              status:
+                                type: string
+                                example: active
+                              createdAt:
+                                type: string
+                                format: date-time
+                                example: 2025-03-21T11:26:27.655Z
+                              updatedAt:
+                                type: string
+                                format: date-time
+                                example: 2025-03-21T11:26:27.655Z
+                          userId:
+                            type: string
+                            example: 67dd4ce3d698258734c22302
+                          location:
+                            type: string
+                            example: India
+                          name:
+                            type: string
+                            example: Create work orders
+                          webHookUrl:
+                            type: string
+                            example: https://api.dev.isyncrabbit.com/api/webhook/26031/67dd4ce3d698258734c22300
+                          authenticationCode:
+                            type: string
+                            example: "[secure_hash]"
+                          primaryHookId:
+                            type: string
+                            example: WorkOrderId
+                          comments:
+                            type: string
+                            nullable: true
+                            example: null
+                          status:
+                            type: string
+                            example: active
+                          createdAt:
+                            type: string
+                            format: date-time
+                            example: 2025-03-27T10:31:35.411Z
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            example: 2025-03-27T10:31:35.411Z
+                          lastPullDate:
+                            type: string
+                            format: date-time
+                            example: 2025-03-28T06:13:12.239Z
+                          __v:
+                            type: integer
+                            example: 0
+    
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -758,6 +942,21 @@ paths:
                   format: date-time
                   example: "2038-07-12T10:33:50.973+00:00"
                   description: "Sets the expiration date and time for the webhook"
+      responses:
+        "200":
+          description: Webhook settings updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Webhook settings updated successfully."
+            
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -779,6 +978,103 @@ paths:
           schema:
             type: string
           description: "Unique identifier of the account for which webhooks are registered"
+      responses:
+         200':
+            description: Successfully retrieved webhook details.
+            content:
+             application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "All webhook details."
+                  data:
+                    type: object
+                    properties:
+                      webHooks:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "67e5290765ae64d5acb60a88"
+                            webHookMasterId:
+                              type: string
+                              example: "67e5290765ae64d5acb60a88"
+                            accountId:
+                              type: string
+                              example: "67dd4ce3d698258734c22300"
+                            userId:
+                              type: string
+                              example: "67dd4ce3d698258734c22302"
+                            location:
+                              type: string
+                              example: "India"
+                            name:
+                              type: string
+                              example: "Create work orders"
+                            webHookUrl:
+                              type: string
+                              example: "https://api.dev.isyncrabbit.com/api/webhook/26031/67dd4ce3d698258734c22300"
+                            authenticationCode:
+                              type: string
+                              example: "31be5e06b50406b668fe7e..."
+                            primaryHookId:
+                              type: string
+                              example: "WorkOrderId"
+                            comments:
+                              type: string
+                              nullable: true
+                            status:
+                              type: string
+                              example: "active"
+                            webhookSettings:
+                              type: object
+                              properties:
+                                periodType:
+                                  type: string
+                                  example: "once each hour"
+                                currentStatus:
+                                  type: string
+                                  example: "stop"
+                                interval:
+                                  type: integer
+                                  example: 1
+                                expiresOn:
+                                  type: string
+                                  format: date-time
+                                  example: "2025-03-27T10:31:35.404Z"
+                            createdAt:
+                              type: string
+                              format: date-time
+                              example: "2025-03-27T10:31:35.411Z"
+                            updatedAt:
+                              type: string
+                              format: date-time
+                              example: "2025-03-27T10:31:35.411Z"
+                            __v:
+                              type: integer
+                              example: 0
+                            lastPullDate:
+                              type: string
+                              format: date-time
+                              example: "2025-03-28T06:13:12.239Z"
+                            statuses:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  status:
+                                    type: string
+                                    example: "received"
+                                  count:
+                                    type: integer
+                                    example: 0
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -833,6 +1129,96 @@ paths:
             type: string
             format: date
           description: "End date (YYYY-MM-DD) for filtering transactions"
+      responses:
+       200:
+        description: Webhook transactions retrieved successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: success
+                message:
+                  type: string
+                  example: Webhook transactions.
+                data:
+                  type: object
+                  properties:
+                    webhookTransactionDetails:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                            example: "67eceef889c3a34af548675c"
+                          webhookMasterId:
+                            type: string
+                            example: "67eb8490233046c701342349"
+                          webhookMetaPayloadId:
+                            type: string
+                            example: "67eb8588233046c70134244c"
+                          accountId:
+                            type: string
+                            example: "67eb81cb45715d3e5b678ebb"
+                          pickupGroupId:
+                            type: integer
+                            example: 0
+                          serialNumber:
+                            type: string
+                            example: "QA00577"
+                          retrievedOn:
+                            type: string
+                            format: date-time
+                            example: "2025-03-27T17:33:03.3030000Z"
+                          transactionDateTime:
+                            type: string
+                            example: "2025-03-27T03:01:10"
+                          userName:
+                            type: string
+                            example: ""
+                          transactionType:
+                            type: string
+                            example: "DoorOpened"
+                          amount:
+                            type: number
+                            example: 0
+                          denominations:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                UnitValue:
+                                  type: number
+                                  example: 5
+                                Count:
+                                  type: integer
+                                  example: 1
+                                Currency:
+                                  type: string
+                                  example: "USD"
+                          location:
+                            type: string
+                            example: "Opal"
+                          status:
+                            type: string
+                            example: "active "
+                          createdAt:
+                            type: string
+                            format: date-time
+                            example: "2025-04-02T08:02:00.067Z"
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            example: "2025-04-02T08:02:00.067Z"
+                          webhookTransactionId:
+                            type: string
+                            example: "67eceef889c3a34af548675c"
+                          __v:
+                            type: integer
+                            example: 0    
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -854,6 +1240,47 @@ paths:
           schema:
             type: string
           description: "Unique identifier of the account for which webhooks are registered"
+      responses:
+        '200':
+          description: Webhook payload headers.
+          content:
+            application/json:
+              example:
+                status: "success"
+                message: "Webhook payload headers."
+                data:
+                  webhookPayloadHeadersData:
+                    serialNumbers:
+                      - "QA00579"
+                      - "QA00577"
+                      - "PA00581"
+                      - "QA00578"
+                      - "QA00580"
+                    transactionTypes:
+                      - "CashIn"
+                      - "DoorOpened"
+                  listOfWebhooks:
+                    - webhookSettings:
+                        periodType: "once each minute"
+                        currentStatus: "stop"
+                        interval: 10
+                        expiresOn: "2025-04-01T06:15:44.625Z"
+                      webhookMasterId: null
+                      _id: "67eb8490233046c701342349"
+                      webHookMasterId: "67eb8490233046c701342349"
+                      accountId: "67eb81cb45715d3e5b678ebb"
+                      userId: "67eb81cb45715d3e5b678ebd"
+                      location: "India"
+                      name: "Create work orders"
+                      webHookUrl: "https://api.dev.isyncrabbit.com/api/webhook/81794/67eb81cb45715d3e5b678ebb"
+                      authenticationCode: "31be5e06b50406b668fe7e591cf4560380df23535a81289c88f2e4d93625860e2213766324664aa05b34245520c2dde88f9a419ad218fc156c62193bae74c77b086e43b88fe498385ba38ec1c78ec15e6b1ec9f9c5fe27c6d533df865f48c2bcbf20be2d689f65b27fae5ee8b64930878f47d2da2585c1e87306c07ba1844202c8a87f7531dfe5d2ff8d70e6fed8aad8abb154c418a139082724411c2e3d6f71ef5b00f3e0a5002a357808df3d124e2c09a0111acc5934e42c77004409553cb1"
+                      primaryHookId: "SerialNumber"
+                      comments: null
+                      status: "active"
+                      lastPullDate: "2025-04-07T04:45:49.450Z"
+                      createdAt: "2025-04-01T06:15:44.643Z"
+                      updatedAt: "2025-04-07T04:45:49.450Z"
+                      __v: 0    
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -866,7 +1293,7 @@ paths:
         - This API provides various statistical insights related to webhook transactions for a given `accountId`.  
         - The response includes 
              - `Statistics of transactions over last six months.`
-             - `Top  5 Users.`
+             - `Top 5 Users.`
              - `Latest transactions.`
         - Requires authentication via the `Authorization` header.
       security:
@@ -878,6 +1305,95 @@ paths:
           schema:
             type: string
           description: "Unique identifier of the account for which webhooks are registered"
+      responses:
+        "200":
+          description: "Successful response with webhook statistics."
+          content:
+            application/json:
+              example:
+                status: "success"
+                message: "Webhook statistics."
+                data:
+                  lastSixMonthsDataForGraph:
+                    - totalAmount: 9929
+                      serialNumbersCount: 5
+                      transactionTypesCount: 2
+                  payloadSummary:
+                    - transactionsCount: 92
+                      statusCounts:
+                        - status: "received"
+                          count: 1
+                        - status: "in-progress"
+                          count: 0
+                        - status: "executed"
+                          count: 8
+                        - status: "execution-failed"
+                          count: 0
+                      serialNumbersCount: 5
+                      transactionTypesCount: 1
+                      usersCount: 2
+                      locationsCount: 1
+                      payloadsCount: 9
+                  totalAccountSummary:
+                    - transactionCount: 222
+                      serialNumbersCount: 5
+                      usersCount: 2
+                      totalRevenue: 9929
+                  topFiveDeviceDetails:
+                    - totalAmount: 7728
+                      location: "Opal"
+                      totalTransactionCount: 120
+                      serialNumber: "QA00579"
+                    - totalAmount: 768
+                      location: "Opal"
+                      totalTransactionCount: 36
+                      serialNumber: "QA00580"
+                    - totalAmount: 573
+                      location: "Opal"
+                      totalTransactionCount: 21
+                      serialNumber: "QA00578"
+                    - totalAmount: 512
+                      location: "Opal"
+                      totalTransactionCount: 24
+                      serialNumber: "PA00581"
+                    - totalAmount: 348
+                      location: "Opal"
+                      totalTransactionCount: 21
+                      serialNumber: "QA00577"
+                  denominations:
+                    - totalAmount: 194
+                      serialNumber: "PA00581"
+                      transactionType: "CashIn"
+                      denominations:
+                        - UnitValue: 20
+                          Count: 2
+                          Currency: "USD"
+                        - UnitValue: 50
+                          Count: 1
+                          Currency: "USD"
+                        - UnitValue: 100
+                          Count: 1
+                          Currency: "USD"
+                        - UnitValue: 2
+                          Count: 2
+                          Currency: "USD"
+                  latestTransactions:
+                    - transactionDetails:
+                        - serialNumber: "PA00581"
+                          count: 4
+                          totalAmount: 194
+                          transactionDate: "2025-03-27T09:59:30"
+                          location: "Opal"
+                  topFiveUsersDetails:
+                    - totalAmount: 9735
+                      totalTransactionCount: 218
+                      location: "Opal"
+                      userName: "TITAN"
+                    - totalAmount: 194
+                      totalTransactionCount: 4
+                      location: "Opal"
+                      userName: "TITAN1"
+
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -907,6 +1423,7 @@ paths:
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
+  paths:
   /api/webhook/get-all-machine-reports:
     get:
       tags:
@@ -914,7 +1431,7 @@ paths:
       summary: "Retrieve statistical insights for machines registered under an account."
       description: |
         - This API provides statistical insights about machines associated with a given `accountId`.  
-        - The response includes aggregated data such as machine status, usage trends, and transaction summaries.
+        - The response includes aggregated data such as machine status, LocationInformation, and transaction summaries.
         - Requires authentication via the `Authorization` header.
       security:
         - Authorization: [] # Requires Authorization header with token
@@ -925,6 +1442,126 @@ paths:
           schema:
             type: string
           description: "Unique identifier of the account for which machine reports are retrieved."
+      responses:
+        200:
+          description: "All machine details."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metapayloads:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "67eb8863e10b26b40307a9d0"
+                        accountId:
+                          type: string
+                          example: "67eb81cb45715d3e5b678ebb"
+                        lastPullDate:
+                          type: string
+                          format: date-time
+                          example: "2025-04-01T06:32:03.986Z"
+                        dataPoint:
+                          type: object
+                          properties:
+                            Metadata:
+                              type: object
+                              properties:
+                                LocationInformation:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      SerialNumber:
+                                        type: string
+                                        example: "QA00579"
+                                      Name:
+                                        type: string
+                                        example: "Opal Demo"
+                                      StoreId:
+                                        type: string
+                                        nullable: true
+                                        example: null
+                                      Location:
+                                        type: string
+                                        example: "Opal"
+                                MessageId:
+                                  type: string
+                                  example: "767b8fbb-f948-413f-acad-15736aee785b"
+                                CorrelationId:
+                                  type: string
+                                  example: "eb221b40-53cb-4449-a5c0-bd761180b67e"
+                            Transactions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  PickupGroupId:
+                                    type: integer
+                                    example: 566758093
+                                  SerialNumber:
+                                    type: string
+                                    example: "QA00579"
+                                  RetrievedOn:
+                                    type: string
+                                    format: date-time
+                                    example: "2025-03-27T17:33:05.4670000Z"
+                                  TransactionDateTime:
+                                    type: string
+                                    example: "2025-03-27T09:57:05"
+                                  UserName:
+                                    type: string
+                                    example: "TITAN"
+                                  TransactionType:
+                                    type: string
+                                    example: "CashIn"
+                                  Amount:
+                                    type: number
+                                    example: 140
+                                  Denominations:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        UnitValue:
+                                          type: number
+                                          example: 20
+                                        Count:
+                                          type: integer
+                                          example: 2
+                                        Currency:
+                                          type: string
+                                          example: "USD"
+                                  Register:
+                                    type: string
+                                    example: "0"
+                        status:
+                          type: string
+                          example: "executed"
+                        primaryHookId:
+                          type: string
+                          example: ""
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: "2025-04-01T06:32:03.997Z"
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: "2025-04-07T04:45:27.216Z"
+                        __v:
+                          type: integer
+                          example: 0
+                        webhookMetaPayloadId:
+                          type: string
+                          example: "67eb8863e10b26b40307a9d0"
+                        webhookMasterId:
+                          type: string
+                          example: "67eb8490233046c701342349"
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -1036,3 +1673,59 @@ paths:
                 __v:
                   type: integer
                   example: 0
+
+  /api/webhook/get-single-machine-report:
+   get:
+      tags:
+        - Webhooks
+      summary: "Retrieve statistical insights for an individual machine registered under an account."
+      description: |
+        - This API provides detailed insights about a specific machine associated with a given `accountId`.  
+        - By providing mandatory query parameters such as `serialNumber`, `accountId`, and `webhookMasterId`, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
+        - Requires authentication via the `Authorization` header.
+
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the account to which the machine belongs."
+        - name: serialNumber
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique serial number identifying the machine."
+        - name: transactionType
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Desired transaction type (or) types-(multiple) from drop down "
+        - name: fromDate
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Desired date from which data to be retreived from "
+        - name: toDate
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Desired date to which data to be retreived from" 
+        - name: startTime
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Desired time from which data to be retreived from" 
+        - name: endTime
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Desired time to which data to be retreived from"     
