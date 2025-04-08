@@ -487,4 +487,288 @@ paths:
             type: string
                  
 
-                 
+  /api/webhook/create-webhook:
+    post:
+      tags:
+        - Webhooks
+      summary:  "Get a dedicated HTTPS POST URL with encrypted security token"
+      description: |
+          1. The `accountId` and `name` fields are **mandatory**.  
+          2. Use this API to get a dedicated **PUSH API** webhook URL to receive real-time updates.  
+          3. The generated webhook URL can be used to subscribe to events and receive data automatically.  
+      security:
+        - Authorization: []  # Requires Authorization header with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - accountId
+                - name
+              properties:
+                accountId:
+                  type: string
+                  description: "**Mandatory** - Unique ID of the account"
+                  example: "67eb81cb45715d3e5b678ebb"
+                name:
+                  type: string
+                  description: "**Mandatory** - Webhook name"
+                  example: "Create work orders"
+                location:
+                  type: string
+                  description: "Optional - Webhook location"
+                  example: "California"
+                primaryHookId:
+                  type: string
+                  description: "Optional - Primary identifier for the webhook"
+                  example: "WorkOrderId"
+                requestObject:
+                  type: object
+                  description: "Optional - Request payload object"
+                  example: {}
+
+  /api/webhook/get-individual-webhook-details/{webhookMasterId}:
+   get:
+      tags:
+        - Webhooks
+      summary:  "Get details of an individual webhook by its unique ID"
+      description: |
+          1. This API retrieves the details of a specific webhook using its unique `webhookMasterId`.  
+          2. The response includes webhook metadata, such as name, status, and registered events.  
+          3. Use this endpoint to verify webhook configurations or troubleshoot issues.  
+      security:
+        - Authorization: []  # Requires Authorization header with token
+      parameters:
+        - name: webhookMasterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the webhook"
+
+  /api/webhook/update-webhook-settings/{webhookMasterId}:
+    patch:
+      tags:
+        - Webhooks
+      summary: "Update webhook settings by its unique ID"
+      description: |
+          1. This API allows updating the webhook settings using its unique `webhookMasterId`.  
+          2. Users can update one or more of the following webhook settings:  
+             - `periodType`: Defines the frequency of webhook execution.  
+             - `interval`: Specifies the time interval between webhook executions.  
+             - `expiresOn`: Sets the expiration date and time for the webhook.  
+          3. Only the fields provided in the request body will be updated; others will remain unchanged.  
+      security:
+        - Authorization: []  # Requires Authorization header with token
+      parameters:
+        - name: webhookMasterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the webhook"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                periodType:
+                  type: string
+                  example: "once each hour"
+                  description: "Defines the frequency of webhook execution"
+                interval:
+                  type: integer
+                  example: 3
+                  description: "Specifies the time interval between webhook executions"
+                expiresOn:
+                  type: string
+                  format: date-time
+                  example: "2038-07-12T10:33:50.973+00:00"
+                  description: "Sets the expiration date and time for the webhook"
+
+
+  /api/webhook/get-all-webhook-details/{accountId}:
+   get:
+      tags:
+        - Webhooks
+      summary:  "Get details of all the webhook URLs registered under an account"
+      description: |
+          1. This API retrieves all webhook details associated with a given `accountId`.  
+          2. The response includes metadata such as webhook name, status, registered events, and delivery settings.  
+          3. Use this endpoint to list and manage all webhooks under a specific account.  
+      security:
+        - Authorization: []  # Requires Authorization header with token
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the account for which webhooks are registered"
+
+
+  /api/webhook/get-webhook-transactions:
+   get:
+      tags:
+        - Webhooks
+      summary:  "Get details of all the transaction records received on single or multiple serial numbers based on desired filters"
+      description: |
+          1. This API retrieves all webhook transactions for a given `accountId` based on the applied filters.
+          2. Users can filter results using:
+             - `serialNumbers`: A comma-separated list of one or more serial numbers.
+             - `transactionTypes`: A comma-separated list of transaction types.
+             - `fromDate` and `toDate`: A date range to filter transactions.
+          3. On clicking submit, the response includes important statistical data for analysis.
+      security:
+        - Authorization: []  # Requires Authorization header with token
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the account for which transactions are retrieved"
+
+        - name: serialNumbers
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Comma-separated list of serial numbers to filter transactions"
+
+        - name: transactionTypes
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Comma-separated list of transaction types (e.g., DoorOpened, CashIn)"
+
+        - name: fromDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: "Start date (YYYY-MM-DD) for filtering transactions"
+
+        - name: toDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: "End date (YYYY-MM-DD) for filtering transactions"
+
+
+  /api/webhook/get-webhook-payload-headers/{accountId}:
+    get:
+      tags:
+        - Webhooks
+      summary:  "Get details of serial numbers of machines registered under an account and transaction types of received transactions."
+      description: |
+        1. This API provides a list of serial numbers of machines registered under a specific `accountId`.  
+        2. Additionally, it retrieves all transaction types associated with these machines that have been recorded through webhooks.
+      security:
+        - Authorization: []  # Requires Authorization header with token
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the account for which webhooks are registered"
+
+
+  /api/webhook/get-dashboard-statastics/{accountId}:
+    get:
+      tags:
+        - Webhooks
+      summary: "Retrieve statistical data for transactions and denominations over the last six months."
+      description: |
+        1. This API provides various statistical insights related to webhook transactions for a given `accountId`.  
+        2. The response includes 
+             (i).Statistics of transactions over last six months.
+             (ii).Top  5 Users.
+             (iii). Latest transactions. 
+        - Authorization: []  # Requires Authorization header with token
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the account for which webhooks are registered"
+
+  /api/webhook/get-list-of-machines:
+    get:
+      tags:
+        - Webhooks
+      summary: "Get the list of machines registered under an account for a specific webhook."
+      description: |
+        1. This API retrieves a list of machines registered under a given `accountId` and a webhook master.  
+
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the account for which machines are registered."
+        - name: webhookMasterId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the webhook under which machines are listed."
+
+
+  /api/webhook/get-all-machine-reports:
+    get:
+      tags:
+        - Webhooks
+      summary: "Retrieve statistical insights for machines registered under an account."
+      description: |
+        1. This API provides statistical insights about machines associated with a given `accountId`.  
+        2. The response includes aggregated data such as machine status, usage trends, and transaction summaries.  
+        3. Use this endpoint to analyze machine performance and activity under a specific account.  
+
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the account for which machine reports are retrieved."
+
+  /api/webhook/get-single-machine-details:
+    get:
+      tags:
+        - Webhooks
+      summary: "Retrieve statistical insights for an individual machine registered under an account."
+      description: |
+        1. This API provides detailed insights about a specific machine associated with a given `accountId`.  
+        2. By providing mandatory query parameters such as `serialNumber`, `accountId`, and `webhookMasterId`, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
+        3. Use this endpoint to analyze a machine's operational history, cash flow, and status within the registered account.  
+
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the account to which the machine belongs."
+        - name: serialNumber
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique serial number identifying the machine."
+        - name: webhookMasterId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Unique identifier of the webhook under which the machine is listed."
