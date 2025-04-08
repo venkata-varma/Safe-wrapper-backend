@@ -1266,6 +1266,8 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   console.log('matchConditions:==',matchConditions)
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
     { $match: matchConditions },
+
+    /*
     { $unwind: { path: "$denominations", preserveNullAndEmptyArrays: true } },
     {
       $group: {
@@ -1342,57 +1344,8 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
         grandTotal: 1
       }
     }
+      */
   ]);
-
-
-  /*
-  const webhookTransactionHeadersDetails = await webhookPayloadHeaders.aggregate([
-    { $match: matchConditions },
-    {
-      $group: {
-        _id: {
-          serialNumber: "$serialNumber",
-          transactionType: "$transactionType"
-        },
-        transactionHeaderData: { $push: "$$ROOT" },
-        transactionDateTime: {$first:"$transactionDateTime"},
-        location: { $first: "$location" },
-        userName: { $first: "$userName" },
-        webhookPayloadHeaderId: { $first: "$webhookPayloadHeaderId" },
-        webhookMasterId: { $first: "$webhookMasterId" },
-        webhookMetaPayloadId: { $first: "$webhookMetaPayloadId" },
-        accountId: { $first: "$accountId" },
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        transactionHeaderDetails: {
-          $push: {
-            serialNumber: "$_id.serialNumber",
-            transactionType: "$_id.transactionType",
-            transactionDateTime:"$transactionDateTime",
-            location: "$location",
-            userName:"$userName",
-            webhookPayloadHeaderId: "$webhookPayloadHeaderId",
-            webhookMasterId: "$webhookMasterId",
-            webhookMetaPayloadId: "$webhookMetaPayloadId",
-            accountId: "$accountId",
-            transactionHeaderData: "$transactionHeaderData",
-          }
-        }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        transactionHeaderDetails: 1,
-      }
-    }
-  ]);
-  */
-
-
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -2043,4 +1996,25 @@ exports.getSingleMachineDetails = asyncWrapper(async(req,res)=>{
     message:customConstants.messages.MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS,
     data:singleMachineReport
   })
+})
+
+exports.getSingleMachineReport = asyncWrapper(async(req,res)=>{
+  const {accountId,serialNumber,transactionType,fromDate,toDate,startTime,endTime} = req.query
+ 
+  const matchStage = {
+    accountId: new mongoose.Types.ObjectId(accountId),
+    serialNumber,
+    transactionType,
+    createdAt: {
+      $gte: new Date(`${fromDate}T${startTime}:00Z`),
+      $lte: new Date(`${toDate}T${endTime}:00Z`)
+    }
+  };
+  console.log('matchStage:===',matchStage)
+  
+  const reports = await webhookPayloadTransactions.aggregate([
+    { $match: matchStage }
+  ]);
+  
+  return res.json(reports)
 })
