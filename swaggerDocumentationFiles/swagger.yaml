@@ -1569,10 +1569,14 @@ paths:
     get:
       tags:
         - Webhooks
-      summary: "Retrieve statistical insights for an individual machine registered under an account."
+      summary: "Retrieve statistical insights for an individual machine based on desired filters"
       description: |
         - This API provides detailed insights about a specific machine associated with a given `accountId`.  
-        - By providing mandatory query parameters such as `serialNumber`, `accountId`, and `webhookMasterId`, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
+        - By providing mandatory query parameters, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
+          The mandatory query parameters are:  
+          - `serialNumber`: Filter by the machine's serial number.  
+          - `accountId`: Filter by the associated account ID.  
+          - `webhookMasterId`: Identify the webhook master record.  
         - Requires authentication via the `Authorization` header.
 
       security:
@@ -1678,12 +1682,19 @@ paths:
    get:
       tags:
         - Webhooks
-      summary: "Retrieve statistical insights for an individual machine registered under an account."
+      summary: "Retrieve statistical insights for an individual machine based on desired filters"
       description: |
-        - This API provides detailed insights about a specific machine associated with a given `accountId`.  
-        - By providing mandatory query parameters such as `serialNumber`, `accountId`, and `webhookMasterId`, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
+        - This API provides detailed insights about a specific machine based on desired filters.  
+        - By providing query parameters, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
+          The available query parameters are:  
+          - `serialNumber`: Filter by the machine's serial number.  
+          - `accountId`: Filter by the associated account ID.  
+          - `transactionType`: Filter by the type of transaction (e.g., CashIn, CashOut).  
+          - `fromDate`: Retrieve records from this date onward.  
+          - `toDate`: Retrieve records up to this date.  
+          - `startTime`: Filter transactions occurring after this time.  
+          - `endTime`: Filter transactions occurring before this time.  
         - Requires authentication via the `Authorization` header.
-
       security:
         - Authorization: [] # Requires Authorization header with token
       parameters:
@@ -1693,39 +1704,126 @@ paths:
           schema:
             type: string
           description: "Unique identifier of the account to which the machine belongs."
+      
         - name: serialNumber
           in: query
-          required: true
           schema:
             type: string
           description: "Unique serial number identifying the machine."
+       
         - name: transactionType
           in: query
-          required: true
           schema:
             type: string
           description: "Desired transaction type (or) types-(multiple) from drop down "
+       
         - name: fromDate
           in: query
-          required: true
           schema:
             type: string
           description: "Desired date from which data to be retreived from "
+       
         - name: toDate
           in: query
-          required: true
           schema:
             type: string
           description: "Desired date to which data to be retreived from" 
+       
         - name: startTime
           in: query
-          required: true
           schema:
             type: string
           description: "Desired time from which data to be retreived from" 
         - name: endTime
           in: query
-          required: true
           schema:
             type: string
           description: "Desired time to which data to be retreived from"     
+      responses:
+        200:
+          description: Successful response with machine report details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Reports of a single machine based on desired filters
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "67eceef889c3a34af5486760"
+                        webhookMasterId:
+                          type: string
+                          example: "67eb8490233046c701342349"
+                        webhookMetaPayloadId:
+                          type: string
+                          example: "67eb8588233046c70134244c"
+                        accountId:
+                          type: string
+                          example: "67eb81cb45715d3e5b678ebb"
+                        pickupGroupId:
+                          type: integer
+                          example: 566758091
+                        serialNumber:
+                          type: string
+                          example: "QA00577"
+                        retrievedOn:
+                          type: string
+                          format: date-time
+                          example: "2025-03-27T17:33:05.4670000Z"
+                        transactionDateTime:
+                          type: string
+                          example: "2025-03-27T09:57:05"
+                        userName:
+                          type: string
+                          example: "TITAN"
+                        transactionType:
+                          type: string
+                          example: "CashIn"
+                        amount:
+                          type: number
+                          example: 25
+                        denominations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              UnitValue:
+                                type: number
+                                example: 5
+                              Count:
+                                type: integer
+                                example: 1
+                              Currency:
+                                type: string
+                                example: "USD"
+                        location:
+                          type: string
+                          example: "Opal"
+                        status:
+                          type: string
+                          example: "active"
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: "2025-04-02T18:02:00.120Z"
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: "2025-04-02T08:02:00.120Z"
+                        webhookTransactionId:
+                          type: string
+                          example: "67eceef889c3a34af5486760"
+                        __v:
+                          type: integer
+                          example: 0
+    
