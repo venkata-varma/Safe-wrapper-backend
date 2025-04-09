@@ -400,8 +400,8 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_USER_LOGIN,
     data:{
-      access_token:sesssionDetails.accessToken,
-      expirationTime:sesssionDetails.expirationTime,
+      accountId:req.body.accountId,
+      access_token:sesssionDetails.accessToken
     }
   });
 
