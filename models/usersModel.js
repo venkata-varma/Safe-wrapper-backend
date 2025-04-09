@@ -47,6 +47,10 @@ const usersSchema = new mongoose.Schema({
         required:[true, 'Role is required.'],
         default:"admin"
     },
+    authUser:{
+        type:"String",
+        default:"loomis"
+    },
     status:{
         type:String,
         enum:['active','deleted', 'blocked'],
