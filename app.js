@@ -43,7 +43,7 @@ app.use(express.static(path.join(__dirname, 'swaggerDocumentationFiles')));
  //const swaggerDocument = yaml.load(fs.readFileSync(path.join(__dirname, 'swagger.yaml'), 'utf8'));
  const swaggerDocument = yaml.load(fs.readFileSync(path.join(__dirname, 'swaggerDocumentationFiles', 'swagger.yaml'), 'utf8'));
 
-app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocument, { customCssUrl: "/swagger-custom.css"  }));
+app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocument, { customCssUrl: "/swagger-custom.css"   }));
 
 
 // End of swagger configuration

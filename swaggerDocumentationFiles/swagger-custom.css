@@ -13,7 +13,7 @@ body {
     line-height: 1.6;
     color: #333;
     background-color: #fff;
-  
+  margin-top: 30px;
     padding: 20px;
 }
 
@@ -108,18 +108,25 @@ button:hover {
         margin-top: 5px;  /* Adjust spacing as needed */
         font-size: 16px !important; /* Adjust font size if necessary */
     }
+   /* 🔴 Completely remove the existing Swagger logo */
+   .topbar-wrapper a.link * {
+    display: none !important;
+}
+
+/* 🟢 Add your custom logo */
+.topbar-wrapper a.link {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start; /* Moves logo to the left */
+    width: 250px !important; /* Adjust width */
+    height: 65px !important; /* Adjust height */
+    background: url('./loomis_logo.svg') no-repeat left center !important;
+    background-size: contain !important;
+}
+
+/* 🟢 Keep the topbar height fixed to prevent shrinking */
+.topbar {
+    height: 86px !important;
 
 
-
-    .topbar-wrapper a.link svg {
-        display: none; /* Hide the existing Swagger UI logo */
-    }
-    
-    .topbar-wrapper a.link {
-        background: url('../assets/loomis_logo.png') no-repeat center !important;
-        background-size: contain !important;
-        width: 200px !important;
-        height: 40px !important;
-        display: block !important;
-    }
-    
+}
