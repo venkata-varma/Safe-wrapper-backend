@@ -9,10 +9,10 @@ info:
     - Ensure that all API requests include the necessary `authentication headers` if required.
     - Use the `Try it out` feature in Swagger UI to interact with the API and test different request parameters.
 
-  contact:
-    name: "Devrabbit- Safe_wrapper"
-    url: "https://lhswweb.dev.devrabbit.co/login"
-    Email: "akram.shaik@devrabbit.com"
+  # contact:
+  #   name: "Devrabbit- Safe_wrapper"
+  #   url: "https://lhswweb.dev.devrabbit.co/login"
+
 
 servers:
   - url: "https://lhswapi.dev.devrabbit.co"
@@ -279,7 +279,7 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data::
+          application/json:
             schema:
               type: object
               properties:

@@ -111,5 +111,15 @@ button:hover {
 
 
 
-
+    .topbar-wrapper a.link svg {
+        display: none; /* Hide the existing Swagger UI logo */
+    }
+    
+    .topbar-wrapper a.link {
+        background: url('../assets/loomis_logo.png') no-repeat center !important;
+        background-size: contain !important;
+        width: 200px !important;
+        height: 40px !important;
+        display: block !important;
+    }
     
