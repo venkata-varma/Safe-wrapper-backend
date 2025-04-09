@@ -1253,7 +1253,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 
   const matchConditions = {
     accountId: new mongoose.Types.ObjectId(accountId),
-    createdAt: { $gte: new Date(fromDate), $lte: new Date(new Date(toDate).setDate(new Date(toDate).getDate()+1)) }
+    createdAt: { $gte: new Date(fromDate), $lte: new Date(new Date(toDate).setDate(new Date(toDate).getDate() + 1)) }
   };
 
   if (serialNumbersArray.length > 0) {
@@ -1263,7 +1263,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   if (transactionTypesArray.length > 0) {
     matchConditions.transactionType = { $in: transactionTypesArray };
   }
-  console.log('matchConditions:==',matchConditions)
+  console.log('matchConditions:==', matchConditions)
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
     { $match: matchConditions },
 
@@ -1381,7 +1381,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
       },
     },
   ]);
-  const listOfWebhooks = await webHooksMasterModel.find({accountId:accountId})
+  const listOfWebhooks = await webHooksMasterModel.find({ accountId: accountId })
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
@@ -1466,7 +1466,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
-  
+
 
   const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
 
@@ -1516,7 +1516,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
           }
         }
       }
-    },    
+    },
     {
       $lookup: {
         from: "webhookmetapayloads",
@@ -1599,8 +1599,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         transactionTypesCount: { $size: { $ifNull: ["$transactionTypes", []] } },
         usersCount: { $size: { $ifNull: ["$users", []] } },
         locationsCount: { $size: { $ifNull: ["$locations", []] } },
-        payloadsCount:"$totalMetaPayloadsCount",
-        transactionsCount:1,
+        payloadsCount: "$totalMetaPayloadsCount",
+        transactionsCount: 1,
         statusCounts: 1
       }
     }
@@ -1662,20 +1662,22 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
           }
         },
         location: { $first: "$location" },
-        totalTransactionCount: { $sum: {
-          $cond: [
-            {$gt: ["$denominations", null]}, 1, 0
-          ]
-        } }
+        totalTransactionCount: {
+          $sum: {
+            $cond: [
+              { $gt: ["$denominations", null] }, 1, 0
+            ]
+          }
+        }
       }
     },
     {
       $sort: {
-        totalAmount: -1 
+        totalAmount: -1
       }
     },
     {
-      $limit: 5 
+      $limit: 5
     },
     {
       $project: {
@@ -1792,7 +1794,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         _id: null,
         transactionDetails: {
           $push: {
-            serialNumber: "$_id", count: "$count", totalAmount: "$totalAmount", transactionDate:"$transactionDate", location:"$location"
+            serialNumber: "$_id", count: "$count", totalAmount: "$totalAmount", transactionDate: "$transactionDate", location: "$location"
           }
         }
       }
@@ -1861,7 +1863,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
-  
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATISTICS,
@@ -1878,9 +1880,9 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 })
 
 
-exports.getListOfMachines = asyncWrapper(async(req,res)=>{
-  const {accountId, webhookMasterId} = req.query
-  const listOfMachines = await webhookPayloadHeaders.find({accountId:accountId, webhookMasterId:webhookMasterId})
+exports.getListOfMachines = asyncWrapper(async (req, res) => {
+  const { accountId, webhookMasterId } = req.query
+  const listOfMachines = await webhookPayloadHeaders.find({ accountId: accountId, webhookMasterId: webhookMasterId })
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATASTICS,
@@ -1889,9 +1891,9 @@ exports.getListOfMachines = asyncWrapper(async(req,res)=>{
 })
 
 
-exports.getAllMachineReports = asyncWrapper(async(req,res)=>{
-  const {accountId} = req.query
- 
+exports.getAllMachineReports = asyncWrapper(async (req, res) => {
+  const { accountId } = req.query
+
   const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
 
   const machineDetails = await webhookPayloadHeaders.aggregate([
@@ -1974,19 +1976,19 @@ exports.getAllMachineReports = asyncWrapper(async(req,res)=>{
       }
     }
   ]);
-  
-  
+
+
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status:customConstants.messages.MESSAGE_SUCCESS,
-    message:customConstants.messages.MESSAGE_WEBOOK_GET_MACHINE_REPORTS,
-    data:machineDetails
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_MACHINE_REPORTS,
+    data: machineDetails
   })
 
 })
 
-exports.getPayloadReports = asyncWrapper(async(req,res)=>{
-  const {serialNumber, accountId, webhookMasterId} = req.query
+exports.getPayloadReports = asyncWrapper(async (req, res) => {
+  const { serialNumber, accountId, webhookMasterId } = req.query
   // const singleMachineReport = await webhookPayloadTransactions.find({accountId:accountId,webhookMasterId:webhookMasterId,serialNumber:serialNumber})
   const lastSixMonthsDataForGraph = await webhookPayloadTransactions.aggregate([
     {
@@ -2031,7 +2033,7 @@ exports.getPayloadReports = asyncWrapper(async(req,res)=>{
         serialNumbers: { $addToSet: "$_id.serialNumber" },
         transactionTypes: { $addToSet: "$_id.transactionType" },
         totalAmount: { $sum: "$totalAmount" },
-        usersCount: {$addToSet:"$_id.users"}
+        usersCount: { $addToSet: "$_id.users" }
       }
     },
     {
@@ -2042,7 +2044,7 @@ exports.getPayloadReports = asyncWrapper(async(req,res)=>{
         totalAmount: 1,
         serialNumbersCount: { $size: "$serialNumbers" },
         transactionTypesCount: { $size: "$transactionTypes" },
-        usersCount: {$size:"$usersCount"},
+        usersCount: { $size: "$usersCount" },
         _id: 0,
         date: {
           $dateFromParts: {
@@ -2062,7 +2064,7 @@ exports.getPayloadReports = asyncWrapper(async(req,res)=>{
     }
   ]);
 
-  
+
   const totalSummaryOfMachine = await webhookPayloadTransactions.aggregate([
     {
       $match: {
@@ -2084,7 +2086,7 @@ exports.getPayloadReports = asyncWrapper(async(req,res)=>{
         _id: {
           serialNumber: "$serialNumber",
           transactionType: "$transactionType",
-          users:"$userName"
+          users: "$userName"
         },
         totalAmount: {
           $sum: {
@@ -2101,7 +2103,7 @@ exports.getPayloadReports = asyncWrapper(async(req,res)=>{
         _id: null,
         serialNumbers: { $addToSet: "$_id.serialNumber" },
         transactionTypes: { $addToSet: "$_id.transactionType" },
-        users: {$addToSet:"$_id.users"},
+        users: { $addToSet: "$_id.users" },
         totalAmount: { $sum: "$totalAmount" }
       }
     },
@@ -2110,26 +2112,168 @@ exports.getPayloadReports = asyncWrapper(async(req,res)=>{
         _id: 0,
         serialNumbersCount: { $size: "$serialNumbers" },
         transactionTypesCount: { $size: "$transactionTypes" },
-        usersCount: {$size:"$users"},
+        usersCount: { $size: "$users" },
         totalAmount: 1
       }
     }
   ]);
-  
-  const machineTransactions = await webhookPayloadTransactions.find({serialNumber:serialNumber, accountId: new mongoose.Types.ObjectId(accountId)})
 
-  return res.json(totalSummaryOfMachine)
-  
+  const machineTransactions = await webhookPayloadTransactions.find({ serialNumber: serialNumber, accountId: new mongoose.Types.ObjectId(accountId) })
+  /*
+    const userActivity = await webhookPayloadTransactions.aggregate([
+      {
+        $match: {
+          accountId: new mongoose.Types.ObjectId(accountId),
+          serialNumber: serialNumber,
+          createdAt: {
+            $gte: new Date(new Date().setDate(new Date().getDate() - ((new Date().getDay() + 6) % 7))), 
+            $lte: new Date()
+          }
+        }
+      },
+      {
+        $addFields: {
+          dayOfWeek: { $dayOfWeek: "$createdAt" },
+          transactionsCount: { $size: "$denominations" }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            dayOfWeek: "$dayOfWeek",
+            day: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } } 
+          },
+          users: { $addToSet: "$userName" },
+          totalTransactions: { $sum: "$transactionsCount" },
+          totalAmount: { $sum: "$amount" }
+        }
+      },
+      {
+        $addFields: {
+          dayName: {
+            $arrayElemAt: [
+              ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+              { $subtract: ["$_id.dayOfWeek", 1] }
+            ]
+          },
+          totalUsers: { $size: "$users" }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          dayName: 1,
+          totalUsers: 1,
+          totalTransactions: 1,
+          totalAmount: 1
+        }
+      },
+      {
+        $sort: {
+          dayName: 1
+        }
+      }
+    ]);
+    
+    */
+
+    const today = new Date();
+    const day = today.getDay();
+    const diffToMonday = (day + 6) % 7;
+    
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+    
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    
+    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    
+    const aggResult = await webhookPayloadTransactions.aggregate([
+      {
+        $match: {
+          accountId: new mongoose.Types.ObjectId(accountId),
+          serialNumber: serialNumber,
+          createdAt: {
+            $gte: monday,
+            $lte: sunday
+          }
+        }
+      },
+      {
+        $unwind: {
+          path: "$denominations",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $addFields: {
+          dayOfWeek: { $dayOfWeek: "$createdAt" },
+          denominationTotal: {
+            $multiply: ["$denominations.UnitValue", "$denominations.Count"]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: "$dayOfWeek",
+          users: { $addToSet: "$userName" },
+          totalTransactions: { $sum: 1 },
+          totalAmount: { $sum: "$denominationTotal" }
+        }
+      },
+      {
+        $addFields: {
+          dayName: {
+            $arrayElemAt: [
+              ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+              { $subtract: ["$_id", 1] }
+            ]
+          },
+          totalUsers: { $size: "$users" }
+        }
+      },      
+      {
+        $project: {
+          _id: 0,
+          dayName: 1,
+          totalUsers: 1,
+          totalTransactions: 1,
+          totalAmount: 1
+        }
+      }
+    ]);
+    
+    
+    // Ensure all 7 days are present in final result
+    const fullWeek = dayNames.map(day => {
+      const found = aggResult.find(d => d.dayName === day);
+      return found || {
+        dayName: day,
+        totalUsers: 0,
+        totalTransactions: 0,
+        totalAmount: 0
+      };
+    });
+    
+    console.log(fullWeek);
+    
+
+
+  return res.json(fullWeek)
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status:customConstants.messages.MESSAGE_SUCCESS,
-    message:customConstants.messages.MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS,
-    data:singleMachineReport
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS,
+    data: singleMachineReport
   })
 })
 
-exports.getSingleMachineReport = asyncWrapper(async(req,res)=>{
-  const {accountId,serialNumber,transactionType,fromDate,toDate,startTime,endTime} = req.query
- 
+exports.getSingleMachineReport = asyncWrapper(async (req, res) => {
+  const { accountId, serialNumber, transactionType, fromDate, toDate, startTime, endTime } = req.query
+
   const matchCondition = {
     accountId: new mongoose.Types.ObjectId(accountId),
     serialNumber,
@@ -2139,14 +2283,14 @@ exports.getSingleMachineReport = asyncWrapper(async(req,res)=>{
       $lte: new Date(`${toDate}T${endTime}:00Z`)
     }
   };
-  console.log('matchCondition:===',matchCondition)
-  
+  console.log('matchCondition:===', matchCondition)
+
   const reports = await webhookPayloadTransactions.aggregate([
     { $match: matchCondition }
   ]);
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status:customConstants.messages.MESSAGE_SUCCESS,
-    message:customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
-    data:reports
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+    data: reports
   })
 })
