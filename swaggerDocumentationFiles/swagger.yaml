@@ -377,6 +377,21 @@ paths:
                   type: string
                   format: binary
                   description: "Upload profile logo (Image of any format)"
+      responses:
+         200:
+          description: Account created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Your account has been created successfully."
+         
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
