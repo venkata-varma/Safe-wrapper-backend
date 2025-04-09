@@ -7,10 +7,7 @@ const accountsSchema = new mongoose.Schema({
         default:null
     },
 
-    noOfIntegrations: {
-        type: Number,
-        default: 2
-    },
+    
     accountName:{
         type:String,
         required:[true, 'Account name is required.'],
