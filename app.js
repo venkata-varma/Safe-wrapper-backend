@@ -32,13 +32,6 @@ app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/webhook',webHooksRoute)
 
-// webhookCrons.webhookScheduleCronJobs()
-
-// Error Handling Middleware (optional)
-app.use(errorcontroller);
-//insertGlobalConstants()
-
-
 // Start of swagger configuration
 
 const yaml = require('js-yaml');
@@ -54,6 +47,12 @@ app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocum
 
 
 // End of swagger configuration
+
+
+// webhookCrons.webhookScheduleCronJobs()
+
+// Error Handling Middleware (optional)
+app.use(errorcontroller);
 
 
 app.listen(8201, () => {

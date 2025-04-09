@@ -1415,22 +1415,26 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     {
       $group: {
         _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
+          day: { $dayOfMonth: "$createdAt" },
           serialNumber: "$serialNumber",
-          transactionType: "$transactionType",
+          transactionType: "$transactionType"
         },
         totalAmount: {
           $sum: {
-            $multiply: [
-              "$denominations.UnitValue",
-              "$denominations.Count"
-            ]
+            $multiply: ["$denominations.UnitValue", "$denominations.Count"]
           }
         }
       }
     },
     {
       $group: {
-        _id: null,
+        _id: {
+          year: "$_id.year",
+          month: "$_id.month",
+          day: "$_id.day"
+        },
         serialNumbers: { $addToSet: "$_id.serialNumber" },
         transactionTypes: { $addToSet: "$_id.transactionType" },
         totalAmount: { $sum: "$totalAmount" }
@@ -1438,13 +1442,31 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     },
     {
       $project: {
-        _id: 0,
+        year: "$_id.year",
+        month: "$_id.month",
+        day: "$_id.day",
+        totalAmount: 1,
         serialNumbersCount: { $size: "$serialNumbers" },
         transactionTypesCount: { $size: "$transactionTypes" },
-        totalAmount: 1
+        _id: 0,
+        date: {
+          $dateFromParts: {
+            year: "$_id.year",
+            month: "$_id.month",
+            day: "$_id.day"
+          }
+        }
+      }
+    },
+    {
+      $sort: {
+        year: 1,
+        month: 1,
+        day: 1
       }
     }
   ]);
+  
 
   const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
 
@@ -1869,6 +1891,8 @@ exports.getListOfMachines = asyncWrapper(async(req,res)=>{
 
 exports.getAllMachineReports = asyncWrapper(async(req,res)=>{
   const {accountId} = req.query
+ 
+  const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
 
   const machineDetails = await webhookPayloadHeaders.aggregate([
     {
@@ -1887,7 +1911,7 @@ exports.getAllMachineReports = asyncWrapper(async(req,res)=>{
     {
       $lookup: {
         from: "webhookmetapayloads",
-        let: { sn: "$_id.serialNumber",location:"$_id.location" },
+        let: { sn: "$_id.serialNumber", location: "$_id.location" },
         pipeline: [
           {
             $match: {
@@ -1915,55 +1939,28 @@ exports.getAllMachineReports = asyncWrapper(async(req,res)=>{
         ],
         as: "metapayloads"
       }
-    },    
+    },
     {
       $addFields: {
         statusCount: {
-          $cond: [
-            { $gt: [{ $size: "$metapayloads" }, 0] },
-            {
-              $arrayToObject: {
-                $map: {
-                  input: {
-                    $setUnion: [
-                      {
-                        $filter: {
-                          input: {
-                            $map: {
-                              input: "$metapayloads",
-                              as: "meta",
-                              in: "$$meta.status"
-                            }
-                          },
-                          as: "status",
-                          cond: {
-                            $and: [
-                              { $ne: ["$$status", null] },
-                              { $ne: ["$$status", undefined] }
-                            ]
-                          }
-                        }
-                      }
-                    ]
-                  },
-                  as: "status",
-                  in: {
-                    k: "$$status",
-                    v: {
-                      $size: {
-                        $filter: {
-                          input: "$metapayloads",
-                          as: "meta",
-                          cond: { $eq: ["$$meta.status", "$$status"] }
-                        }
-                      }
+          $arrayToObject: {
+            $map: {
+              input: predefinedStatuses,
+              as: "status",
+              in: {
+                k: "$$status",
+                v: {
+                  $size: {
+                    $filter: {
+                      input: "$metapayloads",
+                      as: "meta",
+                      cond: { $eq: ["$$meta.status", "$$status"] }
                     }
                   }
                 }
               }
-            },
-            {}
-          ]
+            }
+          }
         }
       }
     },
@@ -1978,6 +1975,7 @@ exports.getAllMachineReports = asyncWrapper(async(req,res)=>{
     }
   ]);
   
+  
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status:customConstants.messages.MESSAGE_SUCCESS,
@@ -1987,9 +1985,140 @@ exports.getAllMachineReports = asyncWrapper(async(req,res)=>{
 
 })
 
-exports.getSingleMachineDetails = asyncWrapper(async(req,res)=>{
+exports.getPayloadReports = asyncWrapper(async(req,res)=>{
   const {serialNumber, accountId, webhookMasterId} = req.query
-  const singleMachineReport = await webhookPayloadTransactions.find({accountId:accountId,webhookMasterId:webhookMasterId,serialNumber:serialNumber})
+  // const singleMachineReport = await webhookPayloadTransactions.find({accountId:accountId,webhookMasterId:webhookMasterId,serialNumber:serialNumber})
+  const lastSixMonthsDataForGraph = await webhookPayloadTransactions.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+        createdAt: {
+          $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
+          $lte: new Date()
+        }
+      }
+    },
+    {
+      $unwind: {
+        path: "$denominations",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
+          day: { $dayOfMonth: "$createdAt" },
+          serialNumber: "$serialNumber",
+          transactionType: "$transactionType",
+          users: "$userName"
+        },
+        totalAmount: {
+          $sum: {
+            $multiply: ["$denominations.UnitValue", "$denominations.Count"]
+          }
+        }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: "$_id.year",
+          month: "$_id.month",
+          day: "$_id.day"
+        },
+        serialNumbers: { $addToSet: "$_id.serialNumber" },
+        transactionTypes: { $addToSet: "$_id.transactionType" },
+        totalAmount: { $sum: "$totalAmount" },
+        usersCount: {$addToSet:"$_id.users"}
+      }
+    },
+    {
+      $project: {
+        // year: "$_id.year",
+        // month: "$_id.month",
+        // day: "$_id.day",
+        totalAmount: 1,
+        serialNumbersCount: { $size: "$serialNumbers" },
+        transactionTypesCount: { $size: "$transactionTypes" },
+        usersCount: {$size:"$usersCount"},
+        _id: 0,
+        date: {
+          $dateFromParts: {
+            year: "$_id.year",
+            month: "$_id.month",
+            day: "$_id.day"
+          }
+        }
+      }
+    },
+    {
+      $sort: {
+        year: 1,
+        month: 1,
+        day: 1
+      }
+    }
+  ]);
+
+  
+  const totalSummaryOfMachine = await webhookPayloadTransactions.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+        // createdAt: {
+        //   $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
+        //   $lte: new Date()
+        // }
+      }
+    },
+    {
+      $unwind: {
+        path: "$denominations",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: {
+          serialNumber: "$serialNumber",
+          transactionType: "$transactionType",
+          users:"$userName"
+        },
+        totalAmount: {
+          $sum: {
+            $multiply: [
+              "$denominations.UnitValue",
+              "$denominations.Count"
+            ]
+          }
+        }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        serialNumbers: { $addToSet: "$_id.serialNumber" },
+        transactionTypes: { $addToSet: "$_id.transactionType" },
+        users: {$addToSet:"$_id.users"},
+        totalAmount: { $sum: "$totalAmount" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        serialNumbersCount: { $size: "$serialNumbers" },
+        transactionTypesCount: { $size: "$transactionTypes" },
+        usersCount: {$size:"$users"},
+        totalAmount: 1
+      }
+    }
+  ]);
+  
+  const machineTransactions = await webhookPayloadTransactions.find({serialNumber:serialNumber, accountId: new mongoose.Types.ObjectId(accountId)})
+
+  return res.json(totalSummaryOfMachine)
   
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status:customConstants.messages.MESSAGE_SUCCESS,

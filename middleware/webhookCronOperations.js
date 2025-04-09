@@ -47,38 +47,44 @@ const webhookMetaPayloadsOperations = async (webHookMetaPayloads) => {
 }
 
 const webhookMetaPayloadTransactions = async (dataPoint, webhookMasterId, webhookMetaPayloadId, accountId) => {
-    for (let transaction of dataPoint?.Transactions) {
-        await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "in-progress" } })
-        await webhookPayloadTransactions.create({
-            webhookMasterId: webhookMasterId,
-            webhookMetaPayloadId: webhookMetaPayloadId,
-            accountId: accountId,
-            pickupGroupId: transaction?.PickupGroupId,
-            serialNumber: transaction?.SerialNumber,
-            retrievedOn: transaction?.RetrievedOn,
-            transactionDateTime: transaction?.TransactionDateTime,
-            userName: transaction?.UserName,
-            transactionType: transaction?.TransactionType,
-            amount: transaction?.Amount,
-            denominations: transaction?.Denominations,
-            location: dataPoint?.Metadata?.LocationInformation[0]?.Location,
-        });
-
-        await webhookPayloadHeaders.create({
-            webhookMasterId: webhookMasterId,
-            webhookMetaPayloadId: webhookMetaPayloadId,
-            accountId: accountId,
-            pickupGroupId: transaction?.PickupGroupId,
-            serialNumber: transaction?.SerialNumber,
-            retrievedOn: transaction?.RetrievedOn,
-            transactionDateTime: transaction?.TransactionDateTime,
-            userName: transaction?.UserName,
-            transactionType: transaction?.TransactionType,
-            location: dataPoint?.Metadata?.LocationInformation[0]?.Location,
-        })
-        await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "executed" } })
+    if(dataPoint && dataPoint.Transactions.length > 0 ){
+        for (let transaction of dataPoint?.Transactions) {
+            await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "in-progress" } })
+            await webhookPayloadTransactions.create({
+                webhookMasterId: webhookMasterId,
+                webhookMetaPayloadId: webhookMetaPayloadId,
+                accountId: accountId,
+                pickupGroupId: transaction?.PickupGroupId,
+                serialNumber: transaction?.SerialNumber,
+                retrievedOn: transaction?.RetrievedOn,
+                transactionDateTime: transaction?.TransactionDateTime,
+                userName: transaction?.UserName,
+                transactionType: transaction?.TransactionType,
+                amount: transaction?.Amount,
+                denominations: transaction?.Denominations,
+                location: dataPoint?.Metadata?.LocationInformation[0]?.Location,
+            });
+    
+            await webhookPayloadHeaders.create({
+                webhookMasterId: webhookMasterId,
+                webhookMetaPayloadId: webhookMetaPayloadId,
+                accountId: accountId,
+                pickupGroupId: transaction?.PickupGroupId,
+                serialNumber: transaction?.SerialNumber,
+                retrievedOn: transaction?.RetrievedOn,
+                transactionDateTime: transaction?.TransactionDateTime,
+                userName: transaction?.UserName,
+                transactionType: transaction?.TransactionType,
+                location: dataPoint?.Metadata?.LocationInformation[0]?.Location,
+            })
+            await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "executed" } })
+        }
+        await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, { $set: { lastPullDate: new Date() } }, { new: true })
+        console.log('Exit')
     }
-    await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, { $set: { lastPullDate: new Date() } }, { new: true })
-    console.log('Exit')
+    else{
+        // Exit
+    }
+    
 }
 

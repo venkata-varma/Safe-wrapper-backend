@@ -25,7 +25,7 @@ const {
   getDashboardStatisticsOfAccount,
   getListOfMachines,
   getAllMachineReports,
-  getSingleMachineDetails,
+  getPayloadReports,
   getSingleMachineReport
 } = require("../controllers/webHooksController");
 
@@ -60,7 +60,7 @@ router.get('/get-webhook-payload-headers/:accountId',getAllWebhookPayoadHeadersO
 router.get('/get-dashboard-statistics/:accountId',getDashboardStatisticsOfAccount)
 router.get('/get-list-of-machines',getListOfMachines)
 router.get('/get-all-machine-reports',getAllMachineReports)
-router.get('/get-single-machine-details',getSingleMachineDetails)
+router.get('/get-payload-reports',getPayloadReports)
 
 //One POS
 router.get('/get-single-machine-report',getSingleMachineReport)
