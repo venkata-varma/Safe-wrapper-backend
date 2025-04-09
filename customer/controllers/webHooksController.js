@@ -2294,3 +2294,112 @@ exports.getSingleMachineReport = asyncWrapper(async (req, res) => {
     data: reports
   })
 })
+
+
+
+exports.getProgressMeterAndTotalsOfSingleMachine=asyncWrapper(async(req,res)=>{
+  let {accountId,serialNumber}=req.query;
+
+
+  // Get the current time
+  const now = new Date();
+  
+  // Calculate time ranges
+  const sixMonthsAgo = new Date(now);
+  sixMonthsAgo.setMonth(now.getMonth() - 6);
+  
+  const twelveMonthsAgo = new Date(sixMonthsAgo);
+  twelveMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  
+  // First aggregation (last 6 months)
+  const lastSixMonths = await webhookPayloadTransactions.aggregate([
+      {
+          $match: {
+              createdAt: { $gte: sixMonthsAgo },
+              accountId: new mongoose.Types.ObjectId(accountId),
+              serialNumber: serialNumber
+          }
+      },
+      {
+          $group: {
+              _id: "$transactionType",
+              totalAmount: { $sum: "$amount" },
+              count: { $sum: 1 }
+          }
+      },
+      {
+          $project: {
+              _id: 0,
+              transactionType: "$_id",
+              totalAmount: 1,
+              count: 1
+          }
+      }
+  ]);
+  
+  // Second aggregation (previous 6 months)
+  const previousSixMonths = await webhookPayloadTransactions.aggregate([
+      {
+          $match: {
+              createdAt: { $gte: twelveMonthsAgo, $lt: sixMonthsAgo },
+              accountId: new mongoose.Types.ObjectId(accountId),
+              serialNumber: serialNumber
+          }
+      },
+      {
+          $group: {
+              _id: "$transactionType",
+              totalAmount: { $sum: "$amount" },
+              count: { $sum: 1 }
+          }
+      },
+      {
+          $project: {
+              _id: 0,
+              transactionType: "$_id",
+              totalAmount: 1,
+              count: 1
+          }
+      }
+  ]);
+  
+  // Merge the two results and calculate percentage increase
+  const percentageIncrease = lastSixMonths.map(recent => {
+      const previous = previousSixMonths.find(prev => prev.transactionType === recent.transactionType);
+      
+      const previousTotal = previous ? previous.totalAmount : 0;
+      const recentTotal = recent.totalAmount;
+  
+      // Calculate percentage increase
+      let percentage = null;
+      if (previousTotal > 0) {
+          percentage = ((recentTotal - previousTotal) / previousTotal) * 100;
+      } else if (recentTotal > 0) {
+          percentage = 100; // If there was no transaction in the previous period but exists now
+      }
+  
+      return {
+          transactionType: recent.transactionType,
+          recentTotalAmount: recentTotal,
+          previousTotalAmount: previousTotal,
+          percentageIncrease: percentage
+      };
+  });
+  
+  
+
+
+
+
+
+
+
+
+
+
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+    data: percentageIncrease
+  })
+})

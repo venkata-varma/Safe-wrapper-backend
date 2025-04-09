@@ -26,7 +26,8 @@ const {
   getListOfMachines,
   getAllMachineReports,
   getPayloadReports,
-  getSingleMachineReport
+  getSingleMachineReport,
+  getProgressMeterAndTotalsOfSingleMachine
 } = require("../controllers/webHooksController");
 
 router.post(
@@ -72,4 +73,8 @@ router.get('/get-single-machine-report',getSingleMachineReport)
 
 // router.get('/get-webhook-logs-reports',validateIntegrationForWebHook, getWebHookLogsReports)
 
+
+
+
+router.get('/get-progres-meter-total-single-machine', getProgressMeterAndTotalsOfSingleMachine)
 module.exports = router;
