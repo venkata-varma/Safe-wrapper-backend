@@ -61,6 +61,8 @@ router.get('/get-dashboard-statistics/:accountId',getDashboardStatisticsOfAccoun
 router.get('/get-list-of-machines',getListOfMachines)
 router.get('/get-all-machine-reports',getAllMachineReports)
 router.get('/get-single-machine-details',getSingleMachineDetails)
+
+//One POS
 router.get('/get-single-machine-report',getSingleMachineReport)
 // router.patch('/update-webhook',validateIntegrationForWebHook, updateWebHook)
 // router.patch('/update-webhook-status',validateIntegrationForWebHook, updateWebHookStatus)

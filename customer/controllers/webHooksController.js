@@ -2001,7 +2001,7 @@ exports.getSingleMachineDetails = asyncWrapper(async(req,res)=>{
 exports.getSingleMachineReport = asyncWrapper(async(req,res)=>{
   const {accountId,serialNumber,transactionType,fromDate,toDate,startTime,endTime} = req.query
  
-  const matchStage = {
+  const matchCondition = {
     accountId: new mongoose.Types.ObjectId(accountId),
     serialNumber,
     transactionType,
@@ -2010,11 +2010,14 @@ exports.getSingleMachineReport = asyncWrapper(async(req,res)=>{
       $lte: new Date(`${toDate}T${endTime}:00Z`)
     }
   };
-  console.log('matchStage:===',matchStage)
+  console.log('matchCondition:===',matchCondition)
   
   const reports = await webhookPayloadTransactions.aggregate([
-    { $match: matchStage }
+    { $match: matchCondition }
   ]);
-  
-  return res.json(reports)
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status:customConstants.messages.MESSAGE_SUCCESS,
+    message:customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+    data:reports
+  })
 })
