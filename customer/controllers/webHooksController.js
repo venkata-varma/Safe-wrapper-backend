@@ -1873,7 +1873,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       totalAccountSummary,
       topFiveDeviceDetails,
       denominations,
-      latestTransactions,
+      latestTransactions:latestTransactions[0].transactionDetails,
       topFiveUsersDetails
     }
   })
