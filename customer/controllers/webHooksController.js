@@ -1475,7 +1475,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       $match: {
         accountId: new mongoose.Types.ObjectId(accountId),
         createdAt: {
-          $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
+          $gte: new Date(new Date().setDate(new Date().getMonth() - 1)),
           $lte: new Date()
         }
       }
@@ -1771,40 +1771,28 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     {
       $match: {
         accountId: new mongoose.Types.ObjectId(accountId),
-        createdAt: {
-          $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
-          $lte: new Date()
-        }
-      }
-    },
-    { $unwind: { path: "$denominations", preserveNullAndEmptyArrays: true } },
-    {
-      $group: {
-        _id: "$serialNumber",
-        count: { $sum: 1 },
-        totalAmount: {
-          $sum: { $multiply: ["$denominations.UnitValue", "$denominations.Count"] }
-        },
-        transactionDate: { $last: "$transactionDateTime" },
-        location: { $last: "$location" }
+        amount: { $ne: 0 }
       }
     },
     {
-      $group: {
-        _id: null,
-        transactionDetails: {
-          $push: {
-            serialNumber: "$_id", count: "$count", totalAmount: "$totalAmount", transactionDate: "$transactionDate", location: "$location"
-          }
-        }
+      $sort: {
+        transactionDateTime: -1  // Sorting by transactionDateTime in descending order (latest first)
       }
+    },
+    {
+      $limit: 10  // Limiting the results to 10 records
     },
     {
       $project: {
-        _id: 0,
-        transactionDetails: 1
+        serialNumber: 1,
+        transactionDateTime: 1,
+        userName: 1,
+        amount: 1,
+        location:1
       }
-    }
+    },
+
+
   ])
 
   const topFiveUsersDetails = await webhookPayloadTransactions.aggregate([
@@ -1873,7 +1861,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       totalAccountSummary,
       topFiveDeviceDetails,
       denominations,
-      latestTransactions:latestTransactions[0].transactionDetails,
+      latestTransactions,
       topFiveUsersDetails
     }
   })
@@ -2177,89 +2165,89 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     
     */
 
-    const today = new Date();
-    const day = today.getDay();
-    const diffToMonday = (day + 6) % 7;
-    
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - diffToMonday);
-    monday.setHours(0, 0, 0, 0);
-    
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
-    
-    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    
-    const aggResult = await webhookPayloadTransactions.aggregate([
-      {
-        $match: {
-          accountId: new mongoose.Types.ObjectId(accountId),
-          serialNumber: serialNumber,
-          createdAt: {
-            $gte: monday,
-            $lte: sunday
-          }
-        }
-      },
-      {
-        $unwind: {
-          path: "$denominations",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $addFields: {
-          dayOfWeek: { $dayOfWeek: "$createdAt" },
-          denominationTotal: {
-            $multiply: ["$denominations.UnitValue", "$denominations.Count"]
-          }
-        }
-      },
-      {
-        $group: {
-          _id: "$dayOfWeek",
-          users: { $addToSet: "$userName" },
-          totalTransactions: { $sum: 1 },
-          totalAmount: { $sum: "$denominationTotal" }
-        }
-      },
-      {
-        $addFields: {
-          dayName: {
-            $arrayElemAt: [
-              ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-              { $subtract: ["$_id", 1] }
-            ]
-          },
-          totalUsers: { $size: "$users" }
-        }
-      },      
-      {
-        $project: {
-          _id: 0,
-          dayName: 1,
-          totalUsers: 1,
-          totalTransactions: 1,
-          totalAmount: 1
+  const today = new Date();
+  const day = today.getDay();
+  const diffToMonday = (day + 6) % 7;
+
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+
+  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const aggResult = await webhookPayloadTransactions.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
+        serialNumber: serialNumber,
+        createdAt: {
+          $gte: monday,
+          $lte: sunday
         }
       }
-    ]);
-    
-    
-    // Ensure all 7 days are present in final result
-    const fullWeek = dayNames.map(day => {
-      const found = aggResult.find(d => d.dayName === day);
-      return found || {
-        dayName: day,
-        totalUsers: 0,
-        totalTransactions: 0,
-        totalAmount: 0
-      };
-    });
-    
-    console.log(fullWeek);
-    
+    },
+    {
+      $unwind: {
+        path: "$denominations",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $addFields: {
+        dayOfWeek: { $dayOfWeek: "$createdAt" },
+        denominationTotal: {
+          $multiply: ["$denominations.UnitValue", "$denominations.Count"]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: "$dayOfWeek",
+        users: { $addToSet: "$userName" },
+        totalTransactions: { $sum: 1 },
+        totalAmount: { $sum: "$denominationTotal" }
+      }
+    },
+    {
+      $addFields: {
+        dayName: {
+          $arrayElemAt: [
+            ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+            { $subtract: ["$_id", 1] }
+          ]
+        },
+        totalUsers: { $size: "$users" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        dayName: 1,
+        totalUsers: 1,
+        totalTransactions: 1,
+        totalAmount: 1
+      }
+    }
+  ]);
+
+
+  // Ensure all 7 days are present in final result
+  const fullWeek = dayNames.map(day => {
+    const found = aggResult.find(d => d.dayName === day);
+    return found || {
+      dayName: day,
+      totalUsers: 0,
+      totalTransactions: 0,
+      totalAmount: 0
+    };
+  });
+
+  console.log(fullWeek);
+
 
 
   return res.json(fullWeek)
