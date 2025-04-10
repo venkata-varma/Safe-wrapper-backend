@@ -16,6 +16,8 @@ const webhookExceptionsModel = require("../../models/webhookExceptionsModel");
 const { getWebHooksLogsSixWeekSalesData } = require("../../utils/accountInsightUtils");
 const webhookPayloadTransactions = require("../../models/webhookPayloadTransactions");
 const webhookPayloadHeaders = require("../../models/webhookPayloadHeaders");
+const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline')
+
 
 /**
  * Middleware function for Create webhook functionality
@@ -1396,77 +1398,90 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
 
 exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
-  const lastSixMonthsDataForGraph = await webhookPayloadTransactions.aggregate([
+  let getLastSiWeeksResult = getSixWeeksSalesFunction()
+
+  const fromDate = getLastSiWeeksResult[0].fromDate;
+  const toDate = getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate;
+
+  const aggregationPipeline = [
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
-        createdAt: {
-          $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
-          $lte: new Date()
+        accountId: new mongoose.Types.ObjectId(accountId), // Ensuring filtering by accountId,
+        transactionDateTime: {
+          $gte: fromDate,  // Start from the first fromDate in the array
+          $lte: toDate     // Ends at the last toDate (which is the present date & time)
         }
-      }
-    },
-    {
-      $unwind: {
-        path: "$denominations",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $group: {
-        _id: {
-          year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" },
-          day: { $dayOfMonth: "$createdAt" },
-          serialNumber: "$serialNumber",
-          transactionType: "$transactionType"
-        },
-        totalAmount: {
-          $sum: {
-            $multiply: ["$denominations.UnitValue", "$denominations.Count"]
-          }
-        }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          year: "$_id.year",
-          month: "$_id.month",
-          day: "$_id.day"
-        },
-        serialNumbers: { $addToSet: "$_id.serialNumber" },
-        transactionTypes: { $addToSet: "$_id.transactionType" },
-        totalAmount: { $sum: "$totalAmount" }
       }
     },
     {
       $project: {
-        year: "$_id.year",
-        month: "$_id.month",
-        day: "$_id.day",
-        totalAmount: 1,
-        serialNumbersCount: { $size: "$serialNumbers" },
-        transactionTypesCount: { $size: "$transactionTypes" },
-        _id: 0,
-        date: {
-          $dateFromParts: {
-            year: "$_id.year",
-            month: "$_id.month",
-            day: "$_id.day"
-          }
+        transactionDateTime: 1,
+        amount: 1,
+        serialNumber: 1,
+        userName: 1,
+
+      }
+    },
+    {
+      $addFields: {
+        matchedWeek: {
+          $arrayElemAt: [
+            {
+              $filter: {
+                input: getLastSiWeeksResult,
+                as: "week",
+                cond: {
+                  $and: [
+                    { $gte: ["$transactionDateTime", "$$week.fromDate"] },
+                    { $lte: ["$transactionDateTime", "$$week.toDate"] }
+                  ]
+                }
+              }
+            },
+            0
+          ]
         }
       }
     },
     {
-      $sort: {
-        year: 1,
-        month: 1,
-        day: 1
+      $group: {
+        _id: {
+          fromDate: "$matchedWeek.fromDate",
+          toDate: "$matchedWeek.toDate"
+        },
+        totalAmount: { $sum: "$amount" },  // Sum of amounts in the time range
+        transactionsCount: { $sum: 1 },   // Count of transactions
+        machines: { $addToSet: "$serialNumber" }  // Unique machines
       }
-    }
-  ]);
+    },
+    {
+      $project: {
+          _id: 0,
+          fromDate: "$_id.fromDate",
+          toDate: "$_id.toDate",
+          totalAmount: 1,
+          transactionsCount: 1,
+         
+          machinesCount: { $size: "$machines" }
+      }
+  }
+  ];
+  const sixWeekAggregate = await webhookPayloadTransactions.aggregate(aggregationPipeline)
 
+  const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
+    const matchingWeek = sixWeekAggregate.find(r => 
+      String(r.fromDate) === String(week.fromDate) &&
+        String(r.toDate) === String(week.toDate)
+    );
+
+    return matchingWeek || {
+        fromDate: week.fromDate,
+        toDate: week.toDate,
+        machinesCount: 0,
+        totalAmount: 0,
+        transactionsCount: 0
+    };
+});
 
   const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
 
@@ -1856,7 +1871,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATISTICS,
     data: {
-      lastSixMonthsDataForGraph,
+      lastSixWeeksDataForGraph:sixWeekAggregateFinalResult,
       payloadSummary,
       totalAccountSummary,
       topFiveDeviceDetails,
