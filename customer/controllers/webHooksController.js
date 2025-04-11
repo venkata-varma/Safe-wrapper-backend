@@ -69,7 +69,7 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
     expiresOn: new Date()
   };
 
-  await webHooksModel.create({
+ let createWebhook= await webHooksModel.create({
     ...req.body,
     userId: req.user._id,
     webHookUrl,
@@ -81,6 +81,7 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
     .json({
       status: customConstants.messages.MESSAGE_SUCCESS,
       message: customConstants.messages.MESSAGE_ADD_WEBHOOK,
+      createWebhook
     });
 });
 
