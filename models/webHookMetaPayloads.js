@@ -20,7 +20,7 @@ const webhookMetaPayloads = new mongoose.Schema({
     },
     lastPullDate: {
         type: Date,
-        default: new Date()
+        default: null
     },
     dataPoint: {
         type: mongoose.Schema.Types.Mixed,

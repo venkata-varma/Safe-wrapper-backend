@@ -1256,7 +1256,8 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 
   const matchConditions = {
     accountId: new mongoose.Types.ObjectId(accountId),
-    createdAt: { $gte: new Date(fromDate), $lte: new Date(new Date(toDate).setDate(new Date(toDate).getDate() + 1)) }
+    createdAt: { $gte: new Date(fromDate), $lte: new Date(new Date(toDate).setDate(new Date(toDate).getDate() + 1)) },
+    
   };
 
   if (serialNumbersArray.length > 0) {
@@ -1269,6 +1270,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   console.log('matchConditions:==', matchConditions)
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
     { $match: matchConditions },
+    { $sort: { createdAt: -1 } } 
 
     /*
     { $unwind: { path: "$denominations", preserveNullAndEmptyArrays: true } },

@@ -59,7 +59,7 @@ const webhookMastersSchema = new mongoose.Schema(
     },
     lastPullDate:{
       type:Date,
-      default:new Date()
+      default:null
     },
     webhookSettings: {
       periodType: {
