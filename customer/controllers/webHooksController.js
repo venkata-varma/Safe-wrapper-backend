@@ -69,7 +69,7 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
     expiresOn: new Date()
   };
 
- let createWebhook= await webHooksModel.create({
+  let createWebhook = await webHooksModel.create({
     ...req.body,
     userId: req.user._id,
     webHookUrl,
@@ -1257,7 +1257,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   const matchConditions = {
     accountId: new mongoose.Types.ObjectId(accountId),
     createdAt: { $gte: new Date(fromDate), $lte: new Date(new Date(toDate).setDate(new Date(toDate).getDate() + 1)) },
-    
+
   };
 
   if (serialNumbersArray.length > 0) {
@@ -1270,7 +1270,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   console.log('matchConditions:==', matchConditions)
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
     { $match: matchConditions },
-    { $sort: { createdAt: -1 } } 
+    { $sort: { createdAt: -1 } }
 
     /*
     { $unwind: { path: "$denominations", preserveNullAndEmptyArrays: true } },
@@ -1459,32 +1459,32 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     },
     {
       $project: {
-          _id: 0,
-          fromDate: "$_id.fromDate",
-          toDate: "$_id.toDate",
-          totalAmount: 1,
-          transactionsCount: 1,
-         
-          machinesCount: { $size: "$machines" }
+        _id: 0,
+        fromDate: "$_id.fromDate",
+        toDate: "$_id.toDate",
+        totalAmount: 1,
+        transactionsCount: 1,
+
+        machinesCount: { $size: "$machines" }
       }
-  }
+    }
   ];
   const sixWeekAggregate = await webhookPayloadTransactions.aggregate(aggregationPipeline)
 
   const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
-    const matchingWeek = sixWeekAggregate.find(r => 
+    const matchingWeek = sixWeekAggregate.find(r =>
       String(r.fromDate) === String(week.fromDate) &&
-        String(r.toDate) === String(week.toDate)
+      String(r.toDate) === String(week.toDate)
     );
 
     return matchingWeek || {
-        fromDate: week.fromDate,
-        toDate: week.toDate,
-        machinesCount: 0,
-        totalAmount: 0,
-        transactionsCount: 0
+      fromDate: week.fromDate,
+      toDate: week.toDate,
+      machinesCount: 0,
+      totalAmount: 0,
+      transactionsCount: 0
     };
-});
+  });
 
   const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
 
@@ -1806,7 +1806,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         transactionDateTime: 1,
         userName: 1,
         amount: 1,
-        location:1
+        location: 1
       }
     },
 
@@ -1874,7 +1874,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATISTICS,
     data: {
-      lastSixWeeksDataForGraph:sixWeekAggregateFinalResult,
+      lastSixWeeksDataForGraph: sixWeekAggregateFinalResult,
       payloadSummary,
       totalAccountSummary,
       topFiveDeviceDetails,
@@ -2303,95 +2303,113 @@ exports.getSingleMachineReport = asyncWrapper(async (req, res) => {
 
 
 
-exports.getProgressMeterAndTotalsOfSingleMachine=asyncWrapper(async(req,res)=>{
-  let {accountId,serialNumber}=req.query;
+exports.getProgressMeterAndTotalsOfSingleMachine = asyncWrapper(async (req, res) => {
+  let { accountId, serialNumber } = req.query;
 
 
   // Get the current time
   const now = new Date();
-  
+
   // Calculate time ranges
   const sixMonthsAgo = new Date(now);
   sixMonthsAgo.setMonth(now.getMonth() - 6);
-  
+
   const twelveMonthsAgo = new Date(sixMonthsAgo);
   twelveMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-  
+
   // First aggregation (last 6 months)
   const lastSixMonths = await webhookPayloadTransactions.aggregate([
-      {
-          $match: {
-              createdAt: { $gte: sixMonthsAgo },
-              accountId: new mongoose.Types.ObjectId(accountId),
-              serialNumber: serialNumber
-          }
-      },
-      {
-          $group: {
-              _id: "$transactionType",
-              totalAmount: { $sum: "$amount" },
-              count: { $sum: 1 }
-          }
-      },
-      {
-          $project: {
-              _id: 0,
-              transactionType: "$_id",
-              totalAmount: 1,
-              count: 1
-          }
+    {
+      // Convert the string to a proper date in a new field
+      $addFields: {
+        transactionDateTime: {
+          $toDate: "$transactionDateTime"
+        }
       }
+    },
+    {
+      $match: {
+        transactionDateTime: { $gte: sixMonthsAgo },
+        accountId: new mongoose.Types.ObjectId(accountId),
+        serialNumber: serialNumber
+      }
+    },
+    {
+      $group: {
+        _id: "$transactionType",
+        totalAmount: { $sum: "$amount" },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        transactionType: "$_id",
+        totalAmount: 1,
+        count: 1
+      }
+    }
   ]);
-  
+
   // Second aggregation (previous 6 months)
   const previousSixMonths = await webhookPayloadTransactions.aggregate([
-      {
-          $match: {
-              createdAt: { $gte: twelveMonthsAgo, $lt: sixMonthsAgo },
-              accountId: new mongoose.Types.ObjectId(accountId),
-              serialNumber: serialNumber
-          }
-      },
-      {
-          $group: {
-              _id: "$transactionType",
-              totalAmount: { $sum: "$amount" },
-              count: { $sum: 1 }
-          }
-      },
-      {
-          $project: {
-              _id: 0,
-              transactionType: "$_id",
-              totalAmount: 1,
-              count: 1
-          }
+    {
+      // Convert the string to a proper date in a new field
+      $addFields: {
+        transactionDateTime: {
+          $toDate: "$transactionDateTime"
+        }
       }
+    },
+
+
+    {
+      $match: {
+        transactionDateTime: { $gte: twelveMonthsAgo, $lt: sixMonthsAgo },
+        accountId: new mongoose.Types.ObjectId(accountId),
+        serialNumber: serialNumber
+      }
+    },
+    {
+      $group: {
+        _id: "$transactionType",
+        totalAmount: { $sum: "$amount" },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        transactionType: "$_id",
+        totalAmount: 1,
+        count: 1
+      }
+    }
   ]);
-  
+
   // Merge the two results and calculate percentage increase
   const percentageIncrease = lastSixMonths.map(recent => {
-      const previous = previousSixMonths.find(prev => prev.transactionType === recent.transactionType);
-      
-      const previousTotal = previous ? previous.totalAmount : 0;
-      const recentTotal = recent.totalAmount;
-  
-      // Calculate percentage increase
-      let percentage = null;
-      if (previousTotal > 0) {
-          percentage = ((recentTotal - previousTotal) / previousTotal) * 100;
-      } else if (recentTotal > 0) {
-          percentage = 100; // If there was no transaction in the previous period but exists now
-      }
-  
-      return {
-          transactionType: recent.transactionType,
-          recentTotalAmount: recentTotal,
-          previousTotalAmount: previousTotal,
-          percentageIncrease: percentage
-      };
+    const previous = previousSixMonths.find(prev => prev.transactionType === recent.transactionType);
+
+    const previousTotal = previous ? previous.totalAmount : 0;
+    const recentTotal = recent.totalAmount;
+
+    // Calculate percentage increase
+    let percentage = 0;
+    if (previousTotal > 0) {
+      percentage = ((recentTotal - previousTotal) / previousTotal) * 100;
+    } else if (recentTotal > 0) {
+      percentage = 100; // If there was no transaction in the previous period but exists now
+    }
+
+    return {
+      transactionType: recent.transactionType,
+      recentTotalAmount: recentTotal,
+      previousTotalAmount: previousTotal,
+      percentageIncrease: percentage
+    };
   });
-  
+
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
