@@ -2008,7 +2008,7 @@ const toDate = getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate;
 
 
   // const singleMachineReport = await webhookPayloadTransactions.find({accountId:accountId,webhookMasterId:webhookMasterId,serialNumber:serialNumber})
-  const lastSixMonthsDataForGraph = await webhookPayloadTransactions.aggregate([
+  const lastSixWeeksDataForGraph = await webhookPayloadTransactions.aggregate([
     {
       $match: {
         accountId: new mongoose.Types.ObjectId(accountId),
@@ -2079,7 +2079,7 @@ const toDate = getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate;
 
 
 const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
-  const matchingWeek = lastSixMonthsDataForGraph.find(r =>
+  const matchingWeek = lastSixWeeksDataForGraph.find(r =>
     String(r.fromDate) === String(week.fromDate) &&
     String(r.toDate) === String(week.toDate)
   );
@@ -2295,7 +2295,7 @@ const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS,
     data: {
-      lastSixMonthsDataForGraph:sixWeekAggregateFinalResult,
+      lastSixWeeksDataForGraph:sixWeekAggregateFinalResult,
       totalSummaryOfMachine,
       machineTransactions,
       userActivity:fullWeek
