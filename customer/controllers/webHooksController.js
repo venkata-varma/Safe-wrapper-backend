@@ -2267,16 +2267,18 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     };
   });
 
-  console.log(fullWeek);
 
 
-
-  return res.json(fullWeek)
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS,
-    data: singleMachineReport
+    data: {
+      lastSixMonthsDataForGraph,
+      totalSummaryOfMachine,
+      machineTransactions,
+      userActivity:fullWeek
+    }
   })
 })
 
