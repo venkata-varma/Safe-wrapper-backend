@@ -2288,6 +2288,110 @@ const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
     };
   });
 
+//Progress- meter code
+  // Get the current time
+  const now = new Date();
+
+  // Calculate time ranges
+  const sixMonthsAgo = new Date(now);
+  sixMonthsAgo.setMonth(now.getMonth() - 6);
+
+  const twelveMonthsAgo = new Date(sixMonthsAgo);
+  twelveMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  // First aggregation (last 6 months)
+  const lastSixMonths = await webhookPayloadTransactions.aggregate([
+    {
+      // Convert the string to a proper date in a new field
+      $addFields: {
+        transactionDateTime: {
+          $toDate: "$transactionDateTime"
+        }
+      }
+    },
+    {
+      $match: {
+        transactionDateTime: { $gte: sixMonthsAgo },
+        accountId: new mongoose.Types.ObjectId(accountId),
+        serialNumber: serialNumber
+      }
+    },
+    {
+      $group: {
+        _id: "$transactionType",
+        totalAmount: { $sum: "$amount" },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        transactionType: "$_id",
+        totalAmount: 1,
+        count: 1
+      }
+    }
+  ]);
+
+  // Second aggregation (previous 6 months)
+  const previousSixMonths = await webhookPayloadTransactions.aggregate([
+    {
+      // Convert the string to a proper date in a new field
+      $addFields: {
+        transactionDateTime: {
+          $toDate: "$transactionDateTime"
+        }
+      }
+    },
+
+
+    {
+      $match: {
+        transactionDateTime: { $gte: twelveMonthsAgo, $lt: sixMonthsAgo },
+        accountId: new mongoose.Types.ObjectId(accountId),
+        serialNumber: serialNumber
+      }
+    },
+    {
+      $group: {
+        _id: "$transactionType",
+        totalAmount: { $sum: "$amount" },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        transactionType: "$_id",
+        totalAmount: 1,
+        count: 1
+      }
+    }
+  ]);
+
+  // Merge the two results and calculate percentage increase
+  const percentageIncrease = lastSixMonths.map(recent => {
+    const previous = previousSixMonths.find(prev => prev.transactionType === recent.transactionType);
+
+    const previousTotal = previous ? previous.totalAmount : 0;
+    const recentTotal = recent.totalAmount;
+
+    // Calculate percentage increase
+    let percentage = 0;
+    if (previousTotal > 0) {
+      percentage = ((recentTotal - previousTotal) / previousTotal) * 100;
+    } else if (previousTotal === 0 && recentTotal > 0) {
+      percentage = 100; // If there was no transaction in the previous period but exists now
+    }
+
+    return {
+      transactionType: recent.transactionType,
+      recentTotalAmount: recentTotal,
+      previousTotalAmount: previousTotal,
+      percentageIncrease: percentage,
+      
+    };
+  });
 
 
 
@@ -2298,7 +2402,8 @@ const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
       lastSixWeeksDataForGraph:sixWeekAggregateFinalResult,
       totalSummaryOfMachine,
       machineTransactions,
-      userActivity:fullWeek
+      userActivity:fullWeek,
+      percentageIncrease
     }
   })
 })
