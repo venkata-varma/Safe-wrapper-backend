@@ -1234,7 +1234,7 @@ exports.updateWebhookSettings = asyncWrapper(async (req, res) => {
 
 exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
-
+  console.log('fromDate, toDate:===',fromDate, toDate)
   console.log("serialNumbers:===", serialNumbers);
 
   const serialNumbersArray =
@@ -1256,8 +1256,11 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 
   const matchConditions = {
     accountId: new mongoose.Types.ObjectId(accountId),
-    createdAt: { $gte: new Date(fromDate), $lte: new Date(new Date(toDate).setDate(new Date(toDate).getDate() + 1)) },
-
+    // createdAt: { $gte: moment(fromDate).format('YYYY-MM-DDTHH:mm:ssZ'), $lte: moment(toDate).format('YYYY-MM-DDTHH:mm:ssZ').add(1)},
+    createdAt: {
+      $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
+      $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss'))
+    }
   };
 
   if (serialNumbersArray.length > 0) {
