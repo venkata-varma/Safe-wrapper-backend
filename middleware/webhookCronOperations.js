@@ -25,10 +25,20 @@ exports.schedulerwebhookCronJobs = async (webhook) => {
         } else if (schedulePeriodType === 'once each month') {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60 * 24 * 30);
         }
+        console.log('lastPullDate:===',lastPullTime)
+        console.log('currentTime:===',currentTime)
 
         if (Math.round(scheduleTime) >= scheduleInterval) {
             if (webhook?.status === 'active') {
-                await webhookMetaPayloadsOperations(await webHookMetaPayloads.find({ $and: [{ createdAt: { $gte: lastPullTime } }, { createdAt: { $lte: currentTime } }] }))
+                // await webhookMetaPayloadsOperations(await webHookMetaPayloads.find({ $and: [{ createdAt: { $gte: lastPullTime } }, { createdAt: { $lte: currentTime } },{status:{$ne:"executed"}}] }))
+                const metaPayloads = await webHookMetaPayloads.find(
+                    {
+                      createdAt: { $gte: lastPullTime, $lte: currentTime },
+                      status: { $ne: "executed" }
+                    }
+                  );
+                  await webhookMetaPayloadsOperations(metaPayloads);
+                  
             }
         }
         else {
