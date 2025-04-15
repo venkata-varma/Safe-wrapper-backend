@@ -1333,10 +1333,17 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const aggregationPipeline = [
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId), // Ensuring filtering by accountId,
+        accountId: new mongoose.Types.ObjectId(accountId),
         transactionDateTime: {
-          $gte: fromDate,  // Start from the first fromDate in the array
-          $lte: toDate     // Ends at the last toDate (which is the present date & time)
+          $gte: fromDate,
+          $lte: toDate
+        }
+      }
+    },
+    {
+      $addFields: {
+        hasDenominations: {
+          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
         }
       }
     },
@@ -1346,10 +1353,9 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         amount: 1,
         serialNumber: 1,
         userName: 1,
-
+        hasDenominations: 1
       }
     },
-    
     {
       $addFields: {
         matchedWeek: {
@@ -1377,9 +1383,13 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
           fromDate: "$matchedWeek.fromDate",
           toDate: "$matchedWeek.toDate"
         },
-        totalAmount: { $sum: "$amount" },  // Sum of amounts in the time range
-        transactionsCount: { $sum: 1 },   // Count of transactions
-        machines: { $addToSet: "$serialNumber" }  // Unique machines
+        totalAmount: { $sum: "$amount" },
+        transactionsCount: {
+          $sum: {
+            $cond: ["$hasDenominations", 1, 0]
+          }
+        },
+        machines: { $addToSet: "$serialNumber" }
       }
     },
     {
@@ -1389,11 +1399,12 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         toDate: "$_id.toDate",
         totalAmount: 1,
         transactionsCount: 1,
-
         machinesCount: { $size: "$machines" }
       }
     }
   ];
+  
+  
   const sixWeekAggregate = await webhookPayloadTransactions.aggregate(aggregationPipeline)
 
   const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
@@ -1557,20 +1568,50 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     },
     {
+      $addFields: {
+        hasDenominations: {
+          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        transactionCount: {
+          $sum: {
+            $cond: ["$hasDenominations", 1, 0]
+          }
+        },
+        serialNumbers: { $addToSet: "$serialNumber" },
+        users: { $addToSet: "$userName" },
+        transactions: { $push: "$$ROOT" }
+      }
+    },
+    {
       $unwind: {
-        path: "$denominations",
+        path: "$transactions"
+      }
+    },
+    {
+      $unwind: {
+        path: "$transactions.denominations",
         preserveNullAndEmptyArrays: true
       }
     },
     {
       $group: {
         _id: null,
-        transactionCount: { $sum: 1 },
-        serialNumbers: { $addToSet: "$serialNumber" },
-        users: { $addToSet: "$userName" },
+        transactionCount: { $first: "$transactionCount" },
+        serialNumbers: { $first: "$serialNumbers" },
+        users: { $first: "$users" },
         totalAmount: {
-          $sum: { $multiply: ["$denominations.UnitValue", "$denominations.Count"] }
-        },
+          $sum: {
+            $multiply: [
+              "$transactions.denominations.UnitValue",
+              "$transactions.denominations.Count"
+            ]
+          }
+        }
       }
     },
     {
@@ -1583,6 +1624,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
+  
 
   const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
     {
@@ -1590,25 +1632,49 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         accountId: new mongoose.Types.ObjectId(accountId)
       }
     },
+    // Add a flag to mark documents with non-empty denominations array
+    {
+      $addFields: {
+        hasDenominations: {
+          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+        }
+      }
+    },
+    // Group by serialNumber to count qualifying transactions BEFORE unwind
+    {
+      $group: {
+        _id: "$serialNumber",
+        location: { $first: "$location" },
+        totalTransactionCount: {
+          $sum: {
+            $cond: ["$hasDenominations", 1, 0]
+          }
+        },
+        transactions: { $push: "$$ROOT" }
+      }
+    },
+    // Now unwind the denominations array to compute totalAmount
     {
       $unwind: {
-        path: "$denominations",
+        path: "$transactions"
+      }
+    },
+    {
+      $unwind: {
+        path: "$transactions.denominations",
         preserveNullAndEmptyArrays: true
       }
     },
     {
       $group: {
-        _id: "$serialNumber",
+        _id: "$_id", // serialNumber
+        location: { $first: "$location" },
+        totalTransactionCount: { $first: "$totalTransactionCount" },
         totalAmount: {
           $sum: {
-            $multiply: ["$denominations.UnitValue", "$denominations.Count"]
-          }
-        },
-        location: { $first: "$location" },
-        totalTransactionCount: {
-          $sum: {
-            $cond: [
-              { $gt: ["$denominations", null] }, 1, 0
+            $multiply: [
+              "$transactions.denominations.UnitValue",
+              "$transactions.denominations.Count"
             ]
           }
         }
@@ -1741,39 +1807,64 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const topFiveUsersDetails = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId)
-      }
-    },
-    {
-      $unwind: {
-        path: "$denominations",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId),
         userName: { $ne: "", $exists: true }
+      }
+    },
+    {
+      $addFields: {
+        hasDenominations: {
+          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+        }
       }
     },
     {
       $group: {
         _id: "$userName",
+        totalTransactionCount: {
+          $sum: {
+            $cond: ["$hasDenominations", 1, 0]
+          }
+        },
+        location: { $first: "$location" },
+        transactions: { $push: "$$ROOT" }
+      }
+    },
+    {
+      $unwind: {
+        path: "$transactions"
+      }
+    },
+    {
+      $unwind: {
+        path: "$transactions.denominations",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: "$_id", // userName
+        totalTransactionCount: { $first: "$totalTransactionCount" },
+        location: { $first: "$location" },
         totalAmount: {
           $sum: {
             $cond: [
               {
                 $and: [
-                  { $gt: ["$denominations.UnitValue", 0] },
-                  { $gt: ["$denominations.Count", 0] }
+                  { $gt: ["$transactions.denominations.UnitValue", 0] },
+                  { $gt: ["$transactions.denominations.Count", 0] }
                 ]
               },
-              { $multiply: ["$denominations.UnitValue", "$denominations.Count"] },
+              {
+                $multiply: [
+                  "$transactions.denominations.UnitValue",
+                  "$transactions.denominations.Count"
+                ]
+              },
               0
             ]
           }
-        },
-        totalTransactionCount: { $sum: 1 },
-        location: { $first: "$location" }
+        }
       }
     },
     {
@@ -1794,6 +1885,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
+  
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
