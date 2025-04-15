@@ -2099,10 +2099,10 @@ const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
       $match: {
         accountId: new mongoose.Types.ObjectId(accountId),
         serialNumber,
-        // createdAt: {
-        //   $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
-        //   $lte: new Date()
-        // }
+        createdAt: {
+          $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
+          $lte: new Date()
+        }
       }
     },
     {
