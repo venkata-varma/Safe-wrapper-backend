@@ -2586,6 +2586,6 @@ exports.getExceptionsOfAccount =asyncWrapper(async(req,res)=>{
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
-    data: exceptionsOfAccount
+    data: exceptionsOfAccount || []
   })
 })
