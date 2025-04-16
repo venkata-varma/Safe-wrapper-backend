@@ -37,6 +37,10 @@ const webhookExceptionsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    exceptionApiService:{
+      type: String,
+      default:""
+    },
     dateCreated: {
       type: Date,
       default: new Date(),

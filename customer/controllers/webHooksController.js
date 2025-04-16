@@ -1785,11 +1785,11 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     },
     {
       $sort: {
-        transactionDateTime: -1  // Sorting by transactionDateTime in descending order (latest first)
+        transactionDateTime: -1
       }
     },
     {
-      $limit: 10  // Limiting the results to 10 records
+      $limit: 10
     },
     {
       $project: {
@@ -1800,8 +1800,6 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         location: 1
       }
     },
-
-
   ])
 
   const topFiveUsersDetails = await webhookPayloadTransactions.aggregate([
@@ -2586,5 +2584,15 @@ exports.getProgressMeterAndTotalsOfSingleMachine = asyncWrapper(async (req, res)
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_PROGRESS_METER_SINGLE_MACHINE,
     data: percentageIncrease
+  })
+})
+
+exports.getExceptionsOfAccount =asyncWrapper(async(req,res)=>{
+  const {accountId} = req.params
+  const exceptionsOfAccount = await webhookExceptionsModel.find({accountId: new mongoose.Types.ObjectId(accountId)})
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
+    data: exceptionsOfAccount
   })
 })

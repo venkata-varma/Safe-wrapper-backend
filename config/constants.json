@@ -134,6 +134,7 @@
     "MESSAGE_WEBHOOK_PAYLOAD_HEADERS": "Webhook payload headers.",
     "MESSAGE_WEBOOK_GET_DASHBOARD_STATISTICS": "Webhook statistics.",
     "MESSAGE_WEBOOK_GET_MACHINE_REPORTS": "All machine details.",
+    "MESSAGE_WEBOOK_GET_EXCEPTIONS": "All exceptions.",
     "MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS": "Machine details.",
     "MESSAGE_PROGRESS_METER_SINGLE_MACHINE": "Progress meter of single machine retrieved succesfully.",
     "MESSAGE_GET_SINGLE_MACHINE_REPORTS": "Get single machine reports based on desired filters."
