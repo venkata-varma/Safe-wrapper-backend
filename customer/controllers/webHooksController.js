@@ -1430,28 +1430,29 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         accountId: new mongoose.Types.ObjectId(accountId),
         createdAt: {
           $gte: new Date(new Date().setDate(new Date().getMonth() - 1)),
-          $lte: new Date()
-        }
-      }
+          $lte: new Date(),
+        },
+      },
     },
     {
       $lookup: {
         from: "webhookpayloadtransactions",
         foreignField: "accountId",
         localField: "accountId",
-        as: "webhooktransactionsresults"
-      }
+        as: "webhooktransactionsresults",
+      },
     },
     {
       $unwind: {
         path: "$webhooktransactionsresults",
-        preserveNullAndEmptyArrays: true
-      }
+        preserveNullAndEmptyArrays: true,
+      },
     },
     {
       $match: {
-        "webhooktransactionsresults.userName": { $ne: "", $exists: true }
-      }
+        "webhooktransactionsresults.userName": { $ne: "", $exists: true },
+        "webhooktransactionsresults.denominations": { $exists: true, $ne: [], $not: { $size: 0 } },
+      },
     },
     {
       $group: {
@@ -1460,33 +1461,25 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         transactionTypes: { $addToSet: "$webhooktransactionsresults.transactionType" },
         users: { $addToSet: "$webhooktransactionsresults.userName" },
         locations: { $addToSet: "$webhooktransactionsresults.location" },
-        transactionsCount: {
-          $sum: {
-            $cond: [
-              { $ifNull: ["$webhooktransactionsresults._id", false] },
-              1,
-              0
-            ]
-          }
-        }
-      }
+        transactionIds: { $addToSet: "$webhooktransactionsresults._id" },
+      },
     },
     {
       $lookup: {
         from: "webhookmetapayloads",
         pipeline: [
           {
-            $match: { accountId: new mongoose.Types.ObjectId(accountId) }
+            $match: { accountId: new mongoose.Types.ObjectId(accountId) },
           },
           {
             $group: {
               _id: "$status",
-              count: { $sum: 1 }
-            }
-          }
+              count: { $sum: 1 },
+            },
+          },
         ],
-        as: "statusCountsData"
-      }
+        as: "statusCountsData",
+      },
     },
     {
       $addFields: {
@@ -1507,21 +1500,21 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
                             $filter: {
                               input: "$statusCountsData",
                               as: "s",
-                              cond: { $eq: ["$$s._id", "$$status"] }
-                            }
+                              cond: { $eq: ["$$s._id", "$$status"] },
+                            },
                           },
-                          0
-                        ]
-                      }
-                    }
+                          0,
+                        ],
+                      },
+                    },
                   },
-                  0
-                ]
-              }
-            }
-          }
-        }
-      }
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      },
     },
     {
       $lookup: {
@@ -1529,22 +1522,22 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         pipeline: [
           {
             $match: {
-              $expr: { $eq: ["$accountId", new mongoose.Types.ObjectId(accountId)] }
-            }
+              $expr: { $eq: ["$accountId", new mongoose.Types.ObjectId(accountId)] },
+            },
           },
           {
-            $count: "totalCount"
-          }
+            $count: "totalCount",
+          },
         ],
-        as: "metaPayloadCountData"
-      }
+        as: "metaPayloadCountData",
+      },
     },
     {
       $addFields: {
         totalMetaPayloadsCount: {
-          $ifNull: [{ $arrayElemAt: ["$metaPayloadCountData.totalCount", 0] }, 0]
-        }
-      }
+          $ifNull: [{ $arrayElemAt: ["$metaPayloadCountData.totalCount", 0] }, 0],
+        },
+      },
     },
     {
       $project: {
@@ -1554,10 +1547,10 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         usersCount: { $size: { $ifNull: ["$users", []] } },
         locationsCount: { $size: { $ifNull: ["$locations", []] } },
         payloadsCount: "$totalMetaPayloadsCount",
-        transactionsCount: 1,
-        statusCounts: 1
-      }
-    }
+        transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
+        statusCounts: 1,
+      },
+    },
   ]);
 
   const totalAccountSummary = await webhookPayloadTransactions.aggregate([
