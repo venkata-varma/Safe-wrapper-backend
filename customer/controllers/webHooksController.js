@@ -1553,6 +1553,9 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     },
   ]);
 
+  const exceptionsCount = await webhookExceptionsModel.find({accountId: accountId}).countDocuments()
+
+
   const totalAccountSummary = await webhookPayloadTransactions.aggregate([
     {
       $match: {
@@ -1613,7 +1616,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         transactionCount: 1,
         serialNumbersCount: { $size: "$serialNumbers" },
         usersCount: { $size: "$users" },
-        totalRevenue: "$totalAmount"
+        totalRevenue: "$totalAmount",
+        exceptionsCount: { $literal: exceptionsCount }
       }
     }
   ]);
