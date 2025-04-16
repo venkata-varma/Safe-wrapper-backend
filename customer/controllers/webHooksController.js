@@ -1900,7 +1900,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 
 exports.getListOfMachines = asyncWrapper(async (req, res) => {
   const { accountId, webhookMasterId } = req.query
-  const listOfMachines = await webhookPayloadHeaders.find({ accountId: accountId, webhookMasterId: webhookMasterId }).sort({_id:-1})
+  const listOfMachines = await webhookPayloadHeaders.find({ accountId: accountId}).sort({_id:-1})
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATASTICS,
