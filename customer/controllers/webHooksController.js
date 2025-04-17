@@ -1917,16 +1917,17 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
   const machineDetails = await webhookPayloadHeaders.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId)
-      }
+        accountId: new mongoose.Types.ObjectId(accountId),
+      },
     },
     {
       $group: {
         _id: {
           serialNumber: "$serialNumber",
-          location: "$location"
-        }
-      }
+          location: "$location",
+        },
+        accountId: { $first: "$accountId" },
+      },
     },
     {
       $lookup: {
@@ -1946,19 +1947,19 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
                         in: {
                           $and: [
                             { $eq: ["$$loc.SerialNumber", "$$sn"] },
-                            { $eq: ["$$loc.Location", "$$location"] }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
+                            { $eq: ["$$loc.Location", "$$location"] },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
         ],
-        as: "metapayloads"
-      }
+        as: "metapayloads",
+      },
     },
     {
       $addFields: {
@@ -1974,15 +1975,45 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
                     $filter: {
                       input: "$metapayloads",
                       as: "meta",
-                      cond: { $eq: ["$$meta.status", "$$status"] }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                      cond: { $eq: ["$$meta.status", "$$status"] },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "webhookpayloadtransactions",
+        foreignField: "serialNumber",
+        localField: "_id.serialNumber",
+        as: "webhooktransactionsresults",
+      },
+    },
+    {
+      $unwind: {
+        path: "$webhooktransactionsresults",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $match: {
+        "webhooktransactionsresults.denominations": { $exists: true, $ne: [] },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          serialNumber: "$_id.serialNumber",
+          location: "$_id.location",
+        },
+        statusCount: { $first: "$statusCount" },
+        metapayloads: { $first: "$metapayloads" },
+        transactionIds: { $addToSet: "$webhooktransactionsresults._id" },
+      },
     },
     {
       $project: {
@@ -1990,9 +2021,10 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
         serialNumber: "$_id.serialNumber",
         location: "$_id.location",
         statusCount: 1,
-        metapayloads: 1
-      }
-    }
+        metapayloads: 1,
+        transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
+      },
+    },
   ]);
 
 
