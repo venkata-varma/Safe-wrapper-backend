@@ -314,7 +314,7 @@ paths:
   /api/webhook/get-webhook-payload-headers/{accountId}:
     get:
       tags:
-        - Webhooks
+        - API calls
       summary: "Get details of serial numbers of machines registered under an account and transaction types of received transactions."
       description: |
         - This API provides a list of serial numbers of machines registered under a specific `accountId`.  
@@ -381,7 +381,7 @@ paths:
   /api/webhook/get-single-machine-report:
    get:
       tags:
-        - Webhooks
+        - API calls
       summary: "Retrieve statistical insights for an individual machine based on desired filters"
       description: |
         - This API provides detailed insights about a specific machine based on desired filters.  
