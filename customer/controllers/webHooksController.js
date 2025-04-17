@@ -2013,6 +2013,9 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
         statusCount: { $first: "$statusCount" },
         metapayloads: { $first: "$metapayloads" },
         transactionIds: { $addToSet: "$webhooktransactionsresults._id" },
+        totalAmount:{
+          $sum:"$webhooktransactionsresults.amount"
+        }
       },
     },
     {
@@ -2023,6 +2026,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
         statusCount: 1,
         metapayloads: 1,
         transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
+        totalAmount:1
       },
     },
   ]);
