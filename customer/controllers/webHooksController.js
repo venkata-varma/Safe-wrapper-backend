@@ -16,7 +16,9 @@ const webhookExceptionsModel = require("../../models/webhookExceptionsModel");
 const { getWebHooksLogsSixWeekSalesData } = require("../../utils/accountInsightUtils");
 const webhookPayloadTransactions = require("../../models/webhookPayloadTransactions");
 const webhookPayloadHeaders = require("../../models/webhookPayloadHeaders");
-const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline')
+const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
+const usersModel = require("../../models/usersModel");
+const onePosLogsModel = require("../../models/onePosLogsModel");
 
 
 /**
@@ -2479,30 +2481,95 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   })
 })
 
-exports.getSingleMachineReport = asyncWrapper(async (req, res) => {
-  const { accountId, serialNumber, transactionType, fromDate, toDate, startTime, endTime } = req.query
 
-  const matchCondition = {
-    accountId: new mongoose.Types.ObjectId(accountId),
-    serialNumber,
-    transactionType,
-    createdAt: {
-      $gte: new Date(`${fromDate}T${startTime}:00Z`),
-      $lte: new Date(`${toDate}T${endTime}:00Z`)
-    }
-  };
-  console.log('matchCondition:===', matchCondition)
+exports.validateAuthentication = asyncWrapper(async(req,res,next)=>{
+  const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query; 
+  const userActivity = await usersModel.findById(req.user._id)
+  if(userActivity.status !== "active" || userActivity.authUser !== "OnePOS"){
+    return res.josn("invalid User")
+  }
+  else{
+    const serialNumbersArray =
+    serialNumbers === "all"
+      ? []
+      : serialNumbers
+        ? serialNumbers.split(",")
+        : serialNumbers;
 
-  const reports = await webhookPayloadTransactions.aggregate([
-    { $match: matchCondition }
-  ]);
-  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_GET_SINGLE_MACHINE_REPORTS,
-    data: reports
-  })
+  const transactionTypesArray =
+    transactionTypes === "all"
+      ? []
+      : transactionTypes
+        ? transactionTypes.split(",")
+        : transactionTypes;
+        
+    await onePosLogsModel.create({
+      accountId: accountId,
+      userId: req.user._id,
+      serialNumbers:serialNumbersArray,
+      transactionTypes: transactionTypesArray,
+      authenticationDateAndTime: new Date(),
+      authenticationCount: 1,
+      apiCalled:req?.url.split('/')[1]
+    })
+    next()
+  }
 })
 
+
+exports.getTransactionsReports = asyncWrapper(async (req, res) => {
+  const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
+  console.log('fromDate, toDate:===', fromDate, toDate)
+  console.log("serialNumbers:===", serialNumbers);
+
+  const serialNumbersArray =
+    serialNumbers === "all"
+      ? []
+      : serialNumbers
+        ? serialNumbers.split(",")
+        : serialNumbers;
+
+  const transactionTypesArray =
+    transactionTypes === "all"
+      ? []
+      : transactionTypes
+        ? transactionTypes.split(",")
+        : transactionTypes;
+
+  console.log("serialNumbersArray:===", serialNumbersArray);
+  console.log("transactionTypesArray:===", transactionTypesArray);
+
+  const matchConditions = {
+    accountId: new mongoose.Types.ObjectId(accountId),
+    // createdAt: { $gte: moment(fromDate).format('YYYY-MM-DDTHH:mm:ssZ'), $lte: moment(toDate).format('YYYY-MM-DDTHH:mm:ssZ').add(1)},
+    createdAt: {
+      $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
+      $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss'))
+    }
+  };
+
+  if (serialNumbersArray.length > 0) {
+    matchConditions.serialNumber = { $in: serialNumbersArray };
+  }
+
+  if (transactionTypesArray.length > 0) {
+    matchConditions.transactionType = { $in: transactionTypesArray };
+  }
+  console.log('matchConditions:==', matchConditions)
+  const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
+    { $match: matchConditions },
+    { $sort: { createdAt: -1 } }
+  ]);
+
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+    data: {
+      webhookTransactionDetails,
+      // webhookTransactionHeadersDetails
+    }
+  })
+})
 
 
 exports.getProgressMeterAndTotalsOfSingleMachine = asyncWrapper(async (req, res) => {
