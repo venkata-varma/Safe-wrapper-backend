@@ -26,7 +26,8 @@ const {
   getListOfMachines,
   getAllMachineReports,
   getPayloadReports,
-  getSingleMachineReport,
+  validateAuthentication,
+  getTransactionsReports,
   getProgressMeterAndTotalsOfSingleMachine,
   getExceptionsOfAccount
 } = require("../controllers/webHooksController");
@@ -66,7 +67,7 @@ router.get('/get-payload-reports',getPayloadReports)
 router.get('/get-exceptions/:accountId',getExceptionsOfAccount)
 
 //One POS
-router.get('/get-single-machine-report',getSingleMachineReport)
+router.get('/get-transactions-reports',validateAuthentication, getTransactionsReports)
 // router.patch('/update-webhook',validateIntegrationForWebHook, updateWebHook)
 // router.patch('/update-webhook-status',validateIntegrationForWebHook, updateWebHookStatus)
 
