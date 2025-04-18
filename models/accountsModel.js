@@ -6,8 +6,6 @@ const accountsSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         default:null
     },
-
-    
     accountName:{
         type:String,
         required:[true, 'Account name is required.'],
@@ -16,7 +14,7 @@ const accountsSchema = new mongoose.Schema({
     accountType: {
         type: String,
         required: [true, "Account type is required"],
-        enum: ['customer', 'super-admin'],
+        enum: ['customer', 'super-admin','merchant'],
         default:"customer"
     },
     companyName:{
@@ -30,7 +28,7 @@ const accountsSchema = new mongoose.Schema({
     },
     role:{
         type:String,
-        default:"super-admin"
+        default:"merchant"
     },
     phone:{
         type:String,
@@ -81,6 +79,10 @@ const accountsSchema = new mongoose.Schema({
         enum:['active','in-progress','deleted', 'blocked'],
         default:"active"
     },
+    machines:{
+        type:String,
+        default:""
+    }
 },{timestamps:true});
 
 accountsSchema.pre('save', function(next) {

@@ -12,48 +12,6 @@ const accountSettingsSchema = mongoose.Schema({
         index: true,
         default: null
     },
-    noOfWebhooks: {
-        type: Number,
-        default: 2
-    },
-    menus: {
-        type: Object,
-        default: {
-            "dashboard": true,
-            "integrations": true,
-            "fieldsmapping": true,
-            "insights": true,
-            "exceptions": true,
-            "settings": true,
-            "createintegrations": true,
-            "wolifecycle":true,
-            "conditions":true
-        }
-    },
-    // serviceProviders: {
-    //     type: Array,
-    //     default: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
-    // },
-    sourceServiceProviders:{
-        type: Array,
-        default:["CPD","nuvolo","NS","SNOW","CYS"]
-    },
-    destinationServiceProviders:{
-        type: Array,
-        default:["SNOW", "DF","CYS","nuvolo","NS"]
-    },
-    dataPoints: {
-        type: Array,
-        default:[{
-            "integrationDetails": {
-                "source": true,
-                "destination": true,
-                "activityLog": true,
-                "fieldMappings": true,
-                "exceptions": true
-            }
-        }]
-    },
     timeZone:{
         type:String,
         default:"IST"

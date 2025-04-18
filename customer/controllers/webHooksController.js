@@ -1256,14 +1256,21 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   console.log("serialNumbersArray:===", serialNumbersArray);
   console.log("transactionTypesArray:===", transactionTypesArray);
 
-  const matchConditions = {
-    accountId: new mongoose.Types.ObjectId(accountId),
-    // createdAt: { $gte: moment(fromDate).format('YYYY-MM-DDTHH:mm:ssZ'), $lte: moment(toDate).format('YYYY-MM-DDTHH:mm:ssZ').add(1)},
-    createdAt: {
-      $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
-      $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss'))
+  const matchConditions = req.user.accountId.accountType === "merchant"
+  ? {
+      createdAt: {
+        $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
+        $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')),
+      },
     }
-  };
+  : {
+      accountId: new mongoose.Types.ObjectId(accountId),
+      createdAt: {
+        $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
+        $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')),
+      },
+    };
+
 
   if (serialNumbersArray.length > 0) {
     matchConditions.serialNumber = { $in: serialNumbersArray };
@@ -1291,10 +1298,22 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 
 exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
+  let matchCondition = {}
+  if(req.user.accountId.accountType === "merchant"){
+    matchCondition = {
+      serialNumber : req.user.accountId.machines
+    }
+  }
+  else{
+    matchCondition = {
+      accountId : new mongoose.Types.ObjectId(accountId)
+    }
+  }
   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition
       },
     },
     {
@@ -1327,6 +1346,19 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
 
 exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
+  let matchCondition = {}
+  if(req.user.accountId.accountType === "merchant"){
+    matchCondition = {
+      serialNumber : req.user.accountId.machines
+    }
+  }
+  else{
+    matchCondition = {
+      accountId : new mongoose.Types.ObjectId(accountId)
+    }
+  }
+  console.log('matchCondition:===',matchCondition)
+  // console.log('matchCondition:===',...matchCondition)
   let getLastSiWeeksResult = getSixWeeksSalesFunction()
 
   const fromDate = getLastSiWeeksResult[0].fromDate;
@@ -1335,7 +1367,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const aggregationPipeline = [
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
         transactionDateTime: {
           $gte: fromDate,
           $lte: toDate
@@ -1425,17 +1458,25 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   });
 
   const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
-
+  let metaPayloadMatchCondition = {}
+  if (Object.keys(matchCondition).includes("serialNumber")) {
+    metaPayloadMatchCondition["primaryHookId"] = matchCondition.serialNumber
+  } else {
+    metaPayloadMatchCondition = matchCondition
+  }
+  console.log('metaPayloadMatchCondition:====',metaPayloadMatchCondition)
+  
   let payloadSummary = await webhookMetaPayloadModel.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
+        // accountId: new mongoose.Types.ObjectId(accountId),
+       ...metaPayloadMatchCondition,
         createdAt: {
           $gte: new Date(new Date().setDate(new Date().getMonth() - 1)),
           $lte: new Date(),
         },
       },
-    },
+    },  
     {
       $lookup: {
         from: "webhookpayloadtransactions",
@@ -1453,13 +1494,15 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     {
       $match: {
         "webhooktransactionsresults.userName": { $ne: "", $exists: true },
-        "webhooktransactionsresults.denominations": { $exists: true, $ne: [], $not: { $size: 0 } },
+        // "webhooktransactionsresults.denominations": { $exists: true, $ne: [], $not: { $size: 0 } },
+        "webhooktransactionsresults.amount": { $exists: true, $gt:0 },
+
       },
     },
     {
       $group: {
         _id: null,
-        serialNumbers: { $addToSet: "$webhooktransactionsresults.serialNumber" },
+        serialNumbers: { $addToSet: "$primaryHookId" },
         transactionTypes: { $addToSet: "$webhooktransactionsresults.transactionType" },
         users: { $addToSet: "$webhooktransactionsresults.userName" },
         locations: { $addToSet: "$webhooktransactionsresults.location" },
@@ -1471,7 +1514,9 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         from: "webhookmetapayloads",
         pipeline: [
           {
-            $match: { accountId: new mongoose.Types.ObjectId(accountId) },
+            // $match: { accountId: new mongoose.Types.ObjectId(accountId) },
+            $match: metaPayloadMatchCondition,
+
           },
           {
             $group: {
@@ -1524,7 +1569,9 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         pipeline: [
           {
             $match: {
-              $expr: { $eq: ["$accountId", new mongoose.Types.ObjectId(accountId)] },
+              // $expr: { $eq: ["$accountId", new mongoose.Types.ObjectId(accountId)] },
+              $expr: { $or: [{$eq:["$accountId", new mongoose.Types.ObjectId(accountId)]}
+                ,{$eq:["$primaryHookId",matchCondition.serialNumber]}] },
             },
           },
           {
@@ -1555,13 +1602,17 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     },
   ]);
 
-  const exceptionsCount = await webhookExceptionsModel.find({ accountId: accountId }).countDocuments()
+  const exceptionsCount = await webhookExceptionsModel.find(
+    // { accountId: accountId }
+    matchCondition
+  ).countDocuments()
 
 
   const totalAccountSummary = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
         userName: { $ne: "", $exists: true }
       }
     },
@@ -1628,7 +1679,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId)
+        // accountId: new mongoose.Types.ObjectId(accountId)
+        ...matchCondition
       }
     },
     // Add a flag to mark documents with non-empty denominations array
@@ -1701,7 +1753,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const denominations = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
         createdAt: {
           $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
           $lte: new Date()
@@ -1778,7 +1831,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const latestTransactions = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
         amount: { $ne: 0 }
       }
     },
@@ -1804,7 +1858,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const topFiveUsersDetails = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
         userName: { $ne: "", $exists: true }
       }
     },
@@ -1902,7 +1957,21 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 
 exports.getListOfMachines = asyncWrapper(async (req, res) => {
   const { accountId, webhookMasterId } = req.query
-  const listOfMachines = await webhookPayloadHeaders.find({ accountId: accountId }).sort({ _id: -1 })
+  let matchCondition = {}
+  if(req.user.accountId.accountType === "merchant"){
+    matchCondition = {
+      serialNumber : req.user.accountId.machines
+    }
+  }
+  else{
+    matchCondition = {
+      accountId : new mongoose.Types.ObjectId(accountId)
+    }
+  }
+
+  // const listOfMachines = await webhookPayloadHeaders.find({ accountId: accountId }).sort({ _id: -1 })
+  const listOfMachines = await webhookPayloadHeaders.find(matchCondition).sort({ _id: -1 })
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATASTICS,
@@ -1913,13 +1982,24 @@ exports.getListOfMachines = asyncWrapper(async (req, res) => {
 
 exports.getAllMachineReports = asyncWrapper(async (req, res) => {
   const { accountId } = req.query
-
+  let matchCondition = {}
+  if(req.user.accountId.accountType === "merchant"){
+    matchCondition = {
+      serialNumber : req.user.accountId.machines
+    }
+  }
+  else{
+    matchCondition = {
+      accountId : new mongoose.Types.ObjectId(accountId)
+    }
+  }
   const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
 
   const machineDetails = await webhookPayloadHeaders.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition
       },
     },
     {
@@ -2045,7 +2125,19 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
 
 exports.getPayloadReports = asyncWrapper(async (req, res) => {
   const { serialNumber, accountId, webhookMasterId } = req.query
-
+  let matchCondition = {}
+  if(req.user.accountId.accountType === "merchant"){
+    matchCondition = {
+      serialNumber : req.user.accountId.machines
+    }
+  }
+  else{
+    matchCondition = {
+      accountId : new mongoose.Types.ObjectId(accountId),
+      serialNumber : serialNumber
+    }
+  }
+  console.log('matchCondition:===',matchCondition)
   let getLastSiWeeksResult = getSixWeeksSalesFunction()
 
   const fromDate = getLastSiWeeksResult[0].fromDate;
@@ -2054,8 +2146,9 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   const lastSixWeeksDataForGraph = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
-        serialNumber,
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
+        // serialNumber,
         transactionDateTime: {
           $gte: fromDate,
           $lte: toDate
@@ -2161,8 +2254,9 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   const totalSummaryOfMachine = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
-        serialNumber,
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
+        // serialNumber,
         createdAt: {
           $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
           $lte: new Date()
@@ -2226,7 +2320,11 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     }
   ]);
 
-  const machineTransactions = await webhookPayloadTransactions.find({ serialNumber: serialNumber, accountId: new mongoose.Types.ObjectId(accountId) })
+  const machineTransactions = await webhookPayloadTransactions.find({ 
+    // serialNumber: serialNumber, 
+    // accountId: new mongoose.Types.ObjectId(accountId)
+    ...matchCondition
+   })
 
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -2240,8 +2338,9 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   const aggResult = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId),
-        serialNumber: serialNumber,
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
+        // serialNumber: serialNumber,
         createdAt: {
           $gte: startDate,
           $lt: endDate
@@ -2361,8 +2460,9 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     {
       $match: {
         transactionDateTime: { $gte: sixMonthsAgo },
-        accountId: new mongoose.Types.ObjectId(accountId),
-        serialNumber: serialNumber
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
+        // serialNumber: serialNumber
       }
     },
     {
@@ -2397,8 +2497,9 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     {
       $match: {
         transactionDateTime: { $gte: twelveMonthsAgo, $lt: sixMonthsAgo },
-        accountId: new mongoose.Types.ObjectId(accountId),
-        serialNumber: serialNumber
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition,
+        // serialNumber: serialNumber
       }
     },
     {
