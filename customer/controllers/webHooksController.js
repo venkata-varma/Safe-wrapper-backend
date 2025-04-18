@@ -1555,7 +1555,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     },
   ]);
 
-  const exceptionsCount = await webhookExceptionsModel.find({accountId: accountId}).countDocuments()
+  const exceptionsCount = await webhookExceptionsModel.find({ accountId: accountId }).countDocuments()
 
 
   const totalAccountSummary = await webhookPayloadTransactions.aggregate([
@@ -1623,7 +1623,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
-  
+
 
   const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
     {
@@ -1882,7 +1882,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
-  
+
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -1902,7 +1902,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 
 exports.getListOfMachines = asyncWrapper(async (req, res) => {
   const { accountId, webhookMasterId } = req.query
-  const listOfMachines = await webhookPayloadHeaders.find({ accountId: accountId}).sort({_id:-1})
+  const listOfMachines = await webhookPayloadHeaders.find({ accountId: accountId }).sort({ _id: -1 })
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_DASHBOARD_STATASTICS,
@@ -2003,7 +2003,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
     },
     {
       $match: {
-        "webhooktransactionsresults.denominations": { $exists: true, $ne: [] },
+        "webhooktransactionsresults.amount": { $exists: true, $ne: 0 },
       },
     },
     {
@@ -2015,8 +2015,8 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
         statusCount: { $first: "$statusCount" },
         metapayloads: { $first: "$metapayloads" },
         transactionIds: { $addToSet: "$webhooktransactionsresults._id" },
-        totalAmount:{
-          $sum:"$webhooktransactionsresults.amount"
+        totalAmount: {
+          $sum: "$webhooktransactionsresults.amount"
         }
       },
     },
@@ -2028,7 +2028,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
         statusCount: 1,
         metapayloads: 1,
         transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
-        totalAmount:1
+        totalAmount: 1
       },
     },
   ]);
@@ -2051,9 +2051,6 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   const fromDate = getLastSiWeeksResult[0].fromDate;
   const toDate = getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate;
 
-
-
-  // const singleMachineReport = await webhookPayloadTransactions.find({accountId:accountId,webhookMasterId:webhookMasterId,serialNumber:serialNumber})
   const lastSixWeeksDataForGraph = await webhookPayloadTransactions.aggregate([
     {
       $match: {
@@ -2102,8 +2099,8 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     // Second: Assign the hasDenominations flag
     {
       $addFields: {
-        hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+        hasAmount: {
+          $gt: ["$amount", 0] 
         }
       }
     },
@@ -2115,9 +2112,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         },
         totalAmount: { $sum: "$amount" },
         transactionsCount: {
-          $sum: {
-            $cond: ["$hasDenominations", 1, 0]
-          }
+          $sum: 1 
         },
         users: {
           $addToSet: {
@@ -2145,6 +2140,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
       }
     }
   ]);
+
 
   const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
     const matchingWeek = lastSixWeeksDataForGraph.find(r =>
@@ -2175,15 +2171,9 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     },
     {
       $addFields: {
-        hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+        hasAmount: {
+          $gt: ["$amount", 0] 
         }
-      }
-    },
-    {
-      $unwind: {
-        path: "$denominations",
-        preserveNullAndEmptyArrays: true
       }
     },
     {
@@ -2191,18 +2181,13 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         _id: {
           serialNumber: "$serialNumber",
           transactionType: "$transactionType",
-          users: "$userName",
-          transactionId: "$_id" // Needed to avoid double-counting in next group
+          userName: "$userName",
+          transactionId: "$_id" 
         },
         totalAmount: {
-          $sum: {
-            $multiply: [
-              "$denominations.UnitValue",
-              "$denominations.Count"
-            ]
-          }
+          $sum: "$amount" 
         },
-        hasDenominations: { $first: "$hasDenominations" }
+        hasAmount: { $first: "$hasAmount" }
       }
     },
     {
@@ -2215,19 +2200,17 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
             $cond: [
               {
                 $not: {
-                  $in: ["$_id.users", ["", null]]
+                  $in: ["$_id.userName", ["", null]] 
                 }
               },
-              "$_id.users",
+              "$_id.userName", 
               "$$REMOVE"
             ]
           }
         },
         totalAmount: { $sum: "$totalAmount" },
         transactionsCount: {
-          $sum: {
-            $cond: ["$hasDenominations", 1, 0]
-          }
+          $sum: { $cond: ["$hasAmount", 1, 0] } 
         }
       }
     },
@@ -2267,22 +2250,13 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     },
     {
       $addFields: {
-        hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+        hasAmount: {
+          $gt: ["$amount", 0] // Flag for amount > 0
         }
       }
     },
     {
-      $unwind: {
-        path: "$denominations",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
       $addFields: {
-        denominationTotal: {
-          $multiply: ["$denominations.UnitValue", "$denominations.Count"]
-        },
         dateOnly: {
           $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "UTC" }
         }
@@ -2295,8 +2269,8 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
           dateOnly: "$dateOnly"
         },
         userName: { $first: "$userName" },
-        denominationTotal: { $sum: "$denominationTotal" },
-        hasDenominations: { $first: "$hasDenominations" }
+        denominationTotal: { $sum: "$amount" },
+        hasAmount: { $first: "$hasAmount" }
       }
     },
     {
@@ -2311,12 +2285,14 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
             ]
           }
         },
-        totalTransactions: { $sum: 1 },
-        totalAmount: { $sum: "$denominationTotal" },
+        totalTransactions: {
+          $sum: { $cond: ["$hasAmount", 1, 0] } 
+        },
+        totalAmount: {
+          $sum: { $cond: ["$hasAmount", "$denominationTotal", 0] } 
+        },
         transactionsCount: {
-          $sum: {
-            $cond: ["$hasDenominations", 1, 0]
-          }
+          $sum: { $cond: ["$hasAmount", 1, 0] }
         }
       }
     },
@@ -2466,8 +2442,6 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     };
   });
 
-
-
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS,
@@ -2482,35 +2456,35 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
 })
 
 
-exports.validateAuthentication = asyncWrapper(async(req,res,next)=>{
-  const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query; 
+exports.validateAuthentication = asyncWrapper(async (req, res, next) => {
+  const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
   const userActivity = await usersModel.findById(req.user._id)
-  if(userActivity.status !== "active" || userActivity.authUser !== "OnePOS"){
+  if (userActivity.status !== "active" || userActivity.authUser !== "OnePOS") {
     return res.josn("invalid User")
   }
-  else{
+  else {
     const serialNumbersArray =
-    serialNumbers === "all"
-      ? []
-      : serialNumbers
-        ? serialNumbers.split(",")
-        : serialNumbers;
+      serialNumbers === "all"
+        ? []
+        : serialNumbers
+          ? serialNumbers.split(",")
+          : serialNumbers;
 
-  const transactionTypesArray =
-    transactionTypes === "all"
-      ? []
-      : transactionTypes
-        ? transactionTypes.split(",")
-        : transactionTypes;
-        
+    const transactionTypesArray =
+      transactionTypes === "all"
+        ? []
+        : transactionTypes
+          ? transactionTypes.split(",")
+          : transactionTypes;
+
     await onePosLogsModel.create({
       accountId: accountId,
       userId: req.user._id,
-      serialNumbers:serialNumbersArray,
+      serialNumbers: serialNumbersArray,
       transactionTypes: transactionTypesArray,
       authenticationDateAndTime: new Date(),
       authenticationCount: 1,
-      apiCalled:req?.url.split('/')[1]
+      apiCalled: req?.url.split('/')[1]
     })
     next()
   }
@@ -2687,9 +2661,9 @@ exports.getProgressMeterAndTotalsOfSingleMachine = asyncWrapper(async (req, res)
   })
 })
 
-exports.getExceptionsOfAccount =asyncWrapper(async(req,res)=>{
-  const {accountId} = req.params
-  const exceptionsOfAccount = await webhookExceptionsModel.find({accountId: new mongoose.Types.ObjectId(accountId)})
+exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
+  const { accountId } = req.params
+  const exceptionsOfAccount = await webhookExceptionsModel.find({ accountId: new mongoose.Types.ObjectId(accountId) })
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
