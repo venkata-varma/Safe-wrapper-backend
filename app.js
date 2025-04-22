@@ -25,12 +25,22 @@ const errorcontroller = require('./customer/controllers/errorcontroller');
 const webHooksRoute = require('./customer/routes/webHooksRoute')
 const webhookCrons = require('./customer/controllers/webhookCronControllers')
 
+//Super Admin Routes.
+
+const SuperAdminAccountRoutes = require('./superAdmin/routes/superAdminAccounts')
+const superAdminUserRoutes = require('./superAdmin/routes/userRoute')
+
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
 
 app.use('/api/accounts', accountsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/webhook',webHooksRoute)
+
+//Super Admin
+app.use('/api/super-admin/accounts',SuperAdminAccountRoutes)
+app.use('/api/super-admin/users',superAdminUserRoutes)
+
 
 // Start of swagger configuration
 

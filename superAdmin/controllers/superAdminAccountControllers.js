@@ -1,0 +1,225 @@
+// const axios = require('axios');
+const accountsModel = require('../../models/accountsModel');
+const accountSettingsModel = require('../../models/accountSettingsModel')
+const authentication = require('../../utils/authentication');
+const asyncWrapper = require('../../middleware/asyncWrapper');
+const customConstants = require('../../config/constants.json');
+const { hashPwd } = require('../../utils/helpers');
+const usersModel = require('../../models/usersModel');
+const mongoose = require("mongoose")
+
+const { validatePhoneNumber } = require('../../utils/userLoginValidation');
+
+const path = require('path');
+const { preSignedUrlToUpload } = require('../../utils/fileUpload');
+
+
+exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
+    const getImageUrl = await preSignedUrlToUpload(req.file)
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_IMAGE_UPLOAD,
+        data: getImageUrl
+    })
+})
+
+/*
+Miidleware function to controller, "createAccount"
+Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, State, Pincode, Country
+If returns True, moves to "next" function,-> "createAccount"
+*/
+exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
+    const { accountName, companyName, email, phone, password, city, state, pincode, country } = req.body;
+
+
+    if (!accountName || !companyName || !email || !phone || !password || !city || !state || !country || !pincode) {
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
+        });
+    }
+    // if(!req.file){
+    //     return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+    //         status: customConstants.messages.MESSAGE_FAIL,
+    //         message: customConstants.messages.MESSAGE_LOGO_MANDATORY
+    //     });
+    // }
+    if (!await validatePhoneNumber(phone)) {
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
+        });
+    }
+    else {
+        next()
+    }
+})
+
+
+/*
+If middleware returns true, this function is to create a New Account along with one New User
+Returns newly created Account with one associated user.
+*/
+exports.createAccount = asyncWrapper(async (req, res) => {
+
+
+    const baseUrl = process.env.DOMAIN_NAME;
+    const { accountName, companyName, email, phone, password, status } = req.body
+    const accountDetails = await usersModel.findOne({ $or: [{ email }, { phone }] })
+    if (accountDetails) {
+        return res.status(409).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_EXIST
+        })
+    }
+    else {
+
+        req.body.password = await hashPwd(password)
+        const accountData = await accountsModel.create({
+            ...req.body,
+            role:"merchant",
+           logo: req.file ? await preSignedUrlToUpload(req.file) : "",
+           machines:req.body.machines.split(',').length > 0 ? req.body.machines.split(',') : req.body.machines
+        })
+        const customId = new mongoose.Types.ObjectId();
+
+        const user = await usersModel.create({
+            _id: customId,
+            userId: customId,
+            createdBy: customId,
+            accountId: accountData._id,
+            name: accountName,
+            password: req.body.password,
+            companyName: companyName,
+            phone: phone,
+            email: email,
+            accountType:"merchant",
+            role:"admin",
+        });
+        await accountSettingsModel.create({
+            accountId: accountData._id,
+            timeZone: req.body.timeZone || "IST"
+        })
+        //To delete Password from Response while displaying it.
+        delete accountData._doc.password;
+        delete user._doc.password;
+
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_ACCOUNT_CREATED,
+
+        })
+    }
+});
+
+/*
+* Verify the status of account and phone number..
+* If status is active pass the middleware.
+*/
+exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
+    const { accountId } = req.params
+    const verifyAccountStatus = await accountsModel.findById(accountId)
+    const reqAccountType = req.user.accountId.accountType
+    if (!verifyAccountStatus) {
+        return res.status(409).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS
+        })
+    }
+    // if (!req.body.phone) {
+    //     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+    //         status: customConstants.messages.MESSAGE_FAIL,
+    //         message: customConstants.messages.MESSAGE_ENTER_MOBILENUMBER,
+    //     });
+    // }
+    if (verifyAccountStatus.status !== 'active' && reqAccountType === 'merchant') {
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+        });
+    }
+    else {
+        next()
+    }
+});
+/**
+ * Update account details.
+ */
+
+exports.updateAccount = asyncWrapper(async (req, res) => {
+    const baseUrl = process.env.DOMAIN_NAME;
+    const { accountId } = req.params
+    const { accountName, companyName, phone, } = req.body
+
+    // req.body.logo = req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : (await accountsModel.findById(accountId,{logo:1})).logo
+    req.body.logo = req.file ? await preSignedUrlToUpload(req.file) : (await accountsModel.findById(accountId, { logo: 1 })).logo
+
+    const accountDetails = await accountsModel.findByIdAndUpdate(accountId, {
+        ...req.body,
+    }, { new: true }); 
+    const updateUserDetails = await usersModel.findOneAndUpdate({ accountId: new mongoose.Types.ObjectId(accountId), phone: phone }, {
+        $set: { name: accountName }
+    }, { new: true })
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_ACCOUNT_UPDATED,
+        data: accountDetails
+    })
+
+})
+
+/**
+ * API end-point not used . On permission, this API end-point to be removed or to be optimised
+  *Function to delete account -Actually to Deactivate account by Admin
+*/
+exports.updateAccountStatus = asyncWrapper(async (req, res) => {
+    const {status, accountId} = req.query
+    const accountDetails = await accountsModel.findById(accountId).lean();
+   if(status === 'delete' || status === 'deleted'){
+        const updatedAccount = await accountsModel.findByIdAndUpdate(accountId, { $set: { status: 'deleted' } }, { new: true })
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_ACCOUNT_DELETED,
+            data: updatedAccount,
+        });
+    }
+    else if(status === 'active'){
+        const updatedAccount = await accountsModel.findByIdAndUpdate(accountId, { $set: { status: 'active' } }, { new: true })
+        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ACTIVATED,
+            data: updatedAccount,
+        });
+    }
+    
+});
+
+/*
+* Verify the status of account.
+* If status is active pass the middleware.
+*/
+exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
+    const { accountId } = req.params
+    console.log('accountId:===',accountId)
+    const verifyAccountStatus = await accountsModel.findById({_id: new mongoose.Types.ObjectId(accountId)})
+    const reqAccountType = req.user.accountId.accountType
+    // console.log('verifyAccountStatus:===',verifyAccountStatus)
+    if (!verifyAccountStatus || verifyAccountStatus.status !== 'active' && reqAccountType === 'merchant') {
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+        });
+    }
+    else {
+        next()
+    }
+});
+
+exports.getAllMerchantAccounts = asyncWrapper(async(req,res)=>{
+    const accounts = await accountsModel.find({accountType:"merchant"},{password:0})
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_GET_MERCHANT_ACCOUNTS,
+        data: accounts
+    })
+})

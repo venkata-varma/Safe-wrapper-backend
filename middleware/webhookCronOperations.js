@@ -2,7 +2,7 @@ const webHookMetaPayloads = require("../models/webHookMetaPayloads");
 const webhookPayloadHeaders = require("../models/webhookPayloadHeaders");
 const webhookPayloadTransactions = require("../models/webhookPayloadTransactions");
 const webHooksMasterModel = require("../models/webHooksMasterModel");
-
+const accountsModel = require('../models/accountsModel')
 
 
 exports.schedulerwebhookCronJobs = async (webhook) => {
@@ -73,8 +73,7 @@ const webhookMetaPayloadTransactions = async (dataPoint, webhookMasterId, webhoo
                 amount: transaction?.Amount,
                 denominations: transaction?.Denominations,
                 location: dataPoint?.Metadata?.LocationInformation[0]?.Location,
-            });
-    
+            });    
             await webhookPayloadHeaders.create({
                 webhookMasterId: webhookMasterId,
                 webhookMetaPayloadId: webhookMetaPayloadId,
@@ -87,6 +86,11 @@ const webhookMetaPayloadTransactions = async (dataPoint, webhookMasterId, webhoo
                 transactionType: transaction?.TransactionType,
                 location: dataPoint?.Metadata?.LocationInformation[0]?.Location,
             })
+            let serialNumberHoldedAccount = await accountsModel.findOne({machines:{$in:[transaction?.SerialNumber]}})
+            if(serialNumberHoldedAccount){
+                await webhookPayloadHeaders.updateMany({serialNumber:transaction?.SerialNumber},{$set:{accountId:serialNumberHoldedAccount?._id}})
+                await webhookPayloadTransactions.updateMany({serialNumber:transaction?.SerialNumber},{$set:{accountId:serialNumberHoldedAccount?._id}})
+            }
             await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "executed" } })
         }
         await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, { $set: { lastPullDate: new Date() } }, { new: true })

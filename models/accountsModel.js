@@ -80,8 +80,8 @@ const accountsSchema = new mongoose.Schema({
         default:"active"
     },
     machines:{
-        type:String,
-        default:""
+        type:[String],
+        default:[]
     }
 },{timestamps:true});
 

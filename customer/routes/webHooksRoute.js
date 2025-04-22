@@ -3,15 +3,9 @@ const router = require("express").Router();
 const {
   createWebHook,
   validateAccountStatusToCreateWebHook,
-  //validateIntegrationForWebHook,
-  //updateWebHook,
-  //getAllWebHooks,
-  //getIndividualWebHook,
-  //updateWebHookStatus,
   generateWebhookToken,
   validateWebHookData,
   createWebHookLog,
-  //getWebHookLogsReports,
   validateWebHookReceiveData,
   receiveWebhookData,
   decryptString,
@@ -68,16 +62,6 @@ router.get('/get-exceptions/:accountId',getExceptionsOfAccount)
 
 //One POS
 router.get('/get-transactions-reports',validateAuthentication, getTransactionsReports)
-// router.patch('/update-webhook',validateIntegrationForWebHook, updateWebHook)
-// router.patch('/update-webhook-status',validateIntegrationForWebHook, updateWebHookStatus)
-
- //router.get('/get-all-webhooks',validateIntegrationForWebHook, getAllWebHooks)
-// router.get('/get-single-webhook',validateIntegrationForWebHook,getIndividualWebHook)
-
-// router.get('/get-webhook-logs-reports',validateIntegrationForWebHook, getWebHookLogsReports)
-
-
-
 
 router.get('/get-progres-meter-total-single-machine', getProgressMeterAndTotalsOfSingleMachine)
 module.exports = router;

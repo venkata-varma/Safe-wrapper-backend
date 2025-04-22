@@ -31,6 +31,8 @@
     "MESSAGE_USER_DELETED": "User deleted successfully.",
     "MESSAGE_USER_ACTIVATED": "User activated successfully.",
     "MESSAGE_ACCOUNT_DELETED": "Account deleted successfully.",
+    "MESSAGE_ACCOUNT_ACTIVATED": "Account activated successfully.",
+    "MESSAGE_GET_MERCHANT_ACCOUNTS": "All accounts.",
     "MESSAGE_ACCOUNT_INTEGRATION_INFORMATION": "Account-Integrations information provided successfully.",
     "MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED": "Account-Integrations reports by filters provided successfully.",
     "MESSAGE_DASHBOARD_STATISTICS_RECEIVED": "Received Account's dashbaord statistics successfully.",
