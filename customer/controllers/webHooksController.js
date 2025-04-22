@@ -1573,8 +1573,10 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
           {
             $match: {
               // $expr: { $eq: ["$accountId", new mongoose.Types.ObjectId(accountId)] },
-              $expr: { $or: [{$eq:["$accountId", new mongoose.Types.ObjectId(accountId)]}
-                ,{$eq:["$primaryHookId",matchCondition.serialNumber.$in]}] },
+              $expr: { $in: ["$primaryHookId", matchCondition.serialNumber.$in] }
+
+              // $expr: { $or: [{$eq:["$accountId", new mongoose.Types.ObjectId(accountId)]}
+              //   ,{$eq:["$primaryHookId",matchCondition.serialNumber.$in]}] },
             },
           },
           {
