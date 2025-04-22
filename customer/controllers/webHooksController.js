@@ -761,6 +761,7 @@ exports.receiveWebhookData = asyncWrapper(async (req, res) => {
     accountId: webHookDetails.accountId._id,
     webhookMasterId: webHookDetails._id,
     dataPoint: req.body,
+    transactionsCount:req.body?.Transactions.length,
     primaryHookId: req.body?.Metadata?.LocationInformation?.[0]?.[webHookDetails?.primaryHookId]
   });
   return res
