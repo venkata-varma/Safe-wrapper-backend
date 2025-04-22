@@ -216,7 +216,7 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
 });
 
 exports.getAllMerchantAccounts = asyncWrapper(async(req,res)=>{
-    const accounts = await accountsModel.find({accountType:"merchant"},{password:0})
+    const accounts = await accountsModel.find({accountType:"merchant"},{password:0}).sort({_id:-1})
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_MERCHANT_ACCOUNTS,
