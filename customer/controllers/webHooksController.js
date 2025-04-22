@@ -1468,6 +1468,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     metaPayloadMatchCondition = matchCondition
   }
   console.log('metaPayloadMatchCondition:====',metaPayloadMatchCondition)
+
+  /*
   
   let payloadSummary = await webhookMetaPayloadModel.aggregate([
     {
@@ -1606,6 +1608,158 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       },
     },
   ]);
+
+  */
+
+  let payloadSummary = []
+  let metaPayloadQuery = await webhookMetaPayloadModel.aggregate([
+    {
+      $facet: {
+        statusCounts: [
+          {
+            $match: {
+              ...metaPayloadMatchCondition,
+            },
+          },
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $project: {
+              status: "$_id",
+              count: 1,
+              _id: 0,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              statusCountsData: { $push: "$$ROOT" },
+            },
+          },
+          {
+            $project: {
+              statusCounts: {
+                $map: {
+                  input: ["received", "in-progress", "executed", "execution-failed"],
+                  as: "status",
+                  in: {
+                    status: "$$status",
+                    count: {
+                      $ifNull: [
+                        {
+                          $getField: {
+                            field: "count",
+                            input: {
+                              $arrayElemAt: [
+                                {
+                                  $filter: {
+                                    input: "$statusCountsData",
+                                    as: "s",
+                                    cond: { $eq: ["$$s.status", "$$status"] },
+                                  },
+                                },
+                                0,
+                              ],
+                            },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+              _id: 0,
+            },
+          },
+        ],
+        payloadsCount: [
+          {
+            $match: {
+              $expr: { $in: ["$primaryHookId", matchCondition.serialNumber.$in || []] },
+            },
+          },
+          {
+            $count: "payloadsCount",
+          },
+          {
+            $project: {
+              payloadsCount: "$payloadsCount",
+              _id: 0,
+            },
+          },
+        ],
+        serialNumbers: [
+          {
+            $match: {
+              ...metaPayloadMatchCondition,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              serialNumbers: { $addToSet: "$primaryHookId" },
+            },
+          },
+          {
+            $project: {
+              serialNumbersCount: { $size: { $ifNull: ["$serialNumbers", []] } },
+              _id: 0,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $project: {
+        statusCounts: { $arrayElemAt: ["$statusCounts.statusCounts", 0] },
+        payloadsCount: { $arrayElemAt: ["$payloadsCount.payloadsCount", 0] },
+        serialNumbersCount: { $arrayElemAt: ["$serialNumbers.serialNumbersCount", 0] },
+        _id: 0,
+      },
+    },
+  ]);
+  let transactionsQuery = await webhookPayloadTransactions.aggregate([
+    {
+      $match: {
+        ...matchCondition,
+        userName: { $exists: true, $ne: null, $ne: "" },
+        location: { $exists: true, $ne: null, $ne: "" },
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        userName: { $first: "$userName" },
+        location: { $first: "$location" },
+        transactionType: { $first: "$transactionType" },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        transactionTypes: { $addToSet: "$transactionType" },
+        users: { $addToSet: "$userName" },
+        locations: { $addToSet: "$location" },
+        transactionIds: { $addToSet: "$_id" },
+      },
+    },
+    {
+      $project: {
+        transactionTypesCount: { $size: { $ifNull: ["$transactionTypes", []] } },
+        usersCount: { $size: { $ifNull: ["$users", []] } },
+        locationsCount: { $size: { $ifNull: ["$locations", []] } },
+        transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
+        _id: 0,
+      },
+    },
+  ]);
+  payloadSummary=[{...metaPayloadQuery[0],...transactionsQuery[0]}]
+  
 
   const exceptionsCount = await webhookExceptionsModel.find(
     // { accountId: accountId }
