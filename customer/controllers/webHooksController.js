@@ -761,7 +761,7 @@ exports.receiveWebhookData = asyncWrapper(async (req, res) => {
     accountId: webHookDetails.accountId._id,
     webhookMasterId: webHookDetails._id,
     dataPoint: req.body,
-    transactionsCount:req.body?.Transactions.length,
+    transactionsCount: req.body?.Transactions.length,
     primaryHookId: req.body?.Metadata?.LocationInformation?.[0]?.[webHookDetails?.primaryHookId]
   });
   return res
@@ -1258,14 +1258,14 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   console.log("transactionTypesArray:===", transactionTypesArray);
 
   const matchConditions = req.user.accountId.accountType === "merchant"
-  ? {
+    ? {
       // serialNumber: { $in: req.user.accountId.machines },
       createdAt: {
         $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
         $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')),
       },
     }
-  : {
+    : {
       accountId: new mongoose.Types.ObjectId(accountId),
       createdAt: {
         $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
@@ -1301,14 +1301,14 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
   let matchCondition = {}
-  if(req.user.accountId.accountType === "merchant"){
+  if (req.user.accountId.accountType === "merchant") {
     matchCondition = {
-      serialNumber : {$in: req.user.accountId.machines}
+      serialNumber: { $in: req.user.accountId.machines }
     }
   }
-  else{
+  else {
     matchCondition = {
-      accountId : new mongoose.Types.ObjectId(accountId)
+      accountId: new mongoose.Types.ObjectId(accountId)
     }
   }
   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
@@ -1349,18 +1349,18 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
 exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
   let matchCondition = {}
-  console.log('req.user.accountId.accountType:===',req.user.accountId.accountType)
-  if(req.user.accountId.accountType === "merchant"){
+  console.log('req.user.accountId.accountType:===', req.user.accountId.accountType)
+  if (req.user.accountId.accountType === "merchant") {
     matchCondition = {
-      serialNumber : {$in:req.user.accountId.machines}
+      serialNumber: { $in: req.user.accountId.machines }
     }
   }
-  else{
+  else {
     matchCondition = {
-      accountId : new mongoose.Types.ObjectId(accountId)
+      accountId: new mongoose.Types.ObjectId(accountId)
     }
   }
-  console.log('matchCondition:===',matchCondition)
+  console.log('matchCondition:===', matchCondition)
   // console.log('matchCondition:===',...matchCondition)
   let getLastSiWeeksResult = getSixWeeksSalesFunction()
 
@@ -1441,8 +1441,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ];
-  
-  
+
+
   const sixWeekAggregate = await webhookPayloadTransactions.aggregate(aggregationPipeline)
 
   const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
@@ -1467,7 +1467,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   } else {
     metaPayloadMatchCondition = matchCondition
   }
-  console.log('metaPayloadMatchCondition:====',metaPayloadMatchCondition)
+  console.log('metaPayloadMatchCondition:====', metaPayloadMatchCondition)
 
   /*
   
@@ -1758,8 +1758,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       },
     },
   ]);
-  payloadSummary=[{...metaPayloadQuery[0],...transactionsQuery[0]}]
-  
+  payloadSummary = [{ ...metaPayloadQuery[0], ...transactionsQuery[0] }]
+
 
   const exceptionsCount = await webhookExceptionsModel.find(
     // { accountId: accountId }
@@ -1833,7 +1833,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
- 
+
 
   const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
     {
@@ -1842,22 +1842,20 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         ...matchCondition
       }
     },
-    // Add a flag to mark documents with non-empty denominations array
     {
       $addFields: {
-        hasAmount: {
-          $gt: 0
+        hasDenominations: {
+          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
         }
       }
     },
-    // Group by serialNumber to count qualifying transactions BEFORE unwind
     {
       $group: {
         _id: "$serialNumber",
         location: { $first: "$location" },
         totalTransactionCount: {
           $sum: {
-            $cond: ["$hasAmount", 1, 0]
+            $cond: ["$hasDenominations", 1, 0]
           }
         },
         transactions: { $push: "$$ROOT" }
@@ -1881,7 +1879,12 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         location: { $first: "$location" },
         totalTransactionCount: { $first: "$totalTransactionCount" },
         totalAmount: {
-          $sum: "$amount"
+          $sum: {
+            $multiply: [
+              "$transactions.denominations.UnitValue",
+              "$transactions.denominations.Count"
+            ]
+          }
         }
       }
     },
@@ -1903,8 +1906,6 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
-  
-
   const denominations = await webhookPayloadTransactions.aggregate([
     {
       $match: {
@@ -2113,14 +2114,14 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 exports.getListOfMachines = asyncWrapper(async (req, res) => {
   const { accountId, webhookMasterId } = req.query
   let matchCondition = {}
-  if(req.user.accountId.accountType === "merchant"){
+  if (req.user.accountId.accountType === "merchant") {
     matchCondition = {
-      serialNumber : {$in: req.user.accountId.machines}
+      serialNumber: { $in: req.user.accountId.machines }
     }
   }
-  else{
+  else {
     matchCondition = {
-      accountId : new mongoose.Types.ObjectId(accountId)
+      accountId: new mongoose.Types.ObjectId(accountId)
     }
   }
 
@@ -2138,14 +2139,14 @@ exports.getListOfMachines = asyncWrapper(async (req, res) => {
 exports.getAllMachineReports = asyncWrapper(async (req, res) => {
   const { accountId } = req.query
   let matchCondition = {}
-  if(req.user.accountId.accountType === "merchant"){
+  if (req.user.accountId.accountType === "merchant") {
     matchCondition = {
-      serialNumber : {$in:req.user.accountId.machines}
+      serialNumber: { $in: req.user.accountId.machines }
     }
   }
-  else{
+  else {
     matchCondition = {
-      accountId : new mongoose.Types.ObjectId(accountId)
+      accountId: new mongoose.Types.ObjectId(accountId)
     }
   }
   const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
@@ -2281,18 +2282,18 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
 exports.getPayloadReports = asyncWrapper(async (req, res) => {
   const { serialNumber, accountId, webhookMasterId } = req.query
   let matchCondition = {}
-  if(req.user.accountId.accountType === "merchant"){
+  if (req.user.accountId.accountType === "merchant") {
     matchCondition = {
-      serialNumber : {$in: req.user.accountId.machines}
+      serialNumber: { $in: req.user.accountId.machines }
     }
   }
-  else{
+  else {
     matchCondition = {
-      accountId : new mongoose.Types.ObjectId(accountId),
-      serialNumber : serialNumber
+      accountId: new mongoose.Types.ObjectId(accountId),
+      serialNumber: serialNumber
     }
   }
-  console.log('matchCondition:===',matchCondition)
+  console.log('matchCondition:===', matchCondition)
   let getLastSiWeeksResult = getSixWeeksSalesFunction()
 
   const fromDate = getLastSiWeeksResult[0].fromDate;
@@ -2348,7 +2349,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     {
       $addFields: {
         hasAmount: {
-          $gt: ["$amount", 0] 
+          $gt: ["$amount", 0]
         }
       }
     },
@@ -2360,7 +2361,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         },
         totalAmount: { $sum: "$amount" },
         transactionsCount: {
-          $sum: 1 
+          $sum: 1
         },
         users: {
           $addToSet: {
@@ -2421,7 +2422,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     {
       $addFields: {
         hasAmount: {
-          $gt: ["$amount", 0] 
+          $gt: ["$amount", 0]
         }
       }
     },
@@ -2431,10 +2432,10 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
           serialNumber: "$serialNumber",
           transactionType: "$transactionType",
           userName: "$userName",
-          transactionId: "$_id" 
+          transactionId: "$_id"
         },
         totalAmount: {
-          $sum: "$amount" 
+          $sum: "$amount"
         },
         hasAmount: { $first: "$hasAmount" }
       }
@@ -2449,17 +2450,17 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
             $cond: [
               {
                 $not: {
-                  $in: ["$_id.userName", ["", null]] 
+                  $in: ["$_id.userName", ["", null]]
                 }
               },
-              "$_id.userName", 
+              "$_id.userName",
               "$$REMOVE"
             ]
           }
         },
         totalAmount: { $sum: "$totalAmount" },
         transactionsCount: {
-          $sum: { $cond: ["$hasAmount", 1, 0] } 
+          $sum: { $cond: ["$hasAmount", 1, 0] }
         }
       }
     },
@@ -2475,11 +2476,11 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     }
   ]);
 
-  const machineTransactions = await webhookPayloadTransactions.find({ 
+  const machineTransactions = await webhookPayloadTransactions.find({
     // serialNumber: serialNumber, 
     // accountId: new mongoose.Types.ObjectId(accountId)
     ...matchCondition
-   })
+  })
 
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -2540,10 +2541,10 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
           }
         },
         totalTransactions: {
-          $sum: { $cond: ["$hasAmount", 1, 0] } 
+          $sum: { $cond: ["$hasAmount", 1, 0] }
         },
         totalAmount: {
-          $sum: { $cond: ["$hasAmount", "$denominationTotal", 0] } 
+          $sum: { $cond: ["$hasAmount", "$denominationTotal", 0] }
         },
         transactionsCount: {
           $sum: { $cond: ["$hasAmount", 1, 0] }
