@@ -1259,6 +1259,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 
   const matchConditions = req.user.accountId.accountType === "merchant"
   ? {
+      // serialNumber: { $in: req.user.accountId.machines },
       createdAt: {
         $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
         $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')),
@@ -1302,7 +1303,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   let matchCondition = {}
   if(req.user.accountId.accountType === "merchant"){
     matchCondition = {
-      serialNumber : req.user.accountId.machines
+      serialNumber : {$in: req.user.accountId.machines}
     }
   }
   else{
@@ -1348,9 +1349,10 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
 exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
   let matchCondition = {}
+  console.log('req.user.accountId.accountType:===',req.user.accountId.accountType)
   if(req.user.accountId.accountType === "merchant"){
     matchCondition = {
-      serialNumber : req.user.accountId.machines
+      serialNumber : {$in:req.user.accountId.machines}
     }
   }
   else{
@@ -1481,8 +1483,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     {
       $lookup: {
         from: "webhookpayloadtransactions",
-        foreignField: "accountId",
-        localField: "accountId",
+        foreignField: "primaryHookId",
+        localField: "serialNumber",
         as: "webhooktransactionsresults",
       },
     },
@@ -1572,7 +1574,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
             $match: {
               // $expr: { $eq: ["$accountId", new mongoose.Types.ObjectId(accountId)] },
               $expr: { $or: [{$eq:["$accountId", new mongoose.Types.ObjectId(accountId)]}
-                ,{$eq:["$primaryHookId",matchCondition.serialNumber]}] },
+                ,{$eq:["$primaryHookId",matchCondition.serialNumber.$in]}] },
             },
           },
           {
@@ -1675,7 +1677,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
-
+ 
 
   const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
     {
@@ -1750,6 +1752,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       }
     }
   ]);
+  
 
   const denominations = await webhookPayloadTransactions.aggregate([
     {
@@ -1961,7 +1964,7 @@ exports.getListOfMachines = asyncWrapper(async (req, res) => {
   let matchCondition = {}
   if(req.user.accountId.accountType === "merchant"){
     matchCondition = {
-      serialNumber : req.user.accountId.machines
+      serialNumber : {$in: req.user.accountId.machines}
     }
   }
   else{
@@ -2129,7 +2132,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   let matchCondition = {}
   if(req.user.accountId.accountType === "merchant"){
     matchCondition = {
-      serialNumber : req.user.accountId.machines
+      serialNumber : {$in: req.user.accountId.machines}
     }
   }
   else{
