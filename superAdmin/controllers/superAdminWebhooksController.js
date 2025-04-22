@@ -2125,7 +2125,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
       $match: {
         // accountId: new mongoose.Types.ObjectId(accountId),
         // ...matchCondition,
-        // serialNumber,
+        serialNumber : serialNumber,
         transactionDateTime: {
           $gte: fromDate,
           $lte: toDate
@@ -2233,7 +2233,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
       $match: {
         // accountId: new mongoose.Types.ObjectId(accountId),
         // ...matchCondition,
-        // serialNumber,
+        serialNumber : serialNumber,
         createdAt: {
           $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
           $lte: new Date()
@@ -2297,7 +2297,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
     }
   ]);
 
-  const machineTransactions = await webhookPayloadTransactions.find({})
+  const machineTransactions = await webhookPayloadTransactions.find({serialNumber : serialNumber})
 
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -2313,7 +2313,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
       $match: {
         // accountId: new mongoose.Types.ObjectId(accountId),
         // ...matchCondition,
-        // serialNumber: serialNumber,
+        serialNumber : serialNumber,
         createdAt: {
           $gte: startDate,
           $lt: endDate
@@ -2435,7 +2435,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         transactionDateTime: { $gte: sixMonthsAgo },
         // accountId: new mongoose.Types.ObjectId(accountId),
         // ...matchCondition,
-        // serialNumber: serialNumber
+        serialNumber: serialNumber
       }
     },
     {
@@ -2472,7 +2472,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         transactionDateTime: { $gte: twelveMonthsAgo, $lt: sixMonthsAgo },
         // accountId: new mongoose.Types.ObjectId(accountId),
         // ...matchCondition,
-        // serialNumber: serialNumber
+        serialNumber: serialNumber
       }
     },
     {
