@@ -54,24 +54,9 @@ const accountsSchema = new mongoose.Schema({
         type:String,
         default:""
     },
-    city:{
+    location:{
         type:String,
-        required:[true, 'city is required.'],
-        default:""
-    },
-    state:{
-        type:String,
-        required:[true, 'state is required.'],
-        default:""
-    },
-    country:{
-        type:String,
-        required:[true, 'country is required.'],
-        default:""
-    },
-    pincode:{
-        type:String,
-        required:[true, 'pincode is required.'],
+        required:[true, 'location is required.'],
         default:""
     },
     status:{
@@ -82,6 +67,10 @@ const accountsSchema = new mongoose.Schema({
     machines:{
         type:[String],
         default:[]
+    },
+    createdBy:{
+        type:mongoose.Schema.Types.ObjectId,
+        default:null
     }
 },{timestamps:true});
 
