@@ -1845,8 +1845,8 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     // Add a flag to mark documents with non-empty denominations array
     {
       $addFields: {
-        hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+        hasAmount: {
+          $gt: 0
         }
       }
     },
@@ -1857,7 +1857,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         location: { $first: "$location" },
         totalTransactionCount: {
           $sum: {
-            $cond: ["$hasDenominations", 1, 0]
+            $cond: ["$hasAmount", 1, 0]
           }
         },
         transactions: { $push: "$$ROOT" }
@@ -1881,12 +1881,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         location: { $first: "$location" },
         totalTransactionCount: { $first: "$totalTransactionCount" },
         totalAmount: {
-          $sum: {
-            $multiply: [
-              "$transactions.denominations.UnitValue",
-              "$transactions.denominations.Count"
-            ]
-          }
+          $sum: "$amount"
         }
       }
     },
@@ -2145,7 +2140,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
   let matchCondition = {}
   if(req.user.accountId.accountType === "merchant"){
     matchCondition = {
-      serialNumber : req.user.accountId.machines
+      serialNumber : {$in:req.user.accountId.machines}
     }
   }
   else{
