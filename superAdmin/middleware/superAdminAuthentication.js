@@ -17,7 +17,6 @@ const superAdminAuth = asyncWrapper(async (req, _res, next) => {
     const payload = await jwt.verify(token, "secret");
     console.log(payload.userId, token, "goood");
     const user = await usersModel.findById(payload.userId).populate('accountId');
-    console.log('userrrrrrrr:==',user)
     const sessionObject = await sessionModel.findOne({
       userId: payload.userId,
       accessToken: token,

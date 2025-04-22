@@ -29,6 +29,7 @@ const webhookCrons = require('./customer/controllers/webhookCronControllers')
 
 const SuperAdminAccountRoutes = require('./superAdmin/routes/superAdminAccounts')
 const superAdminUserRoutes = require('./superAdmin/routes/userRoute')
+const superAdminWebhookRoutes = require('./superAdmin/routes/superAdminWebhookRoutes')
 
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
@@ -40,6 +41,7 @@ app.use('/api/webhook',webHooksRoute)
 //Super Admin
 app.use('/api/super-admin/accounts',SuperAdminAccountRoutes)
 app.use('/api/super-admin/users',superAdminUserRoutes)
+app.use('/api/super-admin/webhook',superAdminWebhookRoutes)
 
 
 // Start of swagger configuration

@@ -37,7 +37,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
     });
   }
   const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }).populate('accountId');
-  console.log('userrrrrrr:=========',user)
+  
   // If user not found
   if (!user) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
