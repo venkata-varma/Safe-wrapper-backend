@@ -29,10 +29,10 @@ Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, Sta
 If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
-    const { accountName, companyName, email, phone, password, city, state, pincode, country } = req.body;
+    const { accountName, companyName, email, phone, password, location} = req.body;
 
 
-    if (!accountName || !companyName || !email || !phone || !password || !city || !state || !country || !pincode) {
+    if (!accountName || !companyName || !email || !phone || !password || !location ) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
