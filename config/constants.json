@@ -46,6 +46,7 @@
     "MESSAGE_MANDATORY_FIELDS": "Fields marked with * are Mandatory.",
     "MESSAGE_ENTER_MOBILENUMBER": "Please enter mobile number.",
     "MESSAGE_PHONE_NUMBER_VALIDATE": "Phone number must be 10 digits.",
+    "MESSAGE_MACHINE_ALREADY_TAKEN":"Selected machine is already taken. Please choose another.",
     "MESSAGE_LOGO_MANDATORY": "Logo field is  Mandatory.",
     "MESSAGE_WRONG_PASSWORD": "Invalid Password.",
     "MESSAGE_WRONG_CURRENT_PASSWORD": "Please enter the current password correctly.",

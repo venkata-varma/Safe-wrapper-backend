@@ -34,14 +34,14 @@ const superAdminWebhookRoutes = require('./superAdmin/routes/superAdminWebhookRo
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
 
-app.use('/api/accounts', accountsRoute);
-app.use('/api/users', usersRoute);
-app.use('/api/webhook',webHooksRoute)
+app.use('/api/merchants/accounts', accountsRoute);
+app.use('/api/merchants/users', usersRoute);
+app.use('/api/merchants/machines',webHooksRoute)
 
 //Super Admin
-app.use('/api/super-admin/accounts',SuperAdminAccountRoutes)
-app.use('/api/super-admin/users',superAdminUserRoutes)
-app.use('/api/super-admin/webhook',superAdminWebhookRoutes)
+app.use('/api/accounts',SuperAdminAccountRoutes)
+app.use('/api/users',superAdminUserRoutes)
+app.use('/api/machines',superAdminWebhookRoutes)
 
 
 // Start of swagger configuration

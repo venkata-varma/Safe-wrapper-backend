@@ -53,12 +53,12 @@ router.get(
 
 router.get('/get-all-webhook-details/:accountId', validateAccountStatus,getAllWebhooksOfAccount)
 
-router.get('/get-webhook-transactions',getAllWebhookTransactionsOfAccount)
-router.get('/get-webhook-payload-headers/:accountId',getAllWebhookPayoadHeadersOfAccount)
+router.get('/get-machine-transactions',getAllWebhookTransactionsOfAccount)
+router.get('/get-machine-payload-headers/:accountId',getAllWebhookPayoadHeadersOfAccount)
 router.get('/get-dashboard-statistics/:accountId',getDashboardStatisticsOfAccount)
 router.get('/get-list-of-machines',getListOfMachines)
 router.get('/get-all-machine-reports',getAllMachineReports)
-router.get('/get-payload-reports',getPayloadReports)
+router.get('/get-machine-reports',getPayloadReports)
 router.get('/get-exceptions/:accountId',getExceptionsOfAccount)
 router.get('/get-transaction-denominations',getTransactionDenominations)
 

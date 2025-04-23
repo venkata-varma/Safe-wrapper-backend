@@ -29,9 +29,11 @@ Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, Sta
 If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
-    const { accountName, companyName, email, phone, password, location} = req.body;
-
-
+    const { accountName, companyName, email, phone, password, location, machines} = req.body;
+    let machinesArray = machines.includes(',')
+    ? machines.split(',').map((s) => s.trim())
+    : [machines];
+    let accountDetails = await accountsModel.find({machines:{$in:machinesArray}})
     if (!accountName || !companyName || !email || !phone || !password || !location ) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -50,6 +52,12 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
             message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
         });
     }
+    if(accountDetails.length > 0){
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_MACHINE_ALREADY_TAKEN
+        });
+    }
     else {
         next()
     }
@@ -61,10 +69,8 @@ If middleware returns true, this function is to create a New Account along with 
 Returns newly created Account with one associated user.
 */
 exports.createAccount = asyncWrapper(async (req, res) => {
-
-
     const baseUrl = process.env.DOMAIN_NAME;
-    const { accountName, companyName, email, phone, password, status } = req.body
+    const { accountName, companyName, email, phone, password, status, machines } = req.body
     const accountDetails = await usersModel.findOne({ $or: [{ email }, { phone }] })
     if (accountDetails) {
         return res.status(409).json({
@@ -73,7 +79,6 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         })
     }
     else {
-
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
