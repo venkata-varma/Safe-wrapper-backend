@@ -29,6 +29,7 @@ const webhookPayloadTransactions = new mongoose.Schema({
     },
     serialNumber: {
         type:String,
+        index:true,
         default:""
     },
     retrievedOn: {
@@ -37,6 +38,7 @@ const webhookPayloadTransactions = new mongoose.Schema({
     },
     transactionDateTime: {
         type: String,
+        index:true,
         default:""
     },
     userName:  {
@@ -45,6 +47,7 @@ const webhookPayloadTransactions = new mongoose.Schema({
     },
     transactionType:  {
         type: String,
+        index:true,
         default:""
     },
     amount:  {

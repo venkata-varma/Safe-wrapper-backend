@@ -31,7 +31,6 @@ const webhookMastersSchema = new mongoose.Schema(
     },
     webHookUrl: {
       type: String,
-
       required: [true, "Webhook URL code is mandatory"]
     },
     authenticationCode: {
@@ -46,6 +45,7 @@ const webhookMastersSchema = new mongoose.Schema(
     },
     primaryHookId: {
       type: String,
+      index:true,
       default: "",
     },
     comments: {

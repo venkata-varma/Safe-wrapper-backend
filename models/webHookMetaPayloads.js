@@ -39,6 +39,7 @@ const webhookMetaPayloads = new mongoose.Schema({
     primaryHookId: {
         type: String,
         // unique:true,
+        index:true,
         default: ""
     }
 }, { timestamps: true })
