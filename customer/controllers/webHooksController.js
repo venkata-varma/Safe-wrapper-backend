@@ -1234,68 +1234,78 @@ exports.updateWebhookSettings = asyncWrapper(async (req, res) => {
   })
 })
 
-
 exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
-  console.log('fromDate, toDate:===', fromDate, toDate)
-  console.log("serialNumbers:===", serialNumbers);
+  console.log('fromDate, toDate:', fromDate, toDate);
+  console.log('serialNumbers:', serialNumbers);
 
-  const serialNumbersArray =
-    serialNumbers === "all"
-      ? []
-      : serialNumbers
-        ? serialNumbers.split(",")
-        : serialNumbers;
+  if (!accountId || !fromDate || !toDate) {
+      throw new Error('accountId, fromDate, and toDate are required');
+  }
 
-  const transactionTypesArray =
-    transactionTypes === "all"
-      ? []
-      : transactionTypes
-        ? transactionTypes.split(",")
-        : transactionTypes;
+  if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
+      throw new Error('Invalid date format for fromDate or toDate');
+  }
 
-  console.log("serialNumbersArray:===", serialNumbersArray);
-  console.log("transactionTypesArray:===", transactionTypesArray);
+  let serialNumbersArray = [];
+  if (serialNumbers && serialNumbers !== 'all') {
+      serialNumbersArray = serialNumbers.includes(',')
+          ? serialNumbers.split(',').map((s) => s.trim())
+          : [serialNumbers];
+  }
+  console.log('serialNumbersArray:', serialNumbersArray);
 
-  const matchConditions = req.user.accountId.accountType === "merchant"
-    ? {
-      // serialNumber: { $in: req.user.accountId.machines },
-      createdAt: {
-        $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
-        $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')),
+  let transactionTypesArray = [];
+  if (transactionTypes && transactionTypes !== 'all') {
+      transactionTypesArray = transactionTypes.includes(',')
+          ? transactionTypes.split(',').map((t) => t.trim())
+          : [transactionTypes];
+  }
+  console.log('transactionTypesArray:', transactionTypesArray);
+
+  const matchConditions = {
+      transactionDateTime: {
+          $gte: moment(fromDate).toDate(),
+          $lte: moment(toDate).toDate(),
       },
-    }
-    : {
-      accountId: new mongoose.Types.ObjectId(accountId),
-      createdAt: {
-        $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
-        $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')),
-      },
-    };
-
-
+  };
+  matchConditions.accountId = new mongoose.Types.ObjectId(accountId);
   if (serialNumbersArray.length > 0) {
-    matchConditions.serialNumber = { $in: serialNumbersArray };
+      matchConditions.serialNumber = { $in: serialNumbersArray };
   }
 
   if (transactionTypesArray.length > 0) {
-    matchConditions.transactionType = { $in: transactionTypesArray };
+      matchConditions.transactionType = { $in: transactionTypesArray };
   }
-  console.log('matchConditions:==', matchConditions)
-  const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
-    { $match: matchConditions },
-    { $sort: { createdAt: -1 } }
-  ]);
+
+  console.log('matchConditions:', matchConditions);
+
+  const pipeline = [];
+
+  pipeline.push({
+      $addFields: {
+          transactionDateTime: { $toDate: '$transactionDateTime' },
+      },
+  });
+
+  pipeline.push({
+      $match: matchConditions,
+  });
+
+  pipeline.push({
+      $sort: { transactionDateTime: -1 },
+  });
+
+  const webhookTransactionDetails = await webhookPayloadTransactions.aggregate(pipeline);
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
-    data: {
-      webhookTransactionDetails,
-      // webhookTransactionHeadersDetails
-    }
-  })
-})
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+      data: {
+          webhookTransactionDetails,
+      },
+  });
+});
 
 
 exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
@@ -1468,148 +1478,6 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     metaPayloadMatchCondition = matchCondition
   }
   console.log('metaPayloadMatchCondition:====', metaPayloadMatchCondition)
-
-  /*
-  
-  let payloadSummary = await webhookMetaPayloadModel.aggregate([
-    {
-      $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId),
-       ...metaPayloadMatchCondition,
-        createdAt: {
-          $gte: new Date(new Date().setDate(new Date().getMonth() - 1)),
-          $lte: new Date(),
-        },
-      },
-    },  
-    {
-      $lookup: {
-        from: "webhookpayloadtransactions",
-        foreignField: "primaryHookId",
-        localField: "serialNumber",
-        as: "webhooktransactionsresults",
-      },
-    },
-    {
-      $unwind: {
-        path: "$webhooktransactionsresults",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $match: {
-        "webhooktransactionsresults.userName": { $ne: "", $exists: true },
-        // "webhooktransactionsresults.denominations": { $exists: true, $ne: [], $not: { $size: 0 } },
-        "webhooktransactionsresults.amount": { $exists: true, $gt:0 },
-
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        serialNumbers: { $addToSet: "$primaryHookId" },
-        transactionTypes: { $addToSet: "$webhooktransactionsresults.transactionType" },
-        users: { $addToSet: "$webhooktransactionsresults.userName" },
-        locations: { $addToSet: "$webhooktransactionsresults.location" },
-        transactionIds: { $addToSet: "$webhooktransactionsresults._id" },
-      },
-    },
-    {
-      $lookup: {
-        from: "webhookmetapayloads",
-        pipeline: [
-          {
-            // $match: { accountId: new mongoose.Types.ObjectId(accountId) },
-            $match: metaPayloadMatchCondition,
-
-          },
-          {
-            $group: {
-              _id: "$status",
-              count: { $sum: 1 },
-            },
-          },
-        ],
-        as: "statusCountsData",
-      },
-    },
-    {
-      $addFields: {
-        statusCounts: {
-          $map: {
-            input: predefinedStatuses,
-            as: "status",
-            in: {
-              status: "$$status",
-              count: {
-                $ifNull: [
-                  {
-                    $getField: {
-                      field: "count",
-                      input: {
-                        $arrayElemAt: [
-                          {
-                            $filter: {
-                              input: "$statusCountsData",
-                              as: "s",
-                              cond: { $eq: ["$$s._id", "$$status"] },
-                            },
-                          },
-                          0,
-                        ],
-                      },
-                    },
-                  },
-                  0,
-                ],
-              },
-            },
-          },
-        },
-      },
-    },
-    {
-      $lookup: {
-        from: "webhookmetapayloads",
-        pipeline: [
-          {
-            $match: {
-              // $expr: { $eq: ["$accountId", new mongoose.Types.ObjectId(accountId)] },
-              $expr: { $in: ["$primaryHookId", matchCondition.serialNumber.$in] }
-
-              // $expr: { $or: [{$eq:["$accountId", new mongoose.Types.ObjectId(accountId)]}
-              //   ,{$eq:["$primaryHookId",matchCondition.serialNumber.$in]}] },
-            },
-          },
-          {
-            $count: "totalCount",
-          },
-        ],
-        as: "metaPayloadCountData",
-      },
-    },
-    {
-      $addFields: {
-        totalMetaPayloadsCount: {
-          $ifNull: [{ $arrayElemAt: ["$metaPayloadCountData.totalCount", 0] }, 0],
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        serialNumbersCount: { $size: { $ifNull: ["$serialNumbers", []] } },
-        transactionTypesCount: { $size: { $ifNull: ["$transactionTypes", []] } },
-        usersCount: { $size: { $ifNull: ["$users", []] } },
-        locationsCount: { $size: { $ifNull: ["$locations", []] } },
-        payloadsCount: "$totalMetaPayloadsCount",
-        transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
-        statusCounts: 1,
-      },
-    },
-  ]);
-
-  */
 
   let payloadSummary = []
   let metaPayloadQuery = await webhookMetaPayloadModel.aggregate([
@@ -2829,5 +2697,126 @@ exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
     data: exceptionsOfAccount || []
+  })
+})
+
+
+exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
+  const { serialNumbers, accountId } = req.query
+  let serialNumbersArray = [];
+  if (serialNumbers && serialNumbers !== 'all') {
+      serialNumbersArray = serialNumbers.includes(',')
+          ? serialNumbers.split(',').map((s) => s.trim())
+          : [serialNumbers];
+  }
+  console.log('serialNumbersArray:===',serialNumbersArray)
+  const denominations = await webhookPayloadTransactions.aggregate([
+    {
+      $match: {
+        serialNumber: {$in:serialNumbersArray},
+        $expr: {
+          $and: [
+            {
+              $gte: [
+                { $toDate: "$transactionDateTime" },
+                new Date(new Date().setMonth(new Date().getMonth() - 1))
+              ]
+            },
+            {
+              $lte: [
+                { $toDate: "$transactionDateTime" },
+                new Date()
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      $unwind: {
+        path: "$denominations",
+        preserveNullAndEmptyArrays: false
+      }
+    },
+    {
+      $match: {
+        "denominations.UnitValue": { $ne: null },
+        "denominations.Count": { $ne: null },
+        "denominations.Currency": { $ne: null }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          serialNumber: "$serialNumber",
+          transactionType: "$transactionType",
+          unitValue: "$denominations.UnitValue",
+          currency: "$denominations.Currency"
+        },
+        totalCount: {
+          $sum: { $ifNull: ["$denominations.Count", 0] }
+        },
+        totalAmount: {
+          $sum: {
+            $multiply: [
+              "$denominations.UnitValue",
+              "$denominations.Count"
+            ]
+          }
+        }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          serialNumber: "$_id.serialNumber",
+          transactionType: "$_id.transactionType"
+        },
+        denominations: {
+          $push: {
+            UnitValue: "$_id.unitValue",
+            Count: "$totalCount",
+            Currency: "$_id.currency",
+            Total: { $multiply: ["$_id.unitValue", "$totalCount"] }
+          }
+        },
+        totalAmount: { $sum: "$totalAmount" }
+      }
+    },
+    {
+      $sort: {
+        totalAmount: -1
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        serialNumber: "$_id.serialNumber",
+        transactionType: "$_id.transactionType",
+        denominations: {
+          $cond: {
+            if: { $gt: [{ $size: "$denominations" }, 0] },
+            then: {
+              $slice: [
+                {
+                  $sortArray: {
+                    input: "$denominations",
+                    sortBy: { Total: -1 }
+                  }
+                },
+                5
+              ]
+            },
+            else: []
+          }
+        },
+        totalAmount: 1
+      }
+    }
+  ]);
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_MACHINE_DENOMINATIONS,
+    data: denominations || []
   })
 })

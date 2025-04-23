@@ -23,7 +23,8 @@ const {
   validateAuthentication,
   getTransactionsReports,
   getProgressMeterAndTotalsOfSingleMachine,
-  getExceptionsOfAccount
+  getExceptionsOfAccount,
+  getTransactionDenominations
 } = require("../controllers/webHooksController");
 
 router.post(
@@ -59,6 +60,7 @@ router.get('/get-list-of-machines',getListOfMachines)
 router.get('/get-all-machine-reports',getAllMachineReports)
 router.get('/get-payload-reports',getPayloadReports)
 router.get('/get-exceptions/:accountId',getExceptionsOfAccount)
+router.get('/get-transaction-denominations',getTransactionDenominations)
 
 //One POS
 router.get('/get-transactions-reports',validateAuthentication, getTransactionsReports)
