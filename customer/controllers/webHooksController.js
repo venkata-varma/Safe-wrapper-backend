@@ -2714,65 +2714,64 @@ exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
 
 
 exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
-  const { serialNumbers, accountId } = req.query
+  const { serialNumbers, accountId } = req.query;
+  
   let serialNumbersArray = [];
   if (serialNumbers && serialNumbers !== 'all') {
-      serialNumbersArray = serialNumbers.includes(',')
-          ? serialNumbers.split(',').map((s) => s.trim())
-          : [serialNumbers];
+    serialNumbersArray = serialNumbers.includes(',')
+      ? serialNumbers.split(',').map(s => s.trim())
+      : [serialNumbers];
   }
-  console.log('serialNumbersArray:===',serialNumbersArray)
+
+  const matchCondition = {
+      serialNumber: { $in: serialNumbersArray },
+      transactionDateTime: {
+        $gte: moment().local().subtract(1, 'day').toDate(),
+        $lte: moment().local().add(1,'day').toDate(),
+      }
+    };
+
+  console.log('matchCondition:==',matchCondition)
+
   const denominations = await webhookPayloadTransactions.aggregate([
+    
     {
-      $match: {
-        serialNumber: {$in:serialNumbersArray},
-        $expr: {
-          $and: [
-            {
-              $gte: [
-                { $toDate: "$transactionDateTime" },
-                new Date(new Date().setDate(new Date().getDate() - 1))
-              ]
-            },
-            {
-              $lte: [
-                { $toDate: "$transactionDateTime" },
-                new Date()
-              ]
-            }
-          ]
-        }
+      $addFields: {
+        transactionDateTime: { $toDate: '$transactionDateTime' }
       }
     },
     {
+      $match: matchCondition
+    },
+    {
       $unwind: {
-        path: "$denominations",
+        path: '$denominations',
         preserveNullAndEmptyArrays: false
       }
     },
     {
       $match: {
-        "denominations.UnitValue": { $ne: null },
-        "denominations.Count": { $ne: null },
-        "denominations.Currency": { $ne: null }
+        'denominations.UnitValue': { $ne: null },
+        'denominations.Count': { $ne: null },
+        'denominations.Currency': { $ne: null }
       }
     },
     {
       $group: {
         _id: {
-          serialNumber: "$serialNumber",
-          transactionType: "$transactionType",
-          unitValue: "$denominations.UnitValue",
-          currency: "$denominations.Currency"
+          serialNumber: '$serialNumber',
+          transactionType: '$transactionType',
+          unitValue: '$denominations.UnitValue',
+          currency: '$denominations.Currency'
         },
         totalCount: {
-          $sum: { $ifNull: ["$denominations.Count", 0] }
+          $sum: { $ifNull: ['$denominations.Count', 0] }
         },
         totalAmount: {
           $sum: {
             $multiply: [
-              "$denominations.UnitValue",
-              "$denominations.Count"
+              '$denominations.UnitValue',
+              '$denominations.Count'
             ]
           }
         }
@@ -2781,18 +2780,18 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
     {
       $group: {
         _id: {
-          serialNumber: "$_id.serialNumber",
-          transactionType: "$_id.transactionType"
+          serialNumber: '$_id.serialNumber',
+          transactionType: '$_id.transactionType'
         },
         denominations: {
           $push: {
-            UnitValue: "$_id.unitValue",
-            Count: "$totalCount",
-            Currency: "$_id.currency",
-            Total: { $multiply: ["$_id.unitValue", "$totalCount"] }
+            UnitValue: '$_id.unitValue',
+            Count: '$totalCount',
+            Currency: '$_id.currency',
+            Total: { $multiply: ['$_id.unitValue', '$totalCount'] }
           }
         },
-        totalAmount: { $sum: "$totalAmount" }
+        totalAmount: { $sum: '$totalAmount' }
       }
     },
     {
@@ -2803,16 +2802,16 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
     {
       $project: {
         _id: 0,
-        serialNumber: "$_id.serialNumber",
-        transactionType: "$_id.transactionType",
+        serialNumber: '$_id.serialNumber',
+        transactionType: '$_id.transactionType',
         denominations: {
           $cond: {
-            if: { $gt: [{ $size: "$denominations" }, 0] },
+            if: { $gt: [{ $size: '$denominations' }, 0] },
             then: {
               $slice: [
                 {
                   $sortArray: {
-                    input: "$denominations",
+                    input: '$denominations',
                     sortBy: { Total: -1 }
                   }
                 },
@@ -2826,9 +2825,10 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
       }
     }
   ]);
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_MACHINE_DENOMINATIONS,
     data: denominations || []
   })
-})
+});
