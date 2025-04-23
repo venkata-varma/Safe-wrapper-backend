@@ -2763,7 +2763,7 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
             {
               $gte: [
                 { $toDate: "$transactionDateTime" },
-                new Date(new Date().setMonth(new Date().getMonth() - 1))
+                new Date(new Date().setMonth(new Date().getDay() - 1))
               ]
             },
             {
