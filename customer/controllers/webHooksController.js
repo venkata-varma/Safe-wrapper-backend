@@ -1723,6 +1723,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       },
     },
   ]);
+
   let transactionsQuery = await webhookPayloadTransactions.aggregate([
     {
       $match: {
@@ -1737,6 +1738,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         userName: { $first: "$userName" },
         location: { $first: "$location" },
         transactionType: { $first: "$transactionType" },
+        amount: { $first: "$amount" },
       },
     },
     {
@@ -1745,7 +1747,15 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         transactionTypes: { $addToSet: "$transactionType" },
         users: { $addToSet: "$userName" },
         locations: { $addToSet: "$location" },
-        transactionIds: { $addToSet: "$_id" },
+        transactionIds: {
+          $addToSet: {
+            $cond: {
+              if: { $gt: ["$amount", 0] },
+              then: "$_id",
+              else: "$$REMOVE",
+            },
+          },
+        },
       },
     },
     {
@@ -1758,6 +1768,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       },
     },
   ]);
+
   payloadSummary = [{ ...metaPayloadQuery[0], ...transactionsQuery[0] }]
 
 
@@ -1766,20 +1777,12 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     matchCondition
   ).countDocuments()
 
-
   const totalAccountSummary = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId),
         ...matchCondition,
-        userName: { $ne: "", $exists: true }
-      }
-    },
-    {
-      $addFields: {
-        hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
-        }
+        userName: { $ne: "", $exists: true },
+        amount: { $exists: true, $ne: null } // Ensure amount exists
       }
     },
     {
@@ -1787,37 +1790,19 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         _id: null,
         transactionCount: {
           $sum: {
-            $cond: ["$hasDenominations", 1, 0]
+            $cond: { if: { $gt: ["$amount", 0] }, then: 1, else: 0 }
           }
         },
         serialNumbers: { $addToSet: "$serialNumber" },
         users: { $addToSet: "$userName" },
-        transactions: { $push: "$$ROOT" }
-      }
-    },
-    {
-      $unwind: {
-        path: "$transactions"
-      }
-    },
-    {
-      $unwind: {
-        path: "$transactions.denominations",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        transactionCount: { $first: "$transactionCount" },
-        serialNumbers: { $first: "$serialNumbers" },
-        users: { $first: "$users" },
-        totalAmount: {
-          $sum: {
-            $multiply: [
-              "$transactions.denominations.UnitValue",
-              "$transactions.denominations.Count"
-            ]
+        transactionIds: {
+          $addToSet: {
+            $cond: { if: { $gt: ["$amount", 0] }, then: "$_id", else: "$$REMOVE" }
+          }
+        },
+        transactions: {
+          $push: {
+            $cond: { if: { $gt: ["$amount", 0] }, then: "$$ROOT", else: "$$REMOVE" }
           }
         }
       }
@@ -1826,72 +1811,39 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       $project: {
         _id: 0,
         transactionCount: 1,
-        serialNumbersCount: { $size: "$serialNumbers" },
-        usersCount: { $size: "$users" },
-        totalRevenue: "$totalAmount",
+        serialNumbersCount: { $size: { $ifNull: ["$serialNumbers", []] } },
+        usersCount: { $size: { $ifNull: ["$users", []] } },
+        transactionIdsCount: { $size: { $ifNull: ["$transactionIds", []] } },
+        totalRevenue: {
+          $reduce: {
+            input: "$transactions",
+            initialValue: 0,
+            in: { $add: ["$$value", "$$this.amount"] }
+          }
+        },
         exceptionsCount: { $literal: exceptionsCount }
       }
     }
   ]);
 
-
   const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId)
-        ...matchCondition
-      }
-    },
-    {
-      $addFields: {
-        hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
-        }
+        ...matchCondition,
+        amount: { $exists: true, $ne: null, $gt: 0 }
       }
     },
     {
       $group: {
         _id: "$serialNumber",
         location: { $first: "$location" },
-        totalTransactionCount: {
-          $sum: {
-            $cond: ["$hasDenominations", 1, 0]
-          }
-        },
+        totalTransactionCount: { $sum: 1 },
+        totalAmount: { $sum: "$amount" },
         transactions: { $push: "$$ROOT" }
       }
     },
-    // Now unwind the denominations array to compute totalAmount
     {
-      $unwind: {
-        path: "$transactions"
-      }
-    },
-    {
-      $unwind: {
-        path: "$transactions.denominations",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $group: {
-        _id: "$_id", // serialNumber
-        location: { $first: "$location" },
-        totalTransactionCount: { $first: "$totalTransactionCount" },
-        totalAmount: {
-          $sum: {
-            $multiply: [
-              "$transactions.denominations.UnitValue",
-              "$transactions.denominations.Count"
-            ]
-          }
-        }
-      }
-    },
-    {
-      $sort: {
-        totalAmount: -1
-      }
+      $sort: { totalAmount: -1 }
     },
     {
       $limit: 5
@@ -1902,10 +1854,11 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         serialNumber: "$_id",
         totalAmount: 1,
         location: 1,
-        totalTransactionCount: 1
+        totalTransactionCount: 1,
       }
     }
   ]);
+
   const denominations = await webhookPayloadTransactions.aggregate([
     {
       $match: {
@@ -2014,74 +1967,25 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   const topFiveUsersDetails = await webhookPayloadTransactions.aggregate([
     {
       $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId),
         ...matchCondition,
-        userName: { $ne: "", $exists: true }
-      }
-    },
-    {
-      $addFields: {
-        hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
-        }
+        userName: { $ne: "", $exists: true },
+        amount: { $exists: true, $ne: null, $gt: 0 }
       }
     },
     {
       $group: {
         _id: "$userName",
-        totalTransactionCount: {
-          $sum: {
-            $cond: ["$hasDenominations", 1, 0]
-          }
-        },
         location: { $first: "$location" },
+        totalTransactionCount: { $sum: 1 },
+        totalAmount: { $sum: "$amount" },
         transactions: { $push: "$$ROOT" }
       }
     },
     {
-      $unwind: {
-        path: "$transactions"
-      }
+      $sort: { totalAmount: -1 }
     },
     {
-      $unwind: {
-        path: "$transactions.denominations",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $group: {
-        _id: "$_id", // userName
-        totalTransactionCount: { $first: "$totalTransactionCount" },
-        location: { $first: "$location" },
-        totalAmount: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $gt: ["$transactions.denominations.UnitValue", 0] },
-                  { $gt: ["$transactions.denominations.Count", 0] }
-                ]
-              },
-              {
-                $multiply: [
-                  "$transactions.denominations.UnitValue",
-                  "$transactions.denominations.Count"
-                ]
-              },
-              0
-            ]
-          }
-        }
-      }
-    },
-    {
-      $sort: {
-        totalAmount: -1
-      }
-    },
-    {
-      $limit: 5
+      $limit: 6
     },
     {
       $project: {
@@ -2089,7 +1993,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         userName: "$_id",
         totalAmount: 1,
         location: 1,
-        totalTransactionCount: 1
+        totalTransactionCount: 1,
       }
     }
   ]);
