@@ -1482,6 +1482,14 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   let payloadSummary = []
   let metaPayloadQuery = await webhookMetaPayloadModel.aggregate([
     {
+      $match:{
+        createdAt: {
+          $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
+          $lte: new Date(),
+        },
+      }
+    },
+    {
       $facet: {
         statusCounts: [
           {
@@ -1596,6 +1604,10 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     {
       $match: {
         ...matchCondition,
+        createdAt: {
+          $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
+          $lte: new Date(),
+        },
         userName: { $exists: true, $ne: null, $ne: "" },
         location: { $exists: true, $ne: null, $ne: "" },
       },
@@ -2719,7 +2731,7 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
             {
               $gte: [
                 { $toDate: "$transactionDateTime" },
-                new Date(new Date().setMonth(new Date().getDay() - 1))
+                new Date(new Date().setMonth(new Date().getDate() - 1))
               ]
             },
             {
