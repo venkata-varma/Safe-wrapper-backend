@@ -1236,64 +1236,76 @@ exports.updateWebhookSettings = asyncWrapper(async (req, res) => {
 
 exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
-  console.log('fromDate, toDate:===', fromDate, toDate)
-  console.log("serialNumbers:===", serialNumbers);
+  console.log('fromDate, toDate:', fromDate, toDate);
+  console.log('serialNumbers:', serialNumbers);
 
-  const serialNumbersArray =
-    serialNumbers === "all"
-      ? []
-      : serialNumbers
-        ? serialNumbers.split(",")
-        : serialNumbers;
+  if (!fromDate || !toDate) {
+      throw new Error('accountId, fromDate, and toDate are required');
+  }
 
-  const transactionTypesArray =
-    transactionTypes === "all"
-      ? []
-      : transactionTypes
-        ? transactionTypes.split(",")
-        : transactionTypes;
+  if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
+      throw new Error('Invalid date format for fromDate or toDate');
+  }
 
-  console.log("serialNumbersArray:===", serialNumbersArray);
-  console.log("transactionTypesArray:===", transactionTypesArray);
+  let serialNumbersArray = [];
+  if (serialNumbers && serialNumbers !== 'all') {
+      serialNumbersArray = serialNumbers.includes(',')
+          ? serialNumbers.split(',').map((s) => s.trim())
+          : [serialNumbers];
+  }
+  console.log('serialNumbersArray:', serialNumbersArray);
 
-  const matchConditions = req.user.accountId.accountType === "merchant"
-  ? {
-      createdAt: {
-        $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
-        $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')),
+  let transactionTypesArray = [];
+  if (transactionTypes && transactionTypes !== 'all') {
+      transactionTypesArray = transactionTypes.includes(',')
+          ? transactionTypes.split(',').map((t) => t.trim())
+          : [transactionTypes];
+  }
+  console.log('transactionTypesArray:', transactionTypesArray);
+
+  const matchConditions = { 
+      transactionDateTime: {
+          $gte: moment(fromDate).toDate(),
+          $lte: moment(toDate).toDate(),
       },
-    }
-  : {
-    //   accountId: new mongoose.Types.ObjectId(accountId),
-      createdAt: {
-        $gte: new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss')),
-        $lte: new Date(moment(toDate).add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')),
-      },
-    };
-
-
+  };
+  // matchConditions.accountId = new mongoose.Types.ObjectId(accountId);
   if (serialNumbersArray.length > 0) {
-    matchConditions.serialNumber = { $in: serialNumbersArray };
+      matchConditions.serialNumber = { $in: serialNumbersArray };
   }
 
   if (transactionTypesArray.length > 0) {
-    matchConditions.transactionType = { $in: transactionTypesArray };
+      matchConditions.transactionType = { $in: transactionTypesArray };
   }
-  console.log('matchConditions:==', matchConditions)
-  const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
-    { $match: matchConditions },
-    { $sort: { createdAt: -1 } }
-  ]);
+
+  console.log('matchConditions:', matchConditions);
+
+  const pipeline = [];
+
+  pipeline.push({
+      $addFields: {
+          transactionDateTime: { $toDate: '$transactionDateTime' },
+      },
+  });
+
+  pipeline.push({
+      $match: matchConditions,
+  });
+
+  pipeline.push({
+      $sort: { transactionDateTime: -1 },
+  });
+
+  const webhookTransactionDetails = await webhookPayloadTransactions.aggregate(pipeline);
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
-    data: {
-      webhookTransactionDetails,
-      // webhookTransactionHeadersDetails
-    }
-  })
-})
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+      data: {
+          webhookTransactionDetails,
+      },
+  });
+});
 
 
 exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
