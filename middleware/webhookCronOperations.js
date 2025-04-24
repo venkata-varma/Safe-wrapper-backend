@@ -88,8 +88,8 @@ const webhookMetaPayloadTransactions = async (dataPoint, webhookMasterId, webhoo
             })
             let serialNumberHoldedAccount = await accountsModel.findOne({machines:{$in:[transaction?.SerialNumber]}})
             if(serialNumberHoldedAccount){
-                await webhookPayloadHeaders.updateMany({serialNumber:transaction?.SerialNumber},{$set:{accountId:serialNumberHoldedAccount?._id}})
-                await webhookPayloadTransactions.updateMany({serialNumber:transaction?.SerialNumber},{$set:{accountId:serialNumberHoldedAccount?._id}})
+                await webhookPayloadHeaders.updateMany({serialNumber:{$in:serialNumberHoldedAccount.machines}},{$set:{accountId:serialNumberHoldedAccount?._id}})
+                await webhookPayloadTransactions.updateMany({serialNumber:{$in:serialNumberHoldedAccount.machines}},{$set:{accountId:serialNumberHoldedAccount?._id}})
             }
             await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "executed" } })
         }

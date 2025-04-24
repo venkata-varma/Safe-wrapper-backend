@@ -1262,14 +1262,26 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
           : [transactionTypes];
   }
   console.log('transactionTypesArray:', transactionTypesArray);
-
-  const matchConditions = {
-      transactionDateTime: {
-          $gte: moment(fromDate).toDate(),
-          $lte: moment(toDate).toDate(),
-      },
+  let matchConditions = {
+    transactionDateTime: {
+        $gte: moment(fromDate).toDate(),
+        $lte: moment(toDate).toDate(),
+    },
   };
-  matchConditions.accountId = new mongoose.Types.ObjectId(accountId);
+  if (req.user.accountId.accountType === "merchant") {
+    matchConditions = {
+      serialNumber: { $in: req.user.accountId.machines }
+    }
+  }
+  else {
+    matchConditions = {
+      accountId: new mongoose.Types.ObjectId(accountId),
+      serialNumber: { $in: req.user.accountId.machines }
+
+    }
+  }
+  
+  // matchConditions.accountId = new mongoose.Types.ObjectId(accountId);
   if (serialNumbersArray.length > 0) {
       matchConditions.serialNumber = { $in: serialNumbersArray };
   }
