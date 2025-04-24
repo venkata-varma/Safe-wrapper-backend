@@ -80,6 +80,59 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
 
 })
 
+/*
+If middleware returns True, this function create session with valid JWT token
+Mandatory fields -> Phone and Password 
+*/
+exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
+  const { mobileEmail, password } = req.body;
+  let user_details = {};
+  // Find user by email or phone
+  const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }, { _id: 0, password: 0 });
+  // const respectiveAccount = await accountsModel.findOne({ _id: user.accountId }, { password: 0 });
+  const userData = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] });
+
+  user_details.userDetails = user.toObject();
+
+  // Generate JWT token
+  const jwtToken = await userData.getJWTToken();
+  const jwtTokenExpires = await userData.getJWTTokenExpireDate(jwtToken);
+
+  // Create session
+  req.body.accessToken = jwtToken;
+  req.body.expirationTime = jwtTokenExpires.exp;
+  req.body.userId = userData._id;
+  req.body.accountId = userData.accountId;
+
+  const sesssionDetails = await sessionsModel.create(req.body);
+  user_details.sesssionDetails = sesssionDetails;
+
+  //Count number of integrations for respective account
+  //  const integrationsCount = await integrationMasterModel.find({ accountId: user.accountId, status: 'active' });
+  //const accountUpdateIntegrationsCount = await accountsModel.findByIdAndUpdate(user.accountId, { $set: { noOfIntegrations: integrationsCount.length } }, { new: true })
+  user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
+
+
+  // Return success response
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_USER_LOGIN,
+    data:{
+      // accountId:req.body.accountId,
+      access_token:sesssionDetails.accessToken
+    }
+  });
+ 
+
+
+});
+
+
+
+
+
+
+
 
 /*
 If middleware returns True, this function create session with valid JWT token

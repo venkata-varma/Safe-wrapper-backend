@@ -267,7 +267,7 @@ components:
 #-----------------------------------------------------------------------------------------------------------------------------------
 
 paths:
-  /api/users/user-login:
+  /api/machines/user-login:
     post:
       tags:
         - Authorize
@@ -311,65 +311,65 @@ paths:
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
-  /api/webhook/get-webhook-payload-headers/{accountId}:
-    get:
-      tags:
-        - API calls
-      summary: "Get details of serial numbers of machines registered under an account and transaction types of received transactions."
-      description: |
-        - This API provides a list of serial numbers of machines registered under a specific `accountId`.  
-        - Additionally, it retrieves all transaction types associated with these machines that have been recorded through webhooks.
-        - Requires authentication via the `Authorization` header.
-      security:
-        - Authorization: [] # Requires Authorization header with token
-      parameters:
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-          description: "Unique identifier of the account for which webhooks are registered"
-      responses:
-        '200':
-          description: Webhook payload headers.
-          content:
-            application/json:
-              example:
-                status: "success"
-                message: "Webhook payload headers."
-                data:
-                  webhookPayloadHeadersData:
-                    serialNumbers:
-                      - "QA00579"
-                      - "QA00577"
-                      - "PA00581"
-                      - "QA00578"
-                      - "QA00580"
-                    transactionTypes:
-                      - "CashIn"
-                      - "DoorOpened"
-                  listOfWebhooks:
-                    - webhookSettings:
-                        periodType: "once each minute"
-                        currentStatus: "stop"
-                        interval: 10
-                        expiresOn: "2025-04-01T06:15:44.625Z"
-                      webhookMasterId: null
-                      _id: "67eb8490233046c701342349"
-                      webHookMasterId: "67eb8490233046c701342349"
-                      accountId: "67eb81cb45715d3e5b678ebb"
-                      userId: "67eb81cb45715d3e5b678ebd"
-                      location: "India"
-                      name: "Create work orders"
-                      webHookUrl: "https://api.dev.isyncrabbit.com/api/webhook/81794/67eb81cb45715d3e5b678ebb"
-                      authenticationCode: "31be5e06b50406b668fe7e591cf4560380df23535a81289c88f2e4d93625860e2213766324664aa05b34245520c2dde88f9a419ad218fc156c62193bae74c77b086e43b88fe498385ba38ec1c78ec15e6b1ec9f9c5fe27c6d533df865f48c2bcbf20be2d689f65b27fae5ee8b64930878f47d2da2585c1e87306c07ba1844202c8a87f7531dfe5d2ff8d70e6fed8aad8abb154c418a139082724411c2e3d6f71ef5b00f3e0a5002a357808df3d124e2c09a0111acc5934e42c77004409553cb1"
-                      primaryHookId: "SerialNumber"
-                      comments: null
-                      status: "active"
-                      lastPullDate: "2025-04-07T04:45:49.450Z"
-                      createdAt: "2025-04-01T06:15:44.643Z"
-                      updatedAt: "2025-04-07T04:45:49.450Z"
-                      __v: 0    
+  # /api/webhook/get-webhook-payload-headers/{accountId}:
+  #   get:
+  #     tags:
+  #       - API calls
+  #     summary: "Get details of serial numbers of machines registered under an account and transaction types of received transactions."
+  #     description: |
+  #       - This API provides a list of serial numbers of machines registered under a specific `accountId`.  
+  #       - Additionally, it retrieves all transaction types associated with these machines that have been recorded through webhooks.
+  #       - Requires authentication via the `Authorization` header.
+  #     security:
+  #       - Authorization: [] # Requires Authorization header with token
+  #     parameters:
+  #       - name: accountId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: "Unique identifier of the account for which webhooks are registered"
+  #     responses:
+  #       '200':
+  #         description: Webhook payload headers.
+  #         content:
+  #           application/json:
+  #             example:
+  #               status: "success"
+  #               message: "Webhook payload headers."
+  #               data:
+  #                 webhookPayloadHeadersData:
+  #                   serialNumbers:
+  #                     - "QA00579"
+  #                     - "QA00577"
+  #                     - "PA00581"
+  #                     - "QA00578"
+  #                     - "QA00580"
+  #                   transactionTypes:
+  #                     - "CashIn"
+  #                     - "DoorOpened"
+  #                 listOfWebhooks:
+  #                   - webhookSettings:
+  #                       periodType: "once each minute"
+  #                       currentStatus: "stop"
+  #                       interval: 10
+  #                       expiresOn: "2025-04-01T06:15:44.625Z"
+  #                     webhookMasterId: null
+  #                     _id: "67eb8490233046c701342349"
+  #                     webHookMasterId: "67eb8490233046c701342349"
+  #                     accountId: "67eb81cb45715d3e5b678ebb"
+  #                     userId: "67eb81cb45715d3e5b678ebd"
+  #                     location: "India"
+  #                     name: "Create work orders"
+  #                     webHookUrl: "https://api.dev.isyncrabbit.com/api/webhook/81794/67eb81cb45715d3e5b678ebb"
+  #                     authenticationCode: "31be5e06b50406b668fe7e591cf4560380df23535a81289c88f2e4d93625860e2213766324664aa05b34245520c2dde88f9a419ad218fc156c62193bae74c77b086e43b88fe498385ba38ec1c78ec15e6b1ec9f9c5fe27c6d533df865f48c2bcbf20be2d689f65b27fae5ee8b64930878f47d2da2585c1e87306c07ba1844202c8a87f7531dfe5d2ff8d70e6fed8aad8abb154c418a139082724411c2e3d6f71ef5b00f3e0a5002a357808df3d124e2c09a0111acc5934e42c77004409553cb1"
+  #                     primaryHookId: "SerialNumber"
+  #                     comments: null
+  #                     status: "active"
+  #                     lastPullDate: "2025-04-07T04:45:49.450Z"
+  #                     createdAt: "2025-04-01T06:15:44.643Z"
+  #                     updatedAt: "2025-04-07T04:45:49.450Z"
+  #                     __v: 0    
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -378,7 +378,7 @@ paths:
 
 
 
-  /api/webhook/get-single-machine-report:
+  /api/machines/get-machine-transactions:
    get:
       tags:
         - API calls
@@ -398,12 +398,6 @@ paths:
       security:
         - Authorization: [] # Requires Authorization header with token
       parameters:
-        - name: accountId
-          in: query
-          required: true
-          schema:
-            type: string
-          description: "Unique identifier of the account to which the machine belongs."
       
         - name: serialNumber
           in: query
