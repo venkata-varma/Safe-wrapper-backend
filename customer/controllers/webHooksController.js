@@ -1452,7 +1452,6 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     }
   ];
 
-
   const sixWeekAggregate = await webhookPayloadTransactions.aggregate(aggregationPipeline)
 
   const sixWeekAggregateFinalResult = getLastSiWeeksResult.map(week => {
@@ -1708,9 +1707,18 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 
   const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
     {
+      $addFields: {
+        transactionDateTime: { $toDate: '$transactionDateTime' }
+      }
+    },
+    {
       $match: {
         ...matchCondition,
-        amount: { $exists: true, $ne: null, $gt: 0 }
+        amount: { $exists: true, $ne: null, $gt: 0 },
+        transactionDateTime: {
+          $gte: moment().local().subtract(1, 'day').toDate(),
+          $lte: moment().endOf('day').toDate(),
+        },
       }
     },
     {
@@ -1846,10 +1854,19 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 
   const topFiveUsersDetails = await webhookPayloadTransactions.aggregate([
     {
+      $addFields: {
+        transactionDateTime: { $toDate: '$transactionDateTime' }
+      }
+    },
+    {
       $match: {
         ...matchCondition,
         userName: { $ne: "", $exists: true },
-        amount: { $exists: true, $ne: null, $gt: 0 }
+        amount: { $exists: true, $ne: null, $gt: 0 },
+        transactionDateTime: {
+          $gte: moment().local().subtract(1, 'day').toDate(),
+          $lte: moment().endOf('day').toDate(),
+        },
       }
     },
     {
@@ -2727,7 +2744,7 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
       serialNumber: { $in: serialNumbersArray },
       transactionDateTime: {
         $gte: moment().local().subtract(1, 'day').toDate(),
-        $lte: moment().local().add(1,'day').toDate(),
+        $lte: moment().endOf('day').toDate(),
       }
     };
 

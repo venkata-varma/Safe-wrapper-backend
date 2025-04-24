@@ -1855,78 +1855,46 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 
 
   const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
-    // {
-    //   $match: {
-    //     // accountId: new mongoose.Types.ObjectId(accountId)
-    //     ...matchCondition
-    //   }
-    // },
-    // Add a flag to mark documents with non-empty denominations array
-    {
-      $addFields: {
-        hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
-        }
-      }
-    },
-    // Group by serialNumber to count qualifying transactions BEFORE unwind
-    {
-      $group: {
-        _id: "$serialNumber",
-        location: { $first: "$location" },
-        totalTransactionCount: {
-          $sum: {
-            $cond: ["$hasDenominations", 1, 0]
-          }
-        },
-        transactions: { $push: "$$ROOT" }
-      }
-    },
-    // Now unwind the denominations array to compute totalAmount
-    {
-      $unwind: {
-        path: "$transactions"
-      }
-    },
-    {
-      $unwind: {
-        path: "$transactions.denominations",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $group: {
-        _id: "$_id", // serialNumber
-        location: { $first: "$location" },
-        totalTransactionCount: { $first: "$totalTransactionCount" },
-        totalAmount: {
-          $sum: {
-            $multiply: [
-              "$transactions.denominations.UnitValue",
-              "$transactions.denominations.Count"
-            ]
-          }
-        }
-      }
-    },
-    {
-      $sort: {
-        totalAmount: -1
-      }
-    },
-    {
-      $limit: 5
-    },
-    {
-      $project: {
-        _id: 0,
-        serialNumber: "$_id",
-        totalAmount: 1,
-        location: 1,
-        totalTransactionCount: 1
-      }
-    }
-  ]);
+     {
+       $addFields: {
+         transactionDateTime: { $toDate: '$transactionDateTime' }
+       }
+     },
+     {
+       $match: {
+        //  ...matchCondition,
+         amount: { $exists: true, $ne: null, $gt: 0 },
+         transactionDateTime: {
+           $gte: moment().local().subtract(1, 'day').toDate(),
+           $lte: moment().endOf('day').toDate(),
+         },
+       }
+     },
+     {
+       $group: {
+         _id: "$serialNumber",
+         location: { $first: "$location" },
+         totalTransactionCount: { $sum: 1 },
+         totalAmount: { $sum: "$amount" },
+         transactions: { $push: "$$ROOT" }
+       }
+     },
+     {
+       $sort: { totalAmount: -1 }
+     },
+     {
+       $limit: 5
+     },
+     {
+       $project: {
+         _id: 0,
+         serialNumber: "$_id",
+         totalAmount: 1,
+         location: 1,
+         totalTransactionCount: 1,
+       }
+     }
+   ]);
 
   const denominations = await webhookPayloadTransactions.aggregate([
     {
@@ -2034,87 +2002,47 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   ])
 
   const topFiveUsersDetails = await webhookPayloadTransactions.aggregate([
-    {
-      $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId),
-        // ...matchCondition,
-        userName: { $ne: "", $exists: true }
-      }
-    },
-    {
-      $addFields: {
-        hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+      {
+        $addFields: {
+          transactionDateTime: { $toDate: '$transactionDateTime' }
+        }
+      },
+      {
+        $match: {
+          // ...matchCondition,
+          userName: { $ne: "", $exists: true },
+          amount: { $exists: true, $ne: null, $gt: 0 },
+          transactionDateTime: {
+            $gte: moment().local().subtract(1, 'day').toDate(),
+            $lte: moment().endOf('day').toDate(),
+          },
+        }
+      },
+      {
+        $group: {
+          _id: "$userName",
+          location: { $first: "$location" },
+          totalTransactionCount: { $sum: 1 },
+          totalAmount: { $sum: "$amount" },
+          transactions: { $push: "$$ROOT" }
+        }
+      },
+      {
+        $sort: { totalAmount: -1 }
+      },
+      {
+        $limit: 6
+      },
+      {
+        $project: {
+          _id: 0,
+          userName: "$_id",
+          totalAmount: 1,
+          location: 1,
+          totalTransactionCount: 1,
         }
       }
-    },
-    {
-      $group: {
-        _id: "$userName",
-        totalTransactionCount: {
-          $sum: {
-            $cond: ["$hasDenominations", 1, 0]
-          }
-        },
-        location: { $first: "$location" },
-        transactions: { $push: "$$ROOT" }
-      }
-    },
-    {
-      $unwind: {
-        path: "$transactions"
-      }
-    },
-    {
-      $unwind: {
-        path: "$transactions.denominations",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $group: {
-        _id: "$_id", // userName
-        totalTransactionCount: { $first: "$totalTransactionCount" },
-        location: { $first: "$location" },
-        totalAmount: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $gt: ["$transactions.denominations.UnitValue", 0] },
-                  { $gt: ["$transactions.denominations.Count", 0] }
-                ]
-              },
-              {
-                $multiply: [
-                  "$transactions.denominations.UnitValue",
-                  "$transactions.denominations.Count"
-                ]
-              },
-              0
-            ]
-          }
-        }
-      }
-    },
-    {
-      $sort: {
-        totalAmount: -1
-      }
-    },
-    {
-      $limit: 5
-    },
-    {
-      $project: {
-        _id: 0,
-        userName: "$_id",
-        totalAmount: 1,
-        location: 1,
-        totalTransactionCount: 1
-      }
-    }
-  ]);
+    ]);
 
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -3084,7 +3012,7 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
     serialNumber: { $in: serialNumbersArray },
     transactionDateTime: {
       $gte: moment().local().subtract(1, 'day').toDate(),
-      $lte: moment().local().add(1,'day').toDate(),
+      $lte: moment().endOf('day').toDate(),
     }
   };
 
