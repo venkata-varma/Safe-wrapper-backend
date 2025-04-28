@@ -82,6 +82,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
+            accountType:"merchant",
             role:"merchant",
            logo: req.file ? await preSignedUrlToUpload(req.file) : "",
            machines:req.body.machines.split(',').length > 0 ? req.body.machines.split(',') : req.body.machines
@@ -98,8 +99,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             companyName: companyName,
             phone: phone,
             email: email,
-            accountType:"merchant",
-            role:"admin",
+            role:"merchant",
         });
         await accountSettingsModel.create({
             accountId: accountData._id,
