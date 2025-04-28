@@ -1240,49 +1240,49 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   console.log('serialNumbers:', serialNumbers);
 
   if (!accountId || !fromDate || !toDate) {
-      throw new Error('accountId, fromDate, and toDate are required');
+    throw new Error('accountId, fromDate, and toDate are required');
   }
 
   if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
-      throw new Error('Invalid date format for fromDate or toDate');
+    throw new Error('Invalid date format for fromDate or toDate');
   }
 
   let serialNumbersArray = [];
   if (serialNumbers && serialNumbers !== 'all') {
-      serialNumbersArray = serialNumbers.includes(',')
-          ? serialNumbers.split(',').map((s) => s.trim())
-          : [serialNumbers];
+    serialNumbersArray = serialNumbers.includes(',')
+      ? serialNumbers.split(',').map((s) => s.trim())
+      : [serialNumbers];
   }
   console.log('serialNumbersArray:', serialNumbersArray);
 
   let transactionTypesArray = [];
   if (transactionTypes && transactionTypes !== 'all') {
-      transactionTypesArray = transactionTypes.includes(',')
-          ? transactionTypes.split(',').map((t) => t.trim())
-          : [transactionTypes];
+    transactionTypesArray = transactionTypes.includes(',')
+      ? transactionTypes.split(',').map((t) => t.trim())
+      : [transactionTypes];
   }
   console.log('transactionTypesArray:', transactionTypesArray);
   let matchConditions = {
     transactionDateTime: {
-        $gte: moment(fromDate).toDate(),
-        $lte: moment(toDate).toDate(),
+      $gte: moment(fromDate).toDate(),
+      $lte: moment(toDate).toDate(),
     },
   };
   if (req.user.accountId.accountType === "merchant") {
-    matchConditions.serialNumber= { $in: req.user.accountId.machines }
+    matchConditions.serialNumber = { $in: req.user.accountId.machines }
   }
   else {
     matchConditions.accountId = new mongoose.Types.ObjectId(accountId)
     matchConditions.serialNumber = { $in: req.user.accountId.machines }
   }
-  
+
   // matchConditions.accountId = new mongoose.Types.ObjectId(accountId);
   if (serialNumbersArray.length > 0) {
-      matchConditions.serialNumber = { $in: serialNumbersArray };
+    matchConditions.serialNumber = { $in: serialNumbersArray };
   }
 
   if (transactionTypesArray.length > 0) {
-      matchConditions.transactionType = { $in: transactionTypesArray };
+    matchConditions.transactionType = { $in: transactionTypesArray };
   }
 
   console.log('matchConditions:', matchConditions);
@@ -1290,28 +1290,28 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   const pipeline = [];
 
   pipeline.push({
-      $addFields: {
-          transactionDateTime: { $toDate: '$transactionDateTime' },
-      },
+    $addFields: {
+      transactionDateTime: { $toDate: '$transactionDateTime' },
+    },
   });
 
   pipeline.push({
-      $match: matchConditions,
+    $match: matchConditions,
   });
 
   pipeline.push({
-      $sort: { transactionDateTime: -1 },
+    $sort: { transactionDateTime: -1 },
   });
   console.log('pipeline:', JSON.stringify(pipeline));
 
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate(pipeline);
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-      status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
-      data: {
-          webhookTransactionDetails,
-      },
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+    data: {
+      webhookTransactionDetails,
+    },
   });
 });
 
@@ -1489,7 +1489,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   let payloadSummary = []
   let metaPayloadQuery = await webhookMetaPayloadModel.aggregate([
     {
-      $match:{
+      $match: {
         createdAt: {
           $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
           $lte: new Date(),
@@ -1725,7 +1725,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         amount: { $exists: true, $ne: null, $gt: 0 },
         transactionDateTime: {
           $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
-          $lte: moment().utc().endOf('day').toDate()                      
+          $lte: moment().utc().endOf('day').toDate()
         }
       }
     },
@@ -1873,7 +1873,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         amount: { $exists: true, $ne: null, $gt: 0 },
         transactionDateTime: {
           $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
-          $lte: moment().utc().endOf('day').toDate()                      
+          $lte: moment().utc().endOf('day').toDate()
         }
       }
     },
@@ -2105,9 +2105,13 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   console.log('matchCondition:===', matchCondition)
   let getLastSiWeeksResult = getSixWeeksSalesFunction()
 
-  const fromDate = getLastSiWeeksResult[0].fromDate;
-  const toDate = getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate;
+  // const fromDate = getLastSiWeeksResult[0].fromDate;
+  // const toDate = getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate;
 
+  const fromDate = moment(getLastSiWeeksResult[0].fromDate).utc().startOf('day').toDate().toISOString();
+  const toDate = moment(getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate).utc().endOf('day').toDate().toISOString();
+  console.log('fromDate:===', fromDate)
+  console.log('toDate:===', toDate)
   const lastSixWeeksDataForGraph = await webhookPayloadTransactions.aggregate([
     {
       $match: {
@@ -2231,8 +2235,8 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         //   $lte: new Date()
         // }
         transactionDateTime: {
-          $gte: moment().utc().subtract(6,'months').startOf('day').toDate(),
-          $lte: moment().utc().endOf('day').toDate()                      
+          $gte: moment().utc().subtract(6, 'months').startOf('day').toDate(),
+          $lte: moment().utc().endOf('day').toDate()
         }
       }
     },
@@ -2325,7 +2329,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         // },
         transactionDateTime: {
           $gte: moment(startDate).utc().startOf('day').toDate(),
-          $lte: moment(endDate).utc().endOf('day').toDate()                      
+          $lte: moment(endDate).utc().endOf('day').toDate()
         }
       }
     },
@@ -2757,7 +2761,7 @@ exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
 
 exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
   const { serialNumbers, accountId } = req.query;
-  
+
   let serialNumbersArray = [];
   if (serialNumbers && serialNumbers !== 'all') {
     serialNumbersArray = serialNumbers.includes(',')
@@ -2766,93 +2770,93 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
   }
 
   const matchCondition = {
-      serialNumber: { $in: serialNumbersArray },
-      transactionDateTime: {
-        $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
-        $lte: moment().utc().endOf('day').toDate()                      
-      }
-    };
+    serialNumber: { $in: serialNumbersArray },
+    transactionDateTime: {
+      $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+      $lte: moment().utc().endOf('day').toDate()
+    }
+  };
 
-  console.log('matchCondition:==',matchCondition)
+  console.log('matchCondition:==', matchCondition)
 
   const denominations = await webhookPayloadTransactions.aggregate([
-      
-      {
-        $addFields: {
-          transactionDateTime: { $toDate: '$transactionDateTime' }
-        }
-      },
-      {
-        $match: matchCondition
-      },
-      {
-        $unwind: {
-          path: '$denominations',
-          preserveNullAndEmptyArrays: false
-        }
-      },
-      {
-        $match: {
-          'denominations.UnitValue': { $ne: null },
-          'denominations.Count': { $ne: null },
-          'denominations.Currency': { $ne: null }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            unitValue: '$denominations.UnitValue',
-            currency: '$denominations.Currency'
-          },
-          totalCount: {
-            $sum: { $ifNull: ['$denominations.Count', 0] }
-          },
-          totalAmount: {
-            $sum: {
-              $multiply: [
-                '$denominations.UnitValue',
-                '$denominations.Count'
-              ]
-            }
+
+    {
+      $addFields: {
+        transactionDateTime: { $toDate: '$transactionDateTime' }
+      }
+    },
+    {
+      $match: matchCondition
+    },
+    {
+      $unwind: {
+        path: '$denominations',
+        preserveNullAndEmptyArrays: false
+      }
+    },
+    {
+      $match: {
+        'denominations.UnitValue': { $ne: null },
+        'denominations.Count': { $ne: null },
+        'denominations.Currency': { $ne: null }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          unitValue: '$denominations.UnitValue',
+          currency: '$denominations.Currency'
+        },
+        totalCount: {
+          $sum: { $ifNull: ['$denominations.Count', 0] }
+        },
+        totalAmount: {
+          $sum: {
+            $multiply: [
+              '$denominations.UnitValue',
+              '$denominations.Count'
+            ]
           }
         }
-      },
-      {
-        $group: {
-          _id:null,
-          denominations: {
-            $push: {
-              UnitValue: '$_id.unitValue',
-              Count: '$totalCount',
-              Currency: '$_id.currency',
-              Total: { $multiply: ['$_id.unitValue', '$totalCount'] }
-            }
-          },
-          totalAmount: { $sum: '$totalAmount' }
-        }
-      },
-      {
-        $project: {
-          _id: 0,
-          denominations: {
-            $slice: [
-              {
-                $sortArray: {
-                  input: '$denominations',
-                  sortBy: {
-                    Total: -1,   
-                    UnitValue: -1
-                  }
-                }
-              },
-              5
-            ]
-          },
-          totalAmount: 1
-        }
       }
-      
-    ]);
+    },
+    {
+      $group: {
+        _id: null,
+        denominations: {
+          $push: {
+            UnitValue: '$_id.unitValue',
+            Count: '$totalCount',
+            Currency: '$_id.currency',
+            Total: { $multiply: ['$_id.unitValue', '$totalCount'] }
+          }
+        },
+        totalAmount: { $sum: '$totalAmount' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        denominations: {
+          $slice: [
+            {
+              $sortArray: {
+                input: '$denominations',
+                sortBy: {
+                  Total: -1,
+                  UnitValue: -1
+                }
+              }
+            },
+            5
+          ]
+        },
+        totalAmount: 1
+      }
+    }
+
+  ]);
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
