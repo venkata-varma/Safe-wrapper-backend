@@ -67,7 +67,7 @@ exports.createUser = asyncWrapper(async (req, res) => {
     const userData = await usersModel.create({
       ...req.body,
       _id: customId,
-      role:"admin",
+      role: req.user.accountId.accountType === "super-admin" ? "merchant" : "admin",
       userId: customId,
       createdBy: req.body.createdBy, //Super-admin user among set 0f 4 -5 users
       accountId:req.user.accountId || null
@@ -175,10 +175,11 @@ exports.getUserDetails = asyncWrapper(async (req, res) => {
  */
 exports.getAllUsers = asyncWrapper(async (req, res) => {
   // const users = await usersModel.find({ accountId: req.params.accountId, role:{$eq:req.user.role === "super-admin"} }, { password: 0 });
+  console.log('req.user.role:===',req.user.role)
   const users = await usersModel.find(
     { 
       accountId: req.params.accountId, 
-      role: req.user.role === "super-admin" ? { $in: ["super-admin","admin"] } : { $ne: "admin" }
+      role: req.user.role === "super-admin" ? { $in: ["super-admin","admin","merchant"] } : req.user.role === "merchant" ? { $in: ["admin","merchant"] } : { $eq: "admin" }
     }, 
     { password: 0 }
   );
