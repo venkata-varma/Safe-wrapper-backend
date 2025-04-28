@@ -2093,7 +2093,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   let matchCondition = {}
   if (req.user.accountId.accountType === "merchant") {
     matchCondition = {
-      serialNumber: { $in: req.user.accountId.machines }
+      serialNumber: serialNumber
     }
   }
   else {
@@ -2113,7 +2113,6 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
       $match: {
         // accountId: new mongoose.Types.ObjectId(accountId),
         ...matchCondition,
-        // serialNumber,
         transactionDateTime: {
           $gte: fromDate,
           $lte: toDate
@@ -2218,13 +2217,22 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
 
   const totalSummaryOfMachine = await webhookPayloadTransactions.aggregate([
     {
+      $addFields: {
+        transactionDateTime: { $toDate: '$transactionDateTime' }
+      }
+    },
+    {
       $match: {
         // accountId: new mongoose.Types.ObjectId(accountId),
         ...matchCondition,
         // serialNumber,
-        createdAt: {
-          $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
-          $lte: new Date()
+        // createdAt: {
+        //   $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
+        //   $lte: new Date()
+        // }
+        transactionDateTime: {
+          $gte: moment().utc().subtract(6,'months').startOf('day').toDate(),
+          $lte: moment().utc().endOf('day').toDate()                      
         }
       }
     },
@@ -2302,13 +2310,22 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
 
   const aggResult = await webhookPayloadTransactions.aggregate([
     {
+      $addFields: {
+        transactionDateTime: { $toDate: '$transactionDateTime' }
+      }
+    },
+    {
       $match: {
         // accountId: new mongoose.Types.ObjectId(accountId),
         ...matchCondition,
         // serialNumber: serialNumber,
-        createdAt: {
-          $gte: startDate,
-          $lt: endDate
+        // createdAt: {
+        //   $gte: startDate,
+        //   $lt: endDate
+        // },
+        transactionDateTime: {
+          $gte: moment(startDate).utc().startOf('day').toDate(),
+          $lte: moment(endDate).utc().endOf('day').toDate()                      
         }
       }
     },
