@@ -1269,16 +1269,11 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
     },
   };
   if (req.user.accountId.accountType === "merchant") {
-    matchConditions = {
-      serialNumber: { $in: req.user.accountId.machines }
-    }
+    matchConditions.serialNumber= { $in: req.user.accountId.machines }
   }
   else {
-    matchConditions = {
-      accountId: new mongoose.Types.ObjectId(accountId),
-      serialNumber: { $in: req.user.accountId.machines }
-
-    }
+    matchConditions.accountId = new mongoose.Types.ObjectId(accountId)
+    matchConditions.serialNumber = { $in: req.user.accountId.machines }
   }
   
   // matchConditions.accountId = new mongoose.Types.ObjectId(accountId);
@@ -1307,6 +1302,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   pipeline.push({
       $sort: { transactionDateTime: -1 },
   });
+  console.log('pipeline:', JSON.stringify(pipeline));
 
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate(pipeline);
 
