@@ -33,7 +33,7 @@ exports.validateUserRegistration = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
     });
   }
-  if (req.user.role !== 'super-admin') {
+  if (!['admin','super-admin'].includes(req.user.role)) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_SESSION_NO_ACCESS_TO_ADD_USER,
