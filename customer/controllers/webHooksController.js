@@ -1724,9 +1724,9 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         ...matchCondition,
         amount: { $exists: true, $ne: null, $gt: 0 },
         transactionDateTime: {
-          $gte: moment().local().subtract(1, 'day').toDate(),
-          $lte: moment().endOf('day').toDate(),
-        },
+          $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+          $lte: moment().utc().endOf('day').toDate()                      
+        }
       }
     },
     {
@@ -1872,9 +1872,9 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         userName: { $ne: "", $exists: true },
         amount: { $exists: true, $ne: null, $gt: 0 },
         transactionDateTime: {
-          $gte: moment().local().subtract(1, 'day').toDate(),
-          $lte: moment().endOf('day').toDate(),
-        },
+          $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+          $lte: moment().utc().endOf('day').toDate()                      
+        }
       }
     },
     {
@@ -2751,105 +2751,91 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
   const matchCondition = {
       serialNumber: { $in: serialNumbersArray },
       transactionDateTime: {
-        $gte: moment().local().subtract(1, 'day').toDate(),
-        $lte: moment().endOf('day').toDate(),
+        $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+        $lte: moment().utc().endOf('day').toDate()                      
       }
     };
 
   console.log('matchCondition:==',matchCondition)
 
   const denominations = await webhookPayloadTransactions.aggregate([
-    
-    {
-      $addFields: {
-        transactionDateTime: { $toDate: '$transactionDateTime' }
-      }
-    },
-    {
-      $match: matchCondition
-    },
-    {
-      $unwind: {
-        path: '$denominations',
-        preserveNullAndEmptyArrays: false
-      }
-    },
-    {
-      $match: {
-        'denominations.UnitValue': { $ne: null },
-        'denominations.Count': { $ne: null },
-        'denominations.Currency': { $ne: null }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          serialNumber: '$serialNumber',
-          transactionType: '$transactionType',
-          unitValue: '$denominations.UnitValue',
-          currency: '$denominations.Currency'
-        },
-        totalCount: {
-          $sum: { $ifNull: ['$denominations.Count', 0] }
-        },
-        totalAmount: {
-          $sum: {
-            $multiply: [
-              '$denominations.UnitValue',
-              '$denominations.Count'
-            ]
+      
+      {
+        $addFields: {
+          transactionDateTime: { $toDate: '$transactionDateTime' }
+        }
+      },
+      {
+        $match: matchCondition
+      },
+      {
+        $unwind: {
+          path: '$denominations',
+          preserveNullAndEmptyArrays: false
+        }
+      },
+      {
+        $match: {
+          'denominations.UnitValue': { $ne: null },
+          'denominations.Count': { $ne: null },
+          'denominations.Currency': { $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            unitValue: '$denominations.UnitValue',
+            currency: '$denominations.Currency'
+          },
+          totalCount: {
+            $sum: { $ifNull: ['$denominations.Count', 0] }
+          },
+          totalAmount: {
+            $sum: {
+              $multiply: [
+                '$denominations.UnitValue',
+                '$denominations.Count'
+              ]
+            }
           }
         }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          serialNumber: '$_id.serialNumber',
-          transactionType: '$_id.transactionType'
-        },
-        denominations: {
-          $push: {
-            UnitValue: '$_id.unitValue',
-            Count: '$totalCount',
-            Currency: '$_id.currency',
-            Total: { $multiply: ['$_id.unitValue', '$totalCount'] }
-          }
-        },
-        totalAmount: { $sum: '$totalAmount' }
-      }
-    },
-    {
-      $sort: {
-        totalAmount: -1
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        serialNumber: '$_id.serialNumber',
-        transactionType: '$_id.transactionType',
-        denominations: {
-          $cond: {
-            if: { $gt: [{ $size: '$denominations' }, 0] },
-            then: {
-              $slice: [
-                {
-                  $sortArray: {
-                    input: '$denominations',
-                    sortBy: { Total: -1 }
+      },
+      {
+        $group: {
+          _id:null,
+          denominations: {
+            $push: {
+              UnitValue: '$_id.unitValue',
+              Count: '$totalCount',
+              Currency: '$_id.currency',
+              Total: { $multiply: ['$_id.unitValue', '$totalCount'] }
+            }
+          },
+          totalAmount: { $sum: '$totalAmount' }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          denominations: {
+            $slice: [
+              {
+                $sortArray: {
+                  input: '$denominations',
+                  sortBy: {
+                    Total: -1,   
+                    UnitValue: -1
                   }
-                },
-                5
-              ]
-            },
-            else: []
-          }
-        },
-        totalAmount: 1
+                }
+              },
+              5
+            ]
+          },
+          totalAmount: 1
+        }
       }
-    }
-  ]);
+      
+    ]);
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
