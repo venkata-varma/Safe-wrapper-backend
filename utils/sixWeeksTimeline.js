@@ -39,8 +39,3 @@ function getSixWeeksSalesFunction() {
 module.exports = {
   getSixWeeksSalesFunction
 };
-
-
-module.exports={
-  getSixWeeksSalesFunction
-}
