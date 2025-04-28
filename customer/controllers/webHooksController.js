@@ -1567,7 +1567,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         payloadsCount: [
           {
             $match: {
-              $expr: { $in: ["$primaryHookId", matchCondition.serialNumber.$in || []] },
+              $expr: { $in: ["$primaryHookId", matchCondition.serialNumber?.$in || []] },
             },
           },
           {
