@@ -2234,8 +2234,8 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   console.log('matchCondition:===', matchCondition)
   let getLastSiWeeksResult = getSixWeeksSalesFunction()
 
-  const fromDate = moment(getLastSiWeeksResult[0].fromDate).utc().startOf('day').toDate().toISOString();
-  const toDate = moment(getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate).utc().endOf('day').toDate().toISOString();
+  const fromDate = getLastSiWeeksResult[0].fromDate;
+  const toDate = getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate
   console.log('fromDate:===',fromDate)
   console.log('toDate:===',toDate)
 
