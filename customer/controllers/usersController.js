@@ -103,7 +103,7 @@ exports.middlewareToDeleteUser = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_USER_ALREADY_DELETED,
     });
   }
-  if (req.user.role !== 'super-admin') {
+  if (!['admin','super-admin'].includes(req.user.role)) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_SESSION_NO_ACCESS_TO_DELETE_USER,
