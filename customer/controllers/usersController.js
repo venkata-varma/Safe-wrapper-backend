@@ -33,7 +33,7 @@ exports.validateUserRegistration = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
     });
   }
-  if (!['admin','super-admin'].includes(req.user.role)) {
+  if (!['super-admin','merchant'].includes(req.user.role)) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_SESSION_NO_ACCESS_TO_ADD_USER,
@@ -103,7 +103,7 @@ exports.middlewareToDeleteUser = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_USER_ALREADY_DELETED,
     });
   }
-  if (!['admin','super-admin'].includes(req.user.role)) {
+  if (!['merchant','super-admin'].includes(req.user.role)) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_SESSION_NO_ACCESS_TO_DELETE_USER,
@@ -285,7 +285,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
     });
   }
-  if (!["admin","super-admin"].includes(user.role)) {
+  if (["super-admin"].includes(user.role)) {
     return res.status(customConstants.statusCodes.FORBIDDEN).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_ONLY_CUSTOMER_ENTRY,
