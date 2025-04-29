@@ -301,9 +301,8 @@ paths:
                   format: password
                   description: "User's password"
                   example: "0000000001"
-                setExpirationForSession:
+                sessionExpirationTime:
                   type: string
-                  format: password
                   description: "Set desired expiration time for a session in either seconds, minutes ,hours,days, weeks, or years. Example: For minutes- 5m; For hours- 5h; For days - 5d; For Weeks- 5w; For Years- 5y"
                   example: " "
       responses:
@@ -400,12 +399,10 @@ paths:
         - This API provides detailed insights about a specific machine based on desired filters.  
         - By providing query parameters, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
           The available query parameters are:  
-          - `serialNumber`: Filter by the machine's serial number.  
-          - `transactionType`: Filter by the type of transaction `(e.g., CashIn, CashOut)`.  
-          - `fromDate`: Retrieve records from this date onward.  `(e.g., 2025-03-31)`
-          - `toDate`: Retrieve records up to this date.  `(e.g., 2025-04-01)`
-          - `startTime`: Filter transactions occurring after this time which is `(24 hour format)` || `(e.g., 11:00)`
-          - `endTime`: Filter transactions occurring before this time which is `(24 hour format)` || `(e.g., 12:00)`
+          - `serialNumbers`: Filter by the machine's serial numbers.  
+          - `transactionTypes`: Filter by the types of transaction `(e.g., CashIn, CashOut)`.  
+          - `fromDate`: Retrieve records from this date onward.  `(e.g., 2025-04-21T10:40Z)`
+          - `toDate`: Retrieve records up to this date.  `(e.g., 2025-04-28T10:40Z)`
         - Requires authentication via the `Authorization` header.
       security:
         - Authorization: [] # Requires Authorization header with token
@@ -427,24 +424,14 @@ paths:
           in: query
           schema:
             type: string
-          description: "Desired date from which data to be retreived from.(e.g., 2025-03-31) "
+          description: "Desired date from which data to be retreived from.(e.g., 2025-04-21T10:40Z) "
        
         - name: toDate
           in: query
           schema:
             type: string
-          description: "Desired date to which data to be retreived from. (e.g., 2025-04-01)" 
-       
-        - name: startTime
-          in: query
-          schema:
-            type: string
-          description: "Desired time (24-hour format) from which data to be retreived from. (e.g., 11:00)" 
-        - name: endTime
-          in: query
-          schema:
-            type: string
-          description: "Desired time (24-hour format) to which data to be retreived from.  (e.g., 12:00)"     
+          description: "Desired date to which data to be retreived from. (e.g., 2025-04-28T10:40Z)" 
+         
       responses:
         200:
           description: Successful response with machine report details

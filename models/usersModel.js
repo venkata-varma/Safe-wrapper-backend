@@ -69,9 +69,9 @@ const usersSchema = new mongoose.Schema({
     },
 },{timestamps:true});
 
-usersSchema.methods.getJWTToken = function (setExpirationForSession) {
+usersSchema.methods.getJWTToken = function (sessionExpirationTime) {
     let jwtExpiresInput;
-    jwtExpiresInput= setExpirationForSession?setExpirationForSession:process.env.JWT_EXPIRES_IN
+    jwtExpiresInput= sessionExpirationTime?sessionExpirationTime:process.env.JWT_EXPIRES_IN
     console.log("jwtExpiresInput", jwtExpiresInput)
     return jwt.sign({ userId: this._id }, 'secret', {
         expiresIn: jwtExpiresInput,
