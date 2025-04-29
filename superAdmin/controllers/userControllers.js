@@ -85,7 +85,7 @@ If middleware returns True, this function create session with valid JWT token
 Mandatory fields -> Phone and Password 
 */
 exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
-  const { mobileEmail, password } = req.body;
+  const { mobileEmail, password,setExpirationForSession } = req.body;
   let user_details = {};
   // Find user by email or phone
   const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }, { _id: 0, password: 0 });
@@ -95,7 +95,7 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
   user_details.userDetails = user.toObject();
 
   // Generate JWT token
-  const jwtToken = await userData.getJWTToken();
+  const jwtToken = await userData.getJWTToken(setExpirationForSession);
   const jwtTokenExpires = await userData.getJWTTokenExpireDate(jwtToken);
 
   // Create session
