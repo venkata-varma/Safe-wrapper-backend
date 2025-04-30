@@ -1227,146 +1227,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   }
   console.log('metaPayloadMatchCondition:====', metaPayloadMatchCondition)
 
-  /*
   
-  let payloadSummary = await webhookMetaPayloadModel.aggregate([
-    {
-      $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId),
-    //    ...metaPayloadMatchCondition,
-        createdAt: {
-          $gte: new Date(new Date().setDate(new Date().getDay() - 1)),
-          $lte: new Date(),
-        },
-      },
-    },  
-    {
-      $lookup: {
-        from: "webhookpayloadtransactions",
-        foreignField: "serialNumber",
-        localField: "primaryHookId",
-        as: "webhooktransactionsresults",
-      },
-    },
-    {
-      $unwind: {
-        path: "$webhooktransactionsresults",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $match: {
-        "webhooktransactionsresults.userName": { $ne: "", $exists: true },
-        // "webhooktransactionsresults.denominations": { $exists: true, $ne: [], $not: { $size: 0 } },
-        "webhooktransactionsresults.amount": { $exists: true, $gt:0 },
-
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        serialNumbers: { $addToSet: "$primaryHookId" },
-        transactionTypes: { $addToSet: "$webhooktransactionsresults.transactionType" },
-        users: { $addToSet: "$webhooktransactionsresults.userName" },
-        locations: { $addToSet: "$webhooktransactionsresults.location" },
-        transactionIds: { $addToSet: "$webhooktransactionsresults._id" },
-      },
-    },
-    {
-      $lookup: {
-        from: "webhookmetapayloads",
-        pipeline: [
-          // {
-          //   // $match: { accountId: new mongoose.Types.ObjectId(accountId) },
-          //   $match: metaPayloadMatchCondition,
-
-          // },
-          {
-            $group: {
-              _id: "$status",
-              count: { $sum: 1 },
-            },
-          },
-        ],
-        as: "statusCountsData",
-      },
-    },
-    {
-      $addFields: {
-        statusCounts: {
-          $map: {
-            input: predefinedStatuses,
-            as: "status",
-            in: {
-              status: "$$status",
-              count: {
-                $ifNull: [
-                  {
-                    $getField: {
-                      field: "count",
-                      input: {
-                        $arrayElemAt: [
-                          {
-                            $filter: {
-                              input: "$statusCountsData",
-                              as: "s",
-                              cond: { $eq: ["$$s._id", "$$status"] },
-                            },
-                          },
-                          0,
-                        ],
-                      },
-                    },
-                  },
-                  0,
-                ],
-              },
-            },
-          },
-        },
-      },
-    },
-    {
-      $lookup: {
-        from: "webhookmetapayloads",
-        pipeline: [
-          // {
-          //   $match: {
-          //     // $expr: { $eq: ["$accountId", new mongoose.Types.ObjectId(accountId)] },
-          //     $expr: { $or: [{$eq:["$accountId", new mongoose.Types.ObjectId(accountId)]}
-          //       ,{$eq:["$primaryHookId",matchCondition.serialNumber]}] },
-          //   },
-          // },
-          {
-            $count: "totalCount",
-          },
-        ],
-        as: "metaPayloadCountData",
-      },
-    },
-    {
-      $addFields: {
-        totalMetaPayloadsCount: {
-          $ifNull: [{ $arrayElemAt: ["$metaPayloadCountData.totalCount", 0] }, 0],
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        serialNumbersCount: { $size: { $ifNull: ["$serialNumbers", []] } },
-        transactionTypesCount: { $size: { $ifNull: ["$transactionTypes", []] } },
-        usersCount: { $size: { $ifNull: ["$users", []] } },
-        locationsCount: { $size: { $ifNull: ["$locations", []] } },
-        payloadsCount: "$totalMetaPayloadsCount",
-        transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
-        statusCounts: 1,
-      },
-    },
-  ]);
-
-  */
-
   let payloadSummary = []
   let metaPayloadQuery = await webhookMetaPayloadModel.aggregate([
     {
@@ -2656,6 +2517,62 @@ exports.updateWebhookAutoDataSyncStatus = asyncWrapper(async (req, res) => {
 
 exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
   const{accountId} = req.query
+  let exceptionsCount = await webhookExceptionsModel.find({accountId:accountId}).countDocuments()
+  let accountDetails = await accountsModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId)
+      }
+    },
+    {
+      $lookup: {
+        from: "webhookpayloadtransactions",
+        localField: "accountId",
+        foreignField: "accountId",
+        as: "transactiondetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$transactiondetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: "$_id", 
+        accountDetails: { $first: "$$ROOT" },
+        serialNumbers: { $addToSet: "$transactiondetails.serialNumber" },
+        transactionsWithPositiveAmount: {
+          $sum: {
+            $cond: [{ $gt: ["$transactiondetails.amount", 0] }, 1, 0]
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        accountDetails: {
+          $arrayToObject: {
+            $filter: {
+              input: { $objectToArray: "$accountDetails" },
+              as: "field",
+              cond: {
+                $not: {
+                  $in: ["$$field.k", ["password", "transactiondetails", "_id"]]
+                }
+              }
+            }
+          }
+        },
+        serialNumbersCount: { $size: "$serialNumbers" },
+        transactionsCount: "$transactionsWithPositiveAmount",
+        exceptionsCount: { $literal: exceptionsCount }
+      }
+    }
+  ]);
+  
   let webhookDetails = await webHooksMasterModel.aggregate([
     {
       $match: {
@@ -2946,7 +2863,7 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
   .json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
-    data: {webhookDetails,webhookMetaPayloadsDetails,onePosLogs}
+    data: {webhookDetails,webhookMetaPayloadsDetails,onePosLogs, accountDetails:accountDetails?.[0]}
   });
   
 })

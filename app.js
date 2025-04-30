@@ -74,8 +74,4 @@ app.listen(8201, () => {
     console.log(`Server is working on port 8201`);
 });
 
-
-
-
-
 module.exports = app;
