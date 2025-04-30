@@ -2769,6 +2769,7 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
         serialNumber: "$primaryHookId",
         transactionDateAndTime: "$createdAt",
         location: { $arrayElemAt: ["$dataPoint.Metadata.LocationInformation.Location", 0] },
+        name: { $arrayElemAt: ["$dataPoint.Metadata.LocationInformation.Name", 0] },
         dataPoint: 1,
         _id: 0
       }
