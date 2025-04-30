@@ -54,7 +54,7 @@ const webhookMastersSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "offline", "delete"],
+      enum: ["active", "offline", "deleted"],
       default: "active",
     },
     lastPullDate:{

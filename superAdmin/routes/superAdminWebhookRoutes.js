@@ -12,7 +12,6 @@ const {
   getIndividualWebhookDetails,
   validateWebhookStatus,
   validateAccountStatus,
-  getAllWebhooksOfAccount,
   validateWebhookandAccount,updateWebhookSettings,
   getAllWebhookTransactionsOfAccount,
   getAllWebhookPayoadHeadersOfAccount,
@@ -22,9 +21,11 @@ const {
   getPayloadReports,
   validateAuthentication,
   getTransactionsReports,
-  getProgressMeterAndTotalsOfSingleMachine,
   getExceptionsOfAccount,
-  getTransactionDenominations
+  getTransactionDenominations,
+  updateWebhookStatus,
+  updateWebhookAutoDataSyncStatus,
+  getWebhookDetailsOfAccount
 } = require("../controllers/superAdminWebhooksController");
 
 router.post(
@@ -43,15 +44,14 @@ router.post(
 );
 
 router.post("/decrypt-string",  decryptString);
-router.patch('/update-webhook-settings/:webhookMasterId',validateWebhookandAccount,updateWebhookSettings)
-
+router.patch('/update-webhook-settings',validateWebhookandAccount,updateWebhookSettings)
+router.patch('/update-webhook-status',updateWebhookStatus)
+router.patch('/update-webhook-auto-data-sync-status',updateWebhookAutoDataSyncStatus)
 router.get(
-  "/get-individual-webhook-details/:webhookMasterId",
+  "/get-individual-webhook-details",
   validateWebhookStatus,
   getIndividualWebhookDetails
 );
-
-router.get('/get-all-webhook-details', validateAccountStatus,getAllWebhooksOfAccount)
 
 router.get('/get-machine-transactions',getAllWebhookTransactionsOfAccount)
 router.get('/get-machine-payload-headers',getAllWebhookPayoadHeadersOfAccount)
@@ -61,9 +61,10 @@ router.get('/get-all-machine-reports',getAllMachineReports)
 router.get('/get-machine-reports',getPayloadReports)
 router.get('/get-exceptions',getExceptionsOfAccount)
 router.get('/get-transaction-denominations',getTransactionDenominations)
+router.get('/get-all-webhook-details-of-account',getWebhookDetailsOfAccount)
+// router.get('/get-')
 
 //One POS
 router.get('/get-transactions-reports',validateAuthentication, getTransactionsReports)
 
-router.get('/get-progres-meter-total-single-machine', getProgressMeterAndTotalsOfSingleMachine)
 module.exports = router;

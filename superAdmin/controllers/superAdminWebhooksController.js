@@ -19,6 +19,7 @@ const webhookPayloadHeaders = require("../../models/webhookPayloadHeaders");
 const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
 const usersModel = require("../../models/usersModel");
 const onePosLogsModel = require("../../models/onePosLogsModel");
+const { insertPosLogs } = require("../../utils/utilsFunctions");
 
 
 /**
@@ -909,7 +910,13 @@ exports.validateWebhookStatus = asyncWrapper(async (req, res, next) => {
 });
 
 exports.getIndividualWebhookDetails = asyncWrapper(async (req, res) => {
-  let individualWebhookDetails = req.individualWebhookDetails;
+  const { webhookMasterId, accountId } = req.query
+  let individualWebhookDetails = await webHooksMasterModel.find(
+    {
+      _id: new mongoose.TYpes.ObjectId(webhookMasterId),
+      accountId: new mongoose.TYpes.ObjectId(accountId)
+    }
+  )
 
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -925,7 +932,7 @@ exports.getIndividualWebhookDetails = asyncWrapper(async (req, res) => {
 
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
   const accountDetails = await accountsModel
-    .findById(req.params.accountId)
+    .findById(req.query.accountId)
     .lean();
 
   if (!accountDetails || accountDetails.status !== "active") {
@@ -939,268 +946,8 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
   next();
 });
 
-exports.getAllWebhooksOfAccount = asyncWrapper(async (req, res) => {
-  let getAllWebhooksOfAccount = await webHooksMasterModel
-    .find({})
-    .lean();
-
-  return res
-    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-    .json({
-      status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
-
-      data: {
-        getAllWebhooksOfAccount,
-      },
-    });
-});
-
-
-exports.getAllWebhooksOfAccount = asyncWrapper(async (req, res) => {
-  const { accountId } = req.params
-  // const getAllWebHooks = await webHooksModel.find({accountId,integrationsMasterId}).sort({_id:-1})
-
-  const statusesEnum = ['received', 'in-progress', 'executed', 'execution-failed', 'deleted'];
-  const getAllWebHooks = await webHooksModel.aggregate([
-    // {
-    //   $match: {
-    //     accountId: new mongoose.Types.ObjectId(accountId),
-    //   }
-    // },
-    {
-      $lookup: {
-        from: "webhookmetapayloads",
-        foreignField: "webhookMasterId",
-        localField: "_id",
-        as: "webhookLogsDetails"
-      }
-    },
-    {
-      $unwind: {
-        path: "$webhookLogsDetails",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $group: {
-        _id: {
-          webhookMasterId: "$_id",
-          status: "$webhookLogsDetails.status"
-        },
-        count: { $sum: 1 },
-        webHookDetails: { $first: "$$ROOT" }
-      }
-    },
-    {
-      $group: {
-        _id: "$_id.webhookMasterId",
-        webHookDetails: { $first: "$webHookDetails" },
-        statuses: {
-          $push: {
-            status: "$_id.status",
-            count: "$count"
-          }
-        }
-      }
-    },
-    {
-      $addFields: {
-        statuses: {
-          $map: {
-            input: statusesEnum,
-            as: "statusEnum",
-            in: {
-              status: "$$statusEnum",
-              count: {
-                $reduce: {
-                  input: "$statuses",
-                  initialValue: 0,
-                  in: {
-                    $cond: [
-                      { $eq: ["$$this.status", "$$statusEnum"] },
-                      { $add: ["$$value", "$$this.count"] },
-                      "$$value"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      $addFields: {
-        "webHookDetails.webhookLogsDetails": "$$REMOVE", // Remove the `webhookLogsDetails` field
-        "webHookDetails.statuses": "$statuses"
-      }
-    },
-    {
-      $replaceRoot: {
-        newRoot: "$webHookDetails"
-      }
-    }
-    /*
-    {
-        $project: {
-            // webHookDetails: {
-            //     _id: 1,
-            //     webHookId: "$webHookDetails._id",
-            //     accountId: "$webHookDetails.accountId",
-            //     integrationsMasterId: "$webHookDetails.integrationsMasterId",
-            //     webHookName: "$webHookDetails.webHookName",
-            //     webHookUrl: "$webHookDetails.webHookUrl",
-            //     authenticationCode: "$webHookDetails.authenticationCode",
-            //     status: "$webHookDetails.status",
-            //     createdAt: "$webHookDetails.createdAt",
-            //     updatedAt: "$webHookDetails.updatedAt",
-            //     requestObject: "$webHookDetails.requestObject"
-            // },
-            webHookDetails: 1,
-            // statuses: 1,
-            _id: 0
-        }
-    }
-        */
-  ]);
-
-  const getWebHookLogs = await webHooksModel.aggregate([
-    // {
-    //   $match: {
-    //     accountId: new mongoose.Types.ObjectId(accountId),
-    //   }
-    // },
-    {
-      $lookup: {
-        from: "webhookmetapayloads",
-        foreignField: "webhookMasterId",
-        localField: "_id",
-        as: "webhookLogsDetails"
-      }
-    }
-  ]);
-  const getPast6WeeksStatuses = await getWebHooksLogsSixWeekSalesData(getWebHookLogs)
-
-  const getOverallStatuses = await webHooksModel.aggregate([
-    // {
-    //   $match: {
-    //     accountId: new mongoose.Types.ObjectId(accountId),
-    //   }
-    // },
-    {
-      $lookup: {
-        from: "webhookmetapayloads",
-        foreignField: "webhookMasterId",
-        localField: "_id",
-        as: "webhookLogsDetails"
-      }
-    },
-    {
-      $unwind: {
-        path: "$webhookLogsDetails",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $group: {
-        _id: "$webhookLogsDetails.status",
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $addFields: {
-        status: "$_id",
-        count: "$count",
-        _id: 0
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        statuses: { $push: { status: "$status", count: "$count" } }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        mergedStatuses: {
-          /*
-          $map: {
-              input: statusesEnum,
-              as: "status",
-              in: {
-                  status: "$$status",
-                  count: {
-                      $ifNull: [
-                          {
-                              $arrayElemAt: [
-                                  {
-                                      $filter: {
-                                          input: "$statuses",
-                                          as: "item",
-                                          cond: [ {$eq: ["$$item.status", "$$status"]},
-                                          { $add: ["$$value", "$$this.count"] },
-                                          "$$value"
-                                       ]
-                                      }
-                                  },
-                                  0
-                              ]
-                          },
-                          { count: 0 }
-                      ]
-                  }
-              }
-          }
-              */
-          $map: {
-            input: statusesEnum,
-            as: "statusEnum",
-            in: {
-              status: "$$statusEnum",
-              count: {
-                $reduce: {
-                  input: "$statuses",
-                  initialValue: 0,
-                  in: {
-                    $cond: [
-                      { $eq: ["$$this.status", "$$statusEnum"] },
-                      { $add: ["$$value", "$$this.count"] },
-                      "$$value"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      $project: {
-        statuses: "$mergedStatuses"
-      }
-    }
-  ]);
-
-  return res
-    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-    .json({
-      status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
-      data: {
-        webHooks: getAllWebHooks,
-        pastSixWeeksData: getPast6WeeksStatuses,
-        overallStatusesCount: getOverallStatuses[0]?.statuses || []
-      }
-    });
-})
-
-
-
 exports.validateWebhookandAccount = asyncWrapper(async (req, res, next) => {
-  const { webhookMasterId } = req.params;
+  const { webhookMasterId } = req.query;
 
   const webhookDetails = await webHooksMasterModel.findById(webhookMasterId).populate('accountId').lean();
   if (!webhookDetails && webhookDetails?.status !== 'active') {
@@ -1220,7 +967,7 @@ exports.validateWebhookandAccount = asyncWrapper(async (req, res, next) => {
 });
 
 exports.updateWebhookSettings = asyncWrapper(async (req, res) => {
-  const { webhookMasterId } = req.params;
+  const { webhookMasterId } = req.query;
 
   await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, {
     $set: Object.fromEntries(
@@ -1236,6 +983,7 @@ exports.updateWebhookSettings = asyncWrapper(async (req, res) => {
 
 exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
+
   console.log('fromDate, toDate:', fromDate, toDate);
   console.log('serialNumbers:', serialNumbers);
 
@@ -1262,6 +1010,17 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
       : [transactionTypes];
   }
   console.log('transactionTypesArray:', transactionTypesArray);
+  if (req?.user?.authUser === "OnePOS") {
+    await insertPosLogs(
+      req.user.accountId._id,
+      req.user._id,
+      req.url,
+      serialNumbersArray,
+      transactionTypesArray,
+      fromDate,
+      toDate
+    )
+  }
 
   const matchConditions = {
     transactionDateTime: {
@@ -1855,46 +1614,46 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 
 
   const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
-     {
-       $addFields: {
-         transactionDateTime: { $toDate: '$transactionDateTime' }
-       }
-     },
-     {
-       $match: {
+    {
+      $addFields: {
+        transactionDateTime: { $toDate: '$transactionDateTime' }
+      }
+    },
+    {
+      $match: {
         //  ...matchCondition,
-         amount: { $exists: true, $ne: null, $gt: 0 },
-         transactionDateTime: {
+        amount: { $exists: true, $ne: null, $gt: 0 },
+        transactionDateTime: {
           $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
-          $lte: moment().utc().endOf('day').toDate()                    
+          $lte: moment().utc().endOf('day').toDate()
         }
-       }
-     },
-     {
-       $group: {
-         _id: "$serialNumber",
-         location: { $first: "$location" },
-         totalTransactionCount: { $sum: 1 },
-         totalAmount: { $sum: "$amount" },
-         transactions: { $push: "$$ROOT" }
-       }
-     },
-     {
-       $sort: { totalAmount: -1 }
-     },
-     {
-       $limit: 5
-     },
-     {
-       $project: {
-         _id: 0,
-         serialNumber: "$_id",
-         totalAmount: 1,
-         location: 1,
-         totalTransactionCount: 1,
-       }
-     }
-   ]);
+      }
+    },
+    {
+      $group: {
+        _id: "$serialNumber",
+        location: { $first: "$location" },
+        totalTransactionCount: { $sum: 1 },
+        totalAmount: { $sum: "$amount" },
+        transactions: { $push: "$$ROOT" }
+      }
+    },
+    {
+      $sort: { totalAmount: -1 }
+    },
+    {
+      $limit: 5
+    },
+    {
+      $project: {
+        _id: 0,
+        serialNumber: "$_id",
+        totalAmount: 1,
+        location: 1,
+        totalTransactionCount: 1,
+      }
+    }
+  ]);
 
   const denominations = await webhookPayloadTransactions.aggregate([
     {
@@ -2002,47 +1761,47 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   ])
 
   const topFiveUsersDetails = await webhookPayloadTransactions.aggregate([
-      {
-        $addFields: {
-          transactionDateTime: { $toDate: '$transactionDateTime' }
-        }
-      },
-      {
-        $match: {
-          // ...matchCondition,
-          userName: { $ne: "", $exists: true },
-          amount: { $exists: true, $ne: null, $gt: 0 },
-          transactionDateTime: {
-            $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
-            $lte: moment().utc().endOf('day').toDate()                     
-          }
-        }
-      },
-      {
-        $group: {
-          _id: "$userName",
-          location: { $first: "$location" },
-          totalTransactionCount: { $sum: 1 },
-          totalAmount: { $sum: "$amount" },
-          transactions: { $push: "$$ROOT" }
-        }
-      },
-      {
-        $sort: { totalAmount: -1 }
-      },
-      {
-        $limit: 6
-      },
-      {
-        $project: {
-          _id: 0,
-          userName: "$_id",
-          totalAmount: 1,
-          location: 1,
-          totalTransactionCount: 1,
+    {
+      $addFields: {
+        transactionDateTime: { $toDate: '$transactionDateTime' }
+      }
+    },
+    {
+      $match: {
+        // ...matchCondition,
+        userName: { $ne: "", $exists: true },
+        amount: { $exists: true, $ne: null, $gt: 0 },
+        transactionDateTime: {
+          $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+          $lte: moment().utc().endOf('day').toDate()
         }
       }
-    ]);
+    },
+    {
+      $group: {
+        _id: "$userName",
+        location: { $first: "$location" },
+        totalTransactionCount: { $sum: 1 },
+        totalAmount: { $sum: "$amount" },
+        transactions: { $push: "$$ROOT" }
+      }
+    },
+    {
+      $sort: { totalAmount: -1 }
+    },
+    {
+      $limit: 6
+    },
+    {
+      $project: {
+        _id: 0,
+        userName: "$_id",
+        totalAmount: 1,
+        location: 1,
+        totalTransactionCount: 1,
+      }
+    }
+  ]);
 
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -2236,8 +1995,8 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
 
   const fromDate = getLastSiWeeksResult[0].fromDate;
   const toDate = getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate
-  console.log('fromDate:===',fromDate)
-  console.log('toDate:===',toDate)
+  console.log('fromDate:===', fromDate)
+  console.log('toDate:===', toDate)
 
   const lastSixWeeksDataForGraph = await webhookPayloadTransactions.aggregate([
     {
@@ -2246,7 +2005,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         transactionDateTime: {
           $gte: fromDate,
           $lte: toDate
-        }       
+        }
       }
     },
     {
@@ -2361,8 +2120,8 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         //   $lte: new Date()
         // }
         transactionDateTime: {
-          $gte: moment().utc().subtract(6,'months').startOf('day').toDate(),
-          $lte: moment().utc().endOf('day').toDate()                      
+          $gte: moment().utc().subtract(6, 'months').startOf('day').toDate(),
+          $lte: moment().utc().endOf('day').toDate()
         }
       }
     },
@@ -2451,7 +2210,7 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
         // }
         transactionDateTime: {
           $gte: moment(startDate).utc().startOf('day').toDate(),
-          $lte: moment(endDate).utc().endOf('day').toDate()                      
+          $lte: moment(endDate).utc().endOf('day').toDate()
         }
       }
     },
@@ -2754,122 +2513,6 @@ exports.getTransactionsReports = asyncWrapper(async (req, res) => {
   })
 })
 
-
-exports.getProgressMeterAndTotalsOfSingleMachine = asyncWrapper(async (req, res) => {
-  let { accountId, serialNumber } = req.query;
-
-
-  // Get the current time
-  const now = new Date();
-
-  // Calculate time ranges
-  const sixMonthsAgo = new Date(now);
-  sixMonthsAgo.setMonth(now.getMonth() - 6);
-
-  const twelveMonthsAgo = new Date(sixMonthsAgo);
-  twelveMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-  // First aggregation (last 6 months)
-  const lastSixMonths = await webhookPayloadTransactions.aggregate([
-    {
-      // Convert the string to a proper date in a new field
-      $addFields: {
-        transactionDateTime: {
-          $toDate: "$transactionDateTime"
-        }
-      }
-    },
-    {
-      $match: {
-        transactionDateTime: { $gte: sixMonthsAgo },
-        accountId: new mongoose.Types.ObjectId(accountId),
-        serialNumber: serialNumber
-      }
-    },
-    {
-      $group: {
-        _id: "$transactionType",
-        totalAmount: { $sum: "$amount" },
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        transactionType: "$_id",
-        totalAmount: 1,
-        count: 1
-      }
-    }
-  ]);
-
-  // Second aggregation (previous 6 months)
-  const previousSixMonths = await webhookPayloadTransactions.aggregate([
-    {
-      // Convert the string to a proper date in a new field
-      $addFields: {
-        transactionDateTime: {
-          $toDate: "$transactionDateTime"
-        }
-      }
-    },
-
-
-    {
-      $match: {
-        transactionDateTime: { $gte: twelveMonthsAgo, $lt: sixMonthsAgo },
-        accountId: new mongoose.Types.ObjectId(accountId),
-        serialNumber: serialNumber
-      }
-    },
-    {
-      $group: {
-        _id: "$transactionType",
-        totalAmount: { $sum: "$amount" },
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        transactionType: "$_id",
-        totalAmount: 1,
-        count: 1
-      }
-    }
-  ]);
-
-  // Merge the two results and calculate percentage increase
-  const percentageIncrease = lastSixMonths.map(recent => {
-    const previous = previousSixMonths.find(prev => prev.transactionType === recent.transactionType);
-
-    const previousTotal = previous ? previous.totalAmount : 0;
-    const recentTotal = recent.totalAmount;
-
-    // Calculate percentage increase
-    let percentage = 0;
-    if (previousTotal > 0) {
-      percentage = ((recentTotal - previousTotal) / previousTotal) * 100;
-    } else if (previousTotal === 0 && recentTotal > 0) {
-      percentage = 100; // If there was no transaction in the previous period but exists now
-    }
-
-    return {
-      transactionType: recent.transactionType,
-      recentTotalAmount: recentTotal,
-      previousTotalAmount: previousTotal,
-      percentageIncrease: percentage
-    };
-  });
-
-
-  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_PROGRESS_METER_SINGLE_MACHINE,
-    data: percentageIncrease
-  })
-})
-
 exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
   const exceptionsOfAccount = await webhookExceptionsModel.find({})
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -2879,146 +2522,10 @@ exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
   })
 })
 
-/*
-
-exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
-  const { serialNumbers, accountId } = req.query
-  let serialNumbersArray = [];
-  if (serialNumbers && serialNumbers !== 'all') {
-    serialNumbersArray = serialNumbers.includes(',')
-      ? serialNumbers.split(',').map((s) => s.trim())
-      : [serialNumbers];
-  }
-  console.log('serialNumbersArray:===', serialNumbersArray)
-  let matchCondition = {
-    $addFields: {
-      transactionDateTime: { $toDate: '$transactionDateTime' },
-    },
-    transactionDateTime: {
-      $gte: moment().subtract(1,'day').toDate(),
-      $lte: moment().toDate(),
-    },
-  };
-  const denominations = await webhookPayloadTransactions.aggregate([
-    {
-      $match: {
-        serialNumber: { $in: serialNumbersArray },
-        /*
-        $expr: {
-          $and: [
-            {
-              $gte: [
-                { $toDate: "$transactionDateTime" },
-                new Date(new Date().setDate(new Date().getDate() - 1))
-              ]
-            },
-            {
-              $lte: [
-                { $toDate: "$transactionDateTime" },
-                new Date()
-              ]
-            }
-          ]
-        }
-          
-         ...matchCondition
-      }
-    },
-    {
-      $unwind: {
-        path: "$denominations",
-        preserveNullAndEmptyArrays: false
-      }
-    },
-    {
-      $match: {
-        "denominations.UnitValue": { $ne: null },
-        "denominations.Count": { $ne: null },
-        "denominations.Currency": { $ne: null }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          serialNumber: "$serialNumber",
-          transactionType: "$transactionType",
-          unitValue: "$denominations.UnitValue",
-          currency: "$denominations.Currency"
-        },
-        totalCount: {
-          $sum: { $ifNull: ["$denominations.Count", 0] }
-        },
-        totalAmount: {
-          $sum: {
-            $multiply: [
-              "$denominations.UnitValue",
-              "$denominations.Count"
-            ]
-          }
-        }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          serialNumber: "$_id.serialNumber",
-          transactionType: "$_id.transactionType"
-        },
-        denominations: {
-          $push: {
-            UnitValue: "$_id.unitValue",
-            Count: "$totalCount",
-            Currency: "$_id.currency",
-            Total: { $multiply: ["$_id.unitValue", "$totalCount"] }
-          }
-        },
-        totalAmount: { $sum: "$totalAmount" }
-      }
-    },
-    {
-      $sort: {
-        totalAmount: -1
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        serialNumber: "$_id.serialNumber",
-        transactionType: "$_id.transactionType",
-        denominations: {
-          $cond: {
-            if: { $gt: [{ $size: "$denominations" }, 0] },
-            then: {
-              $slice: [
-                {
-                  $sortArray: {
-                    input: "$denominations",
-                    sortBy: { Total: -1 }
-                  }
-                },
-                5
-              ]
-            },
-            else: []
-          }
-        },
-        totalAmount: 1
-      }
-    }
-  ]);
-  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_WEBOOK_GET_MACHINE_DENOMINATIONS,
-    data: denominations || []
-  })
-})
-
-*/
-
 
 exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
   const { serialNumbers, accountId } = req.query;
-  
+
   let serialNumbersArray = [];
   if (serialNumbers && serialNumbers !== 'all') {
     serialNumbersArray = serialNumbers.includes(',')
@@ -3030,15 +2537,15 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
     serialNumber: { $in: serialNumbersArray },
     transactionDateTime: {
       $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
-      $lte: moment().utc().endOf('day').toDate()                      
+      $lte: moment().utc().endOf('day').toDate()
     }
-    
+
   };
 
-  console.log('matchCondition:==',matchCondition)
+  console.log('matchCondition:==', matchCondition)
 
   const denominations = await webhookPayloadTransactions.aggregate([
-    
+
     {
       $addFields: {
         transactionDateTime: { $toDate: '$transactionDateTime' }
@@ -3081,7 +2588,7 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
     },
     {
       $group: {
-        _id:null,
+        _id: null,
         denominations: {
           $push: {
             UnitValue: '$_id.unitValue',
@@ -3102,7 +2609,7 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
               $sortArray: {
                 input: '$denominations',
                 sortBy: {
-                  Total: -1,   
+                  Total: -1,
                   UnitValue: -1
                 }
               }
@@ -3113,7 +2620,7 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
         totalAmount: 1
       }
     }
-    
+
   ]);
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -3122,3 +2629,157 @@ exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
     data: denominations[0] || {}
   })
 });
+
+
+exports.updateWebhookStatus = asyncWrapper(async (req, res) => {
+  const { webhookMasterId, status } = req.query
+  const updateStatus = await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, { $set: { status: status } }, { new: true, runValidators: true });
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
+    json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_WEBHOOK_MASTER_STATUS_UPDATED,
+    })
+})
+
+exports.updateWebhookAutoDataSyncStatus = asyncWrapper(async (req, res) => {
+  const { webhookMasterId, status } = req.query
+  await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, {
+    $set:{"webhookSettings.currentStatus":status}
+  }, { new: true, upsert: true });
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
+    json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: status === 'start' ? customConstants.messages.MESSAGE_SETTINGS_AUTO_DATA_SYNC_STARTED : status === 'stop' ? customConstants.messages.MESSAGE_SETTINGS_AUTO_DATA_SYNC_STOPPED : "",
+    })
+})
+
+exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
+  const{accountId} = req.query
+  let webhookDetails = await webHooksMasterModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId)
+      }
+    },
+    {
+      $project: {
+        authenticationCode: 0,
+        webHookUrl: 0
+      }
+    },
+    {
+      $lookup: {
+        from: 'webhookmetapayloads',
+        localField: '_id',
+        foreignField: 'webhookMasterId',
+        as: 'webhookpayloads'
+      }
+    },
+    {
+      $unwind: {
+        path: '$webhookpayloads',
+        preserveNullAndEmptyArrays: false
+      }
+    },
+    {
+      $group: {
+        _id: '$_id',
+        originalDoc: { $first: '$$ROOT' },
+        webhookpayloads: { $push: '$webhookpayloads' }
+      }
+    },
+    {
+      $facet: {
+        results: [
+          {
+            $project: {
+              _id: '$originalDoc._id',
+              webhookMaster: {
+                $mergeObjects: [
+                  {
+                    $arrayToObject: {
+                      $filter: {
+                        input: { $objectToArray: '$originalDoc' },
+                        as: 'field',
+                        cond: { $ne: ['$$field.k', 'webhookpayloads'] }
+                      }
+                    }
+                  },
+                  { _id: '$originalDoc._id' }
+                ]
+              },
+              statusCounts: {
+                $map: {
+                  input: ['received', 'in-progress', 'executed', 'execution-failed'],
+                  as: 'status',
+                  in: {
+                    status: '$$status',
+                    count: {
+                      $size: {
+                        $filter: {
+                          input: '$webhookpayloads',
+                          as: 'payload',
+                          cond: { $eq: ['$$payload.status', '$$status'] }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              payloadsCount: { $size: '$webhookpayloads' },
+              serialNumbersCount: {
+                $size: {
+                  $setUnion: [
+                    { $map: { input: '$webhookpayloads', as: 'payload', in: '$$payload.primaryHookId' } },
+                    []
+                  ]
+                }
+              }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              webhookMaster: 1,
+              statusCounts: 1,
+              payloadsCount: 1,
+              serialNumbersCount: 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      $unwind: '$results'
+    },
+    {
+      $replaceRoot: { newRoot: '$results' }
+    },
+  ]);
+
+  const webhookMetaPayloadsDetails = await webhookMetaPayloadModel.aggregate([
+    {
+      $match: {
+        accountId: new mongoose.Types.ObjectId(accountId)
+      }
+    },
+    {
+      $project: {
+        serialNumber: "$primaryHookId",
+        transactionDateAndTime: "$createdAt",
+        location: { $arrayElemAt: ["$dataPoint.Metadata.LocationInformation.Location", 0] },
+        dataPoint: 1,
+        _id: 0
+      }
+    }
+  ]);
+
+  return res
+  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+  .json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
+    data: {webhookDetails,webhookMetaPayloadsDetails}
+  });
+  
+})

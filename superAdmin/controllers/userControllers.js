@@ -4,7 +4,8 @@ const asyncWrapper = require('../../middleware/asyncWrapper')
 const { validateUserMobileEmailData, validatePhoneNumber } = require('../../utils/userLoginValidation')
 const { hashPwd, comparePassword } = require('../../utils/helpers')
 const customConstants = require('../config/customConstants.json')
-const sessionsModel = require('../../models/sessionsModel')
+const sessionsModel = require('../../models/sessionsModel');
+const onePosLogsModel = require('../../models/onePosLogsModel');
 
 
 /*
@@ -85,7 +86,8 @@ If middleware returns True, this function create session with valid JWT token
 Mandatory fields -> Phone and Password 
 */
 exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
-  const { mobileEmail, password,sessionExpirationTime } = req.body;
+  console.log('Requwest:====',req.url)
+  const { mobileEmail, password,setExpirationForSession } = req.body;
   let user_details = {};
   // Find user by email or phone
   const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }, { _id: 0, password: 0 });
@@ -106,12 +108,15 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
 
   const sesssionDetails = await sessionsModel.create(req.body);
   user_details.sesssionDetails = sesssionDetails;
-
-  //Count number of integrations for respective account
-  //  const integrationsCount = await integrationMasterModel.find({ accountId: user.accountId, status: 'active' });
-  //const accountUpdateIntegrationsCount = await accountsModel.findByIdAndUpdate(user.accountId, { $set: { noOfIntegrations: integrationsCount.length } }, { new: true })
   user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
 
+
+  await onePosLogsModel.create({
+    accountId:userData.accountId,
+    userId:userData._id,
+    apiCalled:req.url,
+    authenticationCount:1
+  })
 
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -122,9 +127,6 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
       access_token:sesssionDetails.accessToken
     }
   });
- 
-
-
 });
 
 
