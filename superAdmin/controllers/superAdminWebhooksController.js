@@ -20,6 +20,7 @@ const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
 const usersModel = require("../../models/usersModel");
 const onePosLogsModel = require("../../models/onePosLogsModel");
 const { insertPosLogs } = require("../../utils/utilsFunctions");
+const { authentication } = require("../../utils/authentication");
 
 
 /**
@@ -2774,12 +2775,177 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
     }
   ]);
 
+  const onePosLogs = await onePosLogsModel.aggregate([
+    {
+      $project: {
+        isActive: { $gte: ["$expirationTime", new Date()] },
+        isExpired: { $lt: ["$expirationTime", new Date()] },
+        authenticationCount: 1,
+        serialNumbers: 1,
+        transactionTypes: 1,
+        transactionDateAndTimes: 1
+      }
+    },
+    {
+      $facet: {
+        mainStats: [
+          {
+            $group: {
+              _id: null,
+              activeUsers: { $sum: { $cond: [{ $eq: ["$is wierd syntax issueActive", true] }, 1, 0] } },
+              expiredSessions: { $sum: { $cond: [{ $eq: ["$isExpired", true] }, 1, 0] } },
+              totalAuthenticationCount: { $sum: "$authenticationCount" },
+              allSerialNumbers: { $addToSet: "$serialNumbers" },
+              allTransactionTypes: { $addToSet: "$transactionTypes" }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              activeUsers: 1,
+              expiredSessions: 1,
+              totalAuthenticationCount: 1,
+              allSerialNumbers: {
+                $reduce: {
+                  input: "$allSerialNumbers",
+                  initialValue: [],
+                  in: { $setUnion: ["$$value", "$$this"] }
+                }
+              },
+              allTransactionTypes: {
+                $reduce: {
+                  input: "$allTransactionTypes",
+                  initialValue: [],
+                  in: { $setUnion: ["$$value", "$$this"] }
+                }
+              },
+              serialNumberCount: { $size: {
+                $reduce: {
+                  input: "$allSerialNumbers",
+                  initialValue: [],
+                  in: { $setUnion: ["$$value", "$$this"] }
+                }
+              } },
+              transactionTypeCount: { $size: {
+                $reduce: {
+                  input: "$allTransactionTypes",
+                  initialValue: [],
+                  in: { $setUnion: ["$$value", "$$this"] }
+                }
+              } }
+            }
+          },
+          {
+            $project: {
+              activeUsers: 1,
+              expiredSessions: 1,
+              totalAuthenticationCount: 1,
+              allSerialNumbers: ["$allSerialNumbers"],
+              allTransactionTypes: ["$allTransactionTypes"],
+              serialNumberCount: 1,
+              transactionTypeCount: 1
+            }
+          }
+        ],
+        serialNumberStats: [
+          { $unwind: "$serialNumbers" },
+          {
+            $group: {
+              _id: "$serialNumbers",
+              count: { $sum: 1 }
+            }
+          },
+          { $sort: { count: -1 } },
+          { $limit: 1 },
+          {
+            $project: {
+              _id: 0,
+              topSerialNumber: "$_id"
+            }
+          }
+        ],
+        transactionTypeStats: [
+          { $unwind: "$transactionTypes" },
+          {
+            $group: {
+              _id: "$transactionTypes",
+              count: { $sum: 1 }
+            }
+          },
+          { $sort: { count: -1 } },
+          { $limit: 1 },
+          {
+            $project: {
+              _id: 0,
+              topTransactionType: "$_id"
+            }
+          }
+        ],
+        transactionDateStats: [
+          { $unwind: "$transactionDateAndTimes" },
+          {
+            $group: {
+              _id: "$transactionDateAndTimes",
+              count: { $sum: 1 }
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              dates: {
+                $push: {
+                  date: "$_id",
+                  count: "$count"
+                }
+              },
+              maxCount: { $max: "$count" }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              topTransactionDateAndTime: {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: "$dates",
+                      as: "item",
+                      cond: { $eq: ["$$item.count", "$maxCount"] }
+                    }
+                  },
+                  as: "item",
+                  in: "$$item.date"
+                }
+              },
+              transactionDateCount: "$maxCount"
+            }
+          }
+        ]
+      }
+    },
+    {
+      $project: {
+        activeUsers: { $arrayElemAt: ["$mainStats.activeUsers", 0] },
+        expiredSessions: { $arrayElemAt: ["$mainStats.expiredSessions", 0] },
+        totalAuthenticationCount: { $arrayElemAt: ["$mainStats.totalAuthenticationCount", 0] },
+        allSerialNumbers: { $arrayElemAt: ["$mainStats.allSerialNumbers", 0] },
+        allTransactionTypes: { $arrayElemAt: ["$mainStats.allTransactionTypes", 0] },
+        topSerialNumber: { $arrayElemAt: ["$serialNumberStats.topSerialNumber", 0] },
+        serialNumberCount: { $arrayElemAt: ["$mainStats.serialNumberCount", 0] },
+        topTransactionType: { $arrayElemAt: ["$transactionTypeStats.topTransactionType", 0] },
+        transactionTypeCount: { $arrayElemAt: ["$mainStats.transactionTypeCount", 0] },
+        topTransactionDateAndTime: { $arrayElemAt: ["$transactionDateStats.topTransactionDateAndTime", 0] },
+        transactionDateCount: { $arrayElemAt: ["$transactionDateStats.transactionDateCount", 0] }
+      }
+    }
+  ]);
+  
   return res
   .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
   .json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
-    data: {webhookDetails,webhookMetaPayloadsDetails}
+    data: {webhookDetails,webhookMetaPayloadsDetails,onePosLogs}
   });
   
 })

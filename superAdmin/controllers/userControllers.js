@@ -97,12 +97,12 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
   user_details.userDetails = user.toObject();
 
   // Generate JWT token
-  const jwtToken = await userData.getJWTToken(sessionExpirationTime);
+  const jwtToken = await userData.getJWTToken(setExpirationForSession);
   const jwtTokenExpires = await userData.getJWTTokenExpireDate(jwtToken);
 
   // Create session
   req.body.accessToken = jwtToken;
-  req.body.expirationTime = sessionExpirationTime?sessionExpirationTime:process.env.JWT_EXPIRES_IN;
+  req.body.expirationTime = jwtTokenExpires.exp;
   req.body.userId = userData._id;
   req.body.accountId = userData.accountId;
 
@@ -110,13 +110,16 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
   user_details.sesssionDetails = sesssionDetails;
   user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
 
-
-  await onePosLogsModel.create({
-    accountId:userData.accountId,
-    userId:userData._id,
-    apiCalled:req.url,
-    authenticationCount:1
-  })
+  if(userData.authUser === "OnePOS"){ 
+    await onePosLogsModel.create({
+      accountId:userData.accountId,
+      userId:userData._id,
+      apiCalled:req.url,
+      authenticationCount:1,
+      expirationTime: new Date((req.body.expirationTime)*1000)
+    })
+  }
+  
 
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({

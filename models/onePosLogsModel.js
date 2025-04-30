@@ -39,6 +39,10 @@ const onePosLogsSchema = mongoose.Schema({
     authenticationCount: {
         type: Number,
         default: 0,
+    },
+    expirationTime:{
+        type:Date,
+        default:null
     }
 },
 {timestamps: true});
