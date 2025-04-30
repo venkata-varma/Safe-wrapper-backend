@@ -2792,7 +2792,7 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
           {
             $group: {
               _id: null,
-              activeUsers: { $sum: { $cond: [{ $eq: ["$is wierd syntax issueActive", true] }, 1, 0] } },
+              activeUsers: { $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] } },
               expiredSessions: { $sum: { $cond: [{ $eq: ["$isExpired", true] }, 1, 0] } },
               totalAuthenticationCount: { $sum: "$authenticationCount" },
               allSerialNumbers: { $addToSet: "$serialNumbers" },
@@ -2939,7 +2939,7 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
       }
     }
   ]);
-  
+
   return res
   .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
   .json({
