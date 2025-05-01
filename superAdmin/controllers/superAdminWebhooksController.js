@@ -2638,7 +2638,7 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
     },
     {
       $group: {
-        _id: "$_id", 
+        _id: "$_id",
         accountDetails: { $first: "$$ROOT" },
         serialNumbers: { $addToSet: "$transactiondetails.serialNumber" },
         transactionsWithPositiveAmount: {
@@ -2651,23 +2651,26 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
     {
       $project: {
         _id: 0,
-        accountDetails: {
-          $arrayToObject: {
-            $filter: {
-              input: { $objectToArray: "$accountDetails" },
-              as: "field",
-              cond: {
-                $not: {
-                  $in: ["$$field.k", ["password", "transactiondetails", "_id"]]
-                }
+        result: {
+          $mergeObjects: [
+            { $arrayToObject: {
+              $filter: {
+                input: { $objectToArray: "$accountDetails" },
+                as: "field",
+                cond: { $not: { $in: ["$$field.k", ["password", "transactiondetails", "_id"]] } }
               }
+            } },
+            {
+              serialNumbersCount: { $size: "$serialNumbers" },
+              transactionsCount: "$transactionsWithPositiveAmount",
+              exceptionsCount: { $literal: exceptionsCount }
             }
-          }
-        },
-        serialNumbersCount: { $size: "$serialNumbers" },
-        transactionsCount: "$transactionsWithPositiveAmount",
-        exceptionsCount: { $literal: exceptionsCount }
+          ]
+        }
       }
+    },
+    {
+      $replaceRoot: { newRoot: "$result" }
     }
   ]);
   
@@ -2856,8 +2859,8 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
               activeUsers: 1,
               expiredSessions: 1,
               totalAuthenticationCount: 1,
-              allSerialNumbers: ["$allSerialNumbers"],
-              allTransactionTypes: ["$allTransactionTypes"],
+              allSerialNumbers: "$allSerialNumbers",
+              allTransactionTypes: "$allTransactionTypes",
               serialNumberCount: 1,
               transactionTypeCount: 1
             }
@@ -2961,7 +2964,7 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
   .json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
-    data: {webhookDetails,webhookMetaPayloadsDetails,onePosLogs, accountDetails:accountDetails?.[0]}
+    data: {webhookDetails,webhookMetaPayloadsDetails,onePosLogs: onePosLogs?.[0], accountDetails:accountDetails?.[0]}
   });
   
 })
