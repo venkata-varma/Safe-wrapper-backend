@@ -101,7 +101,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
 exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
   console.log("Req Body:", req.body);
 
-  const { mobileEmail, password, setExpirationForSession } = req.body;
+  const { mobileEmail, password, sessionExpirationTime } = req.body;
 
   if (!mobileEmail || !password) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
@@ -110,7 +110,7 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
     });
   }
 
-  const value = String(setExpirationForSession).trim().toLowerCase();
+  const value = String(sessionExpirationTime).trim().toLowerCase();
   const dayPattern = /^(\d+)(d)?$/;
 
   if (!dayPattern.test(value)) {
