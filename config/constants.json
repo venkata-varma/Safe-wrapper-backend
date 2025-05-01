@@ -133,7 +133,7 @@
     "MESSAGE_WEBOOK_SETTINGS_CREATED": "Webhook settings added succesfully.",
     "MESSAGE_WEBOOK_SETTINGS_UPDATED": "Webhook settings updated succesfully.",
     "MESSAGE_WEBOOK_GET_SETTINGS": "Webhook settings.",
-    "MESSAGE_WEBOOK_GET_TRANSACTIONS": "Webhook transactions.",
+    "MESSAGE_WEBOOK_GET_TRANSACTIONS": "Machine transactions.",
     "MESSAGE_WEBHOOK_PAYLOAD_HEADERS": "Webhook payload headers.",
     "MESSAGE_WEBOOK_GET_DASHBOARD_STATISTICS": "Webhook statistics.",
     "MESSAGE_WEBOOK_GET_MACHINE_REPORTS": "All machine details.",
