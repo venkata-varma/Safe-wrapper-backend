@@ -402,17 +402,17 @@ paths:
         - Authorization: [] # Requires Authorization header with token
       parameters:
       
-        - name: serialNumber
+        - name: serialNumbers
           in: query
           schema:
             type: string
           description: "Unique serial number identifying the machine."
        
-        - name: transactionType
+        - name: transactionTypes
           in: query
           schema:
             type: string
-          description: "Desired transaction type "
+          description: "Desired transaction types"
        
         - name: fromDate
           in: query
