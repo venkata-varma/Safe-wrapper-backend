@@ -101,6 +101,74 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
 exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
   console.log("Req Body:", req.body);
 
+  const { mobileEmail, password } = req.body;
+
+  if (!mobileEmail || !password) {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_FIELDS_MANDATORY,
+    });
+  }
+
+  const validatedUserMobileAndEmailData = validateUserMobileEmailData(req.body);
+  if (validatedUserMobileAndEmailData.error) {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      message: customConstants.messages.MESSAGE_REQUEST_BODY_ERROR,
+      status: customConstants.messages.MESSAGE_FAIL,
+      error: validatedUserMobileAndEmailData.error.details
+    });
+  }
+
+  const user = await usersModel.findOne({
+    $or: [{ phone: mobileEmail }, { email: mobileEmail }]
+  }).populate('accountId');
+
+  if (!user) {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
+    });
+  }
+
+  if (user.accountId.accountType !== 'super-admin') {
+    return res.status(customConstants.statusCodes.FORBIDDEN).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_SUPER_ADMIN_ENTRY,
+    });
+  }
+
+  if (user.accountId.status === 'in-progress') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_IN_PROGRESS,
+    });
+  }
+
+  if (user.accountId.status === 'deleted' || user.status === 'deleted') {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED,
+    });
+  }
+
+  const comparePasswordResult = await comparePassword(password, user.password);
+
+  if (!comparePasswordResult) {
+    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_WRONG_PASSWORD,
+    });
+  }
+
+  next();
+});
+
+
+
+
+exports.validateLoginProcessForSwagger = asyncWrapper(async (req, res, next) => {
+  console.log("Req Body:", req.body);
+
   const { mobileEmail, password, sessionExpirationTime } = req.body;
 
   if (!mobileEmail || !password) {
@@ -173,7 +241,6 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
 
   next();
 });
-
 
 /*
 If middleware returns True, this function create session with valid JWT token

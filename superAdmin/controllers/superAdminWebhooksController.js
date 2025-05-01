@@ -981,6 +981,7 @@ exports.updateWebhookSettings = asyncWrapper(async (req, res) => {
   })
 })
 
+/*
 
 exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
@@ -1054,6 +1055,103 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 
   pipeline.push({
     $sort: { transactionDateTime: -1 },
+  });
+
+  const webhookTransactionDetails = await webhookPayloadTransactions.aggregate(pipeline);
+
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+    data: {
+      webhookTransactionDetails,
+    },
+  });
+});
+
+*/
+
+exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
+  const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
+
+  console.log('fromDate, toDate:', fromDate, toDate);
+  console.log('serialNumbers:', serialNumbers);
+
+  if (!fromDate || !toDate) {
+    throw new Error('accountId, fromDate, and toDate are required');
+  }
+
+  if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
+    throw new Error('Invalid date format for fromDate or toDate');
+  }
+
+  let serialNumbersArray = [];
+  if (serialNumbers && serialNumbers !== 'all') {
+    serialNumbersArray = serialNumbers.includes(',')
+      ? serialNumbers.split(',').map((s) => s.trim())
+      : [serialNumbers];
+  }
+  console.log('serialNumbersArray:', serialNumbersArray);
+
+  let transactionTypesArray = [];
+  if (transactionTypes && transactionTypes !== 'all') {
+    transactionTypesArray = transactionTypes.includes(',')
+      ? transactionTypes.split(',').map((t) => t.trim())
+      : [transactionTypes];
+  }
+  console.log('transactionTypesArray:', transactionTypesArray);
+
+  if (req?.user?.authUser === "OnePOS") {
+    await insertPosLogs(
+      req.user.accountId._id,
+      req.user._id,
+      req.url,
+      serialNumbersArray,
+      transactionTypesArray,
+      fromDate,
+      toDate
+    );
+  }
+
+  const matchConditions = {
+    transactionDateTime: {
+      $gte: moment(fromDate).toDate(),
+      $lte: moment(toDate).toDate(),
+    },
+  };
+
+  if (serialNumbersArray.length > 0) {
+    matchConditions.serialNumber = { $in: serialNumbersArray };
+  }
+
+  if (transactionTypesArray.length > 0) {
+    matchConditions.transactionType = { $in: transactionTypesArray };
+  }
+
+  console.log('matchConditions:', matchConditions);
+
+  const pipeline = [];
+
+  pipeline.push({
+    $addFields: {
+      transactionDateTime: { $toDate: '$transactionDateTime' },
+    },
+  });
+
+  pipeline.push({
+    $match: matchConditions,
+  });
+
+  pipeline.push({
+    $sort: { transactionDateTime: -1 },
+  });
+
+  pipeline.push({
+    $project: {
+      webhookMasterId: 0,
+      webhookMetaPayloadId: 0,
+      accountId: 0,
+      webhookTransactionId: 0,
+    },
   });
 
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate(pipeline);
