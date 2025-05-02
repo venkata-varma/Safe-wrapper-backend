@@ -67,7 +67,7 @@ exports.createUser = asyncWrapper(async (req, res) => {
     const userData = await usersModel.create({
       ...req.body,
       _id: customId,
-      role: req.user.accountId.accountType === "super-admin" ? "super-admin" : req.user.accountId.accountType === "merchant" ? "admin" : "admin",
+      role: req.user.accountId.accountType === "super-admin" ? "admin" : req.user.accountId.accountType === "merchant" ? "merchant" : "merchant",
       userId: customId,
       createdBy: req.body.createdBy, //Super-admin user among set 0f 4 -5 users
       accountId:req.user.accountId || null

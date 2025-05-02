@@ -1234,12 +1234,14 @@ exports.updateWebhookSettings = asyncWrapper(async (req, res) => {
   })
 })
 
+
 exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
+
   console.log('fromDate, toDate:', fromDate, toDate);
   console.log('serialNumbers:', serialNumbers);
 
-  if (!accountId || !fromDate || !toDate) {
+  if (!fromDate || !toDate) {
     throw new Error('accountId, fromDate, and toDate are required');
   }
 
@@ -1268,6 +1270,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
       $lte: moment(toDate).toDate(),
     },
   };
+
   if (req.user.accountId.accountType === "merchant") {
     matchConditions.serialNumber = { $in: req.user.accountId.machines }
   }
@@ -1276,7 +1279,6 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
     matchConditions.serialNumber = { $in: req.user.accountId.machines }
   }
 
-  // matchConditions.accountId = new mongoose.Types.ObjectId(accountId);
   if (serialNumbersArray.length > 0) {
     matchConditions.serialNumber = { $in: serialNumbersArray };
   }
@@ -1302,7 +1304,15 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   pipeline.push({
     $sort: { transactionDateTime: -1 },
   });
-  console.log('pipeline:', JSON.stringify(pipeline));
+
+  pipeline.push({
+    $project: {
+      webhookMasterId: 0,
+      webhookMetaPayloadId: 0,
+      accountId: 0,
+      webhookTransactionId: 0,
+    },
+  });
 
   const webhookTransactionDetails = await webhookPayloadTransactions.aggregate(pipeline);
 

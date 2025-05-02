@@ -130,12 +130,12 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
     });
   }
 
-  if (user.accountId.accountType !== 'super-admin') {
-    return res.status(customConstants.statusCodes.FORBIDDEN).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_SUPER_ADMIN_ENTRY,
-    });
-  }
+  // if (user.accountId.accountType !== 'super-admin' || user.accountId.accountType !== 'admin') {
+  //   return res.status(customConstants.statusCodes.FORBIDDEN).json({
+  //     status: customConstants.messages.MESSAGE_FAIL,
+  //     message: customConstants.messages.MESSAGE_SUPER_ADMIN_ENTRY,
+  //   });
+  // }
 
   if (user.accountId.status === 'in-progress') {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
