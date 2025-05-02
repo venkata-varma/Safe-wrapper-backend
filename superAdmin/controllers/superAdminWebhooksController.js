@@ -2615,35 +2615,17 @@ exports.updateWebhookAutoDataSyncStatus = asyncWrapper(async (req, res) => {
 
 exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
   const{accountId} = req.query
-  let exceptionsCount = await webhookExceptionsModel.find({accountId:accountId}).countDocuments()
-  let accountDetails = await accountsModel.aggregate([
-    {
-      $match: {
-        accountId: new mongoose.Types.ObjectId(accountId)
-      }
-    },
-    {
-      $lookup: {
-        from: "webhookpayloadtransactions",
-        localField: "accountId",
-        foreignField: "accountId",
-        as: "transactiondetails"
-      }
-    },
-    {
-      $unwind: {
-        path: "$transactiondetails",
-        preserveNullAndEmptyArrays: true
-      }
-    },
+  let exceptionsCount = await webhookExceptionsModel.find({}).countDocuments()
+  let accountDetails = await accountsModel.findById(accountId,{password:0}).lean()
+  let webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
+    
     {
       $group: {
-        _id: "$_id",
-        accountDetails: { $first: "$$ROOT" },
-        serialNumbers: { $addToSet: "$transactiondetails.serialNumber" },
+        _id: null,
+        serialNumbers: { $addToSet: "$serialNumber" },
         transactionsWithPositiveAmount: {
           $sum: {
-            $cond: [{ $gt: ["$transactiondetails.amount", 0] }, 1, 0]
+            $cond: [{ $gt: ["$amount", 0] }, 1, 0]
           }
         }
       }
@@ -2651,28 +2633,13 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
     {
       $project: {
         _id: 0,
-        result: {
-          $mergeObjects: [
-            { $arrayToObject: {
-              $filter: {
-                input: { $objectToArray: "$accountDetails" },
-                as: "field",
-                cond: { $not: { $in: ["$$field.k", ["password", "transactiondetails", "_id"]] } }
-              }
-            } },
-            {
+            
               serialNumbersCount: { $size: "$serialNumbers" },
               transactionsCount: "$transactionsWithPositiveAmount",
               exceptionsCount: { $literal: exceptionsCount }
-            }
-          ]
-        }
       }
     },
-    {
-      $replaceRoot: { newRoot: "$result" }
-    }
-  ]);
+  ])
   
   let webhookDetails = await webHooksMasterModel.aggregate([
     {
@@ -2964,7 +2931,9 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
   .json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
-    data: {webhookDetails,webhookMetaPayloadsDetails,onePosLogs: onePosLogs?.[0], accountDetails:accountDetails?.[0]}
+    data: {webhookDetails,webhookMetaPayloadsDetails,onePosLogs: onePosLogs?.[0], 
+      accountDetails:{...accountDetails,...webhookTransactionDetails?.[0]}
+    }
   });
   
 })
