@@ -418,13 +418,13 @@ paths:
           in: query
           schema:
             type: string
-          description: "Desired date from which data to be retreived from.(e.g., 2025-04-21T10:40Z) "
+          description: "Desired date from which data to be retreived from.(e.g., 2025-04-21T19:09Z) "
        
         - name: toDate
           in: query
           schema:
             type: string
-          description: "Desired date to which data to be retreived from. (e.g., 2025-04-28T10:40Z)" 
+          description: "Desired date to which data to be retreived from. (e.g., 2025-04-28T20:09Z)" 
          
       responses:
         200:
