@@ -179,7 +179,7 @@ exports.getAllUsers = asyncWrapper(async (req, res) => {
   const users = await usersModel.find(
     { 
       accountId: req.params.accountId, 
-      role: req.user.role === "super-admin" ? { $in: ["super-admin","admin","merchant"] } : req.user.role === "merchant" ? { $in: ["admin","merchant"] } : { $eq: "admin" }
+      role: req.user.role === "super-admin" ? { $in: ["super-admin","admin","merchant"] } : req.user.role === "merchant" ? { $in: ["manager","merchant"] } : { $eq: "manager" }
     }, 
     { password: 0 }
   );
