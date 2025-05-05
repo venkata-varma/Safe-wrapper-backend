@@ -1237,7 +1237,9 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     {
       $addFields: {
         hasDenominations: {
-          $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+          // $gt: [{ $size: { $ifNull: ["$denominations", []] } }, 0]
+          $gt: ["$amount", 0]
+
         }
       }
     },
