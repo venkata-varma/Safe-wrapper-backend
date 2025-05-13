@@ -25,7 +25,8 @@ const {
   getTransactionDenominations,
   updateWebhookStatus,
   updateWebhookAutoDataSyncStatus,
-  getWebhookDetailsOfAccount
+  getWebhookDetailsOfAccount,
+  getOneHubPosLogsDetails
 } = require("../controllers/superAdminWebhooksController");
 
 router.post(
@@ -62,6 +63,7 @@ router.get('/get-machine-reports',getPayloadReports)
 router.get('/get-exceptions',getExceptionsOfAccount)
 router.get('/get-transaction-denominations',getTransactionDenominations)
 router.get('/get-all-webhook-details-of-account',getWebhookDetailsOfAccount)
+router.get('/get-onehubpos-logs-details',getOneHubPosLogsDetails)
 // router.get('/get-')
 
 //One POS

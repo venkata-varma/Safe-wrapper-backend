@@ -141,7 +141,9 @@
     "MESSAGE_WEBOOK_GET_SINGLE_MACHINE_REPORTS": "Machine details.",
     "MESSAGE_WEBOOK_GET_MACHINE_DENOMINATIONS": "Machine denominations.",
     "MESSAGE_PROGRESS_METER_SINGLE_MACHINE": "Progress meter of single machine retrieved succesfully.",
-    "MESSAGE_GET_SINGLE_MACHINE_REPORTS": "Get single machine reports based on desired filters."
+    "MESSAGE_GET_SINGLE_MACHINE_REPORTS": "Get single machine reports based on desired filters.",
+    "MESSAGE_GET_ONE_HUB_POS_LOGS": "Logs fetched successfully."
+
   },
   "statusCodes": {
     "FORBIDDEN": 403,

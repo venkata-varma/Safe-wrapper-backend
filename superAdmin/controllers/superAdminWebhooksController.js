@@ -2390,7 +2390,7 @@ exports.validateAuthentication = asyncWrapper(async (req, res, next) => {
   const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
   const userActivity = await usersModel.findById(req.user._id)
   if (userActivity.status !== "active" || userActivity.authUser !== "OnePOS") {
-    return res.josn("invalid User")
+    return res.json("invalid User")
   }
   else {
     const serialNumbersArray =
@@ -2938,4 +2938,17 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
     }
   });
   
+})
+
+
+exports.getOneHubPosLogsDetails = asyncWrapper(async(req,res)=>{
+  const {serialNumber} = req.query
+  const oneHubposDetails = await onePosLogsModel.find({serialNumbers:{$in:[serialNumber]}})
+  return res
+  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+  .json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_GET_ONE_HUB_POS_LOGS,
+    data: oneHubposDetails
+  });
 })
