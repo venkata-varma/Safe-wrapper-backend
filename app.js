@@ -31,6 +31,8 @@ const SuperAdminAccountRoutes = require('./superAdmin/routes/superAdminAccounts'
 const superAdminUserRoutes = require('./superAdmin/routes/userRoute')
 const superAdminWebhookRoutes = require('./superAdmin/routes/superAdminWebhookRoutes')
 const superAdminWebhookOperations = require('./superAdmin/routes/webhookOperationRoutes')
+const cardConnectIntegrationsMasterRoute=require('./cardConnect/routes/cardConnectIntegrationsMasterRoute')
+
 
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
@@ -44,7 +46,7 @@ app.use('/api/accounts',SuperAdminAccountRoutes)
 app.use('/api/users',superAdminUserRoutes)
 app.use('/api/machines',superAdminWebhookRoutes)
 app.use('/api/webhook',superAdminWebhookOperations)
-
+app.use('/api/card-connect/integrations-master', cardConnectIntegrationsMasterRoute)
 
 
 // Start of swagger configuration

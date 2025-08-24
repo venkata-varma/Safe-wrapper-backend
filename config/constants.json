@@ -92,7 +92,7 @@
     "MESSAGE_INTEGRATION_SERVICE_FIELD_MAPPINGS_UPDATED": "Integration master field-mappings updated successfully.",
     "MESSAGE_INTEGRATION_SERVICE_SETTINGS_UPDATED": "Integration master settings and frequency updated successfully.",
     "MESSAGE_INTEGRATION_DELETED": "Integration master deleted successfully.",
-    "MESSAGE_INTEGRATION_DETAILS_NOT_FOUND": "Respective Integration details not found.",
+    "MESSAGE_INTEGRATION_DETAILS_NOT_FOUND": "Respective card connect integration details not found.",
     "MESSAGE_SERVICE_PROVIDERS_LISTS_DETAILS_FOUND": "Details of Service providers found.",
     "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND": "Respective Integration service provider details not found.",
     "MESSAGE_INTEGRATION_ID_NOT_ACTIVE": "Respective integration is not in active state. Please contact admin.",
@@ -142,7 +142,11 @@
     "MESSAGE_WEBOOK_GET_MACHINE_DENOMINATIONS": "Machine denominations.",
     "MESSAGE_PROGRESS_METER_SINGLE_MACHINE": "Progress meter of single machine retrieved succesfully.",
     "MESSAGE_GET_SINGLE_MACHINE_REPORTS": "Get single machine reports based on desired filters.",
-    "MESSAGE_GET_ONE_HUB_POS_LOGS": "Logs fetched successfully."
+    "MESSAGE_GET_ONE_HUB_POS_LOGS": "Logs fetched successfully.",
+    "MESSAGE_CREATED_CARD_CONNECT_INTEGRATIONS_MASTER":"Successfully created.",
+    "MESSAGE_PAYLOAD_MANDATORY_ERROR_TITLE":"Title is mandatory.",
+    "MESSAGE_PAYLOAD_MANDATORY_ERROR_ACCOUNTID":"AccountId is mandatory.",
+    "MESSAGE_PAYLOAD_MANDATORY_ERROR_USERID":"UserId is mandatory."
 
   },
   "statusCodes": {
