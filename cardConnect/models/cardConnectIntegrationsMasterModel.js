@@ -24,7 +24,10 @@ const cardConnectIntegrationMasterSchema = new mongoose.Schema(
             index: true,
             default: null,
         },
-
+        source: {
+            type: String,
+            default: "card-connect"
+        },
         title: {
             type: String,
             required: [true, "Title is required"],
@@ -37,7 +40,7 @@ const cardConnectIntegrationMasterSchema = new mongoose.Schema(
         status: {
             type: String,
             enum: ["active", "offline", "deleted"],
-            default: "active",
+            default: "offline",
         },
         lastPullDate: {
             type: Date,

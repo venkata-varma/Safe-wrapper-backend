@@ -28,8 +28,9 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
     },
     periodType: {
         type: String,
-        enum: ["each second", "once each minute", "once each hour", "once each day", "once each month"],
-        required: [true, 'periodType required'],
+        // enum: ["each second", "once each minute", "once each hour", "once each day", "once each month"],
+        enum: ["once each day"],
+        required: [true, 'Period type is required.'],
         default: ""
     },
     currentStatus: {
@@ -61,10 +62,10 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
         ref: "users",
         default: null,
     },
-    statusFieldMappingKeys: {
-        type: Object,
-        default: {}
-    },
+    // statusFieldMappingKeys: {
+    //     type: Object,
+    //     default: {}
+    // },
     dataPointsAccess: {
         type: Object,
         default: {}

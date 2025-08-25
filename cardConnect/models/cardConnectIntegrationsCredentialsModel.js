@@ -32,12 +32,24 @@ const cardConnectIntegrationsCredentialsSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.Mixed,
             default: {},
         },
-        serviceProvider: {
+
+        authenticationKey: {
             type: String,
-            default: "cardConnect"
-            // enum: ["CPD", "SC", "SNOW", "TT", "QB", "MGP", "SI", "AM", "DF","CYS"],
-            //   require: [true, "Role is required."],
-            // default: "",
+            default: ""
+        },
+        authorizationType: {
+            type: String,
+            enum: ["Basic auth", "Bearer token", "API key"],
+            default: ""
+        },
+        dataMappingPath: {
+            type: Array,
+            required: [true, "dataMapping path key is mandatory"],
+            default: []
+        },
+        primaryKeyValues: {
+            type: Object,
+            default: {}
         },
         status: {
             type: String,
