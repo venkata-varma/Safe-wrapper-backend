@@ -87,7 +87,6 @@ exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) =>
  * 
  */
 exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
-    const { cardConnectIntegrationsMasterId } = req.body;
 
     let credentialsValidation = await validateServiceProviders(req.body)
     // console.log("credentialsValidation===validated", credentialsValidation)
@@ -181,3 +180,96 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
 
 
 })
+
+
+exports.validateintegrationsMasterExistAndActive = asyncWrapper(async (req, res, next) => {
+    const { cardConnectIntegrationsMasterId } = req.params;
+
+    console.log('cardConnectIntegrationsMasterId:===', cardConnectIntegrationsMasterId);
+    const integrationMasterDetails = await cardconnectIntegrationsMastersModel.findById(cardConnectIntegrationsMasterId)
+    if (!integrationMasterDetails || integrationMasterDetails.status !== 'active') {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND_OR_DEACTICATED,
+        });
+    }
+
+    next()
+
+});
+
+
+
+/**
+ * 
+ * 
+ */
+exports.editCardConnectIntegrationsMaster = asyncWrapper(async (req, res) => {
+    let { cardConnectIntegrationsMasterId, accountId, userId, ...newDetails } = req.body;
+    //let { cardConnectIntegrationsMasterId } = req.params;
+    let editIntegrationsMaster = await cardconnectIntegrationsMastersModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { ...newDetails } }, { new: true, runValidators: true });
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_SUCCESS,
+            data: { editIntegrationsMaster },
+        });
+
+})
+
+
+/**
+ * 
+ */
+exports.editIntegrationsMasterCredentials = asyncWrapper(async (req, res) => {
+    let { cardConnectIntegrationsMasterId } = req.params
+    let { cardConnectIntegrationsMasterCredentialsId, accountId, userId, credentials, ...otherCredentials } = req.body;
+    let prepareReqObj = {
+        ...otherCredentials,
+        credentials: encryptData(credentials),
+        updatedBy: req.user._id
+    }
+    let editIntegrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findByIdAndUpdate(cardConnectIntegrationsMasterCredentialsId,
+        { $set: prepareReqObj }, { new: true, runValidators: true }
+    )
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS,
+            data: { editIntegrationsMasterCredentials },
+        });
+
+
+})
+
+/**
+ * 
+ */
+exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
+    let { cardConnectIntegrationsMasterId } = req.params
+    let { cardConnectIntegrationsMasterSettingsId, accountId, userId, ...newSettings } = req.body;
+    console.log("newSettings==", newSettings)
+    let prepareReqObj = {
+        ...newSettings,
+        updatedBy: req.user._id
+    }
+    let editIntegrationsMasterSettings = await cardConnectIntegrationsSettingsModel.findByIdAndUpdate(cardConnectIntegrationsMasterSettingsId,
+        prepareReqObj, { new: true, runValidators: true }
+    )
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS,
+            data: { editIntegrationsMasterSettings },
+        });
+
+
+})
+
+/**
+ * 
+ */
