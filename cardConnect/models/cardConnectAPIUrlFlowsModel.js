@@ -62,6 +62,10 @@ const cardConnectAPIUrlsFlowSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
+        statusKey: {
+            type: String,
+            default: ""
+        },
         status: {
             type: String,
             enum: ["active", "deleted"],

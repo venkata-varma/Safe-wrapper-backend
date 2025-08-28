@@ -1,7 +1,7 @@
 const { default: mongoose } = require("mongoose")
 const cardConnectExceptionsModel = require('../models/cardConnectExceptionsModel')
 
-exports.cardConnectExceptionLogs = async (exceptionObject, status, exceptionMessage, exceptionTitle, exceptionErrorObject, exceptionApiService) => {
+exports.cardConnectExceptionLogs = async (exceptionObject, status, exceptionMessage, exceptionTitle, exceptionErrorObject, exceptionApiService, transactionId) => {
    
   //  console.log('exceptionObject:===', exceptionObject)
     const validObjectId = (id) => {
@@ -10,11 +10,13 @@ exports.cardConnectExceptionLogs = async (exceptionObject, status, exceptionMess
     await cardConnectExceptionsModel.create({
         cardConnectIntegrationsMasterId:validObjectId(exceptionObject?.cardConnectIntegrationsMasterId),
         accountId: validObjectId(exceptionObject?.accountId),
+        userId:validObjectId(exceptionObject?.userId),
         networkCode: status,
         exceptionMessage: exceptionMessage,
         exceptionTitle: exceptionTitle,
         exceptionRequestObject: exceptionErrorObject || {},
-        exceptionApiService: exceptionApiService
+        exceptionApiService: exceptionApiService,
+        cardConnectTransactionId:transactionId || ""
     })
 
 }

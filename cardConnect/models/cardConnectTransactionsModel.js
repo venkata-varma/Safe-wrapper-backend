@@ -28,20 +28,24 @@ const cardConnectTransactionsSchema = new mongoose.Schema(
             index: true,
             default: null,
         },
+        referenceId: {
+            type: String,
+            default:""
+        },
         transaction: {
             type: Object,
             default: {}
         },
-        status: {
+        referenceStatus: {
             type: String,
             enum: ["Auth", "Captured", "Voided", "Failure", "Rejected", "Declined", "Settled", "Processed", "Unknown", ""],
             default: "",
         },
-        transactionType: {
-            type: String,
-            enum: ["", "SALE", "VOID SALE", "VOID REFUND", "UNKNOWN", "REFUND", "CASH ADVANCE", "AUTH REQUEST", "ACCOUNT VERIFY"],
-            default: ""
-        },
+        // referenceType: {
+        //     type: String,
+        //     enum: ["", "SALE", "VOID SALE", "VOID REFUND", "UNKNOWN", "REFUND", "CASH ADVANCE", "AUTH REQUEST", "ACCOUNT VERIFY"],
+        //     default: ""
+        // },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "users",

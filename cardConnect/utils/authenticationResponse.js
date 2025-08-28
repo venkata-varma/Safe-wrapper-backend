@@ -2,11 +2,14 @@
 const cardconnectIntegrationsMastersModel = require('../models/cardConnectIntegrationsMasterModel')
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
-
 let { decryptData } = require('../../utils/encryptionAlgorithms')
 let customConstants = require('../../config/constants.json')
 let axios = require('axios')
 const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
+const { GlobalHTTPMethods } = require('../middleware/globalHttpModel')
+const { cardConnectExceptionLogs } = require('../middleware/cardConnectExceptionOperations')
+
+
 
 const getNestedValue = (obj, path) => {
     const traverse = (current, parts) => {
@@ -163,31 +166,64 @@ exports.processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsM
             while (true) {
                 let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=10000`;
 
-                let response = await axios.get(finalUrl, {
-                    headers: getAuthenticated?.requestMethod === "headers" ? getAuthenticated.responseData : {},
-                    data: getAuthenticated?.requestMethod === "body" ? getAuthenticated.responseData : {}
-                });
+                // let response = await axios.get(finalUrl, {
+                //     headers: getAuthenticated?.requestMethod === "headers" ? getAuthenticated.responseData : {},
+                //     data: getAuthenticated?.requestMethod === "body" ? getAuthenticated.responseData : {}
+                // });
+                let response = await GlobalHTTPMethods.handleGet(finalUrl, getAuthenticated, integrationsMasterCredentials);
 
-                let txns =urlFlow.dataMappingPath[0]? response.data[urlFlow.dataMappingPath[0]] : response.data ;
+                let txns = urlFlow.dataMappingPath[0] ? response[urlFlow.dataMappingPath[0]] : response;
 
                 totalFetched += txns.length;
 
                 if (txns.length > 0) {
-                    // prepare bulk insert objects
-                    let recordsToInsert = txns.map(txn => ({
-                        cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
-                        accountId: integrationsMasterCredentials.accountId,
-                        userId: integrationsMasterCredentials.userId,
-                        transaction: txn,
-                        status: txn.status,
-                        transactionType: txn.type,
-                        createdBy: req.user._id
-                    }));
+                    try {
+                        // prepare bulk insert objects
+                        let recordsToInsert = txns.map(txn => ({
+                            cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
+                            accountId: integrationsMasterCredentials.accountId,
+                            userId: integrationsMasterCredentials.userId,
+                            transaction: txn,
+                            referenceId: txn[urlFlow.filteredReferenceId],
+                            referenceStatus: txn[urlFlow.statusKey],
+                            createdBy: req.user._id
+                        }));
 
-                    // bulk insert
-                    let consoleInsertMany = await cardConnectTransactionsModel.insertMany(recordsToInsert, { ordered: false });
-                    //console.log("consoleInsertMany===", consoleInsertMany)
-                    totalInserted += consoleInsertMany.length;
+                        // bulk insert
+                        let consoleInsertMany = await cardConnectTransactionsModel.insertMany(recordsToInsert, { ordered: false });
+
+                        totalInserted += consoleInsertMany.length;
+                    } catch (error) {
+                        if (error?.writeErrors?.length) {
+                            for (let writeErr of error.writeErrors) {
+                                let failedDoc = recordsToInsert[writeErr.index]; // the txn that failed
+                                await cardConnectExceptionLogs(
+                                    integrationsMasterCredentials,
+                                    error?.code,
+                                    writeErr.errmsg || JSON.stringify(writeErr),
+                                    error?.name,
+                                    failedDoc.transaction, // request object
+                                    finalUrl,
+                                    failedDoc.referenceId // <-- log referenceId here
+                                );
+                            }
+                        } else {
+                            await cardConnectExceptionLogs(
+                                integrationsMasterCredentials,
+                                error.response?.status,
+                                error?.response?.data?.Message || JSON.stringify(error?.response?.data),
+                                error?.name,
+                                error?.config?.data === undefined ? error?.config?.url : error?.config?.data,
+                                finalUrl,
+                                "" // no txn-specific info
+                            );
+                        }
+
+
+
+                      //  await cardConnectExceptionLogs(integrationsMasterCredentials, error.response?.status, error?.response?.data?.Message || JSON.stringify(error?.response?.data), error?.name, error?.config?.data === undefined ? error?.config?.url : error?.config?.data, finalUrl, "")
+                    }
+
                 }
 
 

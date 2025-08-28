@@ -25,7 +25,7 @@ const asyncWrapper = (fn) => {
         const errorMessage = typeof error.message === "object" 
         ? JSON.stringify(error.message) 
         : error.message;
-       await  cardConnectExceptionLogs(exceptionObject, error.statusCode || 500, errorMessage, error.name, res.req?.body || {}, res.req?.url.split('/')[1])
+       await  cardConnectExceptionLogs(exceptionObject, error.statusCode || 500, errorMessage, error.name, res.req?.body || {}, res.req?.url.split('/')[1], "")
         
         if(error.name == "TokenExpiredError") {
           res.status(customConstants.statusCodes.UNAUTHORIZED).json({status: customConstants.messages.MESSAGE_EXPIRED, message: customConstants.messages.MESSAGE_SESSION_EXPIRED}) 
