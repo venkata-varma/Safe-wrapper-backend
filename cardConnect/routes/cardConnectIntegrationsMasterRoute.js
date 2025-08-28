@@ -10,7 +10,9 @@ const {
     validateintegrationsMasterExistAndActive,
     editCardConnectIntegrationsMaster,
     editIntegrationsMasterCredentials,
-    editIntegrationsMasterSettings
+    editIntegrationsMasterSettings,
+    fetchFundingTransactionsForTheDay,
+    createCardConnectIntegrationsAPIUrlFlow
 
 } = require('../controllers/cardConnectIntegrationsMasterController');
 const auth = require('../../middleware/authentication');
@@ -20,6 +22,7 @@ const auth = require('../../middleware/authentication');
 router.use(auth)
 router.post('/create-card-connect-integrations-master', validatecreateCardConnectIntegrationsMaster, createCardConnectIntegrationsMaster)
 router.post('/creare-card-connect-integrations-master-credentials', validateintegrationsMasterExist, credentialsValidationsMiddleware,createIntegrationMasterCredentials)
+router.get('/creare-card-connect-integrations-master-api-url-flow/:cardConnectIntegrationsMasterId', validateintegrationsMasterExist,createCardConnectIntegrationsAPIUrlFlow )
 router.patch('/update-card-connect-integrations-master-settings',validateintegrationsMasterExist, updateIntegrationMasterSettings)
 
 
@@ -28,8 +31,10 @@ router.patch('/edit-card-connect-integrations-master-credentials/:cardConnectInt
     editIntegrationsMasterCredentials
 
 )
-
 router.patch('/edit-card-connect-integrations-master-settings/:cardConnectIntegrationsMasterId',validateintegrationsMasterExistAndActive, editIntegrationsMasterSettings )
+
+ router.post('/fetch-funding-data-for-the-day/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, fetchFundingTransactionsForTheDay )
+
 
 
 module.exports = router;

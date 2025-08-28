@@ -150,7 +150,8 @@
     "MESSAGE_PAYLOAD_MANDATORY_ERROR_USERID": "UserId is mandatory.",
     "MESSAGE_INTEGRATION_CREDENTIALS_SAVED": "Successfully saved integration credentials.",
     "MESSAGE_EDITED_INTEGRATION_MASTER_SUCCESS": "Edited Integration details succesfully.",
-    "MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS": "Edited Integration credentials succesfully."
+    "MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS": "Edited Integration credentials succesfully.",
+    "MESSAGE_CREATED_API_URL_FLOW":"Successfully created API URL flow."
   },
   "statusCodes": {
     "FORBIDDEN": 403,
