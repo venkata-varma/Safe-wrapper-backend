@@ -1,13 +1,13 @@
-const asyncWrapper = require('../../middleware/asyncWrapper');
+const asyncWrapper = require('../middleware/asyncWrapper');
 const cardconnectIntegrationsMastersModel = require('../models/cardConnectIntegrationsMasterModel')
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
-const cardConnectIntegrationsAPIUrlsFlowModel=require('../models/cardConnectIntegrationsAPIUrlFlowModel')
+const cardConnectIntegrationsAPIUrlsFlowModel = require('../models/cardConnectIntegrationsAPIUrlFlowModel')
 const cardConnectAPIUrlFlowModel = require('../models/cardConnectAPIUrlFlowsModel')
 const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
 const customConstants = require('../../config/constants.json')
 const { validateServiceProviders } = require('../../utils/credentialsValidation')
-const { authenticationResponse } = require('../utils/authenticationResponse')
+const { authenticationResponse, processAPIUrlFlows } = require('../utils/authenticationResponse')
 const {
     encryptData,
     decryptData,
@@ -87,6 +87,26 @@ exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) =>
 });
 
 
+/**
+ * 
+ */
+exports.validateintegrationsMasterExistenceParams = asyncWrapper(async (req, res, next) => {
+    const { cardConnectIntegrationsMasterId } = req.params;
+
+    console.log('cardConnectIntegrationsMasterId:===', cardConnectIntegrationsMasterId)
+    const integrationMasterDetails = await cardconnectIntegrationsMastersModel.findById(cardConnectIntegrationsMasterId)
+    if (!integrationMasterDetails) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
+        });
+    }
+    req.integrationMasterDetails = integrationMasterDetails;
+    next()
+
+});
+
+
 
 /**
  * 
@@ -153,8 +173,42 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
 /**
  * 
  */
-exports.createCardConnectIntegrationsAPIUrlFlow=asyncWrapper(async(req,res)=>{
-    
+exports.createCardConnectIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) => {
+    let { cardConnectIntegrationsMasterId } = req.params;
+    let integrationMasterDetails = req.integrationMasterDetails;
+    const fetchAPIUrlFLows = await cardConnectAPIUrlFlowModel.find({});
+
+
+    const apiUrlFlows = fetchAPIUrlFLows.map(rec => {
+        let obj = rec.toObject();    // convert Mongoose doc to plain object
+        delete obj._id;
+        delete obj.cardConnectAPIUrlsFlowId;             // remove _id so Mongoose will generate a new one
+        return obj;
+    });
+
+    let createIntegrationAPIUrlFlow = await cardConnectIntegrationsAPIUrlsFlowModel.create({
+        cardConnectIntegrationsMasterId,
+        accountId: integrationMasterDetails.accountId,
+        userId: integrationMasterDetails.userId,
+        APIUrlFlows: apiUrlFlows,
+        createdBy: req.user._id
+    });
+
+
+
+
+
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_INTEGRATION_API_URL_FLOWS_SAVED,
+
+        });
+
+
+
 })
 
 /**
@@ -286,6 +340,70 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
 /**
  * 
  */
+// exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
+//     let { date } = req.body;
+//     let { cardConnectIntegrationsMasterId } = req.params;
+//     let integrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findOne({ cardConnectIntegrationsMasterId });
+
+
+
+
+//     let getAuthenticated = await authenticationResponse(cardConnectIntegrationsMasterId);
+//     console.log("getAuthenticated===", getAuthenticated)
+
+
+
+//     let baseUrl = 'https://{{site}}.cardconnect.com/cardconnect/rest/funding?merchid={{merchid}}&date={{date}}';
+//     let prepareUrlWithPKV = await modifyUrl(baseUrl, integrationsMasterCredentials, date)
+//     console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
+//     let allTxns = [];
+//     let page = 1;
+//     let totalInserted = 0;
+
+//     while (true) {
+//         let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=10000`;
+
+//         let response = await axios.get(finalUrl, {
+//             headers: getAuthenticated?.requestMethod === "headers" ? getAuthenticated.responseData : {},
+//             data: getAuthenticated?.requestMethod === "body" ? getAuthenticated.responseData : {}
+//         });
+
+//         let txns = response.data.txns || [];
+//         if (txns.length === 0) break;
+
+//         if (txns.length > 0) {
+//             // prepare bulk insert objects
+//             let recordsToInsert = txns.map(txn => ({
+//                 cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
+//                 accountId: integrationsMasterCredentials.accountId,
+//                 userId: integrationsMasterCredentials.userId,
+//                 transaction: txn,
+//                 status: txn.status,
+//                 transactionType: txn.type,
+//                 createdBy: req.user._id
+//             }));
+
+//             // bulk insert
+//             await cardConnectTransactionsModel.insertMany(recordsToInsert, { ordered: false });
+//             totalInserted += recordsToInsert.length;
+//         }
+
+
+
+//         console.log(`Fetched page ${page}, ${txns.length} records`);
+//         page++;
+
+//         // Only wait if you're going to fetch the next page
+//         await new Promise(res => setTimeout(res, 3100));
+//     }
+
+//     console.log(`Total Inserted: ${totalInserted}`);
+//     res.json({ message: "Funding transactions fetched and stored", totalInserted });
+
+
+// })
+
+
 exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
     let { date } = req.body;
     let { cardConnectIntegrationsMasterId } = req.params;
@@ -294,57 +412,32 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 
 
 
-    let getAuthenticated = await authenticationResponse(cardConnectIntegrationsMasterId);
+     let getAuthenticated = await authenticationResponse(cardConnectIntegrationsMasterId);
     console.log("getAuthenticated===", getAuthenticated)
 
+    let integrationAPIUrlFlows = await cardConnectIntegrationsAPIUrlsFlowModel.findOne({ cardConnectIntegrationsMasterId, status: "active" });
 
 
-    let baseUrl = 'https://{{site}}.cardconnect.com/cardconnect/rest/funding?merchid={{merchid}}&date={{date}}';
-    let prepareUrlWithPKV = await modifyUrl(baseUrl, integrationsMasterCredentials, date)
-    console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
-    let allTxns = [];
-    let page = 1;
-    let totalInserted = 0;
 
-    while (true) {
-        let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=10000`;
+    let apiUrlFlows = integrationAPIUrlFlows.APIUrlFlows;
 
-        let response = await axios.get(finalUrl, {
-            headers: getAuthenticated?.requestMethod === "headers" ? getAuthenticated.responseData : {},
-            data: getAuthenticated?.requestMethod === "body" ? getAuthenticated.responseData : {}
+
+     let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req);
+    console.log("processFlows===", processFlows)
+
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_FETCHED_FUNDING_FOR_THE_DAY,
+            data: { 
+                totalFetched:processFlows.totalFetched,
+                totalInserted: processFlows.totalInserted
+            },
         });
 
-        let txns = response.data.txns || [];
-        if (txns.length === 0) break;
 
-        if (txns.length > 0) {
-    // prepare bulk insert objects
-        let recordsToInsert = txns.map(txn => ({
-            cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
-            accountId: integrationsMasterCredentials.accountId,
-            userId: integrationsMasterCredentials.userId,
-            transaction: txn,
-            status: txn.status,
-            transactionType: txn.type,
-            createdBy: req.user._id
-        }));
-
-        // bulk insert
-        await cardConnectTransactionsModel.insertMany(recordsToInsert, { ordered: false });
-        totalInserted += recordsToInsert.length;
-        }
-
-
-
-        console.log(`Fetched page ${page}, ${txns.length} records`);
-        page++;
-
-        // Only wait if you're going to fetch the next page
-        await new Promise(res => setTimeout(res, 3100));
-    }
-
-    console.log(`Total Inserted: ${totalInserted}`);
-    res.json({ message: "Funding transactions fetched and stored", totalInserted });
 
 
 })

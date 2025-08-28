@@ -2,9 +2,11 @@
 const cardconnectIntegrationsMastersModel = require('../models/cardConnectIntegrationsMasterModel')
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
+
 let { decryptData } = require('../../utils/encryptionAlgorithms')
 let customConstants = require('../../config/constants.json')
 let axios = require('axios')
+const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
 
 const getNestedValue = (obj, path) => {
     const traverse = (current, parts) => {
@@ -118,7 +120,7 @@ exports.authenticationResponse = async (cardConnectIntegrationsMasterId) => {
 
 
 
-exports.modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) => {
+const modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) => {
 
 
     for (let [key, value] of Object.entries(integrationsMasterCredentials.primaryKeyValues)) {
@@ -128,7 +130,7 @@ exports.modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) =>
         baseUrl = baseUrl.replaceAll(placeholder, value);
     }
 
-    
+
     if (dateInput) {
         // Remove hyphens
         const formattedDate = dateInput.replace(/-/g, "");
@@ -138,6 +140,82 @@ exports.modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) =>
 
 
     return baseUrl
+
+
+}
+
+
+
+exports.processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req) => {
+    var totalInserted = 0;
+    var totalFetched = 0;
+    for (let urlFlow of apiUrlFlows) {
+
+        let cardConnectUrl = urlFlow.url;
+
+        let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date);
+        console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
+        if (urlFlow.paginationRequired === true) {
+
+
+            let page = 1;
+
+            while (true) {
+                let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=10000`;
+
+                let response = await axios.get(finalUrl, {
+                    headers: getAuthenticated?.requestMethod === "headers" ? getAuthenticated.responseData : {},
+                    data: getAuthenticated?.requestMethod === "body" ? getAuthenticated.responseData : {}
+                });
+
+                let txns =urlFlow.dataMappingPath[0]? response.data[urlFlow.dataMappingPath[0]] : response.data ;
+
+                totalFetched += txns.length;
+
+                if (txns.length > 0) {
+                    // prepare bulk insert objects
+                    let recordsToInsert = txns.map(txn => ({
+                        cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
+                        accountId: integrationsMasterCredentials.accountId,
+                        userId: integrationsMasterCredentials.userId,
+                        transaction: txn,
+                        status: txn.status,
+                        transactionType: txn.type,
+                        createdBy: req.user._id
+                    }));
+
+                    // bulk insert
+                    let consoleInsertMany = await cardConnectTransactionsModel.insertMany(recordsToInsert, { ordered: false });
+                    //console.log("consoleInsertMany===", consoleInsertMany)
+                    totalInserted += consoleInsertMany.length;
+                }
+
+
+
+                console.log(`Fetched page ${page}, ${txns.length} records`);
+
+                if (txns.length === 0) break;
+                if (txns.length < 10000) break;
+                page++;
+
+                if (urlFlow?.rateLimit?.status === true && urlFlow.rateLimit?.limit) {
+                    let delayMs = (60 / urlFlow.rateLimit.limit) * 1000;
+                    // Only wait if you're going to fetch the next page
+                    await new Promise(res => setTimeout(res, delayMs));
+                }
+
+            }
+
+
+        }
+
+    }
+
+
+    return {
+        totalInserted,
+        totalFetched
+    }
 
 
 }

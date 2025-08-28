@@ -1,5 +1,71 @@
 const mongoose = require("mongoose");
 
+const APIUrlFlowSchema = new mongoose.Schema({
+    APIUrlFlowName: {
+        type: String,
+        required: [true, "API Url flow name is mandatory"],
+        default: ""
+    },
+    order: {
+        type: Number,
+        default: 1,
+        required: [true, "Order is mandatory"]
+    },
+    url: {
+        type: String,
+        default: "",
+        required: [true, "URL is mandatory"]
+    },
+    serviceMethod: {
+        type: String,
+        default: "GET",
+        required: [true, "Service method is mandatory"]
+    },
+    dataMappingPath: {
+        type: Array,
+        required: [true, "dataMapping path key is mandatory"],
+        default: []
+    },
+    primaryKeyValues: {
+        type: Array,
+        default: []
+    },
+    dataPoints: {
+        type: Array,
+        default: []
+    },
+    paginationRequired: {
+        type: Boolean,
+        default: false,
+
+    },
+    rateLimit: {
+        status: {
+            type: Boolean,
+            default: false
+        },
+        limit: {
+            type: Number,
+            default: 0
+        }
+    },
+    filteredReferenceId: {
+        type: String,
+        default: ""
+    },
+    status: {
+        type: String,
+        enum: ["active", "deleted"],
+        default: "active",
+    },
+
+
+
+})
+
+
+
+
 const cardConnectIntegrationsAPIUrlFlowSchema = new mongoose.Schema(
     {
         cardConnectIntegrationsAPIUrlFlowId: {
@@ -28,15 +94,12 @@ const cardConnectIntegrationsAPIUrlFlowSchema = new mongoose.Schema(
             index: true,
             default: null,
         },
-        APIUrlFlows: {
-            type: Array,
-            default: []
-        },
+        APIUrlFlows: [APIUrlFlowSchema],
 
         status: {
             type: String,
-            enum: ["new", "verified", "active", "failed", "deleted"],
-            default: "new",
+            enum: ["active", "offline"],
+            default: "active"
         },
 
         createdBy: {

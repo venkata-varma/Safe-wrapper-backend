@@ -149,9 +149,11 @@
     "MESSAGE_PAYLOAD_MANDATORY_ERROR_ACCOUNTID": "AccountId is mandatory.",
     "MESSAGE_PAYLOAD_MANDATORY_ERROR_USERID": "UserId is mandatory.",
     "MESSAGE_INTEGRATION_CREDENTIALS_SAVED": "Successfully saved integration credentials.",
+    "MESSAGE_INTEGRATION_API_URL_FLOWS_SAVED": "Successfully saved integration api-url-flows.",
     "MESSAGE_EDITED_INTEGRATION_MASTER_SUCCESS": "Edited Integration details succesfully.",
     "MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS": "Edited Integration credentials succesfully.",
-    "MESSAGE_CREATED_API_URL_FLOW":"Successfully created API URL flow."
+    "MESSAGE_CREATED_API_URL_FLOW": "Successfully created API URL flow.",
+    "MESSAGE_FETCHED_FUNDING_FOR_THE_DAY":"Fetched and inserted transactions successfully."
   },
   "statusCodes": {
     "FORBIDDEN": 403,
