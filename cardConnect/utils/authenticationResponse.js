@@ -8,7 +8,8 @@ let axios = require('axios')
 const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
 const { GlobalHTTPMethods } = require('../middleware/globalHttpModel')
 const { cardConnectExceptionLogs } = require('../middleware/cardConnectExceptionOperations')
-
+const { generateDateRange } = require('./helpers')
+const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrationsCronsModel')
 
 
 const getNestedValue = (obj, path) => {
@@ -40,7 +41,7 @@ const getNestedValue = (obj, path) => {
 
 
 
-exports.authenticationResponse = async (cardConnectIntegrationsMasterId) => {
+const authenticationResponse = async (cardConnectIntegrationsMasterId) => {
 
     let integrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findOne({ cardConnectIntegrationsMasterId });
 
@@ -149,9 +150,13 @@ const modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) => {
 
 
 
-exports.processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req) => {
+const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req) => {
     var totalInserted = 0;
     var totalFetched = 0;
+    var upsertRecord = {
+        totalInserted: 0,
+        totalUpdated: 0
+    };
     for (let urlFlow of apiUrlFlows) {
 
         let cardConnectUrl = urlFlow.url;
@@ -171,59 +176,23 @@ exports.processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsM
                 //     data: getAuthenticated?.requestMethod === "body" ? getAuthenticated.responseData : {}
                 // });
                 let response = await GlobalHTTPMethods.handleGet(finalUrl, getAuthenticated, integrationsMasterCredentials);
+                if (Array.isArray(urlFlow.dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
+                    // Drill into response using first mapping key
+                    txns = response?.[urlFlow.dataMappingPath[0]] ?? [];
 
-                let txns = urlFlow.dataMappingPath[0] ? response[urlFlow.dataMappingPath[0]] : response;
+                } else {
+                    // No mapping → assume whole response is transactions
+                    txns = response ?? [];
+                }
+
+
+
 
                 totalFetched += txns.length;
 
                 if (txns.length > 0) {
-                    try {
-                        // prepare bulk insert objects
-                        let recordsToInsert = txns.map(txn => ({
-                            cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
-                            accountId: integrationsMasterCredentials.accountId,
-                            userId: integrationsMasterCredentials.userId,
-                            transaction: txn,
-                            referenceId: txn[urlFlow.filteredReferenceId],
-                            referenceStatus: txn[urlFlow.statusKey],
-                            createdBy: req.user._id
-                        }));
-
-                        // bulk insert
-                        let consoleInsertMany = await cardConnectTransactionsModel.insertMany(recordsToInsert, { ordered: false });
-
-                        totalInserted += consoleInsertMany.length;
-                    } catch (error) {
-                        if (error?.writeErrors?.length) {
-                            for (let writeErr of error.writeErrors) {
-                                let failedDoc = recordsToInsert[writeErr.index]; // the txn that failed
-                                await cardConnectExceptionLogs(
-                                    integrationsMasterCredentials,
-                                    error?.code,
-                                    writeErr.errmsg || JSON.stringify(writeErr),
-                                    error?.name,
-                                    failedDoc.transaction, // request object
-                                    finalUrl,
-                                    failedDoc.referenceId // <-- log referenceId here
-                                );
-                            }
-                        } else {
-                            await cardConnectExceptionLogs(
-                                integrationsMasterCredentials,
-                                error.response?.status,
-                                error?.response?.data?.Message || JSON.stringify(error?.response?.data),
-                                error?.name,
-                                error?.config?.data === undefined ? error?.config?.url : error?.config?.data,
-                                finalUrl,
-                                "" // no txn-specific info
-                            );
-                        }
-
-
-
-                      //  await cardConnectExceptionLogs(integrationsMasterCredentials, error.response?.status, error?.response?.data?.Message || JSON.stringify(error?.response?.data), error?.name, error?.config?.data === undefined ? error?.config?.url : error?.config?.data, finalUrl, "")
-                    }
-
+                    upsertRecord = await upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, req);
+                    console.log("upsertRecord===", upsertRecord)
                 }
 
 
@@ -249,9 +218,118 @@ exports.processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsM
 
 
     return {
-        totalInserted,
-        totalFetched
+        date,
+        totalFetched,
+        ...upsertRecord
     }
+
+
+}
+
+
+
+
+async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, req) {
+    var totalInserted = 0;
+    var totalUpdated = 0;
+
+
+    for (var txn of txns) {
+
+        try {
+            let filter = {
+                cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
+                referenceId: txn[urlFlow.filteredReferenceId]
+            };
+
+            let existingRecord = await cardConnectTransactionsModel.findOne(filter);
+
+            if (!existingRecord) {
+                await cardConnectTransactionsModel.create({
+                    cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
+                    accountId: integrationsMasterCredentials.accountId,
+                    userId: integrationsMasterCredentials.userId,
+                    transaction: txn,
+                    referenceId: txn[urlFlow.filteredReferenceId],
+                    referenceStatus: txn[urlFlow.statusKey],
+                    createdBy: req.user._id   // <--- will throw if req is missing
+                });
+                totalInserted++;
+            } else if (existingRecord.referenceStatus !== txn[urlFlow.statusKey]) {
+                await cardConnectTransactionsModel.updateOne(
+                    { _id: existingRecord._id },
+                    { $set: { referenceStatus: txn[urlFlow.statusKey], transaction: txn } }
+                );
+                totalUpdated++;
+            }
+
+        } catch (error) {
+            // console.error("Error in upsert for txn:", txn, error); // <-- log real error
+            await cardConnectExceptionLogs(
+                integrationsMasterCredentials,
+                error.response?.status || 500,
+                error.message,
+                error.name,
+                txn, // now txn is in scope
+                finalUrl,
+                txn[urlFlow.filteredReferenceId]
+            );
+        }
+    }
+
+
+    return {
+        totalInserted,
+        totalUpdated
+    }
+
+
+
+
+}
+
+
+
+const initiateManualTrigger = async (integrationsMasterDetails, cardConnectIntegrationsMasterId, req) => {
+   
+    let dateDumpRange = integrationsMasterDetails.cardconnectintegrationssettings.dataDumpRange;
+    console.log("dateDumpRange===", dateDumpRange)
+
+    let dateRange = generateDateRange(dateDumpRange);
+    console.log("dateRange===", dateRange)
+    dateRange[2] = '20250825';
+    let gatherEachDayResponses = [];
+
+
+    for (let date of dateRange) {
+
+        let getAuthenticated = await authenticationResponse(cardConnectIntegrationsMasterId);
+        //     console.log("getAuthenticated===", getAuthenticated)
+
+        let apiUrlFlows = integrationsMasterDetails.cardconnectintegrationsapiurlflows.APIUrlFlows;
+
+
+        let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, req);
+        console.log("processFlows===", processFlows)
+        gatherEachDayResponses.push(processFlows)
+
+
+
+    }
+
+    return gatherEachDayResponses
+
+}
+
+
+
+module.exports = {
+    getNestedValue,
+    authenticationResponse,
+    modifyUrl,
+    processAPIUrlFlows,
+    upSertRecord,
+    initiateManualTrigger
 
 
 }

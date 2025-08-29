@@ -82,7 +82,7 @@ const cardConnectIntegrationsAPIUrlFlowSchema = new mongoose.Schema(
         },
         cardConnectIntegrationsMasterId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "cardconnectIntegrationmasters",
+            ref: "cardconnectintegrationmasters",
             index: true,
             default: null,
         },

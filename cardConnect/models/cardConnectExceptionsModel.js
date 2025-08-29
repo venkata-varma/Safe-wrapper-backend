@@ -10,10 +10,10 @@ const cardConnectExceptionsSchema = new mongoose.Schema(
                 return this._id;
             },
         },
-       
+
         cardConnectIntegrationsMasterId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "cardconnectIntegrationmasters",
+            ref: "cardconnectintegrationmasters",
             index: true,
             default: null,
         },
@@ -53,6 +53,10 @@ const cardConnectExceptionsSchema = new mongoose.Schema(
             type: Date,
             default: new Date(),
         },
+        cardConnectTransactionId: {
+            type: String,
+            default: ""
+        }
     },
     { timestamps: true }
 );

@@ -153,7 +153,8 @@
     "MESSAGE_EDITED_INTEGRATION_MASTER_SUCCESS": "Edited Integration details succesfully.",
     "MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS": "Edited Integration credentials succesfully.",
     "MESSAGE_CREATED_API_URL_FLOW": "Successfully created API URL flow.",
-    "MESSAGE_FETCHED_FUNDING_FOR_THE_DAY":"Fetched and inserted transactions successfully."
+    "MESSAGE_FETCHED_FUNDING_FOR_THE_DAY": "Fetched and inserted transactions successfully.",
+    "MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION": "Performed manual trigger for the respective integration for its date dump range. Please check results"
   },
   "statusCodes": {
     "FORBIDDEN": 403,

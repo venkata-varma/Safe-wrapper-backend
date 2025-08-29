@@ -18,7 +18,7 @@ class GlobalHTTPMethods {
 
 
             if (!hasInvalidKey && !hasInvalidValue) {
-               
+
                 response = await axios.get(finalUrl, {
                     headers: getAuthenticated?.responseData, // Parse headers if provided
                 });
@@ -31,7 +31,13 @@ class GlobalHTTPMethods {
                 });
             }
 
-            return response.data
+            if (response?.data) {
+                return response?.data
+            } else {
+                return response
+            }
+
+            //  return response?.data
         } catch (error) {
             // console.log('GetError:===',error)
             await cardConnectExceptionLogs(integrationsMasterDetails, error.response?.status, error?.response?.data?.Message || JSON.stringify(error?.response?.data), error?.name, error?.config?.data === undefined ? error?.config?.url : error?.config?.data, finalUrl, "")

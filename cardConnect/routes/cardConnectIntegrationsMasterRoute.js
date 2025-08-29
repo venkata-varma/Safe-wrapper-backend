@@ -13,7 +13,8 @@ const {
     editIntegrationsMasterSettings,
     fetchFundingTransactionsForTheDay,
     createCardConnectIntegrationsAPIUrlFlow,
-    validateintegrationsMasterExistenceParams
+    validateintegrationsMasterExistenceParams,
+    manualPullDateDumpRange
 
 } = require('../controllers/cardConnectIntegrationsMasterController');
 const auth = require('../../middleware/authentication');
@@ -36,6 +37,7 @@ router.patch('/edit-card-connect-integrations-master-settings/:cardConnectIntegr
 
  router.post('/fetch-funding-data-for-the-day/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, fetchFundingTransactionsForTheDay )
 
+ router.get('/manual-pull-for-date-dump-range/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive,manualPullDateDumpRange)
 
 
 module.exports = router;

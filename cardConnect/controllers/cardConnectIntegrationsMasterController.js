@@ -1,19 +1,22 @@
 const asyncWrapper = require('../middleware/asyncWrapper');
+const mongoose = require('mongoose')
 const cardconnectIntegrationsMastersModel = require('../models/cardConnectIntegrationsMasterModel')
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
 const cardConnectIntegrationsAPIUrlsFlowModel = require('../models/cardConnectIntegrationsAPIUrlFlowModel')
 const cardConnectAPIUrlFlowModel = require('../models/cardConnectAPIUrlFlowsModel')
 const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
+const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrationsCronsModel')
 const customConstants = require('../../config/constants.json')
 const { validateServiceProviders } = require('../../utils/credentialsValidation')
-const { authenticationResponse, processAPIUrlFlows } = require('../utils/authenticationResponse')
+const { authenticationResponse, processAPIUrlFlows, initiateManualTrigger } = require('../utils/authenticationResponse')
 const {
     encryptData,
     decryptData,
 } = require("../../utils/encryptionAlgorithms");
 const { modifyUrl } = require('../utils/authenticationResponse');
 const { default: axios } = require('axios');
+const cardConnectIntegrationsMasterModel = require('../models/cardConnectIntegrationsMasterModel');
 //------------------------------------------------------------------------------------
 
 
@@ -412,7 +415,7 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 
 
 
-     let getAuthenticated = await authenticationResponse(cardConnectIntegrationsMasterId);
+    let getAuthenticated = await authenticationResponse(cardConnectIntegrationsMasterId);
     console.log("getAuthenticated===", getAuthenticated)
 
     let integrationAPIUrlFlows = await cardConnectIntegrationsAPIUrlsFlowModel.findOne({ cardConnectIntegrationsMasterId, status: "active" });
@@ -422,7 +425,7 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
     let apiUrlFlows = integrationAPIUrlFlows.APIUrlFlows;
 
 
-     let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req);
+    let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req);
     console.log("processFlows===", processFlows)
 
 
@@ -431,13 +434,95 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_FETCHED_FUNDING_FOR_THE_DAY,
-            data: { 
-                totalFetched:processFlows.totalFetched,
-                totalInserted: processFlows.totalInserted
+            data: {
+                ...processFlows
             },
         });
 
 
 
+
+})
+
+
+
+exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
+    const { cardConnectIntegrationsMasterId } = req.params;
+    let integrationsMasterDetails = await cardconnectIntegrationsMastersModel.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(cardConnectIntegrationsMasterId)
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationscredentials",
+                localField: "_id",
+                foreignField: "cardConnectIntegrationsMasterId",
+                as: "cardconnectintegrationscredentials"
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationsapiurlflows",
+                localField: "_id",
+                foreignField: "cardConnectIntegrationsMasterId",
+                as: "cardconnectintegrationsapiurlflows"
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationssettings",
+                localField: "_id",
+                foreignField: "cardConnectIntegrationsMasterId",
+                as: "cardconnectintegrationssettings"
+            }
+        },
+        { $unwind: "$cardconnectintegrationscredentials" },
+        { $unwind: "$cardconnectintegrationsapiurlflows" },
+        { $unwind: "$cardconnectintegrationssettings" }
+
+    ])
+    let createIntegrationsCron = await cardConnectIntegrationsCronsModel.create({
+        cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
+        accountId: integrationsMasterDetails[0].accountId,
+        userId: integrationsMasterDetails[0].userId,
+        cronJobType: "manual"
+    })
+
+
+    let initiateManualPull = await initiateManualTrigger(integrationsMasterDetails[0], cardConnectIntegrationsMasterId, req);
+
+    await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date() } }, { new: true, runValidators: true })
+
+    const totals = initiateManualPull.reduce((acc, curr) => {
+        acc.totalFetched += curr.totalFetched;
+        acc.totalInserted += curr.totalInserted;
+        acc.totalUpdated += curr.totalUpdated;
+        return acc;
+    }, { totalFetched: 0, totalInserted: 0, totalUpdated: 0 });
+
+
+    await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
+        {
+            $set: {
+                pulledCount: totals.totalFetched,
+                pushedCount: totals.totalInserted,
+                updatedCount: totals.totalUpdated,
+                status:"completed"
+        
+            }
+        }, { new: true, runValidators: true })
+
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
+            data: {
+                initiateManualPull
+            },
+        });
 
 })
