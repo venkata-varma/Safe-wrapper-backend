@@ -150,7 +150,7 @@ const modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) => {
 
 
 
-const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req) => {
+const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req, integrationsCronId) => {
     var totalInserted = 0;
     var totalFetched = 0;
     var upsertRecord = {
@@ -191,7 +191,7 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
                 totalFetched += txns.length;
 
                 if (txns.length > 0) {
-                    upsertRecord = await upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, req);
+                    upsertRecord = await upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, req, integrationsCronId);
                     console.log("upsertRecord===", upsertRecord)
                 }
 
@@ -229,7 +229,7 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
 
 
 
-async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, req) {
+async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, req, integrationsCronId) {
     var totalInserted = 0;
     var totalUpdated = 0;
 
@@ -254,12 +254,14 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                     referenceStatus: txn[urlFlow.statusKey],
                     createdBy: req.user._id   // <--- will throw if req is missing
                 });
+                await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pushedCount: 1 } }, { new: true, runValidators: true })
                 totalInserted++;
             } else if (existingRecord.referenceStatus !== txn[urlFlow.statusKey]) {
                 await cardConnectTransactionsModel.updateOne(
                     { _id: existingRecord._id },
                     { $set: { referenceStatus: txn[urlFlow.statusKey], transaction: txn } }
                 );
+                await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { updatedCount: 1 } }, { new: true, runValidators: true })
                 totalUpdated++;
             }
 
@@ -290,8 +292,8 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
 
 
 
-const initiateManualTrigger = async (integrationsMasterDetails, cardConnectIntegrationsMasterId, req) => {
-   
+const initiateManualTrigger = async (integrationsMasterDetails, cardConnectIntegrationsMasterId, req, integrationsCronId) => {
+
     let dateDumpRange = integrationsMasterDetails.cardconnectintegrationssettings.dataDumpRange;
     console.log("dateDumpRange===", dateDumpRange)
 
@@ -309,7 +311,7 @@ const initiateManualTrigger = async (integrationsMasterDetails, cardConnectInteg
         let apiUrlFlows = integrationsMasterDetails.cardconnectintegrationsapiurlflows.APIUrlFlows;
 
 
-        let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, req);
+        let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, req, integrationsCronId);
         console.log("processFlows===", processFlows)
         gatherEachDayResponses.push(processFlows)
 

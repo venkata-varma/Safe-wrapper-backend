@@ -10,6 +10,14 @@ const cardConnectTransactionsSchema = new mongoose.Schema(
                 return this._id;
             },
         },
+        cardConnectIntegrationsCronId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"cardconnectintegrationscrons",
+            default: null,
+            index: true,
+            
+        },
+
         cardConnectIntegrationsMasterId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "cardconnectintegrationmasters",
@@ -30,7 +38,7 @@ const cardConnectTransactionsSchema = new mongoose.Schema(
         },
         referenceId: {
             type: String,
-            default:""
+            default: ""
         },
         transaction: {
             type: Object,

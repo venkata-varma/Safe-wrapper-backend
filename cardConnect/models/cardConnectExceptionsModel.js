@@ -10,6 +10,13 @@ const cardConnectExceptionsSchema = new mongoose.Schema(
                 return this._id;
             },
         },
+        cardConnectIntegrationsCronId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "cardconnectintegrationscrons",
+            default: null,
+            index: true,
+
+        },
 
         cardConnectIntegrationsMasterId: {
             type: mongoose.Schema.Types.ObjectId,

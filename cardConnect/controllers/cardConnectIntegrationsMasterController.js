@@ -483,6 +483,8 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
         { $unwind: "$cardconnectintegrationssettings" }
 
     ])
+
+
     let createIntegrationsCron = await cardConnectIntegrationsCronsModel.create({
         cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
         accountId: integrationsMasterDetails[0].accountId,
@@ -491,7 +493,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
     })
 
 
-    let initiateManualPull = await initiateManualTrigger(integrationsMasterDetails[0], cardConnectIntegrationsMasterId, req);
+    let initiateManualPull = await initiateManualTrigger(integrationsMasterDetails[0], cardConnectIntegrationsMasterId, req, createIntegrationsCron._id);
 
     await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date() } }, { new: true, runValidators: true })
 
