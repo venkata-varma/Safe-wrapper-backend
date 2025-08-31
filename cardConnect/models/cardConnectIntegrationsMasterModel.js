@@ -46,6 +46,12 @@ const cardConnectIntegrationMasterSchema = new mongoose.Schema(
             type: Date,
             default: null
         },
+        lastIntgerationsCronId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "cardconnectintegrationscrons",
+            default: null,
+            index: true,
+        },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "users",

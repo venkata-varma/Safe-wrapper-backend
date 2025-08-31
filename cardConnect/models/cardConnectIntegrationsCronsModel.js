@@ -35,7 +35,7 @@ const cardConnectintegrationsCronsSchema = mongoose.Schema({
     cronJobType: {
         type: String,
         enum: ["manual", "automated"],
-    
+
     },
     pulledCount: {
         type: Number,
@@ -52,6 +52,10 @@ const cardConnectintegrationsCronsSchema = mongoose.Schema({
     updatedCount: {
         type: Number,
         default: 0
+    },
+    dateRange: {
+        type: Array,
+        default: ""
     },
     status: {
         type: String,

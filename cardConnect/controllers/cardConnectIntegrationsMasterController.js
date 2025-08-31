@@ -17,7 +17,7 @@ const {
 const { modifyUrl } = require('../utils/authenticationResponse');
 const { default: axios } = require('axios');
 const cardConnectIntegrationsMasterModel = require('../models/cardConnectIntegrationsMasterModel');
-const { generateDateRange } = require('../utils/helpers');
+const { generateDateRange, generateDateArray } = require('../utils/helpers');
 //------------------------------------------------------------------------------------
 
 
@@ -486,7 +486,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
     ])
 
 
-//----------------------------------
+    //----------------------------------
 
 
     let dateDumpRange = integrationsMasterDetails[0].cardconnectintegrationssettings.dataDumpRange;
@@ -496,7 +496,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
     console.log("dateRange===", dateRange)
     dateRange[2] = '20250825';
 
-//-------------------------
+    //-------------------------
 
 
 
@@ -505,30 +505,22 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
         cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
+        dateRange,
         cronJobType: "manual"
     })
 
 
     let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, req, createIntegrationsCron._id);
 
-    await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date() } }, { new: true, runValidators: true })
-
-    // const totals = initiateManualPull.reduce((acc, curr) => {
-    //     acc.totalFetched += curr.totalFetched;
-    //     acc.totalInserted += curr.totalInserted;
-    //     acc.totalUpdated += curr.totalUpdated;
-    //     return acc;
-    // }, { totalFetched: 0, totalInserted: 0, totalUpdated: 0 });
+    await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
 
 
     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
         {
             $set: {
-                // pulledCount: totals.totalFetched,
-                // pushedCount: totals.totalInserted,
-                // updatedCount: totals.totalUpdated,
-                status:"completed"
-        
+
+                status: "completed"
+
             }
         }, { new: true, runValidators: true })
 
@@ -543,4 +535,98 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
             },
         });
 
+})
+
+
+
+/**
+ * 
+ */
+exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) => {
+    let { fromDate, toDate } = req.body
+    let { cardConnectIntegrationsMasterId } = req.params
+//------------------------------
+
+    let integrationsMasterDetails = await cardconnectIntegrationsMastersModel.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(cardConnectIntegrationsMasterId)
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationscredentials",
+                localField: "_id",
+                foreignField: "cardConnectIntegrationsMasterId",
+                as: "cardconnectintegrationscredentials"
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationsapiurlflows",
+                localField: "_id",
+                foreignField: "cardConnectIntegrationsMasterId",
+                as: "cardconnectintegrationsapiurlflows"
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationssettings",
+                localField: "_id",
+                foreignField: "cardConnectIntegrationsMasterId",
+                as: "cardconnectintegrationssettings"
+            }
+        },
+        { $unwind: "$cardconnectintegrationscredentials" },
+        { $unwind: "$cardconnectintegrationsapiurlflows" },
+        { $unwind: "$cardconnectintegrationssettings" }
+
+    ])
+
+//----------------------------------
+    let generatedDateArray = generateDateArray(fromDate, toDate)
+    console.log("generatedDateArray===", generatedDateArray)
+
+
+    let createIntegrationsCron = await cardConnectIntegrationsCronsModel.create({
+        cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
+        accountId: integrationsMasterDetails[0].accountId,
+        userId: integrationsMasterDetails[0].userId,
+        dateRange:generatedDateArray,
+        cronJobType: "manual"
+    })
+
+
+    let initiateManualPull = await initiateManualTrigger(generatedDateArray, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, req, createIntegrationsCron._id);
+
+    await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
+
+
+    await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
+        {
+            $set: {
+
+                status: "completed"
+
+            }
+        }, { new: true, runValidators: true })
+
+
+
+
+
+
+
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
+            data: {
+                fromDate, toDate,
+                cardConnectIntegrationsMasterId: cardConnectIntegrationsMasterId,
+                initiateManualPull
+            },
+        });
 })
