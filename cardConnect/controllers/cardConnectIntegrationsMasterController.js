@@ -17,6 +17,7 @@ const {
 const { modifyUrl } = require('../utils/authenticationResponse');
 const { default: axios } = require('axios');
 const cardConnectIntegrationsMasterModel = require('../models/cardConnectIntegrationsMasterModel');
+const { generateDateRange } = require('../utils/helpers');
 //------------------------------------------------------------------------------------
 
 
@@ -485,6 +486,21 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
     ])
 
 
+//----------------------------------
+
+
+    let dateDumpRange = integrationsMasterDetails[0].cardconnectintegrationssettings.dataDumpRange;
+    console.log("dateDumpRange===", dateDumpRange)
+
+    let dateRange = generateDateRange(dateDumpRange);
+    console.log("dateRange===", dateRange)
+    dateRange[2] = '20250825';
+
+//-------------------------
+
+
+
+
     let createIntegrationsCron = await cardConnectIntegrationsCronsModel.create({
         cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
         accountId: integrationsMasterDetails[0].accountId,
@@ -493,24 +509,24 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
     })
 
 
-    let initiateManualPull = await initiateManualTrigger(integrationsMasterDetails[0], cardConnectIntegrationsMasterId, req, createIntegrationsCron._id);
+    let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, req, createIntegrationsCron._id);
 
     await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date() } }, { new: true, runValidators: true })
 
-    const totals = initiateManualPull.reduce((acc, curr) => {
-        acc.totalFetched += curr.totalFetched;
-        acc.totalInserted += curr.totalInserted;
-        acc.totalUpdated += curr.totalUpdated;
-        return acc;
-    }, { totalFetched: 0, totalInserted: 0, totalUpdated: 0 });
+    // const totals = initiateManualPull.reduce((acc, curr) => {
+    //     acc.totalFetched += curr.totalFetched;
+    //     acc.totalInserted += curr.totalInserted;
+    //     acc.totalUpdated += curr.totalUpdated;
+    //     return acc;
+    // }, { totalFetched: 0, totalInserted: 0, totalUpdated: 0 });
 
 
     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
         {
             $set: {
-                pulledCount: totals.totalFetched,
-                pushedCount: totals.totalInserted,
-                updatedCount: totals.totalUpdated,
+                // pulledCount: totals.totalFetched,
+                // pushedCount: totals.totalInserted,
+                // updatedCount: totals.totalUpdated,
                 status:"completed"
         
             }

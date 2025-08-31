@@ -10,6 +10,7 @@ const { GlobalHTTPMethods } = require('../middleware/globalHttpModel')
 const { cardConnectExceptionLogs } = require('../middleware/cardConnectExceptionOperations')
 const { generateDateRange } = require('./helpers')
 const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrationsCronsModel')
+const { default: mongoose } = require('mongoose')
 
 
 const getNestedValue = (obj, path) => {
@@ -177,7 +178,7 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
                 // });
                 let response = await GlobalHTTPMethods.handleGet(finalUrl, getAuthenticated, integrationsMasterCredentials);
                 if (Array.isArray(urlFlow.dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
-                    // Drill into response using first mapping key
+                    
                     txns = response?.[urlFlow.dataMappingPath[0]] ?? [];
 
                 } else {
@@ -188,8 +189,8 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
 
 
 
-                totalFetched += txns.length;
-
+                totalFetched = txns.length;
+                await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pulledCount: totalFetched } }, { new: true, runValidators: true })
                 if (txns.length > 0) {
                     upsertRecord = await upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, req, integrationsCronId);
                     console.log("upsertRecord===", upsertRecord)
@@ -245,11 +246,13 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
             let existingRecord = await cardConnectTransactionsModel.findOne(filter);
 
             if (!existingRecord) {
+
                 await cardConnectTransactionsModel.create({
                     cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
                     accountId: integrationsMasterCredentials.accountId,
                     userId: integrationsMasterCredentials.userId,
                     transaction: txn,
+                    cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
                     referenceId: txn[urlFlow.filteredReferenceId],
                     referenceStatus: txn[urlFlow.statusKey],
                     createdBy: req.user._id   // <--- will throw if req is missing
@@ -259,14 +262,14 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
             } else if (existingRecord.referenceStatus !== txn[urlFlow.statusKey]) {
                 await cardConnectTransactionsModel.updateOne(
                     { _id: existingRecord._id },
-                    { $set: { referenceStatus: txn[urlFlow.statusKey], transaction: txn } }
+                    { $set: { referenceStatus: txn[urlFlow.statusKey], transaction: txn , cardConnectIntegrationsCronIdUpdate: new mongoose.Types.ObjectId(integrationsCronId)} }
                 );
                 await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { updatedCount: 1 } }, { new: true, runValidators: true })
                 totalUpdated++;
             }
 
         } catch (error) {
-            // console.error("Error in upsert for txn:", txn, error); // <-- log real error
+             console.error("Error in upsert for txn:",  error); // <-- log real error
             await cardConnectExceptionLogs(
                 integrationsMasterCredentials,
                 error.response?.status || 500,
@@ -292,14 +295,8 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
 
 
 
-const initiateManualTrigger = async (integrationsMasterDetails, cardConnectIntegrationsMasterId, req, integrationsCronId) => {
+const initiateManualTrigger = async (dateRange, integrationsMasterDetails, cardConnectIntegrationsMasterId, req, integrationsCronId) => {
 
-    let dateDumpRange = integrationsMasterDetails.cardconnectintegrationssettings.dataDumpRange;
-    console.log("dateDumpRange===", dateDumpRange)
-
-    let dateRange = generateDateRange(dateDumpRange);
-    console.log("dateRange===", dateRange)
-    dateRange[2] = '20250825';
     let gatherEachDayResponses = [];
 
 
@@ -312,7 +309,7 @@ const initiateManualTrigger = async (integrationsMasterDetails, cardConnectInteg
 
 
         let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, req, integrationsCronId);
-        console.log("processFlows===", processFlows)
+        //console.log("processFlows===", processFlows)
         gatherEachDayResponses.push(processFlows)
 
 
