@@ -89,4 +89,4 @@ const cardConnectIntegrationMasterSchema = new mongoose.Schema(
 );
 
 
-module.exports = mongoose.model("cardconnectIntegrationmasters", cardConnectIntegrationMasterSchema);
+module.exports = mongoose.model("cardconnectintegrationmasters", cardConnectIntegrationMasterSchema);

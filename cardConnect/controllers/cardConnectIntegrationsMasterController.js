@@ -237,7 +237,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
         },
         { new: true, runValidators: true, } // Options to return the updated document
     );
-    updatedIntegrationsDetails = await cardconnectIntegrationsMastersModel.findOneAndUpdate({ _id: cardConnectIntegrationsMasterId, stepCount: 3 }, { status: "active" }, { new: true, runValidators: true })
+    updatedIntegrationsDetails = await cardconnectIntegrationsMastersModel.findOneAndUpdate({ _id: cardConnectIntegrationsMasterId, stepCount: 4 }, { status: "active" }, { new: true, runValidators: true })
 
 
     return res
@@ -248,6 +248,22 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
             data: { updatedIntegrationsDetails },
         });
 
+
+
+})
+
+
+exports.getIntegrationsAPIUrlFlows = asyncWrapper(async (req, res) => {
+    const { cardConnectIntegrationsMasterId } = req.params;
+    const getAPIUrlFlows = await cardConnectIntegrationsAPIUrlsFlowModel.find({ cardConnectIntegrationsMasterId });
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_RETREIVED_API_URL_FLOWS_OF_INTEGRATION,
+        data: {
+            getAPIUrlFlows
+        }
+    });
 
 
 })
@@ -297,6 +313,14 @@ exports.editCardConnectIntegrationsMaster = asyncWrapper(async (req, res) => {
 exports.editIntegrationsMasterCredentials = asyncWrapper(async (req, res) => {
     let { cardConnectIntegrationsMasterId } = req.params
     let { cardConnectIntegrationsMasterCredentialsId, accountId, userId, credentials, ...otherCredentials } = req.body;
+    let findExistenceOfIntegrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findById(cardConnectIntegrationsMasterCredentialsId);
+    if (!findExistenceOfIntegrationsMasterCredentials) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_CREDENTIALS_RECORD_NOT_FOUND,
+        });
+    }
+
     let prepareReqObj = {
         ...otherCredentials,
         credentials: encryptData(credentials),
@@ -321,13 +345,20 @@ exports.editIntegrationsMasterCredentials = asyncWrapper(async (req, res) => {
  */
 exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
     let { cardConnectIntegrationsMasterId } = req.params
-    let { cardConnectIntegrationsMasterSettingsId, accountId, userId, ...newSettings } = req.body;
+    let { cardConnectIntegrationsSettingId, accountId, userId, ...newSettings } = req.body;
+    let findExistenceOfIntegrationSettingsRecord = await cardConnectIntegrationsSettingsModel.findById(cardConnectIntegrationsSettingId);
+    if (!findExistenceOfIntegrationSettingsRecord) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_SETTINGS_RECORD_NOT_FOUND,
+        });
+    }
     console.log("newSettings==", newSettings)
     let prepareReqObj = {
         ...newSettings,
         updatedBy: req.user._id
     }
-    let editIntegrationsMasterSettings = await cardConnectIntegrationsSettingsModel.findByIdAndUpdate(cardConnectIntegrationsMasterSettingsId,
+    let editIntegrationsMasterSettings = await cardConnectIntegrationsSettingsModel.findByIdAndUpdate(cardConnectIntegrationsSettingId,
         prepareReqObj, { new: true, runValidators: true }
     )
     return res
@@ -340,6 +371,35 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
 
 
 })
+
+exports.updateIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) => {
+    let { cardConnectIntegrationsMasterId } = req.params
+    let { cardConnectIntegrationsAPIUrlFlowId, accountId, userId, APIUrlFlows } = req.body;
+
+    let updatedIntegrationAPIUrlFlows = await cardConnectIntegrationsAPIUrlsFlowModel.findByIdAndUpdate(cardConnectIntegrationsAPIUrlFlowId,
+        { $set: { APIUrlFlows } },
+        { new: true, runValidators: true }
+    )
+    let updateIntegrationMasterDetails = await cardconnectIntegrationsMastersModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, {
+        $inc: { stepCount: 1 },
+        $set: {
+
+            updatedBy: req.user._id
+        }
+    },
+        { runValidators: true, new: true })
+
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_API_URL_FLOWS_SUCCESS,
+            data: { updateIntegrationMasterDetails },
+        });
+})
+
+
 
 /**
  * 
@@ -408,11 +468,61 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
 // })
 
 
+/**
+ * 
+ */
+exports.editIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) => {
+    let { cardConnectIntegrationsMasterId } = req.params
+    let { cardConnectIntegrationsAPIUrlFlowId, accountId, userId, APIUrlFlows } = req.body;
+
+    let findExistenceOfIntegrationAPIUrlFlow = await cardConnectIntegrationsAPIUrlsFlowModel.findById(cardConnectIntegrationsAPIUrlFlowId);
+    if (!findExistenceOfIntegrationAPIUrlFlow) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_API_URL_FLOW_RECORD_NOT_FOUND,
+        });
+    }
+
+
+    let updatedIntegrationAPIUrlFlows = await cardConnectIntegrationsAPIUrlsFlowModel.findByIdAndUpdate(cardConnectIntegrationsAPIUrlFlowId,
+        { $set: { APIUrlFlows } },
+        { new: true, runValidators: true }
+    )
+
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_API_URL_FLOWS_SUCCESS,
+            data: { updatedIntegrationAPIUrlFlows },
+        });
+})
+
+
+
+
 exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
     let { date } = req.body;
     let { cardConnectIntegrationsMasterId } = req.params;
     let integrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findOne({ cardConnectIntegrationsMasterId });
 
+    let dateRange = [];
+    dateRange.push(date)
+
+    //---------------------------------------------------------
+    let createIntegrationsCron = await cardConnectIntegrationsCronsModel.create({
+        cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
+        accountId: integrationsMasterCredentials.accountId,
+        userId: integrationsMasterCredentials.userId,
+        dateRange,
+        cronJobType: "manual"
+    })
+
+    await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
+
+
+    //---------------------------=----------------------
 
 
 
@@ -426,8 +536,20 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
     let apiUrlFlows = integrationAPIUrlFlows.APIUrlFlows;
 
 
-    let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req);
+    let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, createIntegrationsCron._id);
     console.log("processFlows===", processFlows)
+    
+    
+    
+    await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
+        {
+            $set: {
+
+                status: "completed"
+
+            }
+        }, { new: true, runValidators: true })
+
 
 
     return res
@@ -509,10 +631,10 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
         cronJobType: "manual"
     })
 
-
-    let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, req, createIntegrationsCron._id);
-
     await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
+
+    let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, createIntegrationsCron._id);
+
 
 
     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
@@ -545,7 +667,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
 exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) => {
     let { fromDate, toDate } = req.body
     let { cardConnectIntegrationsMasterId } = req.params
-//------------------------------
+    //------------------------------
 
     let integrationsMasterDetails = await cardconnectIntegrationsMastersModel.aggregate([
         {
@@ -583,7 +705,7 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
 
     ])
 
-//----------------------------------
+    //----------------------------------
     let generatedDateArray = generateDateArray(fromDate, toDate)
     console.log("generatedDateArray===", generatedDateArray)
 
@@ -592,14 +714,14 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
         cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
-        dateRange:generatedDateArray,
+        dateRange: generatedDateArray,
         cronJobType: "manual"
     })
 
-
-    let initiateManualPull = await initiateManualTrigger(generatedDateArray, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, req, createIntegrationsCron._id);
-
     await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
+
+
+    let initiateManualPull = await initiateManualTrigger(generatedDateArray, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, createIntegrationsCron._id);
 
 
     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
@@ -629,4 +751,14 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
                 initiateManualPull
             },
         });
+})
+
+
+exports.findGgarte = asyncWrapper(async (req, res) => {
+    console.log("-----------------------cle")
+    const cardConnectIntegrationsMasterSettingsDetails = await cardConnectIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each minute', "periodSettings.currentStatus": "start" })
+        .populate("cardConnectIntegrationsMasterId")
+
+    console.log("cardConnectIntegrationsMasterSettingsDetails====", cardConnectIntegrationsMasterSettingsDetails)
+    res.send(cardConnectIntegrationsMasterSettingsDetails)
 })

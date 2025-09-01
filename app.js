@@ -24,7 +24,7 @@ const usersRoute = require('./customer/routes/usersRoute');
 const errorcontroller = require('./customer/controllers/errorcontroller');
 const webHooksRoute = require('./customer/routes/webHooksRoute')
 const webhookCrons = require('./customer/controllers/webhookCronControllers')
-
+const integrationCrons=require('./cardConnect/controllers/cardConnectCronScheduleController')
 //Super Admin Routes.
 
 const SuperAdminAccountRoutes = require('./superAdmin/routes/superAdminAccounts')
@@ -69,6 +69,7 @@ app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocum
 
 //webhookCrons.webhookScheduleCronJobs()
 
+integrationCrons.cardConnectScheduleCronJobs()
 // Error Handling Middleware (optional)
 app.use(errorcontroller);
 

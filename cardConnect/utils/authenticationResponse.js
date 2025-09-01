@@ -6,6 +6,7 @@ let { decryptData } = require('../../utils/encryptionAlgorithms')
 let customConstants = require('../../config/constants.json')
 let axios = require('axios')
 const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
+const cardConnectTransactionLifeCycleModel = require('../models/cardConnectTransactionLifeCycle')
 const { GlobalHTTPMethods } = require('../middleware/globalHttpModel')
 const { cardConnectExceptionLogs } = require('../middleware/cardConnectExceptionOperations')
 const { generateDateRange } = require('./helpers')
@@ -151,7 +152,7 @@ const modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) => {
 
 
 
-const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, req, integrationsCronId) => {
+const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, integrationsCronId) => {
     var totalInserted = 0;
     var totalFetched = 0;
     var upsertRecord = {
@@ -178,7 +179,7 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
                 // });
                 let response = await GlobalHTTPMethods.handleGet(finalUrl, getAuthenticated, integrationsMasterCredentials);
                 if (Array.isArray(urlFlow.dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
-                    
+
                     txns = response?.[urlFlow.dataMappingPath[0]] ?? [];
 
                 } else {
@@ -192,7 +193,7 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
                 totalFetched = txns.length;
                 await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pulledCount: totalFetched } }, { new: true, runValidators: true })
                 if (txns.length > 0) {
-                    upsertRecord = await upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, req, integrationsCronId);
+                    upsertRecord = await upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId);
                     console.log("upsertRecord===", upsertRecord)
                 }
 
@@ -227,10 +228,18 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
 
 }
 
+const createTransactionLifeCycleRecord = async (requestObject , integrationsMasterCredentials) => {
+    await cardConnectTransactionLifeCycleModel.create({
+        cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
+        accountId: integrationsMasterCredentials.accountId,
+        transactionId: requestObject.referenceId,
+        transactionStatus: requestObject.referenceStatus,
+        responseObject: JSON.stringify(requestObject)
+    })
+}
 
 
-
-async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, req, integrationsCronId) {
+async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId) {
     var totalInserted = 0;
     var totalUpdated = 0;
 
@@ -244,32 +253,35 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
             };
 
             let existingRecord = await cardConnectTransactionsModel.findOne(filter);
+            let requestObject = {
+                cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
+                accountId: integrationsMasterCredentials.accountId,
+                userId: integrationsMasterCredentials.userId,
+                transaction: txn,
+                cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
+                referenceId: txn[urlFlow.filteredReferenceId],
+                referenceStatus: txn[urlFlow.statusKey],
 
+            }
             if (!existingRecord) {
 
-                await cardConnectTransactionsModel.create({
-                    cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
-                    accountId: integrationsMasterCredentials.accountId,
-                    userId: integrationsMasterCredentials.userId,
-                    transaction: txn,
-                    cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
-                    referenceId: txn[urlFlow.filteredReferenceId],
-                    referenceStatus: txn[urlFlow.statusKey],
-                    createdBy: req.user._id   // <--- will throw if req is missing
-                });
+                await cardConnectTransactionsModel.create(requestObject);
+                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials )
                 await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pushedCount: 1 } }, { new: true, runValidators: true })
                 totalInserted++;
             } else if (existingRecord.referenceStatus !== txn[urlFlow.statusKey]) {
                 await cardConnectTransactionsModel.updateOne(
                     { _id: existingRecord._id },
-                    { $set: { referenceStatus: txn[urlFlow.statusKey], transaction: txn , cardConnectIntegrationsCronIdUpdate: new mongoose.Types.ObjectId(integrationsCronId)} }
+                    { $set: { referenceStatus: txn[urlFlow.statusKey], transaction: txn, cardConnectIntegrationsCronIdUpdate: new mongoose.Types.ObjectId(integrationsCronId) } }
                 );
+
+                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials )
                 await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { updatedCount: 1 } }, { new: true, runValidators: true })
                 totalUpdated++;
             }
 
         } catch (error) {
-             console.error("Error in upsert for txn:",  error); // <-- log real error
+            console.error("Error in upsert for txn:", error); // <-- log real error
             await cardConnectExceptionLogs(
                 integrationsMasterCredentials,
                 error.response?.status || 500,
@@ -277,7 +289,8 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                 error.name,
                 txn, // now txn is in scope
                 finalUrl,
-                txn[urlFlow.filteredReferenceId]
+                txn[urlFlow.filteredReferenceId],
+                integrationsCronId
             );
         }
     }
@@ -295,7 +308,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
 
 
 
-const initiateManualTrigger = async (dateRange, integrationsMasterDetails, cardConnectIntegrationsMasterId, req, integrationsCronId) => {
+const initiateManualTrigger = async (dateRange, integrationsMasterDetails, cardConnectIntegrationsMasterId, integrationsCronId) => {
 
     let gatherEachDayResponses = [];
 
@@ -308,7 +321,7 @@ const initiateManualTrigger = async (dateRange, integrationsMasterDetails, cardC
         let apiUrlFlows = integrationsMasterDetails.cardconnectintegrationsapiurlflows.APIUrlFlows;
 
 
-        let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, req, integrationsCronId);
+        let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, integrationsCronId);
         //console.log("processFlows===", processFlows)
         gatherEachDayResponses.push(processFlows)
 

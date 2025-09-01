@@ -26,26 +26,30 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
         index: true,
         default: null,
     },
-    periodType: {
-        type: String,
-        // enum: ["each second", "once each minute", "once each hour", "once each day", "once each month"],
-        enum: ["once each day"],
-        required: [true, 'Period type is required.'],
-        default: ""
-    },
-    currentStatus: {
-        type: String,
-        enum: ['start', 'stop'],
-        default: "stop"
-    },
+
+
     periodSettings: {
-        type: mongoose.Schema.Types.Mixed,
-        default: {}
+        periodType: {
+            type: String,
+            enum: ["once each minute", "each 5 minutes", "once each hour", "once each day"],
+            required: [true, 'periodType required'],
+            default: ""
+        },
+        currentStatus: {
+            type: String,
+            enum: ['start', 'stop'],
+            default: "stop"
+        },
+        interval: {
+            type: Number,
+            default: 1
+        },
+        expiresOn: {
+            type: Date,
+            default: new Date()
+        }
     },
-    statusPreValidationConditions: {
-        type: Object,
-        default: {}
-    },
+   
     requiredDatapoints: {
         type: Object,
         default: {}
@@ -75,10 +79,7 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
         required: [true, 'data dump range is required'],
         default: 20
     },
-    expiresOn: {
-        type: Date,
-        default: new Date()
-    }
+
 }, { timestamps: true });
 
 

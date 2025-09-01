@@ -63,7 +63,7 @@ const cardConnectTransactionsSchema = new mongoose.Schema(
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "users",
-            required: [true, "Created by is required."],
+           // required: [true, "Created by is required."],
             default: null,
         },
         updatedBy: {
