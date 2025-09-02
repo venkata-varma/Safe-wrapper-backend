@@ -1,14 +1,15 @@
 const asyncWrapper = require('../middleware/asyncWrapper');
 const mongoose = require('mongoose')
-const cardconnectIntegrationsMastersModel = require('../models/cardConnectIntegrationsMasterModel')
+
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
 const cardConnectIntegrationsAPIUrlsFlowModel = require('../models/cardConnectIntegrationsAPIUrlFlowModel')
-const cardConnectAPIUrlFlowModel = require('../models/cardConnectAPIUrlFlowsModel')
+
 const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
 const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrationsCronsModel')
 const customConstants = require('../../config/constants.json')
 const { validateServiceProviders } = require('../../utils/credentialsValidation')
+const accountsModel = require('../../models/accountsModel')
 const { authenticationResponse, processAPIUrlFlows, initiateManualTrigger } = require('../utils/authenticationResponse')
 const {
     encryptData,
@@ -16,74 +17,26 @@ const {
 } = require("../../utils/encryptionAlgorithms");
 const { modifyUrl } = require('../utils/authenticationResponse');
 const { default: axios } = require('axios');
-const cardConnectIntegrationsMasterModel = require('../models/cardConnectIntegrationsMasterModel');
+
 const { generateDateRange, generateDateArray } = require('../utils/helpers');
 const { cardConnectPredefinedKeys } = require('../config/predefinedKeys')
 //------------------------------------------------------------------------------------
 
 
-exports.validatecreateCardConnectIntegrationsMaster = asyncWrapper(async (req, res, next) => {
-    let payload = req.body;
-    if (!payload.title) {
-        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-            status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_PAYLOAD_MANDATORY_ERROR_TITLE
-        });
-    }
-
-    if (!payload.accountId) {
-        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-            status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_PAYLOAD_MANDATORY_ERROR_ACCOUNTID
-        });
-    }
-
-    if (!payload.userId) {
-        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-            status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_PAYLOAD_MANDATORY_ERROR_USERID
-        });
-    }
-    next()
-})
-
-
-
-
-/**
- * 
- * 
- */
-exports.createCardConnectIntegrationsMaster = asyncWrapper(async (req, res) => {
-    const cardConnectIntegrationsMaster = await cardconnectIntegrationsMastersModel.create({
-        ...req.body,
-        createdBy: req.user._id,
-        updatedBY: req.user._id,
-        stepCount: 1
-    });
-
-    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_CREATED_CARD_CONNECT_INTEGRATIONS_MASTER,
-        data: {
-            cardConnectIntegrationsMaster
-        }
-    })
-})
 
 
 /**
  * 
  */
-exports.validateintegrationsMasterExist = asyncWrapper(async (req, res, next) => {
-    const { cardConnectIntegrationsMasterId } = req.body;
+exports.validateAccountExistAndActive = asyncWrapper(async (req, res, next) => {
+    const { accountId } = req.body;
 
-    console.log('cardConnectIntegrationsMasterId:===', cardConnectIntegrationsMasterId)
-    const integrationMasterDetails = await cardconnectIntegrationsMastersModel.findById(cardConnectIntegrationsMasterId)
-    if (!integrationMasterDetails) {
+
+    const accountDetails = await accountsModel.findById(accountId);
+    if (!accountDetails || accountDetails.status !== 'active') {
         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
             status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND,
+            message: customConstants.messages.MESSAGE_ACCOUNT_NOT_EXISTS_INACTIVE,
         });
     }
 
@@ -118,8 +71,17 @@ exports.validateintegrationsMasterExistenceParams = asyncWrapper(async (req, res
  * 
  */
 exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
+    var payload;
+    if (req.body.source === 'card-connect') {
+        payload = {
+            ...req.body,
+            authorizationType: "Basic auth",
+            authenticationKey: "Authorization",
+            dataMappingPath: [],
+        }
+    }
 
-    let credentialsValidation = await validateServiceProviders(req.body)
+    let credentialsValidation = await validateServiceProviders(payload)
     // console.log("credentialsValidation===validated", credentialsValidation)
 
     if (credentialsValidation.status === "fail" || credentialsValidation === undefined || credentialsValidation.statusCode !== 200) {
@@ -131,6 +93,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
             data: credentialsValidation?.data
         })
     }
+    req.payload = payload;
     next()
 });
 
@@ -141,26 +104,17 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
  * 
  */
 exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next) => {
-    const { cardConnectIntegrationsMasterId, accountId, credentials } = req.body;
+    const payload = req.payload;
 
     let prepareReqObj = {
-        ...req.body,
-        credentials: encryptData(req.body.credentials),
+        ...payload,
+        credentials: encryptData(payload.credentials),
         status: "verified",
         createdBy: req.user._id,
         updatedBy: req.user._id
 
     }
     let createCardConnectIntegrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.create(prepareReqObj);
-    let updateIntegrationMasterDetails = await cardconnectIntegrationsMastersModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, {
-        $inc: { stepCount: 1 },
-        $set: {
-            source: "card-connect",
-            updatedBy: req.user._id
-        }
-    },
-        { runValidators: true, new: true })
-
 
 
     return res
@@ -168,7 +122,7 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_INTEGRATION_CREDENTIALS_SAVED,
-            data: { updateIntegrationMasterDetails },
+            data: { createCardConnectIntegrationsMasterCredentials },
         });
 
 
@@ -179,29 +133,15 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
  * 
  */
 exports.createCardConnectIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) => {
-    let { cardConnectIntegrationsMasterId } = req.params;
-    let integrationMasterDetails = req.integrationMasterDetails;
-    const fetchAPIUrlFLows = await cardConnectAPIUrlFlowModel.find({});
-
-
-    const apiUrlFlows = fetchAPIUrlFLows.map(rec => {
-        let obj = rec.toObject();    // convert Mongoose doc to plain object
-        delete obj._id;
-        delete obj.cardConnectAPIUrlsFlowId;             // remove _id so Mongoose will generate a new one
-        return obj;
-    });
+    let payload = req.body;
 
     let createIntegrationAPIUrlFlow = await cardConnectIntegrationsAPIUrlsFlowModel.create({
-        cardConnectIntegrationsMasterId,
-        accountId: integrationMasterDetails.accountId,
-        userId: integrationMasterDetails.userId,
-        APIUrlFlows: apiUrlFlows,
+
+        accountId: payload.accountId,
+        userId: payload.userId,
+        APIUrlFlows: payload.APIUrlFlows,
         createdBy: req.user._id
     });
-
-
-
-
 
 
     return res
@@ -209,7 +149,9 @@ exports.createCardConnectIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) 
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_INTEGRATION_API_URL_FLOWS_SAVED,
-
+            data: {
+                createIntegrationAPIUrlFlow
+            }
         });
 
 
@@ -219,8 +161,8 @@ exports.createCardConnectIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) 
 /**
  * 
  */
-exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
-    let { cardConnectIntegrationsMasterId } = req.body;
+exports.createCardConnectIntegrationMasterSettings = asyncWrapper(async (req, res) => {
+    
     let createCardConnectIntegrationsSettings = await cardConnectIntegrationsSettingsModel.create({
         ...req.body,
         createdBy: req.user._id,
@@ -229,19 +171,6 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
         requiredDatapoints: cardConnectPredefinedKeys.requiredDatapoints
 
     });
-    // Perform the update
-    let updatedIntegrationsDetails = await cardconnectIntegrationsMastersModel.findByIdAndUpdate(
-        cardConnectIntegrationsMasterId,
-        {
-            $inc: { stepCount: 1 },
-            $set: {
-
-                updatedBy: req.user._id
-            }
-        },
-        { new: true, runValidators: true, } // Options to return the updated document
-    );
-    updatedIntegrationsDetails = await cardconnectIntegrationsMastersModel.findOneAndUpdate({ _id: cardConnectIntegrationsMasterId, stepCount: 4 }, { status: "active" }, { new: true, runValidators: true })
 
 
     return res
@@ -249,7 +178,7 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_INTEGRATIONS_SETTINGS,
-            data: { updatedIntegrationsDetails },
+            data: { createCardConnectIntegrationsSettings },
         });
 
 
@@ -271,24 +200,6 @@ exports.getIntegrationsAPIUrlFlows = asyncWrapper(async (req, res) => {
 
 
 })
-
-
-exports.validateintegrationsMasterExistAndActive = asyncWrapper(async (req, res, next) => {
-    const { cardConnectIntegrationsMasterId } = req.params;
-
-    console.log('cardConnectIntegrationsMasterId:===', cardConnectIntegrationsMasterId);
-    const integrationMasterDetails = await cardconnectIntegrationsMastersModel.findById(cardConnectIntegrationsMasterId)
-    if (!integrationMasterDetails || integrationMasterDetails.status !== 'active') {
-        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
-            status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_INTEGRATION_DETAILS_NOT_FOUND_OR_DEACTICATED,
-        });
-    }
-
-    next()
-
-});
-
 
 
 /**
@@ -376,32 +287,6 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
 
 })
 
-exports.updateIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) => {
-    let { cardConnectIntegrationsMasterId } = req.params
-    let { cardConnectIntegrationsAPIUrlFlowId, accountId, userId, APIUrlFlows } = req.body;
-
-    let updatedIntegrationAPIUrlFlows = await cardConnectIntegrationsAPIUrlsFlowModel.findByIdAndUpdate(cardConnectIntegrationsAPIUrlFlowId,
-        { $set: { APIUrlFlows } },
-        { new: true, runValidators: true }
-    )
-    let updateIntegrationMasterDetails = await cardconnectIntegrationsMastersModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, {
-        $inc: { stepCount: 1 },
-        $set: {
-
-            updatedBy: req.user._id
-        }
-    },
-        { runValidators: true, new: true })
-
-
-    return res
-        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-        .json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_API_URL_FLOWS_SUCCESS,
-            data: { updateIntegrationMasterDetails },
-        });
-})
 
 
 

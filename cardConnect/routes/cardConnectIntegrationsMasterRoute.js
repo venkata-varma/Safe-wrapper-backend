@@ -1,22 +1,21 @@
 const router = require('express').Router();
 const { access } = require('fs');
 const {
-    validatecreateCardConnectIntegrationsMaster,
-    createCardConnectIntegrationsMaster,
-    validateintegrationsMasterExist,
+
+    validateAccountExistAndActive,
     credentialsValidationsMiddleware,
     createIntegrationMasterCredentials,
-    updateIntegrationMasterSettings,
-    validateintegrationsMasterExistAndActive,
+    createCardConnectIntegrationMasterSettings,
+
     editCardConnectIntegrationsMaster,
     editIntegrationsMasterCredentials,
     editIntegrationsMasterSettings,
     fetchFundingTransactionsForTheDay,
     createCardConnectIntegrationsAPIUrlFlow,
-    validateintegrationsMasterExistenceParams,
+
     manualPullDateDumpRange,
     fetchFundingTransactionsForTheDateRange,
-    updateIntegrationsAPIUrlFlow,
+    
     getIntegrationsAPIUrlFlows,
     editIntegrationsAPIUrlFlow
 
@@ -26,26 +25,24 @@ const auth = require('../../middleware/authentication');
 
 
 router.use(auth)
-router.post('/create-card-connect-integrations-master', validatecreateCardConnectIntegrationsMaster, createCardConnectIntegrationsMaster)
-router.post('/creare-card-connect-integrations-master-credentials', validateintegrationsMasterExist, credentialsValidationsMiddleware, createIntegrationMasterCredentials)
-router.get('/creare-card-connect-integrations-master-api-url-flow/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistenceParams, createCardConnectIntegrationsAPIUrlFlow)
-router.patch('/update-card-connect-integrations-master-settings', validateintegrationsMasterExist, updateIntegrationMasterSettings)
-router.patch('/update-card-connect-integrations-master-api-url-flows/:cardConnectIntegrationsMasterId', validateintegrationsMasterExist, updateIntegrationsAPIUrlFlow)
 
+router.post('/create-card-connect-integrations-master-credentials', validateAccountExistAndActive, credentialsValidationsMiddleware, createIntegrationMasterCredentials)
+router.post('/create-card-connect-integrations-master-api-url-flow', validateAccountExistAndActive, createCardConnectIntegrationsAPIUrlFlow)
+router.post('/create-card-connect-integrations-master-settings', validateAccountExistAndActive, createCardConnectIntegrationMasterSettings)
 
-router.patch('/edit-card-connect-integrations-master/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, editCardConnectIntegrationsMaster)
-router.patch('/edit-card-connect-integrations-master-credentials/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, credentialsValidationsMiddleware,
+router.patch('/edit-card-connect-integrations-master/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, editCardConnectIntegrationsMaster)
+router.patch('/edit-card-connect-integrations-master-credentials/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, credentialsValidationsMiddleware,
     editIntegrationsMasterCredentials
 
 )
-router.get('/get-card-connect-integrations-api-url-flows/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, getIntegrationsAPIUrlFlows)
-router.patch('/edit-card-connect-integrations-master-settings/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, editIntegrationsMasterSettings)
-router.patch('/edit-card-connect-integrations-master-api-url-flows/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, editIntegrationsAPIUrlFlow)
+router.get('/get-card-connect-integrations-api-url-flows/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, getIntegrationsAPIUrlFlows)
+router.patch('/edit-card-connect-integrations-master-settings/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, editIntegrationsMasterSettings)
+router.patch('/edit-card-connect-integrations-master-api-url-flows/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, editIntegrationsAPIUrlFlow)
 
 
-router.post('/fetch-funding-data-for-the-day/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, fetchFundingTransactionsForTheDay)
-router.get('/manual-pull-for-date-dump-range/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, manualPullDateDumpRange)
-router.post('/fetch-funding-data-for-the-date-range/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, fetchFundingTransactionsForTheDateRange)
+router.post('/fetch-funding-data-for-the-day/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, fetchFundingTransactionsForTheDay)
+router.get('/manual-pull-for-date-dump-range/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, manualPullDateDumpRange)
+router.post('/fetch-funding-data-for-the-date-range/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, fetchFundingTransactionsForTheDateRange)
 
 
 

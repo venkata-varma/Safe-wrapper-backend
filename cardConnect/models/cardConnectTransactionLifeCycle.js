@@ -24,12 +24,7 @@ const cardConnectTransactionLifeCycleSchema = new mongoose.Schema({
             index: true,
             default: null,
         },
-        cardConnectIntegrationsMasterId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "cardconnectintegrationmasters",
-            index: true,
-            default: null
-        },
+        
         requestObject: {
             type: String,
             default: ""

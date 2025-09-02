@@ -1,5 +1,5 @@
 
-const cardconnectIntegrationsMastersModel = require('../models/cardConnectIntegrationsMasterModel')
+
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
 let { decryptData } = require('../../utils/encryptionAlgorithms')

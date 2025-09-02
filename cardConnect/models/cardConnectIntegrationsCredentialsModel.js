@@ -10,20 +10,17 @@ const cardConnectIntegrationsCredentialsSchema = new mongoose.Schema(
                 return this._id;
             },
         },
-        cardConnectIntegrationsMasterId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "cardconnectintegrationmasters",
-            index: true,
-            default: null,
-        },
+
         accountId: {
             type: mongoose.Schema.Types.ObjectId,
+            required: [true, "Account id is mandatory."],
             ref: "accounts",
             index: true,
             default: null,
         },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
+            required: [true, "User id is mandatory."],
             ref: "users",
             index: true,
             default: null,
@@ -56,7 +53,11 @@ const cardConnectIntegrationsCredentialsSchema = new mongoose.Schema(
             enum: ["new", "verified", "active", "failed", "deleted"],
             default: "new",
         },
-
+        source: {
+            type: String,
+            required: [true, "Source is mandatory."],
+            default: "card-connect"
+        },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "users",
