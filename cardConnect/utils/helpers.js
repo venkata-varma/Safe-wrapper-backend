@@ -1,27 +1,27 @@
 
-exports.generateDateRange=(days)=> {
-    const dates = [];
-    const today = new Date();
+exports.generateDateRange = (days) => {
+  const dates = [];
+  const today = new Date();
 
-    for (let i = 0; i < days; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
+  for (let i = 0; i < days; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
 
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
 
-        dates.push(`${yyyy}${mm}${dd}`);
-    }
+    dates.push(`${yyyy}${mm}${dd}`);
+  }
 
-    return dates;
+  return dates;
 }
 
 // utils/helpers.js
 exports.generateDateArray = (fromDate, toDate) => {
   const parseUTC = (s) => new Date(`${s}T00:00:00.000Z`);
   let start = parseUTC(fromDate);   // earliest
-  let end   = parseUTC(toDate);     // latest
+  let end = parseUTC(toDate);     // latest
 
   const out = [];
   while (end >= start) {
@@ -33,3 +33,177 @@ exports.generateDateArray = (fromDate, toDate) => {
   }
   return out;
 };
+
+
+
+
+exports.statusMappings = async (getAllTransactions, cardconnectintegrationssettings) => {
+  // console.log("getAllTransactions===", getAllTransactions[0])
+
+  //console.log("cardconnectintegrationssettings===", cardconnectintegrationssettings.transactionStatusKeys)
+
+  let statusCounts = {};
+  const normalizedKeys = {};
+
+  cardconnectintegrationssettings.transactionStatusKeys.forEach(key => {
+    statusCounts[key] = 0;                 // store original case for output
+    normalizedKeys[key.toLowerCase()] = key; // map lowercase -> original key
+  });
+
+  // console.log("statusCounts===", statusCounts)
+  // console.log("normalizedKeys===", normalizedKeys)
+
+
+  getAllTransactions.forEach(txn => {
+    const txnStatus = txn.referenceStatus?.toLowerCase();
+
+    if (txnStatus && normalizedKeys[txnStatus]) {
+      const originalKey = normalizedKeys[txnStatus];
+      statusCounts[originalKey] += 1;
+    }
+  });
+
+
+
+  return statusCounts
+
+
+}
+
+function normalizeDate(value) {
+  if (value == null) return value;
+  const s = String(value).trim();
+  if (!/^\d+$/.test(s)) return value; // not pure digits → leave it
+
+  let date;
+  switch (s.length) {
+    case 10: // epoch seconds
+      date = new Date(parseInt(s, 10) * 1000);
+      break;
+    case 13: // epoch millis
+      date = new Date(parseInt(s, 10));
+      break;
+    case 14: // YYYYMMDDHHmmss
+      date = new Date(
+        `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T${s.slice(8, 10)}:${s.slice(10, 12)}:${s.slice(12, 14)}Z`
+      );
+      break;
+    case 8: // YYYYMMDD
+      date = new Date(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T00:00:00Z`);
+      break;
+    default:
+      return value;
+  }
+
+  return isNaN(date) ? value : date.toISOString();
+}
+
+
+async function getNestedValue(obj, path) {
+  if (!path || typeof path !== "string") return "";
+  if (!path.includes(".") && obj[path] === undefined) return "";
+  if (!path.includes(".") && obj[path] !== undefined) return obj[path];
+
+  const result = path.split(".").reduce((acc, part) => {
+    if (acc === undefined || acc === null) return undefined;
+    const arrayMatch = part.match(/^(\w+)\[(\d+)\]$/);
+    if (arrayMatch) {
+      const arrayName = arrayMatch[1];
+      const index = parseInt(arrayMatch[2], 10);
+      return Array.isArray(acc[arrayName]) ? acc[arrayName][index] : undefined;
+    } else {
+      return acc[part];
+    }
+  }, obj);
+
+  return result === undefined ? "" : result;
+}
+
+
+
+const getRequiredWODetailsTODisplay = async (responseObject, requiredDatapoints) => {
+
+  let prePareResult = {}
+  for (const [mappedKey, value] of Object.entries(requiredDatapoints)) {
+
+    let result = await getNestedValue(responseObject, value)
+
+    // 👉 Convert numeric UNIX timestamp (seconds) to Date
+    if (mappedKey.toLowerCase().includes("date") && typeof result === "number") {
+      //console.log("mappedKey===", mappedKey)
+      //  console.log("result===", result)
+      result = normalizeDate(result);
+
+    }
+    prePareResult[`${mappedKey}`] = result
+  }
+
+  //console.log("prePareResult:===", prePareResult)
+  return prePareResult
+}
+
+
+
+
+
+
+
+
+
+exports.getProcessedDisplayPoints = async (getAllTransactions, requiredDataPoints) => {
+  //  console.log("getAllTransactions===", getAllTransactions[0])
+
+  // console.log("requiredDataPoints===", requiredDataPoints)
+
+  let WOData = []
+  await Promise.all(
+    getAllTransactions.map(async record => {
+      let rawMetaData = record?.transaction
+
+
+      let parsedMetaData = {
+        ...record,
+        ...rawMetaData,
+      }
+      //console.log("parsedMetaData", parsedMetaData)
+
+      let processedRecord = await getRequiredWODetailsTODisplay(
+        parsedMetaData,
+        requiredDataPoints
+      );
+      WOData.push(processedRecord)
+    })
+  )
+  return WOData;
+
+
+}
+
+
+
+
+/**
+ * 
+ * 
+ */
+exports.transactionTypeMappings=async(transactions, transactionTypeKeys)=>{
+let typeCounts = {};
+  const normalizedKeys = {};
+
+  transactionTypeKeys.forEach(key => {
+    typeCounts[key] = 0;                 // store original case for output
+    normalizedKeys[key.toLowerCase()] = key; // map lowercase -> original key
+  });
+
+
+  transactions.forEach(txn => {
+    const txnType = txn?.Transaction_type?.toLowerCase();
+
+    if (txnType && normalizedKeys[txnType]) {
+      const originalKey = normalizedKeys[txnType];
+      typeCounts[originalKey] += 1;
+    }
+  });
+
+return typeCounts
+}

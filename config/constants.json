@@ -159,7 +159,8 @@
     "MESSAGE_CREATED_API_URL_FLOW": "Successfully created API URL flow.",
     "MESSAGE_FETCHED_FUNDING_FOR_THE_DAY": "Fetched and inserted transactions successfully.",
     "MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION": "Performed manual trigger for the respective integration for its date dump range. Please check results",
-    "MESSAGE_RETREIVED_API_URL_FLOWS_OF_INTEGRATION": "API Url flows retreived succesfully."
+    "MESSAGE_RETREIVED_API_URL_FLOWS_OF_INTEGRATION": "API Url flows retreived succesfully.",
+    "MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS":"Details of respective integration retreived succesfully."
   },
   "statusCodes": {
     "FORBIDDEN": 403,

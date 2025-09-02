@@ -48,7 +48,5 @@ router.get('/manual-pull-for-date-dump-range/:cardConnectIntegrationsMasterId', 
 router.post('/fetch-funding-data-for-the-date-range/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, fetchFundingTransactionsForTheDateRange)
 
 
-router.get('/get-single-integration-view/:cardConnectIntegrationsMasterId',validateintegrationsMasterExistAndActive, getSingleIntegrationView )
-
 
 module.exports = router;

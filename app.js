@@ -33,6 +33,8 @@ const superAdminWebhookRoutes = require('./superAdmin/routes/superAdminWebhookRo
 const superAdminWebhookOperations = require('./superAdmin/routes/webhookOperationRoutes')
 const cardConnectIntegrationsMasterRoute=require('./cardConnect/routes/cardConnectIntegrationsMasterRoute')
 const cardConnectAPIUrlFlowRoute=require('./cardConnect/routes/cardConnectAPIUrlFlowRoute')
+const cardConnectIntegrationsMasterDataPointsRoute=require('./cardConnect/routes/cardConnectIntegrationsMasterDataPointsRoute')
+
 
 //Provide the static images 
 app.use('/static', express.static(path.join(__dirname, 'assets')));
@@ -48,7 +50,7 @@ app.use('/api/machines',superAdminWebhookRoutes)
 app.use('/api/webhook',superAdminWebhookOperations)
 app.use('/api/card-connect/integrations-master', cardConnectIntegrationsMasterRoute)
 app.use('/api/card-connect/api-url-flow', cardConnectAPIUrlFlowRoute)
-
+app.use('/api/card-connect/data-points', cardConnectIntegrationsMasterDataPointsRoute)
 
 // Start of swagger configuration
 
@@ -67,9 +69,9 @@ app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocum
 // End of swagger configuration
 
 
-webhookCrons.webhookScheduleCronJobs()
+//webhookCrons.webhookScheduleCronJobs()
 
-integrationCrons.cardConnectScheduleCronJobs()
+//integrationCrons.cardConnectScheduleCronJobs()
 // Error Handling Middleware (optional)
 app.use(errorcontroller);
 
