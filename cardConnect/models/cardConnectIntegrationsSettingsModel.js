@@ -8,7 +8,7 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
             return this._id;
         },
     },
-    
+
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "accounts",
@@ -68,6 +68,16 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
     transactionTypeKeys: {
         type: Array,
         default: []
+    },
+    lastPullDate: {
+        type: Date,
+        default: null
+    },
+    lastIntgerationsCronId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "cardconnectintegrationscrons",
+        default: null,
+        index: true,
     },
     // dataPointsAccess: {
     //     type: Object,

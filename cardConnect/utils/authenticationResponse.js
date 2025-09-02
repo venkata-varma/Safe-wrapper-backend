@@ -43,9 +43,9 @@ const getNestedValue = (obj, path) => {
 
 
 
-const authenticationResponse = async (cardConnectIntegrationsMasterId) => {
+const authenticationResponse = async (accountId) => {
 
-    let integrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findOne({ cardConnectIntegrationsMasterId });
+    let integrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findOne({ accountId });
 
 
     if (!integrationsMasterCredentials || !integrationsMasterCredentials.credentials) {
@@ -231,7 +231,7 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
 
 const createTransactionLifeCycleRecord = async (requestObject, integrationsMasterCredentials) => {
     await cardConnectTransactionLifeCycleModel.create({
-        cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
+
         accountId: integrationsMasterCredentials.accountId,
         transactionId: requestObject.referenceId,
         transactionStatus: requestObject.referenceStatus,
@@ -249,13 +249,13 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
 
         try {
             let filter = {
-                cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
+                accountId: integrationsMasterCredentials.accountId,
                 referenceId: txn[urlFlow.filteredReferenceId]
             };
 
             let existingRecord = await cardConnectTransactionsModel.findOne(filter);
             let requestObject = {
-                cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
+
                 accountId: integrationsMasterCredentials.accountId,
                 userId: integrationsMasterCredentials.userId,
                 transaction: txn,

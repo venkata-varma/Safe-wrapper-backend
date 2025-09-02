@@ -6,8 +6,8 @@ const {
     credentialsValidationsMiddleware,
     createIntegrationMasterCredentials,
     createCardConnectIntegrationMasterSettings,
+validateAccountExistAndActiveParams,
 
-    editCardConnectIntegrationsMaster,
     editIntegrationsMasterCredentials,
     editIntegrationsMasterSettings,
     fetchFundingTransactionsForTheDay,
@@ -30,19 +30,19 @@ router.post('/create-card-connect-integrations-master-credentials', validateAcco
 router.post('/create-card-connect-integrations-master-api-url-flow', validateAccountExistAndActive, createCardConnectIntegrationsAPIUrlFlow)
 router.post('/create-card-connect-integrations-master-settings', validateAccountExistAndActive, createCardConnectIntegrationMasterSettings)
 
-router.patch('/edit-card-connect-integrations-master/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, editCardConnectIntegrationsMaster)
-router.patch('/edit-card-connect-integrations-master-credentials/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, credentialsValidationsMiddleware,
+
+router.patch('/edit-card-connect-integrations-master-credentials/:accountId', validateAccountExistAndActiveParams, credentialsValidationsMiddleware,
     editIntegrationsMasterCredentials
 
 )
-router.get('/get-card-connect-integrations-api-url-flows/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, getIntegrationsAPIUrlFlows)
-router.patch('/edit-card-connect-integrations-master-settings/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, editIntegrationsMasterSettings)
-router.patch('/edit-card-connect-integrations-master-api-url-flows/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, editIntegrationsAPIUrlFlow)
+router.get('/get-card-connect-integrations-api-url-flows/:accountId', validateAccountExistAndActiveParams, getIntegrationsAPIUrlFlows)
+router.patch('/edit-card-connect-integrations-master-settings/:accountId', validateAccountExistAndActiveParams, editIntegrationsMasterSettings)
+router.patch('/edit-card-connect-integrations-master-api-url-flows/:accountId', validateAccountExistAndActiveParams, editIntegrationsAPIUrlFlow)
 
 
-router.post('/fetch-funding-data-for-the-day/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, fetchFundingTransactionsForTheDay)
-router.get('/manual-pull-for-date-dump-range/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, manualPullDateDumpRange)
-router.post('/fetch-funding-data-for-the-date-range/:cardConnectIntegrationsMasterId', validateAccountExistAndActive, fetchFundingTransactionsForTheDateRange)
+router.post('/fetch-funding-data-for-the-day/:accountId', validateAccountExistAndActiveParams, fetchFundingTransactionsForTheDay)
+router.get('/manual-pull-for-date-dump-range/:accountId', validateAccountExistAndActiveParams, manualPullDateDumpRange)
+router.post('/fetch-funding-data-for-the-date-range/:accountId', validateAccountExistAndActiveParams, fetchFundingTransactionsForTheDateRange)
 
 
 

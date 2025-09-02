@@ -67,6 +67,7 @@
     "MESSAGE_GLOBAL_CONSTANTS": "Global Constants.",
     "MESSAGE_GLOBAL_IMAGES": "Global Images.",
     "MESSAGE_FIELD_MAPPING_KEYS": "Default integration field mapping keys.",
+    "MESSAGE_ACCOUNTID_MISSING_FOR_VALIDATION":"Account Id is missing.",
     "MESSAGE_CRON_WORKORDERS": "All cronjob Work orders.",
     "MESSAGE_ACCOUNT_MIDDLEWARE": "Account is deactivated / deleted",
     "MESSAGE_INTEGRATION_NOT_FOUND": "Integration details not found.",

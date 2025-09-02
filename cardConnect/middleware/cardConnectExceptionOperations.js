@@ -8,7 +8,7 @@ exports.cardConnectExceptionLogs = async (exceptionObject, status, exceptionMess
         return mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : null;
     };
     await cardConnectExceptionsModel.create({
-        cardConnectIntegrationsMasterId:validObjectId(exceptionObject?.cardConnectIntegrationsMasterId),
+
         accountId: validObjectId(exceptionObject?.accountId),
         userId:validObjectId(exceptionObject?.userId),
         networkCode: status,
