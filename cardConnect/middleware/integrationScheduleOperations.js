@@ -116,7 +116,16 @@ exports.schedulerIntegrationCronJobs = async (integration) => {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60 * 24);
         } else if (schedulePeriodType === 'each 5 minutes') {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 5);
+        }else if (schedulePeriodType === 'once each three hours') {
+            scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60 * 3);
+        }else if (schedulePeriodType === 'once each twelve hours') {
+            scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60 * 12);
         }
+
+
+
+
+
         console.log('lastPullDate:===', lastPullTime)
         console.log('currentTime:===', currentTime)
         console.log('scheduleTime:===', scheduleTime)

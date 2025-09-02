@@ -67,7 +67,7 @@ app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocum
 // End of swagger configuration
 
 
-//webhookCrons.webhookScheduleCronJobs()
+webhookCrons.webhookScheduleCronJobs()
 
 integrationCrons.cardConnectScheduleCronJobs()
 // Error Handling Middleware (optional)

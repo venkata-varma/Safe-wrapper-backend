@@ -173,10 +173,6 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
             while (true) {
                 let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=10000`;
 
-                // let response = await axios.get(finalUrl, {
-                //     headers: getAuthenticated?.requestMethod === "headers" ? getAuthenticated.responseData : {},
-                //     data: getAuthenticated?.requestMethod === "body" ? getAuthenticated.responseData : {}
-                // });
                 let response = await GlobalHTTPMethods.handleGet(finalUrl, getAuthenticated, integrationsMasterCredentials);
                 if (Array.isArray(urlFlow.dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
 
@@ -192,6 +188,7 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
 
                 totalFetched = txns.length;
                 await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pulledCount: totalFetched } }, { new: true, runValidators: true })
+                console.log(`Fetched page ${page}, ${txns.length} records`);
                 if (txns.length > 0) {
                     upsertRecord = await upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId);
                     console.log("upsertRecord===", upsertRecord)
@@ -199,14 +196,15 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
 
 
 
-                console.log(`Fetched page ${page}, ${txns.length} records`);
+
 
                 if (txns.length === 0) break;
                 if (txns.length < 10000) break;
                 page++;
 
                 if (urlFlow?.rateLimit?.status === true && urlFlow.rateLimit?.limit) {
-                    let delayMs = (60 / urlFlow.rateLimit.limit) * 1000;
+                    //    let delayMs = (60 / urlFlow.rateLimit.limit) * 1000;
+                    let delayMs = 1;
                     // Only wait if you're going to fetch the next page
                     await new Promise(res => setTimeout(res, delayMs));
                 }
@@ -214,6 +212,9 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
             }
 
 
+        } else {
+            //
+            console.log("pagination not required case")
         }
 
     }
@@ -228,7 +229,7 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
 
 }
 
-const createTransactionLifeCycleRecord = async (requestObject , integrationsMasterCredentials) => {
+const createTransactionLifeCycleRecord = async (requestObject, integrationsMasterCredentials) => {
     await cardConnectTransactionLifeCycleModel.create({
         cardConnectIntegrationsMasterId: integrationsMasterCredentials.cardConnectIntegrationsMasterId,
         accountId: integrationsMasterCredentials.accountId,
@@ -266,7 +267,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
             if (!existingRecord) {
 
                 await cardConnectTransactionsModel.create(requestObject);
-                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials )
+                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials)
                 await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pushedCount: 1 } }, { new: true, runValidators: true })
                 totalInserted++;
             } else if (existingRecord.referenceStatus !== txn[urlFlow.statusKey]) {
@@ -275,7 +276,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                     { $set: { referenceStatus: txn[urlFlow.statusKey], transaction: txn, cardConnectIntegrationsCronIdUpdate: new mongoose.Types.ObjectId(integrationsCronId) } }
                 );
 
-                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials )
+                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials)
                 await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { updatedCount: 1 } }, { new: true, runValidators: true })
                 totalUpdated++;
             }
@@ -323,13 +324,13 @@ const initiateManualTrigger = async (dateRange, integrationsMasterDetails, cardC
 
         let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, integrationsCronId);
         //console.log("processFlows===", processFlows)
-        gatherEachDayResponses.push(processFlows)
+        //  gatherEachDayResponses.push(processFlows)
 
 
 
     }
 
-    return gatherEachDayResponses
+    // return gatherEachDayResponses
 
 }
 

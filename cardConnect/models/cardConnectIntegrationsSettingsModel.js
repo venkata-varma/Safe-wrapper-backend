@@ -31,7 +31,7 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
     periodSettings: {
         periodType: {
             type: String,
-            enum: ["once each minute", "each 5 minutes", "once each hour", "once each day"],
+            enum: ["once each minute", "each 5 minutes", "once each hour", "once each three hours", "once each twelve hours", "once each day"],
             required: [true, 'periodType required'],
             default: ""
         },
@@ -49,7 +49,7 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
             default: new Date()
         }
     },
-   
+
     requiredDatapoints: {
         type: Object,
         default: {}
@@ -66,14 +66,18 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
         ref: "users",
         default: null,
     },
-    // statusFieldMappingKeys: {
+    transactionStatusKeys: {
+        type: Array,
+        default: []
+    },
+    transactionTypeKeys: {
+        type: Array,
+        default: []
+    },
+    // dataPointsAccess: {
     //     type: Object,
     //     default: {}
     // },
-    dataPointsAccess: {
-        type: Object,
-        default: {}
-    },
     dataDumpRange: {
         type: Number,
         required: [true, 'data dump range is required'],

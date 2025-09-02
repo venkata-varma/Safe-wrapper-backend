@@ -18,6 +18,7 @@ const { modifyUrl } = require('../utils/authenticationResponse');
 const { default: axios } = require('axios');
 const cardConnectIntegrationsMasterModel = require('../models/cardConnectIntegrationsMasterModel');
 const { generateDateRange, generateDateArray } = require('../utils/helpers');
+const { cardConnectPredefinedKeys } = require('../config/predefinedKeys')
 //------------------------------------------------------------------------------------
 
 
@@ -223,6 +224,9 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
     let createCardConnectIntegrationsSettings = await cardConnectIntegrationsSettingsModel.create({
         ...req.body,
         createdBy: req.user._id,
+        transactionStatusKeys: cardConnectPredefinedKeys.transactionStatusKeys,
+        transactionTypeKeys: cardConnectPredefinedKeys.transactionTypeKeys,
+        requiredDatapoints: cardConnectPredefinedKeys.requiredDatapoints
 
     });
     // Perform the update
@@ -538,9 +542,9 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 
     let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, createIntegrationsCron._id);
     console.log("processFlows===", processFlows)
-    
-    
-    
+
+
+
     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
         {
             $set: {
@@ -557,9 +561,9 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_FETCHED_FUNDING_FOR_THE_DAY,
-            data: {
-                ...processFlows
-            },
+            // data: {
+            //     ...processFlows
+            // },
         });
 
 
@@ -652,9 +656,9 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
-            data: {
-                initiateManualPull
-            },
+            // data: {
+            //     initiateManualPull
+            // },
         });
 
 })
@@ -735,30 +739,17 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
 
 
 
-
-
-
-
-
     return res
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
-            data: {
-                fromDate, toDate,
-                cardConnectIntegrationsMasterId: cardConnectIntegrationsMasterId,
-                initiateManualPull
-            },
+            // data: {
+            //     fromDate, toDate,
+            //     cardConnectIntegrationsMasterId: cardConnectIntegrationsMasterId,
+            //    // initiateManualPull
+            // },
         });
 })
 
 
-exports.findGgarte = asyncWrapper(async (req, res) => {
-    console.log("-----------------------cle")
-    const cardConnectIntegrationsMasterSettingsDetails = await cardConnectIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each minute', "periodSettings.currentStatus": "start" })
-        .populate("cardConnectIntegrationsMasterId")
-
-    console.log("cardConnectIntegrationsMasterSettingsDetails====", cardConnectIntegrationsMasterSettingsDetails)
-    res.send(cardConnectIntegrationsMasterSettingsDetails)
-})
