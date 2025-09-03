@@ -229,96 +229,139 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
 
 }
 
-const createTransactionLifeCycleRecord = async (requestObject, integrationsMasterCredentials) => {
-    let findExisting = await cardConnectTransactionLifeCycleModel.findOne(
-        {
-            accountId: integrationsMasterCredentials.accountId,
-            transactionId: requestObject.referenceId,
-            transactionStatus: requestObject.referenceStatus
-        }
-    );
-    if (!findExisting) {
-        await cardConnectTransactionLifeCycleModel.create({
+// const createTransactionLifeCycleRecord = async (requestObject, integrationsMasterCredentials) => {
+//     let findExisting = await cardConnectTransactionLifeCycleModel.findOne(
+//         {
+//             accountId: integrationsMasterCredentials.accountId,
+//             transactionId: requestObject.referenceId,
+//             transactionStatus: requestObject.referenceStatus
+//         }
+//     );
+//     if (!findExisting) {
+//         await cardConnectTransactionLifeCycleModel.create({
 
-            accountId: integrationsMasterCredentials.accountId,
-            transactionId: requestObject.referenceId,
-            transactionStatus: requestObject.referenceStatus,
-            responseObject: JSON.stringify(requestObject)
-        })
-    } else if (findExisting) {
-        console.log("record with same status exisis")
-        return;
-    }
+//             accountId: integrationsMasterCredentials.accountId,
+//             transactionId: requestObject.referenceId,
+//             transactionStatus: requestObject.referenceStatus,
+//             responseObject: JSON.stringify(requestObject)
+//         })
+//     } else if (findExisting) {
+//         console.log("record with same status exisis")
+//         return;
+//     }
 
-}
+// }
 
 
 async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId) {
-    var totalInserted = 0;
-    var totalUpdated = 0;
+    try {
+        const txnOps = [];
+        const lifeCycleOps = [];
 
+        for (const txn of txns) {
+            const refId = txn[urlFlow.filteredReferenceId];
+            const statusVal = txn[urlFlow.statusKey];
+            
+            // Transaction bulk upsert
+            txnOps.push({
+                updateOne: {
+                    filter: { accountId: integrationsMasterCredentials.accountId, referenceId: refId },
+                    update: {
+                        $setOnInsert: {
+                            accountId: integrationsMasterCredentials.accountId,
+                            userId: integrationsMasterCredentials.userId,
+                            referenceId: refId,
+                            cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
+                            //  cardConnectIntegrationsCronIdUpdate: null // ensure null on insert
+                        },
+                        $set: {
+                            transaction: txn,
+                            referenceStatus: statusVal,
+                            cardConnectIntegrationsCronIdUpdate: new mongoose.Types.ObjectId(integrationsCronId)
+                        }
+                    },
+                    upsert: true
+                }
+            });
 
-    for (var txn of txns) {
+            // Lifecycle bulk upsert (no duplicates by txnId+status)
+            lifeCycleOps.push({
+                updateOne: {
+                    filter: {
+                        accountId: integrationsMasterCredentials.accountId,
+                        transactionId: refId,
+                        transactionStatus: statusVal
+                    },
+                    update: {
+                        $setOnInsert: {
+                            accountId: integrationsMasterCredentials.accountId,
+                            userId: integrationsMasterCredentials.userId,
+                            transactionId: refId,
+                            transactionStatus: statusVal,
+                            responseObject: JSON.stringify(txn)
+                        }
+                    },
+                    upsert: true
+                }
+            });
+        }
 
-        try {
-            let filter = {
-                accountId: integrationsMasterCredentials.accountId,
-                referenceId: txn[urlFlow.filteredReferenceId]
-            };
+        // Run transaction bulkWrite
+        const bulkResult = await cardConnectTransactionsModel.bulkWrite(txnOps, { ordered: false });
 
-            let existingRecord = await cardConnectTransactionsModel.findOne(filter);
-            let requestObject = {
+        // Run lifecycle bulkWrite
+        if (lifeCycleOps.length > 0) {
+            await cardConnectTransactionLifeCycleModel.bulkWrite(lifeCycleOps, { ordered: false });
+        }
 
-                accountId: integrationsMasterCredentials.accountId,
-                userId: integrationsMasterCredentials.userId,
-                transaction: txn,
-                cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
-                referenceId: txn[urlFlow.filteredReferenceId],
-                referenceStatus: txn[urlFlow.statusKey],
-
+        // Update cron counts once
+        await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, {
+            $inc: {
+                pushedCount: bulkResult.upsertedCount || 0,
+                updatedCount: bulkResult.modifiedCount || 0
             }
-            if (!existingRecord) {
+        });
 
-                await cardConnectTransactionsModel.create(requestObject);
-                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials)
-                await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pushedCount: 1 } }, { new: true, runValidators: true })
-                totalInserted++;
-            } else if (existingRecord.referenceStatus !== txn[urlFlow.statusKey]) {
-                await cardConnectTransactionsModel.updateOne(
-                    { _id: existingRecord._id },
-                    { $set: { referenceStatus: txn[urlFlow.statusKey], transaction: txn, cardConnectIntegrationsCronIdUpdate: new mongoose.Types.ObjectId(integrationsCronId) } }
+        return {
+            totalInserted: bulkResult.upsertedCount || 0,
+            totalUpdated: bulkResult.modifiedCount || 0
+        };
+
+    } catch (error) {
+        console.error("Error in upsert batch:", error);
+
+        if (error.writeErrors && error.writeErrors.length > 0) {
+            for (const writeErr of error.writeErrors) {
+                const failedTxn = txns[writeErr.index]; // specific txn that failed
+                await cardConnectExceptionLogs(
+                    integrationsMasterCredentials,
+                    writeErr.code || 500,
+                    writeErr.errmsg || error.message,
+                    error.name,
+                    failedTxn,
+                    finalUrl,
+                    failedTxn ? failedTxn[urlFlow.filteredReferenceId] : "",
+                    integrationsCronId
                 );
-
-                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials)
-                await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { updatedCount: 1 } }, { new: true, runValidators: true })
-                totalUpdated++;
             }
-
-        } catch (error) {
-            console.error("Error in upsert for txn:", error); // <-- log real error
+        } else {
+            // fallback: unexpected error
             await cardConnectExceptionLogs(
                 integrationsMasterCredentials,
                 error.response?.status || 500,
                 error.message,
                 error.name,
-                txn, // now txn is in scope
+                null,
                 finalUrl,
-                txn[urlFlow.filteredReferenceId],
+                "",
                 integrationsCronId
             );
         }
+
+        return { totalInserted: 0, totalUpdated: 0 };
     }
-
-
-    return {
-        totalInserted,
-        totalUpdated
-    }
-
-
-
-
 }
+
 
 
 
