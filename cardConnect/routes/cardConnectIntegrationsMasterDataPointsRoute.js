@@ -7,18 +7,12 @@ const {
 } = require('../controllers/cardConnectIntegrationsMasterDataPointsController');
 
 const {
-    validatecreateCardConnectIntegrationsMaster,
-
-    validateintegrationsMasterExist,
-
-    validateintegrationsMasterExistAndActive,
-
-
+    validateAccountExistAndActiveParams
 } = require('../controllers/cardConnectIntegrationsMasterController');
 const auth = require('../../middleware/authentication');
 
 
 router.use(auth)
-router.get('/get-single-integration-view/:cardConnectIntegrationsMasterId', validateintegrationsMasterExistAndActive, getSingleIntegrationView)
+router.get('/get-single-integration-view/:accountId', validateAccountExistAndActiveParams, getSingleIntegrationView)
 
-module.exports=router
+module.exports = router

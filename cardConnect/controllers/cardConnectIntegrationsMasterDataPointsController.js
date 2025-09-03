@@ -1,34 +1,35 @@
 const asyncWrapper = require('../middleware/asyncWrapper');
 const mongoose = require('mongoose')
-const cardconnectIntegrationsMasterModel = require('../models/cardConnectIntegrationsMasterModel')
+
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
 const cardConnectIntegrationsAPIUrlsFlowModel = require('../models/cardConnectIntegrationsAPIUrlFlowModel')
-const cardConnectAPIUrlFlowModel = require('../models/cardConnectAPIUrlFlowsModel')
+
 const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
 const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrationsCronsModel')
 const cardConnectTransactionLifeCycleModel = require('../models/cardConnectTransactionLifeCycle')
 const cardConnectExceptionsModel = require('../models/cardConnectExceptionsModel')
 const customConstants = require('../../config/constants.json');
 const { statusMappings, getProcessedDisplayPoints, transactionTypeMappings } = require('../utils/helpers');
+const accountsModel = require('../../models/accountsModel');
 
 
 exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
-    const { cardConnectIntegrationsMasterId } = req.params
+    const { accountId } = req.params
 
     const [integrationsMasterDetails, exceptions, getAllTransactions] = await Promise.all([
 
-        cardconnectIntegrationsMasterModel.aggregate([
+        accountsModel.aggregate([
             {
                 $match: {
-                    _id: new mongoose.Types.ObjectId(cardConnectIntegrationsMasterId)
+                    _id: new mongoose.Types.ObjectId(accountId)
                 }
             },
             {
                 $lookup: {
                     from: "cardconnectintegrationscredentials",
                     localField: "_id",
-                    foreignField: "cardConnectIntegrationsMasterId",
+                    foreignField: "accountId",
                     as: "cardconnectintegrationscredentials"
                 }
             },
@@ -36,7 +37,7 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
                 $lookup: {
                     from: "cardconnectintegrationsapiurlflows",
                     localField: "_id",
-                    foreignField: "cardConnectIntegrationsMasterId",
+                    foreignField: "accountId",
                     as: "cardconnectintegrationsapiurlflows"
                 }
             },
@@ -44,7 +45,7 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
                 $lookup: {
                     from: "cardconnectintegrationssettings",
                     localField: "_id",
-                    foreignField: "cardConnectIntegrationsMasterId",
+                    foreignField: "accountId",
                     as: "cardconnectintegrationssettings"
                 }
             },
@@ -53,8 +54,8 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
             { $unwind: "$cardconnectintegrationssettings" }
 
         ]),
-        cardConnectExceptionsModel.find({ cardConnectIntegrationsMasterId }),
-        cardConnectTransactionsModel.find({ cardConnectIntegrationsMasterId })
+        cardConnectExceptionsModel.find({ accountId }),
+        cardConnectTransactionsModel.find({ accountId })
 
 
 

@@ -21,3 +21,5 @@ exports.cardConnectExceptionLogs = async (exceptionObject, status, exceptionMess
     })
 
 }
+
+

@@ -419,7 +419,7 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
         cronJobType: "manual"
     })
 
-    await cardConnectIntegrationsSettingsModel.findOneAndUpdate({accountId}, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
+    await cardConnectIntegrationsSettingsModel.findOneAndUpdate({ accountId }, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
 
 
     //---------------------------=----------------------
@@ -470,18 +470,18 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 
 
 exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
-    const { cardConnectIntegrationsMasterId } = req.params;
-    let integrationsMasterDetails = await cardconnectIntegrationsMastersModel.aggregate([
+    const { accountId } = req.params;
+    let integrationsMasterDetails = await accountsModel.aggregate([
         {
             $match: {
-                _id: new mongoose.Types.ObjectId(cardConnectIntegrationsMasterId)
+                _id: new mongoose.Types.ObjectId(accountId)
             }
         },
         {
             $lookup: {
                 from: "cardconnectintegrationscredentials",
                 localField: "_id",
-                foreignField: "cardConnectIntegrationsMasterId",
+                foreignField: "accountId",
                 as: "cardconnectintegrationscredentials"
             }
         },
@@ -489,7 +489,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
             $lookup: {
                 from: "cardconnectintegrationsapiurlflows",
                 localField: "_id",
-                foreignField: "cardConnectIntegrationsMasterId",
+                foreignField: "accountId",
                 as: "cardconnectintegrationsapiurlflows"
             }
         },
@@ -497,7 +497,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
             $lookup: {
                 from: "cardconnectintegrationssettings",
                 localField: "_id",
-                foreignField: "cardConnectIntegrationsMasterId",
+                foreignField: "accountId",
                 as: "cardconnectintegrationssettings"
             }
         },
@@ -516,7 +516,6 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
 
     let dateRange = generateDateRange(dateDumpRange);
     console.log("dateRange===", dateRange)
-    dateRange[2] = '20250825';
 
     //-------------------------
 
@@ -524,16 +523,16 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
 
 
     let createIntegrationsCron = await cardConnectIntegrationsCronsModel.create({
-        cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
+
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
         dateRange,
         cronJobType: "manual"
     })
 
-    await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
+    await cardConnectIntegrationsSettingsModel.findOneAndUpdate({ accountId }, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
 
-    let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, createIntegrationsCron._id);
+    let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], accountId, createIntegrationsCron._id);
 
 
 
@@ -566,20 +565,20 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
  */
 exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) => {
     let { fromDate, toDate } = req.body
-    let { cardConnectIntegrationsMasterId } = req.params
+    let { accountId } = req.params
     //------------------------------
 
-    let integrationsMasterDetails = await cardconnectIntegrationsMastersModel.aggregate([
+  let integrationsMasterDetails = await accountsModel.aggregate([
         {
             $match: {
-                _id: new mongoose.Types.ObjectId(cardConnectIntegrationsMasterId)
+                _id: new mongoose.Types.ObjectId(accountId)
             }
         },
         {
             $lookup: {
                 from: "cardconnectintegrationscredentials",
                 localField: "_id",
-                foreignField: "cardConnectIntegrationsMasterId",
+                foreignField: "accountId",
                 as: "cardconnectintegrationscredentials"
             }
         },
@@ -587,7 +586,7 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
             $lookup: {
                 from: "cardconnectintegrationsapiurlflows",
                 localField: "_id",
-                foreignField: "cardConnectIntegrationsMasterId",
+                foreignField: "accountId",
                 as: "cardconnectintegrationsapiurlflows"
             }
         },
@@ -595,7 +594,7 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
             $lookup: {
                 from: "cardconnectintegrationssettings",
                 localField: "_id",
-                foreignField: "cardConnectIntegrationsMasterId",
+                foreignField: "accountId",
                 as: "cardconnectintegrationssettings"
             }
         },
@@ -611,17 +610,17 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
 
 
     let createIntegrationsCron = await cardConnectIntegrationsCronsModel.create({
-        cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
+
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
         dateRange: generatedDateArray,
         cronJobType: "manual"
     })
 
-    await cardConnectIntegrationsMasterModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
+    await cardConnectIntegrationsSettingsModel.findOneAndUpdate({ accountId }, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
 
 
-    let initiateManualPull = await initiateManualTrigger(generatedDateArray, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, createIntegrationsCron._id);
+    let initiateManualPull = await initiateManualTrigger(generatedDateArray, integrationsMasterDetails[0], accountId, createIntegrationsCron._id);
 
 
     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
@@ -640,11 +639,7 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
-            // data: {
-            //     fromDate, toDate,
-            //     cardConnectIntegrationsMasterId: cardConnectIntegrationsMasterId,
-            //    // initiateManualPull
-            // },
+            
         });
 })
 

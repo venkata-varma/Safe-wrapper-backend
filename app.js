@@ -24,7 +24,7 @@ const usersRoute = require('./customer/routes/usersRoute');
 const errorcontroller = require('./customer/controllers/errorcontroller');
 const webHooksRoute = require('./customer/routes/webHooksRoute')
 const webhookCrons = require('./customer/controllers/webhookCronControllers')
-//const integrationCrons=require('./cardConnect/controllers/cardConnectCronScheduleController')
+const integrationCrons=require('./cardConnect/controllers/cardConnectCronScheduleController')
 //Super Admin Routes.
 
 const SuperAdminAccountRoutes = require('./superAdmin/routes/superAdminAccounts')
@@ -33,7 +33,7 @@ const superAdminWebhookRoutes = require('./superAdmin/routes/superAdminWebhookRo
 const superAdminWebhookOperations = require('./superAdmin/routes/webhookOperationRoutes')
 const cardConnectIntegrationsMasterRoute=require('./cardConnect/routes/cardConnectIntegrationsMasterRoute')
 
-//const cardConnectIntegrationsMasterDataPointsRoute=require('./cardConnect/routes/cardConnectIntegrationsMasterDataPointsRoute')
+const cardConnectIntegrationsMasterDataPointsRoute=require('./cardConnect/routes/cardConnectIntegrationsMasterDataPointsRoute')
 
 
 //Provide the static images 
@@ -50,7 +50,7 @@ app.use('/api/machines',superAdminWebhookRoutes)
 app.use('/api/webhook',superAdminWebhookOperations)
 app.use('/api/card-connect/integrations-master', cardConnectIntegrationsMasterRoute)
 
-//app.use('/api/card-connect/data-points', cardConnectIntegrationsMasterDataPointsRoute)
+app.use('/api/card-connect/data-points', cardConnectIntegrationsMasterDataPointsRoute)
 
 // Start of swagger configuration
 
@@ -71,7 +71,7 @@ app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocum
 
 //webhookCrons.webhookScheduleCronJobs()
 
-//integrationCrons.cardConnectScheduleCronJobs()
+integrationCrons.cardConnectScheduleCronJobs()
 // Error Handling Middleware (optional)
 app.use(errorcontroller);
 

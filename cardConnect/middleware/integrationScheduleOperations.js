@@ -1,29 +1,30 @@
 const mongoose = require('mongoose')
-const cardconnectIntegrationsMastersModel = require('../models/cardConnectIntegrationsMasterModel')
+
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
 const cardConnectIntegrationsAPIUrlsFlowModel = require('../models/cardConnectIntegrationsAPIUrlFlowModel')
-const cardConnectAPIUrlFlowModel = require('../models/cardConnectAPIUrlFlowsModel')
 const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
 const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrationsCronsModel')
 const { generateDateRange, generateDateArray } = require('../utils/helpers');
 const { initiateManualTrigger } = require('../utils/authenticationResponse')
+const asyncWrapper = require('./asyncWrapper')
+//const accountsModel = require('../../models/accountsModel')
 
 
-const initiateCronJob = async (integration) => {
-    const { cardConnectIntegrationsMasterId } = integration.cardConnectIntegrationsMasterId
+const initiateCronJob =async (integration) => {
+    const { accountId } = integration?.accountId;
 
-    let integrationsMasterDetails = await cardconnectIntegrationsMastersModel.aggregate([
+    let integrationsMasterDetails = await accountsModel.aggregate([
         {
             $match: {
-                _id: new mongoose.Types.ObjectId(cardConnectIntegrationsMasterId)
+                _id: new mongoose.Types.ObjectId(accountId)
             }
         },
         {
             $lookup: {
                 from: "cardconnectintegrationscredentials",
                 localField: "_id",
-                foreignField: "cardConnectIntegrationsMasterId",
+                foreignField: "accountId",
                 as: "cardconnectintegrationscredentials"
             }
         },
@@ -31,7 +32,7 @@ const initiateCronJob = async (integration) => {
             $lookup: {
                 from: "cardconnectintegrationsapiurlflows",
                 localField: "_id",
-                foreignField: "cardConnectIntegrationsMasterId",
+                foreignField: "accountId",
                 as: "cardconnectintegrationsapiurlflows"
             }
         },
@@ -39,7 +40,7 @@ const initiateCronJob = async (integration) => {
             $lookup: {
                 from: "cardconnectintegrationssettings",
                 localField: "_id",
-                foreignField: "cardConnectIntegrationsMasterId",
+                foreignField: "accountId",
                 as: "cardconnectintegrationssettings"
             }
         },
@@ -48,7 +49,6 @@ const initiateCronJob = async (integration) => {
         { $unwind: "$cardconnectintegrationssettings" }
 
     ])
-
 
     //----------------------------------
 
@@ -61,17 +61,16 @@ const initiateCronJob = async (integration) => {
 
     //-------------------------
     let createIntegrationsCron = await cardConnectIntegrationsCronsModel.create({
-        cardConnectIntegrationsMasterId: cardConnectIntegrationsMasterId,
+
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
         dateRange,
         cronJobType: "automated"
     })
-// console.log("createIntegrationsCron===", createIntegrationsCron)
+    // console.log("createIntegrationsCron===", createIntegrationsCron)
+    await cardConnectIntegrationsSettingsModel.findOneAndUpdate({ accountId }, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
 
-    await cardconnectIntegrationsMastersModel.findByIdAndUpdate(cardConnectIntegrationsMasterId, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
-
-    let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], cardConnectIntegrationsMasterId, createIntegrationsCron._id);
+    let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], accountId, createIntegrationsCron._id);
 
 
     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
@@ -101,27 +100,20 @@ exports.schedulerIntegrationCronJobs = async (integration) => {
 
         let schedulePeriodType = integration?.periodSettings?.periodType;
         let scheduleInterval = integration?.periodSettings?.interval;
-        let lastPullTime = new Date(integration?.cardConnectIntegrationsMasterId?.lastPullDate);
+        let lastPullTime = new Date(integration?.lastPullDate);
         let scheduleTime = 0;
         let currentTime = new Date();
 
-        if (schedulePeriodType === 'each second') {
-            scheduleTime = (currentTime - lastPullTime) / 1000;
-        } else if (schedulePeriodType === 'once each minute') {
+        if (schedulePeriodType === 'once each minute') {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60);
             console.log('scheduleTime:===', scheduleTime)
         } else if (schedulePeriodType === 'once each hour') {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60);
         } else if (schedulePeriodType === 'once each day') {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60 * 24);
-        } else if (schedulePeriodType === 'each 5 minutes') {
-            scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 5);
-        }else if (schedulePeriodType === 'once each three hours') {
-            scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60 * 3);
-        }else if (schedulePeriodType === 'once each twelve hours') {
-            scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60 * 12);
+        } else if (schedulePeriodType === 'once each month') {
+            scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60 * 24 * 30);
         }
-
 
 
 
@@ -131,7 +123,7 @@ exports.schedulerIntegrationCronJobs = async (integration) => {
         console.log('scheduleTime:===', scheduleTime)
 
         if (Math.round(scheduleTime) >= scheduleInterval) {
-            if (integration?.cardConnectIntegrationsMasterId?.status === 'active') {
+            if (integration?.accountId?.status === 'active') {
                 console.log("write main function here")
                 await initiateCronJob(integration)
             }
