@@ -8,7 +8,7 @@ const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrat
 const { generateDateRange, generateDateArray } = require('../utils/helpers');
 const { initiateManualTrigger } = require('../utils/authenticationResponse')
 const asyncWrapper = require('./asyncWrapper')
-//const accountsModel = require('../../models/accountsModel')
+const accountsModel = require('../../models/accountsModel')
 
 
 const initiateCronJob =async (integration) => {

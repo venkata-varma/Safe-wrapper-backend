@@ -29,12 +29,12 @@ Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, Sta
 If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
-    const { accountName, companyName, email, phone, password, location, machines} = req.body;
+    const { accountName, companyName, email, phone, password, location, machines } = req.body;
     let machinesArray = machines.includes(',')
-    ? machines.split(',').map((s) => s.trim())
-    : [machines];
-    let accountDetails = await accountsModel.find({machines:{$in:machinesArray}})
-    if (!accountName || !companyName || !email || !phone || !password || !location ) {
+        ? machines.split(',').map((s) => s.trim())
+        : [machines];
+    let accountDetails = await accountsModel.find({ machines: { $in: machinesArray } })
+    if (!accountName || !companyName || !email || !phone || !password || !location) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
@@ -52,7 +52,7 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
             message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
         });
     }
-    if(accountDetails.length > 0){
+    if (accountDetails.length > 0) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_MACHINE_ALREADY_TAKEN
@@ -82,10 +82,10 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            accountType:"merchant",
-            role:"merchant",
-           logo: req.file ? await preSignedUrlToUpload(req.file) : "",
-           machines:req.body.machines.split(',').length > 0 ? req.body.machines.split(',') : req.body.machines
+            accountType: "merchant",
+            role: "merchant",
+            logo: req.file ? await preSignedUrlToUpload(req.file) : "",
+            machines: req.body.machines.split(',').length > 0 ? req.body.machines.split(',') : req.body.machines
         })
         const customId = new mongoose.Types.ObjectId();
 
@@ -99,7 +99,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             companyName: companyName,
             phone: phone,
             email: email,
-            role:"merchant",
+            role: "merchant",
         });
         await accountSettingsModel.create({
             accountId: accountData._id,
@@ -123,6 +123,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
 */
 exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
+    let { machines } = req.body
     const verifyAccountStatus = await accountsModel.findById(accountId)
     const reqAccountType = req.user.accountId.accountType
     if (!verifyAccountStatus) {
@@ -143,6 +144,23 @@ exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
         });
     }
+
+
+    let machinesArray = machines.includes(',')
+        ? machines.split(',').map((s) => s.trim())
+        : [machines];
+
+    let accountDetails = await accountsModel.find({ machines: { $in: machinesArray } })
+
+    if (accountDetails.length > 0) {
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_MACHINE_ALREADY_TAKEN
+        });
+    }
+
+
+
     else {
         next()
     }
@@ -159,9 +177,14 @@ exports.updateAccount = asyncWrapper(async (req, res) => {
     // req.body.logo = req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : (await accountsModel.findById(accountId,{logo:1})).logo
     req.body.logo = req.file ? await preSignedUrlToUpload(req.file) : (await accountsModel.findById(accountId, { logo: 1 })).logo
 
-    const accountDetails = await accountsModel.findByIdAndUpdate(accountId, {
-        ...req.body,
-    }, { new: true }); 
+    const accountDetails = await accountsModel.findByIdAndUpdate(accountId,
+        {
+            $set: {
+                ...req.body,
+                machines: req.body.machines.split(',').length > 0 ? req.body.machines.split(',') : req.body.machines
+            }
+        },
+        { new: true });
     const updateUserDetails = await usersModel.findOneAndUpdate({ accountId: new mongoose.Types.ObjectId(accountId), phone: phone }, {
         $set: { name: accountName }
     }, { new: true })
@@ -178,9 +201,9 @@ exports.updateAccount = asyncWrapper(async (req, res) => {
   *Function to delete account -Actually to Deactivate account by Admin
 */
 exports.updateAccountStatus = asyncWrapper(async (req, res) => {
-    const {status, accountId} = req.query
+    const { status, accountId } = req.query
     const accountDetails = await accountsModel.findById(accountId).lean();
-   if(status === 'delete' || status === 'deleted'){
+    if (status === 'delete' || status === 'deleted') {
         const updatedAccount = await accountsModel.findByIdAndUpdate(accountId, { $set: { status: 'deleted' } }, { new: true })
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
@@ -188,7 +211,7 @@ exports.updateAccountStatus = asyncWrapper(async (req, res) => {
             data: updatedAccount,
         });
     }
-    else if(status === 'active'){
+    else if (status === 'active') {
         const updatedAccount = await accountsModel.findByIdAndUpdate(accountId, { $set: { status: 'active' } }, { new: true })
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
@@ -196,7 +219,7 @@ exports.updateAccountStatus = asyncWrapper(async (req, res) => {
             data: updatedAccount,
         });
     }
-    
+
 });
 
 /*
@@ -205,8 +228,8 @@ exports.updateAccountStatus = asyncWrapper(async (req, res) => {
 */
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
-    console.log('accountId:===',accountId)
-    const verifyAccountStatus = await accountsModel.findById({_id: new mongoose.Types.ObjectId(accountId)})
+    console.log('accountId:===', accountId)
+    const verifyAccountStatus = await accountsModel.findById({ _id: new mongoose.Types.ObjectId(accountId) })
     const reqAccountType = req.user.accountId.accountType
     // console.log('verifyAccountStatus:===',verifyAccountStatus)
     if (!verifyAccountStatus || verifyAccountStatus.status !== 'active' && reqAccountType === 'merchant') {
@@ -220,8 +243,8 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     }
 });
 
-exports.getAllMerchantAccounts = asyncWrapper(async(req,res)=>{
-    const accounts = await accountsModel.find({accountType:"merchant"},{password:0}).sort({_id:-1})
+exports.getAllMerchantAccounts = asyncWrapper(async (req, res) => {
+    const accounts = await accountsModel.find({ accountType: "merchant" }, { password: 0 }).sort({ _id: -1 })
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_GET_MERCHANT_ACCOUNTS,
