@@ -230,13 +230,26 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
 }
 
 const createTransactionLifeCycleRecord = async (requestObject, integrationsMasterCredentials) => {
-    await cardConnectTransactionLifeCycleModel.create({
+    let findExisting = await cardConnectTransactionLifeCycleModel.findOne(
+        {
+            accountId: integrationsMasterCredentials.accountId,
+            transactionId: requestObject.referenceId,
+            transactionStatus: requestObject.referenceStatus
+        }
+    );
+    if (!findExisting) {
+        await cardConnectTransactionLifeCycleModel.create({
 
-        accountId: integrationsMasterCredentials.accountId,
-        transactionId: requestObject.referenceId,
-        transactionStatus: requestObject.referenceStatus,
-        responseObject: JSON.stringify(requestObject)
-    })
+            accountId: integrationsMasterCredentials.accountId,
+            transactionId: requestObject.referenceId,
+            transactionStatus: requestObject.referenceStatus,
+            responseObject: JSON.stringify(requestObject)
+        })
+    } else if (findExisting) {
+        console.log("record with same status exisis")
+        return;
+    }
+
 }
 
 
