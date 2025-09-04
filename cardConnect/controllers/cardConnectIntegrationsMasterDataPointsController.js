@@ -91,3 +91,43 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
 
 
 })
+
+
+
+/**
+ * 
+ * 
+ */
+
+exports.getCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
+
+    const { accountId } = req.params;
+
+    const [cardConnectIntegrationsSettings, cardConnectIntegrationsCredentials] = await Promise.all([
+        cardConnectIntegrationsSettingsModel.findOne({ accountId }).lean(),
+        cardconnectIntegrationsCredentialsModel.findOne({ accountId })
+    ]);
+
+
+    let transactionStatusKeys = cardConnectIntegrationsSettings?.transactionStatusKeys;
+    let transactionTypeKeys = cardConnectIntegrationsSettings?.transactionTypeKeys;
+
+    let allMerchantIds = cardConnectIntegrationsCredentials?.primaryKeyValues?.merchantId ;
+
+
+
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS,
+            data: {
+                transactionStatusKeys,
+                transactionTypeKeys,
+                allMerchantIds
+
+            },
+        });
+
+})
