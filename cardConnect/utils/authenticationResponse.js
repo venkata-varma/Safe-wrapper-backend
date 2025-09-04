@@ -126,7 +126,7 @@ const authenticationResponse = async (accountId) => {
 
 
 
-const modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) => {
+const modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput, primaryKeyValues, currentRecord) => {
 
 
     for (let [key, value] of Object.entries(integrationsMasterCredentials.primaryKeyValues)) {
@@ -137,11 +137,25 @@ const modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) => {
     }
 
 
-    if (dateInput) {
-        // Remove hyphens
+    // if (dateInput) {
+    //     // Remove hyphens
+    //     const formattedDate = dateInput.replace(/-/g, "");
+    //     baseUrl = baseUrl.replaceAll("{{date}}", formattedDate);
+    // }
+    if (baseUrl.includes('{{date}}')) {
         const formattedDate = dateInput.replace(/-/g, "");
         baseUrl = baseUrl.replaceAll("{{date}}", formattedDate);
     }
+
+    for (let findPK of primaryKeyValues) {
+        if (baseUrl.includes(`{{${findPK}}}`)) {
+            let placeHolder = `{{${findPK}}}`
+            let findValueOfPKFromCurrentRecord = currentRecord[findPK]
+            baseUrl = baseUrl.replaceAll(placeHolder, findValueOfPKFromCurrentRecord);
+        }
+    }
+
+
 
 
 
@@ -149,60 +163,49 @@ const modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput) => {
 
 
 }
+const preProccessUrlFlows = async (finalResultData, urlFlow, cardConnectUrl, filteredReferenceId, dataMappingPath, primaryKeyValues, getAuthenticated, date, integrationsCronId, statusKey, integrationsMasterCredentials) => {
+    if (finalResultData.length === 0) {
 
-
-
-const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, integrationsCronId) => {
-    var totalInserted = 0;
-    var totalFetched = 0;
-    var upsertRecord = {
-        totalInserted: 0,
-        totalUpdated: 0
-    };
-
-
-
-    for (let urlFlow of apiUrlFlows) {
-
-        let cardConnectUrl = urlFlow.url;
-
-        let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date);
+        let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date, primaryKeyValues, currentRecord);
         console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
         if (urlFlow.paginationRequired === true) {
 
 
             let page = 1;
-
             while (true) {
-                let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=10000`;
+                let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=11`;
 
                 let response = await GlobalHTTPMethods.handleGet(finalUrl, getAuthenticated, integrationsMasterCredentials);
                 if (Array.isArray(urlFlow.dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
 
-                    txns = response?.[urlFlow.dataMappingPath[0]] ?? [];
+                    var txns = response?.[dataMappingPath] ?? [];
 
                 } else {
                     // No mapping → assume whole response is transactions
-                    txns = response ?? [];
+                    var txns = response ?? [];
                 }
 
 
 
 
                 totalFetched = txns.length;
+                if (Array.isArray(finalResultData)) {
+
+                    finalResultData = [
+                        ...finalResultData,
+                        ...txns
+                    ]
+
+                }
                 await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pulledCount: totalFetched } }, { new: true, runValidators: true })
                 console.log(`Fetched page ${page}, ${txns.length} records`);
-                if (txns.length > 0) {
-                    upsertRecord = await upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId);
-                    console.log("upsertRecord===", upsertRecord)
-                }
 
 
 
 
 
                 if (txns.length === 0) break;
-                if (txns.length < 10000) break;
+                // if (txns.length < 10000) break;
                 page++;
 
                 if (urlFlow?.rateLimit?.status === true && urlFlow.rateLimit?.limit) {
@@ -220,14 +223,60 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
             console.log("pagination not required case")
         }
 
-    }
+    } else if (finalResultData.length > 0) {
+        if (urlFlow.paginationRequired === true) {
+            console.log("pagination===true")
+        } else if (urlFlow.paginationRequired === false) {
+            for (let currentRecord of finalResultData) {
+                let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date, primaryKeyValues, currentRecord);
+            }
+
+        }
 
 
-    return {
-        date,
-        totalFetched,
-        ...upsertRecord
     }
+    return finalResultData
+
+
+
+}
+
+
+
+
+
+const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, integrationsCronId) => {
+    var totalInserted = 0;
+    var totalFetched = 0;
+    var upsertRecord = {
+        totalInserted: 0,
+        totalUpdated: 0
+    };
+
+    let finalResultData = [];
+    let filteredReferenceId, dataMappingPath, primaryKeyValues, statusKey;
+
+
+    for (let urlFlow of apiUrlFlows) {
+        console.log("urlFlow===", urlFlow.url, urlFlow.filteredReferenceId, urlFlow.dataMappingPath,)
+
+
+
+        let cardConnectUrl = urlFlow.url;
+        filteredReferenceId = urlFlow.filteredReferenceId;
+        dataMappingPath = urlFlow.dataMappingPath[0]
+        primaryKeyValues = urlFlow.primaryKeyValues
+        statusKey = urlFlow === null ? "status" : urlFlow.statusKey;
+        finalResultData = await preProccessUrlFlows(finalResultData, urlFlow, cardConnectUrl, filteredReferenceId, dataMappingPath, primaryKeyValues, getAuthenticated, date, integrationsCronId, statusKey, integrationsMasterCredentials)
+
+
+
+
+
+
+
+    }
+    console.log("out of loop of url flow-===", finalResultData.length)
 
 
 }
@@ -244,7 +293,7 @@ const createTransactionLifeCycleRecord = async (requestObject, integrationsMaste
         await cardConnectTransactionLifeCycleModel.create({
 
             accountId: integrationsMasterCredentials?.accountId,
-            userId:integrationsMasterCredentials?.userId,
+            userId: integrationsMasterCredentials?.userId,
             transactionId: requestObject?.referenceId,
             transactionStatus: requestObject?.referenceStatus,
             responseObject: JSON.stringify(requestObject?.responseObject)
@@ -264,6 +313,9 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
     const results = await Promise.allSettled(
         txns.map(async (txn) => {
             try {
+
+
+
                 let filter = {
                     accountId: integrationsMasterCredentials?.accountId,
                     referenceId: txn[urlFlow?.filteredReferenceId]

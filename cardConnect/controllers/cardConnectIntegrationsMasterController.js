@@ -433,8 +433,8 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 
 
 
-    let apiUrlFlows = integrationAPIUrlFlows.APIUrlFlows;
-
+    let apiUrlFlows = integrationAPIUrlFlows.APIUrlFlows.filter((url) => url.status === 'active');
+console.log("apiUrlFlows.length===", apiUrlFlows.length)
 
     let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, createIntegrationsCron._id);
     console.log("processFlows===", processFlows)
@@ -568,7 +568,7 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
     let { accountId } = req.params
     //------------------------------
 
-  let integrationsMasterDetails = await accountsModel.aggregate([
+    let integrationsMasterDetails = await accountsModel.aggregate([
         {
             $match: {
                 _id: new mongoose.Types.ObjectId(accountId)
@@ -639,7 +639,7 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
-            
+
         });
 })
 
