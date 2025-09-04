@@ -159,6 +159,9 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
         totalInserted: 0,
         totalUpdated: 0
     };
+
+
+
     for (let urlFlow of apiUrlFlows) {
 
         let cardConnectUrl = urlFlow.url;
@@ -244,7 +247,7 @@ const createTransactionLifeCycleRecord = async (requestObject, integrationsMaste
             userId:integrationsMasterCredentials?.userId,
             transactionId: requestObject?.referenceId,
             transactionStatus: requestObject?.referenceStatus,
-            responseObject: JSON.stringify(requestObject?.transaction)
+            responseObject: JSON.stringify(requestObject?.responseObject)
         })
     } else if (findExisting) {
         console.log("record with same status exisis")
@@ -271,7 +274,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
 
                     accountId: integrationsMasterCredentials?.accountId,
                     userId: integrationsMasterCredentials?.userId,
-                    transaction: txn,
+                    responseObject: txn,
                     cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
                     referenceId: txn[urlFlow?.filteredReferenceId],
                     referenceStatus: txn[urlFlow?.statusKey],
@@ -293,7 +296,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                         {
                             $set: {
                                 referenceStatus: txn[urlFlow?.statusKey],
-                                transaction: txn,
+                                responseObject: txn,
                                 cardConnectIntegrationsCronIdUpdate: new mongoose.Types.ObjectId(integrationsCronId)
                             }
                         }

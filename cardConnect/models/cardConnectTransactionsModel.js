@@ -41,7 +41,7 @@ const cardConnectTransactionsSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
-        transaction: {
+        responseObject: {
             type: Object,
             default: {}
         },
