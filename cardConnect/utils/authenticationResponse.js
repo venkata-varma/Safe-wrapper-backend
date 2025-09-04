@@ -13,275 +13,10 @@ const { generateDateRange } = require('./helpers')
 const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrationsCronsModel')
 const { default: mongoose } = require('mongoose')
 
+//-----------------------------------------------------------------------
 
-const getNestedValue = (obj, path) => {
-    const traverse = (current, parts) => {
-        if (current === undefined || current === null) return undefined;
-        if (parts.length === 0) return current;
 
-        const part = parts[0];
-
-        if (part.endsWith("[]")) {
-            const key = part.slice(0, -2);
-            const array = current[key];
-            if (!Array.isArray(array)) return undefined;
-            const remainingParts = parts.slice(1);
-
-            for (const item of array) {
-                const result = traverse(item, remainingParts);
-                if (result !== undefined) return result; // return first non-undefined
-            }
-            return undefined;
-        } else {
-            return traverse(current[part], parts.slice(1));
-        }
-    };
-
-    const parts = path.split(".");
-    return traverse(obj, parts);
-};
-
-
-
-const authenticationResponse = async (accountId) => {
-
-    let integrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findOne({ accountId });
-
-
-    if (!integrationsMasterCredentials || !integrationsMasterCredentials.credentials) {
-
-        throw new Error("Credentials not found.")
-    }
-
-    let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationsMasterCredentials.credentials };
-    let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-    console.log("decryptConfigCredentials====", decryptConfigCredentials)
-
-
-
-    var baseEncoded;
-    if (decryptConfigCredentials.requestMethod === 'headers' && integrationsMasterCredentials.authorizationType === 'Basic auth') {
-        baseEncoded = Buffer.from(`${decryptConfigCredentials.headers.username}:${decryptConfigCredentials.headers.password}`).toString('base64');
-        baseEncoded = `Basic ${baseEncoded}`
-    }
-
-    var giveHeaders = {};
-    if (baseEncoded) {
-        giveHeaders = {
-            [integrationsMasterCredentials.authenticationKey]: baseEncoded
-        }
-
-    } else {
-        giveHeaders = decryptConfigCredentials.headers
-    }
-
-    let createConfig = {
-        method: decryptConfigCredentials.serviceMethod,
-        maxBodyLength: Infinity,
-        url: decryptConfigCredentials.baseUrl,
-        headers: giveHeaders,
-        data: decryptConfigCredentials.requestMethod === "body" ? querystring.stringify(decryptConfigCredentials.data) : decryptConfigCredentials.data
-    };
-
-
-
-    try {
-        const authResponse = await axios.request(createConfig);
-        const token = decryptConfigCredentials.requestMethod === "body" ? getNestedValue(authResponse.data, integrationsMasterCredentials.dataMappingPath) : decryptConfigCredentials.headers;
-        responseData = decryptConfigCredentials.requestMethod === "body" ? authResponse.data : decryptConfigCredentials.headers;
-        console.log(",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
-        return {
-            statusCode: authResponse.status,
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_CARD_CONNECT_CREDENTIALS_VALIDATION_SUCCESS,
-            requestMethod: decryptConfigCredentials.requestMethod,
-            responseData: (decryptConfigCredentials.requestMethod === 'headers' && integrationsMasterCredentials.authorizationType === 'Basic auth') ?
-                {
-                    [integrationsMasterCredentials.authenticationKey]: `Basic ${Buffer.from(`${decryptConfigCredentials.headers.username}:${decryptConfigCredentials.headers.password}`).toString('base64')}`
-                } : (decryptConfigCredentials.requestMethod === 'body') ?
-                    {
-                        [integrationsMasterCredentials.authenticationKey]: `${token}`
-                    } :
-                    {
-                        [integrationsMasterCredentials.authenticationKey]: `${token}`
-                    }
-
-        };
-
-
-
-    } catch (error) {
-        //console.log('ERORRR:===', error)
-        return { statusCode: error?.response?.status, statusText: error?.response?.statusText, status: customConstants.messages.MESSAGE_FAIL, message: customConstants.messages.MESSAGE_CARD_CONNECT_CREDENTIALS_VALIDATION_FAILED, data: error?.response?.data }
-    }
-
-
-
-
-
-
-}
-
-
-
-
-
-const modifyUrl = async (baseUrl, integrationsMasterCredentials, dateInput, primaryKeyValues, currentRecord) => {
-
-
-    for (let [key, value] of Object.entries(integrationsMasterCredentials.primaryKeyValues)) {
-
-        const placeholder = `{{${key}}}`;
-
-        baseUrl = baseUrl.replaceAll(placeholder, value);
-    }
-
-
-    // if (dateInput) {
-    //     // Remove hyphens
-    //     const formattedDate = dateInput.replace(/-/g, "");
-    //     baseUrl = baseUrl.replaceAll("{{date}}", formattedDate);
-    // }
-    if (baseUrl.includes('{{date}}')) {
-        const formattedDate = dateInput.replace(/-/g, "");
-        baseUrl = baseUrl.replaceAll("{{date}}", formattedDate);
-    }
-
-    for (let findPK of primaryKeyValues) {
-        if (baseUrl.includes(`{{${findPK}}}`)) {
-            let placeHolder = `{{${findPK}}}`
-            let findValueOfPKFromCurrentRecord = currentRecord[findPK]
-            baseUrl = baseUrl.replaceAll(placeHolder, findValueOfPKFromCurrentRecord);
-        }
-    }
-
-
-
-
-
-    return baseUrl
-
-
-}
-const preProccessUrlFlows = async (finalResultData, urlFlow, cardConnectUrl, filteredReferenceId, dataMappingPath, primaryKeyValues, getAuthenticated, date, integrationsCronId, statusKey, integrationsMasterCredentials) => {
-    if (finalResultData.length === 0) {
-
-        let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date, primaryKeyValues, currentRecord);
-        console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
-        if (urlFlow.paginationRequired === true) {
-
-
-            let page = 1;
-            while (true) {
-                let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=11`;
-
-                let response = await GlobalHTTPMethods.handleGet(finalUrl, getAuthenticated, integrationsMasterCredentials);
-                if (Array.isArray(urlFlow.dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
-
-                    var txns = response?.[dataMappingPath] ?? [];
-
-                } else {
-                    // No mapping → assume whole response is transactions
-                    var txns = response ?? [];
-                }
-
-
-
-
-                totalFetched = txns.length;
-                if (Array.isArray(finalResultData)) {
-
-                    finalResultData = [
-                        ...finalResultData,
-                        ...txns
-                    ]
-
-                }
-                await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pulledCount: totalFetched } }, { new: true, runValidators: true })
-                console.log(`Fetched page ${page}, ${txns.length} records`);
-
-
-
-
-
-                if (txns.length === 0) break;
-                // if (txns.length < 10000) break;
-                page++;
-
-                if (urlFlow?.rateLimit?.status === true && urlFlow.rateLimit?.limit) {
-                    //    let delayMs = (60 / urlFlow.rateLimit.limit) * 1000;
-                    let delayMs = 1;
-                    // Only wait if you're going to fetch the next page
-                    await new Promise(res => setTimeout(res, delayMs));
-                }
-
-            }
-
-
-        } else {
-            //
-            console.log("pagination not required case")
-        }
-
-    } else if (finalResultData.length > 0) {
-        if (urlFlow.paginationRequired === true) {
-            console.log("pagination===true")
-        } else if (urlFlow.paginationRequired === false) {
-            for (let currentRecord of finalResultData) {
-                let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date, primaryKeyValues, currentRecord);
-            }
-
-        }
-
-
-    }
-    return finalResultData
-
-
-
-}
-
-
-
-
-
-const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, integrationsCronId) => {
-    var totalInserted = 0;
-    var totalFetched = 0;
-    var upsertRecord = {
-        totalInserted: 0,
-        totalUpdated: 0
-    };
-
-    let finalResultData = [];
-    let filteredReferenceId, dataMappingPath, primaryKeyValues, statusKey;
-
-
-    for (let urlFlow of apiUrlFlows) {
-        console.log("urlFlow===", urlFlow.url, urlFlow.filteredReferenceId, urlFlow.dataMappingPath,)
-
-
-
-        let cardConnectUrl = urlFlow.url;
-        filteredReferenceId = urlFlow.filteredReferenceId;
-        dataMappingPath = urlFlow.dataMappingPath[0]
-        primaryKeyValues = urlFlow.primaryKeyValues
-        statusKey = urlFlow === null ? "status" : urlFlow.statusKey;
-        finalResultData = await preProccessUrlFlows(finalResultData, urlFlow, cardConnectUrl, filteredReferenceId, dataMappingPath, primaryKeyValues, getAuthenticated, date, integrationsCronId, statusKey, integrationsMasterCredentials)
-
-
-
-
-
-
-
-    }
-    console.log("out of loop of url flow-===", finalResultData.length)
-
-
-}
-
-const createTransactionLifeCycleRecord = async (requestObject, integrationsMasterCredentials) => {
+async function createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials) {
     let findExisting = await cardConnectTransactionLifeCycleModel.findOne(
         {
             accountId: integrationsMasterCredentials?.accountId,
@@ -395,21 +130,392 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
 
 
 
-const initiateManualTrigger = async (dateRange, integrationsMasterDetails, accountId, integrationsCronId) => {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getNestedValue(obj, path) {
+    const traverse = (current, parts) => {
+        if (current === undefined || current === null) return undefined;
+        if (parts.length === 0) return current;
+
+        const part = parts[0];
+
+        if (part.endsWith("[]")) {
+            const key = part.slice(0, -2);
+            const array = current[key];
+            if (!Array.isArray(array)) return undefined;
+            const remainingParts = parts.slice(1);
+
+            for (const item of array) {
+                const result = traverse(item, remainingParts);
+                if (result !== undefined) return result; // return first non-undefined
+            }
+            return undefined;
+        } else {
+            return traverse(current[part], parts.slice(1));
+        }
+    };
+
+    const parts = path.split(".");
+    return traverse(obj, parts);
+};
+
+
+/**
+ * 
+ * @param {*} accountId 
+ * @returns 
+ */
+async function authenticationResponse(accountId) {
+
+    let integrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findOne({ accountId });
+
+
+    if (!integrationsMasterCredentials || !integrationsMasterCredentials.credentials) {
+
+        throw new Error("Credentials not found.")
+    }
+
+    let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationsMasterCredentials.credentials };
+    let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
+    // console.log("decryptConfigCredentials====", decryptConfigCredentials)
+
+
+
+    var baseEncoded;
+    if (decryptConfigCredentials.requestMethod === 'headers' && integrationsMasterCredentials.authorizationType === 'Basic auth') {
+        baseEncoded = Buffer.from(`${decryptConfigCredentials.headers.username}:${decryptConfigCredentials.headers.password}`).toString('base64');
+        baseEncoded = `Basic ${baseEncoded}`
+    }
+
+    var giveHeaders = {};
+    if (baseEncoded) {
+        giveHeaders = {
+            [integrationsMasterCredentials.authenticationKey]: baseEncoded
+        }
+
+    } else {
+        giveHeaders = decryptConfigCredentials.headers
+    }
+
+    let createConfig = {
+        method: decryptConfigCredentials.serviceMethod,
+        maxBodyLength: Infinity,
+        url: decryptConfigCredentials.baseUrl,
+        headers: giveHeaders,
+        data: decryptConfigCredentials.requestMethod === "body" ? querystring.stringify(decryptConfigCredentials.data) : decryptConfigCredentials.data
+    };
+
+
+
+    try {
+        const authResponse = await axios.request(createConfig);
+        const token = decryptConfigCredentials.requestMethod === "body" ? getNestedValue(authResponse.data, integrationsMasterCredentials.dataMappingPath) : decryptConfigCredentials.headers;
+        responseData = decryptConfigCredentials.requestMethod === "body" ? authResponse.data : decryptConfigCredentials.headers;
+        
+        return {
+            statusCode: authResponse.status,
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_CARD_CONNECT_CREDENTIALS_VALIDATION_SUCCESS,
+            requestMethod: decryptConfigCredentials.requestMethod,
+            responseData: (decryptConfigCredentials.requestMethod === 'headers' && integrationsMasterCredentials.authorizationType === 'Basic auth') ?
+                {
+                    [integrationsMasterCredentials.authenticationKey]: `Basic ${Buffer.from(`${decryptConfigCredentials.headers.username}:${decryptConfigCredentials.headers.password}`).toString('base64')}`
+                } : (decryptConfigCredentials.requestMethod === 'body') ?
+                    {
+                        [integrationsMasterCredentials.authenticationKey]: `${token}`
+                    } :
+                    {
+                        [integrationsMasterCredentials.authenticationKey]: `${token}`
+                    }
+
+        };
+
+
+
+    } catch (error) {
+        //console.log('ERORRR:===', error)
+        return { statusCode: error?.response?.status, statusText: error?.response?.statusText, status: customConstants.messages.MESSAGE_FAIL, message: customConstants.messages.MESSAGE_CARD_CONNECT_CREDENTIALS_VALIDATION_FAILED, data: error?.response?.data }
+    }
+
+
+
+
+
+
+}
+
+
+
+
+/**
+ * 
+ * @param {*} baseUrl 
+ * @param {*} integrationsMasterCredentials 
+ * @param {*} dateInput 
+ * @param {*} primaryKeyValues 
+ * @param {*} currentRecord 
+ * @returns 
+ */
+async function modifyUrl(baseUrl, integrationsMasterCredentials, dateInput, primaryKeyValues, currentRecord) {
+
+
+    for (let [key, value] of Object.entries(integrationsMasterCredentials.primaryKeyValues)) {
+
+        const placeholder = `{{${key}}}`;
+
+        baseUrl = baseUrl.replaceAll(placeholder, value);
+    }
+
+
+    // if (dateInput) {
+    //     // Remove hyphens
+    //     const formattedDate = dateInput.replace(/-/g, "");
+    //     baseUrl = baseUrl.replaceAll("{{date}}", formattedDate);
+    // }
+    if (baseUrl.includes('{{date}}')) {
+        const formattedDate = dateInput.replace(/-/g, "");
+        baseUrl = baseUrl.replaceAll("{{date}}", formattedDate);
+    }
+
+    for (let findPK of primaryKeyValues) {
+        if (baseUrl.includes(`{{${findPK}}}`)) {
+            let placeHolder = `{{${findPK}}}`
+            let findValueOfPKFromCurrentRecord = currentRecord[findPK]
+            baseUrl = baseUrl.replaceAll(placeHolder, findValueOfPKFromCurrentRecord);
+        }
+    }
+
+
+
+
+
+    return baseUrl
+
+
+}
+
+
+
+
+
+/**
+ * 
+ * @param {*} finalResultData 
+ * @param {*} urlFlow 
+ * @param {*} cardConnectUrl 
+ * @param {*} filteredReferenceId 
+ * @param {*} dataMappingPath 
+ * @param {*} primaryKeyValues 
+ * @param {*} getAuthenticated 
+ * @param {*} date 
+ * @param {*} integrationsCronId 
+ * @param {*} statusKey 
+ * @param {*} integrationsMasterCredentials 
+ * @param {*} apiUrlFlowsLength 
+ * @returns 
+ */
+async function preProccessUrlFlows(finalResultData, urlFlow, cardConnectUrl, filteredReferenceId, dataMappingPath, primaryKeyValues, getAuthenticated, date, integrationsCronId, statusKey, integrationsMasterCredentials, apiUrlFlowsLength) {
+    if (finalResultData.length === 0) {
+
+        let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date, primaryKeyValues, {});
+        console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
+        if (urlFlow.paginationRequired === true) {
+
+
+            let page = 1;
+            while (true) {
+                let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=10000`;
+
+                let response = await GlobalHTTPMethods.handleGet(finalUrl, getAuthenticated, integrationsMasterCredentials);
+                if (Array.isArray(urlFlow.dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
+
+                    var txns = response?.[dataMappingPath] ?? [];
+
+                } else {
+                    // No mapping → assume whole response is transactions
+                    var txns = response ?? [];
+                }
+
+
+
+
+                totalFetched = txns.length;
+                if (Array.isArray(finalResultData)) {
+
+                    finalResultData = [
+                        ...finalResultData,
+                        ...txns
+                    ]
+
+                }
+                await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pulledCount: totalFetched } }, { new: true, runValidators: true })
+                console.log(`Fetched page ${page}, ${txns.length} records`);
+
+
+
+
+
+                if (txns.length === 0) break;
+                if (txns.length < 10000) break;
+                page++;
+
+                if (urlFlow?.rateLimit?.status === true && urlFlow.rateLimit?.limit) {
+                    //    let delayMs = (60 / urlFlow.rateLimit.limit) * 1000;
+                    let delayMs = 1;
+                    // Only wait if you're going to fetch the next page
+                    await new Promise(res => setTimeout(res, delayMs));
+                }
+
+            }
+
+
+        } else {
+            //
+            console.log("pagination not required case")
+        }
+        return finalResultData
+    } else if (finalResultData.length > 0) {
+        if (urlFlow.paginationRequired === true) {
+            console.log("pagination===true")
+        } else if (urlFlow.paginationRequired === false) {
+            let finalResponsesArray = []
+            for (let currentRecord of finalResultData) {
+                if (urlFlow.order === apiUrlFlowsLength) {
+                    let filter = {
+                        accountId: integrationsMasterCredentials.accountId,
+                        referenceId: currentRecord[filteredReferenceId],
+                        referenceStatus: currentRecord[statusKey]
+                    };
+
+                    let existingRecord = await cardConnectTransactionsModel.findOne(filter).lean();
+
+                    if (existingRecord) {
+                        // Skip this record, continue with next one
+                        continue;
+                    }
+                }
+
+                let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date, primaryKeyValues, currentRecord);
+                //console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
+                let response = await GlobalHTTPMethods.handleGet(prepareUrlWithPKV, getAuthenticated, integrationsMasterCredentials);
+
+                if (Array.isArray(dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
+
+                    var txn = response?.[dataMappingPath] ?? [];
+
+                } else {
+                    // No mapping → assume whole response is transactions
+                    var txn = response ?? [];
+                }
+                let finalResponse =
+                {
+                    ...currentRecord,
+                    ...txn
+                }
+                finalResponsesArray.push(finalResponse)
+            }
+            return finalResponsesArray
+        }
+
+
+    }
+
+
+
+
+}
+
+
+
+
+/**
+ * 
+ * @param {*} apiUrlFlows 
+ * @param {*} getAuthenticated 
+ * @param {*} integrationsMasterCredentials 
+ * @param {*} date 
+ * @param {*} integrationsCronId 
+ */
+const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, integrationsCronId) => {
+   
+    var upsertRecord = {
+        totalInserted: 0,
+        totalUpdated: 0
+    }
+
+    let apiUrlFlowsLength = apiUrlFlows.length;
+
+    let finalResultData = [];
+    let filteredReferenceId, dataMappingPath, primaryKeyValues, statusKey, cardConnectUrl;
+    let latestAPIUrlFlow;
+
+    for (let urlFlow of apiUrlFlows) {
+        console.log("urlFlow===", urlFlow.url, urlFlow.filteredReferenceId, urlFlow.dataMappingPath,)
+
+
+        cardConnectUrl = urlFlow.url;
+        latestAPIUrlFlow = urlFlow;
+        filteredReferenceId = urlFlow.filteredReferenceId;
+        dataMappingPath = urlFlow.dataMappingPath[0]
+        primaryKeyValues = urlFlow.primaryKeyValues
+        statusKey = urlFlow === null ? "status" : urlFlow.statusKey;  //remember that this might be hard-coded- just 1 percent possibility
+        finalResultData = await preProccessUrlFlows(finalResultData, urlFlow, cardConnectUrl, filteredReferenceId, dataMappingPath, primaryKeyValues, getAuthenticated, date, integrationsCronId, statusKey, integrationsMasterCredentials, apiUrlFlowsLength)
+
+
+
+
+
+
+
+    }
+    console.log("out of loop of url flow-===", finalResultData.length)
+    // console.log("out of loop of url flow-===", finalResultData[0])
+    // txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId
+    if (![null, undefined].includes(finalResultData) && Array.isArray(finalResultData) && finalResultData.length > 0) {
+        upsertRecord = await upSertRecord(finalResultData, integrationsMasterCredentials, latestAPIUrlFlow, cardConnectUrl, integrationsCronId)
+    }
+    return upsertRecord;
+}
+
+
+
+
+/**
+ * 
+ * @param {*} dateRange 
+ * @param {*} integrationsMasterDetails 
+ * @param {*} accountId 
+ * @param {*} integrationsCronId 
+ */
+async function initiateManualTrigger(dateRange, integrationsMasterDetails, accountId, integrationsCronId) {
 
     let gatherEachDayResponses = [];
 
 
     for (let date of dateRange) {
-
+console.log("Cron running for date===", date)
         let getAuthenticated = await authenticationResponse(accountId);
         //     console.log("getAuthenticated===", getAuthenticated)
 
         let apiUrlFlows = integrationsMasterDetails.cardconnectintegrationsapiurlflows.APIUrlFlows;
-
+        apiUrlFlows = apiUrlFlows.filter((url) => url.status === 'active');
 
         let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, integrationsCronId);
-        //console.log("processFlows===", processFlows)
+        console.log("processFlows===", processFlows)
         //  gatherEachDayResponses.push(processFlows)
 
 
