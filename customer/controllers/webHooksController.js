@@ -19,7 +19,7 @@ const webhookPayloadHeaders = require("../../models/webhookPayloadHeaders");
 const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
 const usersModel = require("../../models/usersModel");
 const onePosLogsModel = require("../../models/onePosLogsModel");
-
+const { dashboardFiltersCardConnect, dashboardFiltersSafeCash } = require('./smartDashboardFunctions')
 
 /**
  * Middleware function for Create webhook functionality
@@ -1325,6 +1325,33 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   });
 });
 
+exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => {
+  let { accountId } = req.params
+  let { selectDashboard, } = req.body
+  let returnDashboardFiltersSafeCash;
+  let returnDashboardFiltersCardConnect;
+  if (selectDashboard === "safe-cash") {
+
+    let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
+    returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange)
+  } else if (selectDashboard === "card-connect") {
+
+    let { cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, fromDate, toDate, cardTransactionRange } = req.query
+    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, fromDate, toDate, cardTransactionRange)
+  } else if (selectDashboard === "both") {
+    let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, } = req.body
+    let { cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, cardTransactionRange } = req.body
+
+
+    returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(req.body)
+    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(req.body)
+  }
+
+})
+
+
+
+
 
 exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
@@ -1351,6 +1378,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
         _id: null,
         serialNumbers: { $addToSet: "$serialNumber" },
         transactionTypes: { $addToSet: "$transactionType" },
+        userNames: { $addToSet: "$userName" }
       },
     },
     {
@@ -1358,6 +1386,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
         _id: 0,
         serialNumbers: 1,
         transactionTypes: 1,
+        userNames: 1
       },
     },
   ]);

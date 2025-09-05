@@ -1180,12 +1180,14 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
         _id: null,
         serialNumbers: { $addToSet: "$serialNumber" },
         transactionTypes: { $addToSet: "$transactionType" },
+        userNames: { $addToSet: "$userName" }
       },
     },
     {
       $project: {
         _id: 0,
         serialNumbers: 1,
+        userNames: 1,
         transactionTypes: 1,
       },
     },
@@ -1327,7 +1329,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
   }
   console.log('metaPayloadMatchCondition:====', metaPayloadMatchCondition)
 
-  
+
   let payloadSummary = []
   let metaPayloadQuery = await webhookMetaPayloadModel.aggregate([
     {
@@ -2606,7 +2608,7 @@ exports.updateWebhookStatus = asyncWrapper(async (req, res) => {
 exports.updateWebhookAutoDataSyncStatus = asyncWrapper(async (req, res) => {
   const { webhookMasterId, status } = req.query
   await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, {
-    $set:{"webhookSettings.currentStatus":status}
+    $set: { "webhookSettings.currentStatus": status }
   }, { new: true, upsert: true });
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).
     json({
@@ -2615,12 +2617,12 @@ exports.updateWebhookAutoDataSyncStatus = asyncWrapper(async (req, res) => {
     })
 })
 
-exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
-  const{accountId} = req.query
+exports.getWebhookDetailsOfAccount = asyncWrapper(async (req, res) => {
+  const { accountId } = req.query
   let exceptionsCount = await webhookExceptionsModel.find({}).countDocuments()
-  let accountDetails = await accountsModel.findById(accountId,{password:0}).lean()
+  let accountDetails = await accountsModel.findById(accountId, { password: 0 }).lean()
   let webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
-    
+
     {
       $group: {
         _id: null,
@@ -2635,14 +2637,14 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
     {
       $project: {
         _id: 0,
-            
-              serialNumbersCount: { $size: "$serialNumbers" },
-              transactionsCount: "$transactionsWithPositiveAmount",
-              exceptionsCount: { $literal: exceptionsCount }
+
+        serialNumbersCount: { $size: "$serialNumbers" },
+        transactionsCount: "$transactionsWithPositiveAmount",
+        exceptionsCount: { $literal: exceptionsCount }
       }
     },
   ])
-  
+
   let webhookDetails = await webHooksMasterModel.aggregate([
     {
       $match: {
@@ -2807,20 +2809,24 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
                   in: { $setUnion: ["$$value", "$$this"] }
                 }
               },
-              serialNumberCount: { $size: {
-                $reduce: {
-                  input: "$allSerialNumbers",
-                  initialValue: [],
-                  in: { $setUnion: ["$$value", "$$this"] }
+              serialNumberCount: {
+                $size: {
+                  $reduce: {
+                    input: "$allSerialNumbers",
+                    initialValue: [],
+                    in: { $setUnion: ["$$value", "$$this"] }
+                  }
                 }
-              } },
-              transactionTypeCount: { $size: {
-                $reduce: {
-                  input: "$allTransactionTypes",
-                  initialValue: [],
-                  in: { $setUnion: ["$$value", "$$this"] }
+              },
+              transactionTypeCount: {
+                $size: {
+                  $reduce: {
+                    input: "$allTransactionTypes",
+                    initialValue: [],
+                    in: { $setUnion: ["$$value", "$$this"] }
+                  }
                 }
-              } }
+              }
             }
           },
           {
@@ -2929,26 +2935,27 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async(req,res)=>{
   ]);
 
   return res
-  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-  .json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
-    data: {webhookDetails,webhookMetaPayloadsDetails,onePosLogs: onePosLogs?.[0], 
-      accountDetails:{...accountDetails,...webhookTransactionDetails?.[0]}
-    }
-  });
-  
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_GET_ALL_WEBHOOK,
+      data: {
+        webhookDetails, webhookMetaPayloadsDetails, onePosLogs: onePosLogs?.[0],
+        accountDetails: { ...accountDetails, ...webhookTransactionDetails?.[0] }
+      }
+    });
+
 })
 
 
-exports.getOneHubPosLogsDetails = asyncWrapper(async(req,res)=>{
-  const {serialNumber} = req.query
-  const oneHubposDetails = await onePosLogsModel.find({serialNumbers:{$in:[serialNumber]}})
+exports.getOneHubPosLogsDetails = asyncWrapper(async (req, res) => {
+  const { serialNumber } = req.query
+  const oneHubposDetails = await onePosLogsModel.find({ serialNumbers: { $in: [serialNumber] } })
   return res
-  .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-  .json({
-    status: customConstants.messages.MESSAGE_SUCCESS,
-    message: customConstants.messages.MESSAGE_GET_ONE_HUB_POS_LOGS,
-    data: oneHubposDetails
-  });
+    .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+    .json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_GET_ONE_HUB_POS_LOGS,
+      data: oneHubposDetails
+    });
 })
