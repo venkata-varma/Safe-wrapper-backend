@@ -103,16 +103,59 @@ exports.getCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
 
     const { accountId } = req.params;
 
-    const [cardConnectIntegrationsSettings, cardConnectIntegrationsCredentials] = await Promise.all([
+    const [cardConnectIntegrationsSettings, cardConnectIntegrationsCredentials, customerDetails] = await Promise.all([
         cardConnectIntegrationsSettingsModel.findOne({ accountId }).lean(),
-        cardconnectIntegrationsCredentialsModel.findOne({ accountId })
+        cardconnectIntegrationsCredentialsModel.findOne({ accountId }),
+        cardConnectTransactionsModel.aggregate([
+            { $match: { accountId: new mongoose.Types.ObjectId(accountId) } },
+            {
+                $facet: {
+                    customers: [
+                        {
+                            $group: {
+                                _id: "$customerDetails.lastFour",
+                                name: { $first: "$customerDetails.name" },
+                                cardBrand: { $first: "$customerDetails.cardBrand" },
+                                cardType: { $first: "$customerDetails.cardType" }
+                            }
+                        },
+                        {
+                            $project: {
+                                _id: 0,
+                                lastFour: "$_id",
+                                name: 1,
+                                cardBrand: 1,
+                                cardType: 1
+                            }
+                        }
+                    ],
+                    batches: [
+                        {
+                            $group: {
+                                _id: "$responseObject.batchid"
+                            }
+                        },
+                        {
+                            $project: {
+                                _id: 0,
+                                batchId: "$_id"
+                            }
+                        }
+                    ]
+                }
+            }
+        ])
+
+
     ]);
 
 
     let transactionStatusKeys = cardConnectIntegrationsSettings?.transactionStatusKeys;
     let transactionTypeKeys = cardConnectIntegrationsSettings?.transactionTypeKeys;
 
-    let allMerchantIds = cardConnectIntegrationsCredentials?.primaryKeyValues?.merchantId ;
+
+    let allMerchantIds = cardConnectIntegrationsCredentials?.primaryKeyValues?.merchantId;
+
 
 
 
@@ -125,7 +168,9 @@ exports.getCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
             data: {
                 transactionStatusKeys,
                 transactionTypeKeys,
-                allMerchantIds
+                allMerchantIds,
+                customerDetails: customerDetails[0].customers,
+                batches: customerDetails[0].batches
 
             },
         });
