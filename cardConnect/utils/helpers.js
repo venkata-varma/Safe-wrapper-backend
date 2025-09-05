@@ -129,7 +129,7 @@ const getRequiredWODetailsTODisplay = async (responseObject, requiredDatapoints)
     let result = await getNestedValue(responseObject, value)
 
     // 👉 Convert numeric UNIX timestamp (seconds) to Date
-    if (mappedKey.toLowerCase().includes("date") && typeof result === "number") {
+    if (mappedKey.toLowerCase().includes("date")) {
       //console.log("mappedKey===", mappedKey)
       //  console.log("result===", result)
       result = normalizeDate(result);
@@ -158,7 +158,7 @@ exports.getProcessedDisplayPoints = async (getAllTransactions, requiredDataPoint
   let WOData = []
   await Promise.all(
     getAllTransactions.map(async record => {
-      let rawMetaData = record?.transaction
+      let rawMetaData = record?.responseObject
 
 
       let parsedMetaData = {
@@ -171,6 +171,10 @@ exports.getProcessedDisplayPoints = async (getAllTransactions, requiredDataPoint
         parsedMetaData,
         requiredDataPoints
       );
+      processedRecord = {
+        ...processedRecord,
+        customerDetails: record?.customerDetails
+      }
       WOData.push(processedRecord)
     })
   )
@@ -186,8 +190,8 @@ exports.getProcessedDisplayPoints = async (getAllTransactions, requiredDataPoint
  * 
  * 
  */
-exports.transactionTypeMappings=async(transactions, transactionTypeKeys)=>{
-let typeCounts = {};
+exports.transactionTypeMappings = async (transactions, transactionTypeKeys) => {
+  let typeCounts = {};
   const normalizedKeys = {};
 
   transactionTypeKeys.forEach(key => {
@@ -205,5 +209,5 @@ let typeCounts = {};
     }
   });
 
-return typeCounts
+  return typeCounts
 }
