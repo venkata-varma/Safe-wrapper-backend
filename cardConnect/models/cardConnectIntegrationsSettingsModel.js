@@ -88,7 +88,10 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
         required: [true, 'data dump range is required'],
         default: 20
     },
-
+    customerObjectKeys: {
+        type: Array,
+        default: []
+    }
 }, { timestamps: true });
 
 

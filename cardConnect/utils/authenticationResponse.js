@@ -17,26 +17,38 @@ const { default: mongoose } = require('mongoose')
 
 
 async function createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials) {
-    let findExisting = await cardConnectTransactionLifeCycleModel.findOne(
-        {
-            accountId: integrationsMasterCredentials?.accountId,
-            transactionId: requestObject?.referenceId,
-            transactionStatus: requestObject?.referenceStatus
-        }
-    );
-    if (!findExisting) {
-        await cardConnectTransactionLifeCycleModel.create({
+    await cardConnectTransactionLifeCycleModel.create({
 
-            accountId: integrationsMasterCredentials?.accountId,
-            userId: integrationsMasterCredentials?.userId,
-            transactionId: requestObject?.referenceId,
-            transactionStatus: requestObject?.referenceStatus,
-            responseObject: JSON.stringify(requestObject?.responseObject)
-        })
-    } else if (findExisting) {
-        console.log("record with same status exisis")
-        return;
-    }
+        accountId: integrationsMasterCredentials?.accountId,
+        userId: integrationsMasterCredentials?.userId,
+        transactionId: requestObject?.referenceId,
+        transactionStatus: requestObject?.referenceStatus,
+        responseObject: JSON.stringify(requestObject?.responseObject),
+        customerDetails: requestObject?.customerDetails
+    })
+
+
+
+    // let findExisting = await cardConnectTransactionLifeCycleModel.findOne(
+    //     {
+    //         accountId: integrationsMasterCredentials?.accountId,
+    //         transactionId: requestObject?.referenceId,
+    //         transactionStatus: requestObject?.referenceStatus
+    //     }
+    // );
+    // if (!findExisting) {
+    //     await cardConnectTransactionLifeCycleModel.create({
+
+    //         accountId: integrationsMasterCredentials?.accountId,
+    //         userId: integrationsMasterCredentials?.userId,
+    //         transactionId: requestObject?.referenceId,
+    //         transactionStatus: requestObject?.referenceStatus,
+    //         responseObject: JSON.stringify(requestObject?.responseObject)
+    //     })
+    // } else if (findExisting) {
+    //     console.log("record with same status exisis")
+    //     return;
+    // }
 
 }
 
@@ -44,6 +56,8 @@ async function createTransactionLifeCycleRecord(requestObject, integrationsMaste
 async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId) {
     let totalInserted = 0;
     let totalUpdated = 0;
+
+
 
     const results = await Promise.allSettled(
         txns.map(async (txn) => {
@@ -57,6 +71,9 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                 };
 
                 let existingRecord = await cardConnectTransactionsModel.findOne(filter);
+
+
+
                 let requestObject = {
 
                     accountId: integrationsMasterCredentials?.accountId,
@@ -65,6 +82,15 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                     cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
                     referenceId: txn[urlFlow?.filteredReferenceId],
                     referenceStatus: txn[urlFlow?.statusKey],
+                    //There is one array in settins for keys for below customerDetails. 
+                    // we can obviously use that, loop and get the key-value pairs. But, as of now, to lessen time and do it if it is realy necessary when other Stripe or other arrives.
+                    customerDetails: {
+                        name: txn?.name,
+                        cardNumber: txn?.cardnumber,
+                        lastFour: txn?.lastfour,
+                        cardBrand: txn?.cardbrand,
+                        cardType: txn?.cardtype
+                    }
                 };
 
                 if (!existingRecord) {
@@ -225,7 +251,7 @@ async function authenticationResponse(accountId) {
         const authResponse = await axios.request(createConfig);
         const token = decryptConfigCredentials.requestMethod === "body" ? getNestedValue(authResponse.data, integrationsMasterCredentials.dataMappingPath) : decryptConfigCredentials.headers;
         responseData = decryptConfigCredentials.requestMethod === "body" ? authResponse.data : decryptConfigCredentials.headers;
-        
+
         return {
             statusCode: authResponse.status,
             status: customConstants.messages.MESSAGE_SUCCESS,
@@ -397,11 +423,11 @@ async function preProccessUrlFlows(finalResultData, urlFlow, cardConnectUrl, fil
                 if (urlFlow.order === apiUrlFlowsLength) {
                     let filter = {
                         accountId: integrationsMasterCredentials.accountId,
-                        referenceId: currentRecord[filteredReferenceId],
-                        referenceStatus: currentRecord[statusKey]
+                        transactionId: currentRecord[filteredReferenceId],
+                        transactionStatus: currentRecord[statusKey]
                     };
 
-                    let existingRecord = await cardConnectTransactionsModel.findOne(filter).lean();
+                    let existingRecord = await cardConnectTransactionLifeCycleModel.findOne(filter).lean();
 
                     if (existingRecord) {
                         // Skip this record, continue with next one
@@ -451,7 +477,7 @@ async function preProccessUrlFlows(finalResultData, urlFlow, cardConnectUrl, fil
  * @param {*} integrationsCronId 
  */
 const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, integrationsCronId) => {
-   
+
     var upsertRecord = {
         totalInserted: 0,
         totalUpdated: 0
@@ -507,7 +533,7 @@ async function initiateManualTrigger(dateRange, integrationsMasterDetails, accou
 
 
     for (let date of dateRange) {
-console.log("Cron running for date===", date)
+        console.log("Cron running for date===", date)
         let getAuthenticated = await authenticationResponse(accountId);
         //     console.log("getAuthenticated===", getAuthenticated)
 

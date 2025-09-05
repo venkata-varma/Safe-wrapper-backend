@@ -197,8 +197,8 @@ exports.createCardConnectIntegrationMasterSettings = asyncWrapper(async (req, re
         createdBy: req.user._id,
         transactionStatusKeys: cardConnectPredefinedKeys.transactionStatusKeys,
         transactionTypeKeys: cardConnectPredefinedKeys.transactionTypeKeys,
-        requiredDatapoints: cardConnectPredefinedKeys.requiredDatapoints
-
+        requiredDatapoints: cardConnectPredefinedKeys.requiredDatapoints,
+        customerObjectKeys: cardConnectPredefinedKeys.customerObjectKeys
     });
 
 
@@ -285,7 +285,7 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
         updatedBy: req.user._id
     }
     let editIntegrationsMasterSettings = await cardConnectIntegrationsSettingsModel.findByIdAndUpdate(cardConnectIntegrationsSettingId,
-        prepareReqObj, { new: true, runValidators: true }
+        { $set: { ...prepareReqObj } }, { new: true, runValidators: true }
     )
     return res
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -434,7 +434,7 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 
 
     let apiUrlFlows = integrationAPIUrlFlows.APIUrlFlows.filter((url) => url.status === 'active');
-console.log("apiUrlFlows.length===", apiUrlFlows.length)
+    console.log("apiUrlFlows.length===", apiUrlFlows.length)
 
     let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, createIntegrationsCron._id);
     console.log("processFlows===", processFlows)

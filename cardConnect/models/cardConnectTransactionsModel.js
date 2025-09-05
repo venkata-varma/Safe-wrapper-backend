@@ -12,19 +12,19 @@ const cardConnectTransactionsSchema = new mongoose.Schema(
         },
         cardConnectIntegrationsCronIdCreate: {
             type: mongoose.Schema.Types.ObjectId,
-            ref:"cardconnectintegrationscrons",
+            ref: "cardconnectintegrationscrons",
             default: null,
             index: true,
-            
+
         },
         cardConnectIntegrationsCronIdUpdate: {
             type: mongoose.Schema.Types.ObjectId,
-            ref:"cardconnectintegrationscrons",
+            ref: "cardconnectintegrationscrons",
             default: null,
             index: true,
-            
+
         },
-        
+
         accountId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "accounts",
@@ -45,6 +45,10 @@ const cardConnectTransactionsSchema = new mongoose.Schema(
             type: Object,
             default: {}
         },
+        customerDetails: {
+            type: Object,
+            default: {}
+        },
         referenceStatus: {
             type: String,
             enum: ["Auth", "Captured", "Voided", "Failure", "Rejected", "Declined", "Settled", "Processed", "Unknown", ""],
@@ -58,7 +62,7 @@ const cardConnectTransactionsSchema = new mongoose.Schema(
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "users",
-           // required: [true, "Created by is required."],
+            // required: [true, "Created by is required."],
             default: null,
         },
         updatedBy: {

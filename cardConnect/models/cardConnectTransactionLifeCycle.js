@@ -38,6 +38,10 @@ const cardConnectTransactionLifeCycleSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    customerDetails: {
+        type: Object,
+        default: {}
+    },
     source: {
         type: String,
         default: "card-connect"

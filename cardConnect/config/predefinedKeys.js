@@ -16,7 +16,13 @@ const cardConnectPredefinedKeys = {
         Transaction_date: 'date',
         Transaction_type: 'type'
 
-    }
+    },
+    customerObjectKeys: [
+        "name",
+        "cardnumber",
+        "lastfour",
+        "cardbrand",
+        "cardtype"]
 
 
 }
