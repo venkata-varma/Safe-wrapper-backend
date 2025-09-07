@@ -26,7 +26,7 @@ const cardConnectExceptionsModel = require("../../cardConnect/models/cardConnect
 
 exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange) => {
 
-
+console.log("fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange", fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange)
     if (!fromDate || !toDate) {
         throw new Error(' From date, and To date are required');
     }
@@ -42,7 +42,7 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
             : [serialNumbers];
     }
 
-
+console.log("serialNumbersArray===", serialNumbersArray)
 
 
 

@@ -1331,7 +1331,7 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
   let returnDashboardFiltersSafeCash;
   let returnDashboardFiltersCardConnect;
   if (selectDashboard === "safe-cash") {
-console.log("req.query===", req.query)
+    console.log("req.query===", req.query)
     let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
     returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange)
   } else if (selectDashboard === "card-connect") {
@@ -1378,7 +1378,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
         _id: null,
         serialNumbers: { $addToSet: "$serialNumber" },
         transactionTypes: { $addToSet: "$transactionType" },
-        userNames: { $addToSet: "$userName" }
+        //   userNames: { $addToSet: "$userName" }
       },
     },
     {
@@ -1386,16 +1386,45 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
         _id: 0,
         serialNumbers: 1,
         transactionTypes: 1,
-        userNames: 1
+        // userNames: 1
       },
     },
   ]);
+
+  const userNamesOfMachine = await webhookPayloadHeaders.aggregate([
+    {
+      $match: {
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        ...matchCondition
+      },
+    },
+    {
+      $group: {
+        _id: null,
+
+        userNames: { $addToSet: "$userName" }
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+
+        // userNames: 1
+      },
+    },
+  ]);
+
+
+
+
+
   const listOfWebhooks = await webHooksMasterModel.find({ accountId: accountId })
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
     data: {
       webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
+      userNamesOfMachine,
       listOfWebhooks: listOfWebhooks
     }
   })
