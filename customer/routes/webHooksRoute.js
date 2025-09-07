@@ -71,5 +71,5 @@ router.get('/get-progres-meter-total-single-machine', getProgressMeterAndTotalsO
 
 
 
-router.get('merchant-smart-filtered-dashboard/:accountId', merchantSmartFilteredDashboard)
+router.get('/merchant-smart-filtered-dashboard/:accountId', merchantSmartFilteredDashboard)
 module.exports = router;

@@ -1327,11 +1327,11 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 
 exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => {
   let { accountId } = req.params
-  let { selectDashboard, } = req.body
+  let { selectDashboard, } = req.query
   let returnDashboardFiltersSafeCash;
   let returnDashboardFiltersCardConnect;
   if (selectDashboard === "safe-cash") {
-
+console.log("req.query===", req.query)
     let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
     returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange)
   } else if (selectDashboard === "card-connect") {
