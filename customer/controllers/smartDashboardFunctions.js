@@ -24,9 +24,9 @@ const cardConnectExceptionsModel = require("../../cardConnect/models/cardConnect
 
 
 
-exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange) => {
+exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, accountId) => {
 
-console.log("fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange", fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange)
+    console.log("fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange", fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange)
     if (!fromDate || !toDate) {
         throw new Error(' From date, and To date are required');
     }
@@ -36,13 +36,91 @@ console.log("fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, c
     }
 
     let serialNumbersArray = [];
-    if (serialNumbers && serialNumbers !== 'all') {
-        serialNumbersArray = serialNumbers.includes(',')
-            ? serialNumbers.split(',').map((s) => s.trim())
-            : [serialNumbers];
+
+    serialNumbersArray = serialNumbers.includes(',')
+        ? serialNumbers.split(',').map((s) => s.trim())
+        : [serialNumbers];
+
+
+
+
+    let cashTransactionTypesArray = [];
+
+    cashTransactionTypesArray = cashTransactionTypes.includes(',')
+        ? cashTransactionTypes.split(',').map((t) => t.trim())
+        : [cashTransactionTypes];
+
+
+
+    let matchConditions = {
+        transactionDateTime: {
+            $gte: moment(fromDate).toDate(),
+            $lte: moment(toDate).toDate(),
+        },
+    };
+
+    if (serialNumbersArray.length > 0) {
+        matchConditions.serialNumber = { $in: serialNumbersArray };
     }
 
-console.log("serialNumbersArray===", serialNumbersArray)
+    if (cashTransactionTypesArray.length > 0) {
+        matchConditions.transactionType = { $in: cashTransactionTypesArray };
+    }
+
+    if (cashTransactionRange) {
+        var [fromRange, toRange] = cashTransactionRange.split('-')
+        fromRange = parseInt(fromRange)
+        toRange = parseInt(toRange)
+        matchConditions.amount = {
+            $gte: fromRange,
+            $lte: toRange,
+        }
+    }
+    var userNamesArray = []
+    if (userNames) {
+        userNamesArray = userNames.includes(',')
+            ? userNames.split(',').map((s) => s.trim())
+            : [userNames];
+
+
+    }
+
+
+
+    if (userNamesArray.length > 0) {
+        matchConditions.userName = { $in: userNamesArray };
+    }
+
+    const pipeline = [];
+
+    //   pipeline.push({
+    //     $addFields: {
+    //       transactionDateTime: { $toDate: '$transactionDateTime' },
+    //     },
+    //   });
+
+    pipeline.push({
+        $match: matchConditions,
+    });
+
+    pipeline.push({
+        $sort: { transactionDateTime: -1 },
+    });
+
+    pipeline.push({
+        $project: {
+            webhookMasterId: 0,
+            webhookMetaPayloadId: 0,
+            accountId: 0,
+            webhookTransactionId: 0,
+        },
+    });
+console.log("pipleLine===", pipeline)
+    const webhookTransactionDetails = await webhookPayloadTransactions.aggregate(pipeline);
+console.log("webhookTransactionDetails===", webhookTransactionDetails)
+
+
+    return webhookTransactionDetails
 
 
 

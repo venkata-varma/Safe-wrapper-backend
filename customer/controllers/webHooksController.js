@@ -1333,11 +1333,11 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
   if (selectDashboard === "safe-cash") {
     console.log("req.query===", req.query)
     let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
-    returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange)
+    returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, accountId)
   } else if (selectDashboard === "card-connect") {
 
     let { cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, fromDate, toDate, cardTransactionRange } = req.query
-    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, fromDate, toDate, cardTransactionRange)
+    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, fromDate, toDate, cardTransactionRange, accountId)
   } else if (selectDashboard === "both") {
     let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, } = req.body
     let { cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, cardTransactionRange } = req.body
@@ -1346,6 +1346,17 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
     returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(req.body)
     returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(req.body)
   }
+
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+    data: {
+      returnDashboardFiltersSafeCash,
+      returnDashboardFiltersCardConnect
+    },
+  });
+
+
 
 })
 
