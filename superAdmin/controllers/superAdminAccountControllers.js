@@ -49,15 +49,7 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
             message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
         });
     }
-    if (accountDetails.length > 0) {
-        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
-            status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_MACHINE_ALREADY_TAKEN
-        });
-    }
-    else {
-        next()
-    }
+    next()
 })
 
 
@@ -73,9 +65,9 @@ exports.validationMapMachinesToAccount = asyncWrapper(async (req, res, next) => 
             message: customConstants.messages.MESSAGE_ACCOUNT_ID_MANDATORY
         });
     }
-    const findAccount = await usersModel.findOne({ accountId })
+    const findAccount = await accountsModel.findOne({ accountId })
     if (!findAccount) {
-        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_ACCOUNT_NOT_EXISTS
         })
@@ -106,6 +98,54 @@ exports.validationMapMachinesToAccount = asyncWrapper(async (req, res, next) => 
 })
 
 
+
+/**
+ * 
+ */
+exports.validationMapMachinesToAccountUpdate = asyncWrapper(async (req, res, next) => {
+    const { accountId, machines } = req.body
+    if (!accountId) {
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ID_MANDATORY
+        });
+    }
+    const findAccount = await accountsModel.findOne({ accountId })
+    if (!findAccount) {
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_NOT_EXISTS
+        })
+    }
+
+
+
+    if (!machines) {
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_MACHINES_MANDATORY
+        });
+    }
+    let machinesArray = machines.includes(',')
+        ? machines.split(',').map((s) => s.trim())
+        : [machines];
+    let accountDetails = await accountsModel.find({
+        machines: { $in: machinesArray },
+        _id: { $ne: accountId }
+    })
+
+
+    if (accountDetails.length > 0) {
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_MACHINE_ALREADY_TAKEN
+        });
+    }
+
+    next()
+})
+
+
 /**
  * 
  */
@@ -115,7 +155,7 @@ exports.mapMachinesToAccount = asyncWrapper(async (req, res) => {
     let updateAccount = await accountsModel.findByIdAndUpdate(accountId,
         {
             $set: {
-                machines: req.body.machines.split(',').length > 0 ? req.body.machines.split(',') : req.body.machines
+                machines: machines.split(',').length > 0 ? machines.split(',') : machines
             }
         },
         { new: true, runValidators: true }
@@ -124,8 +164,10 @@ exports.mapMachinesToAccount = asyncWrapper(async (req, res) => {
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.MESSAGE_ACCOUNT_CREATED,
-
+        message: customConstants.messages.MESSAGE_MACHINES_LINKING_SUCCESSFULL,
+        data: {
+            updateAccount
+        }
     })
 })
 
@@ -189,13 +231,15 @@ exports.createAccount = asyncWrapper(async (req, res) => {
 */
 exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
-    let { machines } = req.body
+
     const verifyAccountStatus = await accountsModel.findById(accountId)
-    const reqAccountType = req.user.accountId.accountType
+    //const reqAccountType = req.user.accountId.accountType
+    const reqAccountType = verifyAccountStatus.accountType
+
     if (!verifyAccountStatus) {
-        return res.status(409).json({
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS
+            message: customConstants.messages.MESSAGE_ACCOUNT_NOT_EXISTS
         })
     }
     // if (!req.body.phone) {
@@ -204,7 +248,9 @@ exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
     //         message: customConstants.messages.MESSAGE_ENTER_MOBILENUMBER,
     //     });
     // }
+
     if (verifyAccountStatus.status !== 'active' && reqAccountType === 'merchant') {
+
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
@@ -212,25 +258,15 @@ exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
     }
 
 
-    let machinesArray = machines.includes(',')
-        ? machines.split(',').map((s) => s.trim())
-        : [machines];
+    next()
 
-    let accountDetails = await accountsModel.find({ machines: { $in: machinesArray } })
-
-    if (accountDetails.length > 0) {
-        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
-            status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_MACHINE_ALREADY_TAKEN
-        });
-    }
-
-
-
-    else {
-        next()
-    }
 });
+
+
+
+
+
+
 /**
  * Update account details.
  */
@@ -247,7 +283,7 @@ exports.updateAccount = asyncWrapper(async (req, res) => {
         {
             $set: {
                 ...req.body,
-                machines: req.body.machines.split(',').length > 0 ? req.body.machines.split(',') : req.body.machines
+
             }
         },
         { new: true });
@@ -261,6 +297,35 @@ exports.updateAccount = asyncWrapper(async (req, res) => {
     })
 
 })
+
+
+/**
+ * 
+ */
+exports.updateLinkedMachinesOfAccount = asyncWrapper(async (req, res) => {
+    let { accountId, machines } = req.body
+
+
+    const updatedAccountDetails = await accountsModel.findByIdAndUpdate(accountId,
+        {
+            $set: {
+
+                machines: machines.split(',').length > 0 ? machines.split(',') : machines
+            }
+        },
+        { new: true });
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_LINKED_MACHINES_TO_ACCOUNT_UPDATED,
+        data: updatedAccountDetails
+    })
+
+
+
+})
+
+
 
 /**
  * API end-point not used . On permission, this API end-point to be removed or to be optimised
