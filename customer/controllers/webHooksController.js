@@ -1369,62 +1369,87 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
     {
       $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId),
         ...matchCondition
-      },
+      }
     },
     {
-      $group: {
-        _id: null,
-        serialNumbers: { $addToSet: "$serialNumber" },
-        transactionTypes: { $addToSet: "$transactionType" },
-        //   userNames: { $addToSet: "$userName" }
-      },
+      $addFields: {
+        userName: {
+          $cond: {
+            if: { $eq: ["$userName", ""] },  // check if empty string
+            then: "unknown",                  // replace with "unknown"
+            else: "$userName"
+          }
+        }
+      }
+    },
+    {
+      $facet: {
+        serialNumbers: [
+          { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
+          { $project: { _id: 0, serialNumbers: 1 } }
+        ],
+        transactionTypes: [
+          { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
+          { $project: { _id: 0, transactionTypes: 1 } }
+        ],
+        userNamesOfMachine: [
+          {
+            $group: {
+              _id: "$serialNumber",
+              userNames: { $addToSet: "$userName" }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              serialNumber: "$_id",
+              userNames: 1
+            }
+          }
+        ]
+      }
     },
     {
       $project: {
-        _id: 0,
-        serialNumbers: 1,
-        transactionTypes: 1,
-        // userNames: 1
-      },
-    },
+        serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
+        transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
+        userNamesOfMachine: 1
+      }
+    }
   ]);
 
-  const userNamesOfMachine = await webhookPayloadHeaders.aggregate([
-    {
-      $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId),
-        ...matchCondition
-      },
-    },
-    {
-      $group: {
-        _id: null,
+  // let userNamesOfMachine = await webhookPayloadHeaders.aggregate([
+  //   {
+  //     $match: {
+  //       ...matchCondition
+  //     },
+  //   },
+  //   {
+  //     $group: {
+  //       _id: "$serialNumber",        // group by machine
+  //       userNames: { $addToSet: "$userName" }, // distinct usernames
+  //     },
+  //   },
+  //   {
+  //     $project: {
+  //       _id: 0,
+  //       serialNumber: "$_id",
+  //       userNames: 1
+  //     },
+  //   },
+  // ]);
 
-        userNames: { $addToSet: "$userName" }
-      },
-    },
-    {
-      $project: {
-        _id: 0,
+  // webhookPayloadHeadersData = webhookPayloadHeadersData?.[0] || {},
 
-        // userNames: 1
-      },
-    },
-  ]);
-
-
-
-
+  //   webhookPayloadHeadersData.userNamesOfMachine = userNamesOfMachine
 
   const listOfWebhooks = await webHooksMasterModel.find({ accountId: accountId })
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
     data: {
-      webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
-      userNamesOfMachine,
+      webhookPayloadHeadersData: webhookPayloadHeadersData[0] ? webhookPayloadHeadersData[0] : {},
       listOfWebhooks: listOfWebhooks
     }
   })
