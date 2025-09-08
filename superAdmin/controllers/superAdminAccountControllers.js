@@ -30,10 +30,7 @@ If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
     const { accountName, companyName, email, phone, password, location, machines } = req.body;
-    let machinesArray = machines.includes(',')
-        ? machines.split(',').map((s) => s.trim())
-        : [machines];
-    let accountDetails = await accountsModel.find({ machines: { $in: machinesArray } })
+
     if (!accountName || !companyName || !email || !phone || !password || !location) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -64,6 +61,75 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
 })
 
 
+
+/**
+ * 
+ */
+exports.validationMapMachinesToAccount = asyncWrapper(async (req, res, next) => {
+    const { accountId, machines } = req.body
+    if (!accountId) {
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ID_MANDATORY
+        });
+    }
+    const findAccount = await usersModel.findOne({ accountId })
+    if (!findAccount) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_NOT_EXISTS
+        })
+    }
+
+
+
+    if (!machines) {
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_MACHINES_MANDATORY
+        });
+    }
+    let machinesArray = machines.includes(',')
+        ? machines.split(',').map((s) => s.trim())
+        : [machines];
+    let accountDetails = await accountsModel.find({ machines: { $in: machinesArray } })
+
+
+    if (accountDetails.length > 0) {
+        return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_MACHINE_ALREADY_TAKEN
+        });
+    }
+
+    next()
+})
+
+
+/**
+ * 
+ */
+exports.mapMachinesToAccount = asyncWrapper(async (req, res) => {
+    let { accountId, machines } = req.body
+
+    let updateAccount = await accountsModel.findByIdAndUpdate(accountId,
+        {
+            $set: {
+                machines: req.body.machines.split(',').length > 0 ? req.body.machines.split(',') : req.body.machines
+            }
+        },
+        { new: true, runValidators: true }
+    )
+
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_ACCOUNT_CREATED,
+
+    })
+})
+
+
 /*
 If middleware returns true, this function is to create a New Account along with one New User
 Returns newly created Account with one associated user.
@@ -85,7 +151,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             accountType: "merchant",
             role: "merchant",
             logo: req.file ? await preSignedUrlToUpload(req.file) : "",
-            machines: req.body.machines.split(',').length > 0 ? req.body.machines.split(',') : req.body.machines
+
         })
         const customId = new mongoose.Types.ObjectId();
 
