@@ -11,11 +11,7 @@ const accountsSchema = new mongoose.Schema({
        // required: [true, 'Account name is required.'],
         default: ""
     },
-    merchantName: {
-        type: String,
-        required: [true, "Merchant name is required."],
-        default: ""
-    },
+    
     accountType: {
         type: String,
         // required: [true, "Account type is required"],
