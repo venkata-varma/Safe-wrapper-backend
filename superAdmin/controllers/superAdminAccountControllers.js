@@ -29,9 +29,9 @@ Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, Sta
 If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
-    const { accountName, companyName, email, phone, password, location, machines } = req.body;
+    const { merchantName, companyName, email, phone, password, location } = req.body;
 
-    if (!accountName || !companyName || !email || !phone || !password || !location) {
+    if (!merchantName || !companyName || !email || !phone || !password || !location) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
@@ -84,16 +84,24 @@ exports.validationMapMachinesToAccount = asyncWrapper(async (req, res, next) => 
     let machinesArray = machines.includes(',')
         ? machines.split(',').map((s) => s.trim())
         : [machines];
-    let accountDetails = await accountsModel.find({ machines: { $in: machinesArray } })
+    let accountDetails = await accountsModel.find({
+        machines: { $in: machinesArray },
 
+    }, { machines: 1 }); // only fetch machines field
 
     if (accountDetails.length > 0) {
+        // Collect machines that are already taken
+        let takenMachines = [];
+        accountDetails.forEach(acc => {
+            takenMachines.push(...acc.machines.filter(m => machinesArray.includes(m)));
+        });
+
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_MACHINE_ALREADY_TAKEN
+            message: `These machines are already taken: ${takenMachines.join(', ')}`,
+            takenMachines // also send as array for frontend
         });
     }
-
     next()
 })
 
@@ -132,16 +140,21 @@ exports.validationMapMachinesToAccountUpdate = asyncWrapper(async (req, res, nex
     let accountDetails = await accountsModel.find({
         machines: { $in: machinesArray },
         _id: { $ne: accountId }
-    })
-
+    }, { machines: 1 }); // only fetch machines field
 
     if (accountDetails.length > 0) {
+        // Collect machines that are already taken
+        let takenMachines = [];
+        accountDetails.forEach(acc => {
+            takenMachines.push(...acc.machines.filter(m => machinesArray.includes(m)));
+        });
+
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
-            message: customConstants.messages.MESSAGE_MACHINE_ALREADY_TAKEN
+            message: `These machines are already taken: ${takenMachines.join(', ')}`,
+            takenMachines // also send as array for frontend
         });
     }
-
     next()
 })
 
@@ -155,7 +168,8 @@ exports.mapMachinesToAccount = asyncWrapper(async (req, res) => {
     let updateAccount = await accountsModel.findByIdAndUpdate(accountId,
         {
             $set: {
-                machines: machines.split(',').length > 0 ? machines.split(',') : machines
+                machines: machines.split(',').length > 0 ? machines.split(',') : machines,
+                updatedBy:req.user._id
             }
         },
         { new: true, runValidators: true }
@@ -178,22 +192,23 @@ Returns newly created Account with one associated user.
 */
 exports.createAccount = asyncWrapper(async (req, res) => {
     const baseUrl = process.env.DOMAIN_NAME;
-    const { accountName, companyName, email, phone, password, status, machines } = req.body
+    const { merchantName, companyName, email, phone, password, status, } = req.body
     const accountDetails = await usersModel.findOne({ $or: [{ email }, { phone }] })
     if (accountDetails) {
-        return res.status(409).json({
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_ACCOUNT_EXIST
         })
     }
     else {
+        console.log("req.user===", req.user)
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
             accountType: "merchant",
             role: "merchant",
             logo: req.file ? await preSignedUrlToUpload(req.file) : "",
-
+            createdBy: req.user._id
         })
         const customId = new mongoose.Types.ObjectId();
 
@@ -202,7 +217,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             userId: customId,
             createdBy: customId,
             accountId: accountData._id,
-            name: accountName,
+            name: merchantName,
             password: req.body.password,
             companyName: companyName,
             phone: phone,
@@ -274,7 +289,9 @@ exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
 exports.updateAccount = asyncWrapper(async (req, res) => {
     const baseUrl = process.env.DOMAIN_NAME;
     const { accountId } = req.params
-    const { accountName, companyName, phone, } = req.body
+    const { merchantName, companyName, phone, address, location } = req.body
+
+    let findAccount = await accountsModel.findById(accountId);
 
     // req.body.logo = req.file ? `${baseUrl}devapps/Integration-assets/${req.file.filename}` : (await accountsModel.findById(accountId,{logo:1})).logo
     req.body.logo = req.file ? await preSignedUrlToUpload(req.file) : (await accountsModel.findById(accountId, { logo: 1 })).logo
@@ -283,13 +300,17 @@ exports.updateAccount = asyncWrapper(async (req, res) => {
         {
             $set: {
                 ...req.body,
-
+                updatedBy: req.user._id
             }
         },
         { new: true });
-    const updateUserDetails = await usersModel.findOneAndUpdate({ accountId: new mongoose.Types.ObjectId(accountId), phone: phone }, {
-        $set: { name: accountName }
+    const updateUserDetails = await usersModel.findOneAndUpdate({ accountId: new mongoose.Types.ObjectId(accountId) }, {
+        $set: { name: merchantName }
     }, { new: true })
+
+    await usersModel.findOneAndUpdate({ phone: findAccount.phone }, { $set: { phone: req.body.phone } }, { runValidators: true, new: true });
+
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_UPDATED,
@@ -310,7 +331,8 @@ exports.updateLinkedMachinesOfAccount = asyncWrapper(async (req, res) => {
         {
             $set: {
 
-                machines: machines.split(',').length > 0 ? machines.split(',') : machines
+                machines: machines.split(',').length > 0 ? machines.split(',') : machines,
+                 updatedBy:req.user._id
             }
         },
         { new: true });
