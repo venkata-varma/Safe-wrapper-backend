@@ -34,48 +34,31 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
     if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
         throw new Error('Invalid date format for fromDate or toDate');
     }
+    fromDate = moment.utc(fromDate).startOf("day").toDate();
+    toDate = moment.utc(toDate).endOf("day").toDate()
 
     let serialNumbersArray = [];
+    if (serialNumbers) {
+        serialNumbersArray = serialNumbers.includes(',')
+            ? serialNumbers.split(',').map((s) => s.trim())
+            : [serialNumbers];
 
-    serialNumbersArray = serialNumbers.includes(',')
-        ? serialNumbers.split(',').map((s) => s.trim())
-        : [serialNumbers];
 
-
-
+    }
 
     let cashTransactionTypesArray = [];
+    if (cashTransactionTypes) {
+        cashTransactionTypesArray = cashTransactionTypes.includes(',')
+            ? cashTransactionTypes.split(',').map((t) => t.trim())
+            : [cashTransactionTypes];
 
-    cashTransactionTypesArray = cashTransactionTypes.includes(',')
-        ? cashTransactionTypes.split(',').map((t) => t.trim())
-        : [cashTransactionTypes];
 
-
-
-    let matchConditions = {
-        transactionDateTime: {
-            $gte: moment(fromDate).toDate(),
-            $lte: moment(toDate).toDate(),
-        },
-    };
-
-    if (serialNumbersArray.length > 0) {
-        matchConditions.serialNumber = { $in: serialNumbersArray };
     }
 
-    if (cashTransactionTypesArray.length > 0) {
-        matchConditions.transactionType = { $in: cashTransactionTypesArray };
-    }
+    var [fromRange, toRange] = cashTransactionRange.split('-')
+    fromRange = parseInt(fromRange)
+    toRange = parseInt(toRange)
 
-    if (cashTransactionRange) {
-        var [fromRange, toRange] = cashTransactionRange.split('-')
-        fromRange = parseInt(fromRange)
-        toRange = parseInt(toRange)
-        matchConditions.amount = {
-            $gte: fromRange,
-            $lte: toRange,
-        }
-    }
     var userNamesArray = []
     if (userNames) {
         userNamesArray = userNames.includes(',')
@@ -86,39 +69,55 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
     }
 
 
+    let matchConditions = {
+        transactionDateTimeType: {
+            $gte: fromDate,
+            $lte: toDate,
+        },
+        amount: {
+            $gte: fromRange,
+            $lte: toRange,
+        },
+    };
 
     if (userNamesArray.length > 0) {
         matchConditions.userName = { $in: userNamesArray };
     }
 
-    const pipeline = [];
 
-    //   pipeline.push({
-    //     $addFields: {
-    //       transactionDateTime: { $toDate: '$transactionDateTime' },
-    //     },
-    //   });
+    if (serialNumbersArray.length > 0) {
+        matchConditions.serialNumber = { $in: serialNumbersArray };
+    }
 
-    pipeline.push({
-        $match: matchConditions,
-    });
-
-    pipeline.push({
-        $sort: { transactionDateTime: -1 },
-    });
-
-    pipeline.push({
-        $project: {
-            webhookMasterId: 0,
-            webhookMetaPayloadId: 0,
-            accountId: 0,
-            webhookTransactionId: 0,
+    if (cashTransactionTypesArray.length > 0) {
+        matchConditions.transactionType = { $in: cashTransactionTypesArray };
+    }
+    console.log("fromDate--=", fromDate);
+    console.log("toDate--=", toDate);
+    const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
+        {
+            $addFields: {
+                transactionDateTimeType: { $toDate: "$transactionDateTime" },
+                category: "cash"
+            }
         },
-    });
-console.log("pipleLine===", pipeline)
-    const webhookTransactionDetails = await webhookPayloadTransactions.aggregate(pipeline);
-console.log("webhookTransactionDetails===", webhookTransactionDetails)
 
+        {
+            $match: matchConditions
+        },
+        { $sort: { transactionDateTime: -1 } },
+        {
+            $project: {
+                webhookMasterId: 0,
+                webhookMetaPayloadId: 0,
+                accountId: 0,
+                webhookTransactionId: 0,
+                transactionDateTime: 0
+            }
+        }
+    ]);
+
+    console.log("webhookTransactionDetails===", webhookTransactionDetails.length)
 
     return webhookTransactionDetails
 
@@ -129,6 +128,160 @@ console.log("webhookTransactionDetails===", webhookTransactionDetails)
 
 
 
-exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, fromDate, toDate, cardTransactionRange) => {
+exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange) => {
 
+    if (!fromDate || !toDate) {
+        throw new Error(' From date, and To date are required');
+    }
+
+    if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
+        throw new Error('Invalid date format for fromDate or toDate');
+    }
+    fromDate = moment.utc(fromDate).startOf("day").toDate();
+    toDate = moment.utc(toDate).endOf("day").toDate()
+
+
+    var [fromRange, toRange] = cardTransactionRange.split('-')
+    fromRange = parseInt(fromRange)
+    toRange = parseInt(toRange)
+
+
+    let cardTransactionStatusArray = [];
+    if (cardConnectTransactionStatusKeys) {
+        cardTransactionStatusArray = cardConnectTransactionStatusKeys.includes(',')
+            ? cardConnectTransactionStatusKeys.split(',').map((s) => s.trim())
+            : [cardConnectTransactionStatusKeys];
+
+
+    }
+
+
+    let customerDetailsArray = [];
+    if (customerDetails) {
+        customerDetailsArray = customerDetails.includes(',')
+            ? customerDetails.split(',').map((s) => s.trim())
+            : [customerDetails];
+
+
+    }
+
+
+    let batchNumberArray = [];
+    if (batchNumber) {
+        batchNumberArray = batchNumber.includes(',')
+            ? batchNumber.split(',').map((s) => s.trim())
+            : [batchNumber];
+
+
+    }
+
+
+
+    let cardTransactionTypesArray = [];
+    if (cardConnecttransactionTypeKeys) {
+        cardTransactionTypesArray = cardConnecttransactionTypeKeys.includes(',')
+            ? cardConnecttransactionTypeKeys.split(',').map((t) => t.trim())
+            : [cardConnecttransactionTypeKeys];
+
+
+    }
+    console.log("fromDate-=-", fromDate)
+    console.log("toDate-=-", toDate)
+
+    let matchConditions = {
+        transactionDate: {
+            $gte: fromDate,
+            $lte: toDate,
+        },
+        amount: {
+            $gte: fromRange,
+            $lte: toRange,
+        },
+    };
+
+
+    if (cardTransactionStatusArray.length > 0) {
+        matchConditions.transactionStatus = { $in: cardTransactionStatusArray };
+    }
+
+
+    if (customerDetailsArray.length > 0) {
+        matchConditions.customerCardLastFour = { $in: customerDetailsArray };
+    }
+
+    if (batchNumberArray.length > 0) {
+        matchConditions.batchId = { $in: batchNumberArray };
+    }
+
+
+    if (cardTransactionTypesArray.length > 0) {
+        matchConditions.transactionType = { $in: cardTransactionTypesArray };
+    }
+
+
+    //----------------------__End of tuning requirements and start of aggregate----------------
+    const cardTransactionDetails = await cardConnectTransactionsModel.aggregate([
+        {
+            $addFields: {
+
+                amount: { $toDouble: "$responseObject.amount" },
+                customerName: "$customerDetails.name",
+                transactionType: "$responseObject.type",
+                transactionStatus: "$responseObject.status",
+                merchantId: "$responseObject.merchid",
+                currency: "$responseObject.currency",
+                customerCardLastFour: "$customerDetails.lastFour",
+                transactionDate: { $toDate: "$responseObject.date" },
+                batchId: "$responseObject.batchid",
+                settledDate: {
+                    $dateFromString: {
+                        dateString: {
+                            $concat: [
+                                { $substr: ["$responseObject.settledate", 0, 4] }, "-", // YYYY
+                                { $substr: ["$responseObject.settledate", 4, 2] }, "-", // MM
+                                { $substr: ["$responseObject.settledate", 6, 2] }, "T", // DD
+                                { $substr: ["$responseObject.settledate", 8, 2] }, ":", // HH
+                                { $substr: ["$responseObject.settledate", 10, 2] }, ":", // mm
+                                { $substr: ["$responseObject.settledate", 12, 2] }, "Z" // ss
+                            ]
+                        }
+                    }
+                },
+                capturedDate: {
+                    $dateFromString: {
+                        dateString: {
+                            $concat: [
+                                { $substr: ["$responseObject.capturedate", 0, 4] }, "-",
+                                { $substr: ["$responseObject.capturedate", 4, 2] }, "-",
+                                { $substr: ["$responseObject.capturedate", 6, 2] }, "T",
+                                { $substr: ["$responseObject.capturedate", 8, 2] }, ":",
+                                { $substr: ["$responseObject.capturedate", 10, 2] }, ":",
+                                { $substr: ["$responseObject.capturedate", 12, 2] }, "Z"
+                            ]
+                        }
+                    }
+                },
+                category: "card"
+            }
+        },
+
+        // {
+        //     $match: matchConditions
+        // },
+        { $sort: { transactionDate: -1 } },
+        {
+            $project: {
+                cardConnectIntegrationsCronIdCreate: 0,
+                cardConnectIntegrationsCronIdUpdate: 0,
+                accountId: 0,
+                userId: 0,
+                responseObject: 0,
+                cardConnectTransactionId: 0,
+                updatedBy: 0,
+                createdBy: 0
+            }
+        }
+    ]);
+    console.log("cardTransactionDetails===", cardTransactionDetails.length)
+    return cardTransactionDetails
 }

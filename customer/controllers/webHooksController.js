@@ -1330,22 +1330,25 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
   let { selectDashboard, } = req.query
   let returnDashboardFiltersSafeCash;
   let returnDashboardFiltersCardConnect;
-  if (selectDashboard === "safe-cash") {
+
+let selectDashboardArray=selectDashboard.split(',')
+
+
+
+
+
+  if (selectDashboardArray.includes("cash")) {
     console.log("req.query===", req.query)
     let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
     returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, accountId)
-  } else if (selectDashboard === "card-connect") {
+  } else if (selectDashboardArray.includes("card")) {
 
-    let { cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, fromDate, toDate, cardTransactionRange } = req.query
-    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, fromDate, toDate, cardTransactionRange, accountId)
-  } else if (selectDashboard === "both") {
-    let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, } = req.body
-    let { cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batches, cardTransactionRange } = req.body
+    let { cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange } = req.query
+    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange, accountId)
+  } 
 
 
-    returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(req.body)
-    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(req.body)
-  }
+
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
