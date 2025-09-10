@@ -53,17 +53,30 @@ async function createTransactionLifeCycleRecord(requestObject, integrationsMaste
 }
 
 
-async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId) {
+async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId, getAuthenticated) {
     let totalInserted = 0;
     let totalUpdated = 0;
 
 
 
-    const results = await Promise.allSettled(
+    let results = await Promise.allSettled(
         txns.map(async (txn) => {
             try {
 
+                let callSecondUrlFlowStaic = "https://{{site}}.cardconnect.com/cardconnect/rest//inquire/{{retref}}/{{merchantId}}"
+                let moidifyFinalUrl = await modifyUrl(callSecondUrlFlowStaic, integrationsMasterCredentials, "")
+                let txnRetref = txn[urlFlow?.filteredReferenceId]
 
+                let replacePlaceholder = '{{retref}}';
+
+                moidifyFinalUrl = moidifyFinalUrl.replace(replacePlaceholder, txnRetref)
+                //console.log("moidifyFinalUrl===second api", moidifyFinalUrl)
+                let axiosResponse = await GlobalHTTPMethods.handleGet(moidifyFinalUrl, getAuthenticated, integrationsMasterCredentials);
+
+                txn = {
+                    ...txn,
+                    ...axiosResponse
+                }
 
                 let filter = {
                     accountId: integrationsMasterCredentials?.accountId,
@@ -296,7 +309,7 @@ async function authenticationResponse(accountId) {
  * @param {*} currentRecord 
  * @returns 
  */
-async function modifyUrl(baseUrl, integrationsMasterCredentials, dateInput, primaryKeyValues, currentRecord) {
+async function modifyUrl(baseUrl, integrationsMasterCredentials, dateInput) {
 
 
     for (let [key, value] of Object.entries(integrationsMasterCredentials.primaryKeyValues)) {
@@ -317,16 +330,6 @@ async function modifyUrl(baseUrl, integrationsMasterCredentials, dateInput, prim
         baseUrl = baseUrl.replaceAll("{{date}}", formattedDate);
     }
 
-    for (let findPK of primaryKeyValues) {
-        if (baseUrl.includes(`{{${findPK}}}`)) {
-            let placeHolder = `{{${findPK}}}`
-            let findValueOfPKFromCurrentRecord = currentRecord[findPK]
-            baseUrl = baseUrl.replaceAll(placeHolder, findValueOfPKFromCurrentRecord);
-        }
-    }
-
-
-
 
 
     return baseUrl
@@ -338,58 +341,57 @@ async function modifyUrl(baseUrl, integrationsMasterCredentials, dateInput, prim
 
 
 
+
 /**
  * 
- * @param {*} finalResultData 
- * @param {*} urlFlow 
- * @param {*} cardConnectUrl 
- * @param {*} filteredReferenceId 
- * @param {*} dataMappingPath 
- * @param {*} primaryKeyValues 
+ * @param {*} apiUrlFlows 
  * @param {*} getAuthenticated 
+ * @param {*} integrationsMasterCredentials 
  * @param {*} date 
  * @param {*} integrationsCronId 
- * @param {*} statusKey 
- * @param {*} integrationsMasterCredentials 
- * @param {*} apiUrlFlowsLength 
- * @returns 
  */
-async function preProccessUrlFlows(finalResultData, urlFlow, cardConnectUrl, filteredReferenceId, dataMappingPath, primaryKeyValues, getAuthenticated, date, integrationsCronId, statusKey, integrationsMasterCredentials, apiUrlFlowsLength) {
-    if (finalResultData.length === 0) {
+const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, integrationsCronId) => {
+    var upsertRecord = {
+        totalInserted: 0,
+        totalUpdated: 0
+    };
 
-        let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date, primaryKeyValues, {});
+
+
+    for (let urlFlow of apiUrlFlows) {
+
+        let cardConnectUrl = urlFlow.url;
+
+        let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date);
         console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
         if (urlFlow.paginationRequired === true) {
 
 
             let page = 1;
+
             while (true) {
                 let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=10000`;
 
                 let response = await GlobalHTTPMethods.handleGet(finalUrl, getAuthenticated, integrationsMasterCredentials);
                 if (Array.isArray(urlFlow.dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
 
-                    var txns = response?.[dataMappingPath] ?? [];
+                    txns = response?.[urlFlow.dataMappingPath[0]] ?? [];
 
                 } else {
                     // No mapping → assume whole response is transactions
-                    var txns = response ?? [];
+                    txns = response ?? [];
                 }
 
 
 
 
                 totalFetched = txns.length;
-                if (Array.isArray(finalResultData)) {
-
-                    finalResultData = [
-                        ...finalResultData,
-                        ...txns
-                    ]
-
-                }
                 await cardConnectIntegrationsCronsModel.findByIdAndUpdate(integrationsCronId, { $inc: { pulledCount: totalFetched } }, { new: true, runValidators: true })
                 console.log(`Fetched page ${page}, ${txns.length} records`);
+                if (txns.length > 0) {
+                    upsertRecord = await upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId, getAuthenticated);
+                    console.log("upsertRecord===", upsertRecord)
+                }
 
 
 
@@ -413,108 +415,16 @@ async function preProccessUrlFlows(finalResultData, urlFlow, cardConnectUrl, fil
             //
             console.log("pagination not required case")
         }
-        return finalResultData
-    } else if (finalResultData.length > 0) {
-        if (urlFlow.paginationRequired === true) {
-            console.log("pagination===true")
-        } else if (urlFlow.paginationRequired === false) {
-            let finalResponsesArray = []
-            for (let currentRecord of finalResultData) {
-                if (urlFlow.order === apiUrlFlowsLength) {
-                    let filter = {
-                        accountId: integrationsMasterCredentials.accountId,
-                        transactionId: currentRecord[filteredReferenceId],
-                        transactionStatus: currentRecord[statusKey]
-                    };
-
-                    let existingRecord = await cardConnectTransactionLifeCycleModel.findOne(filter).lean();
-
-                    if (existingRecord) {
-                        // Skip this record, continue with next one
-                        continue;
-                    }
-                }
-
-                let prepareUrlWithPKV = await modifyUrl(cardConnectUrl, integrationsMasterCredentials, date, primaryKeyValues, currentRecord);
-                //console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
-                let response = await GlobalHTTPMethods.handleGet(prepareUrlWithPKV, getAuthenticated, integrationsMasterCredentials);
-
-                if (Array.isArray(dataMappingPath) && urlFlow.dataMappingPath.length > 0) {
-
-                    var txn = response?.[dataMappingPath] ?? [];
-
-                } else {
-                    // No mapping → assume whole response is transactions
-                    var txn = response ?? [];
-                }
-                let finalResponse =
-                {
-                    ...currentRecord,
-                    ...txn
-                }
-                finalResponsesArray.push(finalResponse)
-            }
-            return finalResponsesArray
-        }
-
 
     }
 
 
-
-
-}
-
-
-
-
-/**
- * 
- * @param {*} apiUrlFlows 
- * @param {*} getAuthenticated 
- * @param {*} integrationsMasterCredentials 
- * @param {*} date 
- * @param {*} integrationsCronId 
- */
-const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, integrationsCronId) => {
-
-    var upsertRecord = {
-        totalInserted: 0,
-        totalUpdated: 0
+    return {
+        date,
+        totalFetched,
+        ...upsertRecord
     }
 
-    let apiUrlFlowsLength = apiUrlFlows.length;
-
-    let finalResultData = [];
-    let filteredReferenceId, dataMappingPath, primaryKeyValues, statusKey, cardConnectUrl;
-    let latestAPIUrlFlow;
-
-    for (let urlFlow of apiUrlFlows) {
-        console.log("urlFlow===", urlFlow.url, urlFlow.filteredReferenceId, urlFlow.dataMappingPath,)
-
-
-        cardConnectUrl = urlFlow.url;
-        latestAPIUrlFlow = urlFlow;
-        filteredReferenceId = urlFlow.filteredReferenceId;
-        dataMappingPath = urlFlow.dataMappingPath[0]
-        primaryKeyValues = urlFlow.primaryKeyValues
-        statusKey = urlFlow === null ? "status" : urlFlow.statusKey;  //remember that this might be hard-coded- just 1 percent possibility
-        finalResultData = await preProccessUrlFlows(finalResultData, urlFlow, cardConnectUrl, filteredReferenceId, dataMappingPath, primaryKeyValues, getAuthenticated, date, integrationsCronId, statusKey, integrationsMasterCredentials, apiUrlFlowsLength)
-
-
-
-
-
-
-
-    }
-    console.log("out of loop of url flow-===", finalResultData.length)
-    // console.log("out of loop of url flow-===", finalResultData[0])
-    // txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId
-    if (![null, undefined].includes(finalResultData) && Array.isArray(finalResultData) && finalResultData.length > 0) {
-        upsertRecord = await upSertRecord(finalResultData, integrationsMasterCredentials, latestAPIUrlFlow, cardConnectUrl, integrationsCronId)
-    }
-    return upsertRecord;
 }
 
 
@@ -529,7 +439,6 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
  */
 async function initiateManualTrigger(dateRange, integrationsMasterDetails, accountId, integrationsCronId) {
 
-    let gatherEachDayResponses = [];
 
 
     for (let date of dateRange) {
@@ -542,13 +451,10 @@ async function initiateManualTrigger(dateRange, integrationsMasterDetails, accou
 
         let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, integrationsCronId);
         console.log("processFlows===", processFlows)
-        //  gatherEachDayResponses.push(processFlows)
-
 
 
     }
 
-    // return gatherEachDayResponses
 
 }
 
