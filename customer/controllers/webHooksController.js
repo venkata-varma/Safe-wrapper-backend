@@ -1330,8 +1330,8 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
   let { selectDashboard, } = req.query
   let returnDashboardFiltersSafeCash;
   let returnDashboardFiltersCardConnect;
-
-let selectDashboardArray=selectDashboard.split(',')
+  let cashAndCardMixResultArray = []
+  let selectDashboardArray = selectDashboard.split(',')
 
 
 
@@ -1343,12 +1343,19 @@ let selectDashboardArray=selectDashboard.split(',')
     returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, accountId)
   } else if (selectDashboardArray.includes("card")) {
 
-    let { cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange } = req.query
-    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange, accountId)
-  } 
+    let { cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange } = req.query
+    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange, accountId)
+  }
 
+if(Array.isArray(returnDashboardFiltersSafeCash) ||Array.isArray(returnDashboardFiltersCardConnect)   ){
 
+  cashAndCardMixResultArray=[
+    ...returnDashboardFiltersSafeCash,
+    ...returnDashboardFiltersCardConnect
+  ]
+}
 
+console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -1356,6 +1363,9 @@ let selectDashboardArray=selectDashboard.split(',')
     data: {
       returnDashboardFiltersSafeCash,
       returnDashboardFiltersCardConnect
+
+
+      // cashAndCardMixResultArray
     },
   });
 

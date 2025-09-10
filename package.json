@@ -21,6 +21,7 @@
     "express": "^4.19.2",
     "flatted": "^3.3.2",
     "fs": "^0.0.1-security",
+    "gopd": "^1.2.0",
     "human-to-cron": "^0.3.1",
     "joi": "^17.13.1",
     "js-yaml": "^4.1.0",

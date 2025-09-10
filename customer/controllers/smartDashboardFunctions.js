@@ -128,7 +128,7 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
 
 
 
-exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, cardConnectTransactionStatusKeys, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange) => {
+exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange) => {
 
     if (!fromDate || !toDate) {
         throw new Error(' From date, and To date are required');
@@ -147,10 +147,10 @@ exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, car
 
 
     let cardTransactionStatusArray = [];
-    if (cardConnectTransactionStatusKeys) {
-        cardTransactionStatusArray = cardConnectTransactionStatusKeys.includes(',')
-            ? cardConnectTransactionStatusKeys.split(',').map((s) => s.trim())
-            : [cardConnectTransactionStatusKeys];
+    if (cardTransactionStatus) {
+        cardTransactionStatusArray = cardTransactionStatus.includes(',')
+            ? cardTransactionStatus.split(',').map((s) => s.trim())
+            : [cardTransactionStatus];
 
 
     }
@@ -178,46 +178,17 @@ exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, car
 
 
     let cardTransactionTypesArray = [];
-    if (cardConnecttransactionTypeKeys) {
-        cardTransactionTypesArray = cardConnecttransactionTypeKeys.includes(',')
-            ? cardConnecttransactionTypeKeys.split(',').map((t) => t.trim())
-            : [cardConnecttransactionTypeKeys];
+    if (cardTransactionTypes) {
+        cardTransactionTypesArray = cardTransactionTypes.includes(',')
+            ? cardTransactionTypes.split(',').map((t) => t.trim())
+            : [cardTransactionTypes];
 
 
     }
     console.log("fromDate-=-", fromDate)
     console.log("toDate-=-", toDate)
 
-    // let matchConditions = {
-    //     capturedDate: {
-    //         $gte: fromDate,
-    //         $lte: toDate,
-    //     },
-    //     amount: {
-    //         $gte: fromRange,
-    //         $lte: toRange,
-    //     },
-    // };
-
-
-    // if (cardTransactionStatusArray.length > 0) {
-    //     matchConditions.transactionStatus = { $in: cardTransactionStatusArray };
-    // }
-
-
-    // if (customerDetailsArray.length > 0) {
-    //     matchConditions.customerCardLastFour = { $in: customerDetailsArray };
-    // }
-
-    // if (batchNumberArray.length > 0) {
-    //     matchConditions.batchId = { $in: batchNumberArray };
-    // }
-
-
-    // if (cardTransactionTypesArray.length > 0) {
-    //     matchConditions.transactionType = { $in: cardTransactionTypesArray };
-    // }
-
+    
 
     //----------------------__End of tuning requirements and start of aggregate----------------
     const cardTransactionDetails = await cardConnectTransactionsModel.aggregate([
@@ -233,45 +204,45 @@ exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, car
                 customerCardLastFour: "$customerDetails.lastFour",
                 transactionDate: { $toDate: "$responseObject.date" },
                 batchId: "$responseObject.batchid",
-                settledDate: {
-                    $dateFromString: {
-                        dateString: {
-                            $concat: [
-                                { $substr: ["$responseObject.settledate", 0, 4] }, "-", // YYYY
-                                { $substr: ["$responseObject.settledate", 4, 2] }, "-", // MM
-                                { $substr: ["$responseObject.settledate", 6, 2] }, "T", // DD
-                                { $substr: ["$responseObject.settledate", 8, 2] }, ":", // HH
-                                { $substr: ["$responseObject.settledate", 10, 2] }, ":", // mm
-                                { $substr: ["$responseObject.settledate", 12, 2] }, "Z" // ss
-                            ]
-                        }
-                    }
-                },
-                capturedDate: {
-                    $dateFromString: {
-                        dateString: {
-                            $concat: [
-                                { $substr: ["$responseObject.capturedate", 0, 4] }, "-",
-                                { $substr: ["$responseObject.capturedate", 4, 2] }, "-",
-                                { $substr: ["$responseObject.capturedate", 6, 2] }, "T",
-                                { $substr: ["$responseObject.capturedate", 8, 2] }, ":",
-                                { $substr: ["$responseObject.capturedate", 10, 2] }, ":",
-                                { $substr: ["$responseObject.capturedate", 12, 2] }, "Z"
-                            ]
-                        }
-                    }
-                },
+                // settledDate: {
+                //     $dateFromString: {
+                //         dateString: {
+                //             $concat: [
+                //                 { $substr: ["$responseObject.settledate", 0, 4] }, "-", // YYYY
+                //                 { $substr: ["$responseObject.settledate", 4, 2] }, "-", // MM
+                //                 { $substr: ["$responseObject.settledate", 6, 2] }, "T", // DD
+                //                 { $substr: ["$responseObject.settledate", 8, 2] }, ":", // HH
+                //                 { $substr: ["$responseObject.settledate", 10, 2] }, ":", // mm
+                //                 { $substr: ["$responseObject.settledate", 12, 2] }, "Z" // ss
+                //             ]
+                //         }
+                //     }
+                // },
+                // capturedDate: {
+                //     $dateFromString: {
+                //         dateString: {
+                //             $concat: [
+                //                 { $substr: ["$responseObject.capturedate", 0, 4] }, "-",
+                //                 { $substr: ["$responseObject.capturedate", 4, 2] }, "-",
+                //                 { $substr: ["$responseObject.capturedate", 6, 2] }, "T",
+                //                 { $substr: ["$responseObject.capturedate", 8, 2] }, ":",
+                //                 { $substr: ["$responseObject.capturedate", 10, 2] }, ":",
+                //                 { $substr: ["$responseObject.capturedate", 12, 2] }, "Z"
+                //             ]
+                //         }
+                //     }
+                // },
                 category: "card"
             }
         },
         {
             $match: {
-                capturedDate: {
+                transactionDate: {
                     $gte: fromDate,
                     $lte: toDate
                 },
                 amount: {
-                    $gte: fromRange,
+                    $lte: fromRange,    // Both are $lte because as Negative numbers might be involved 
                     $lte: toRange
                 },
                 ...(cardTransactionStatusArray.length > 0 && { transactionStatus: { $in: cardTransactionStatusArray } }),
@@ -295,6 +266,6 @@ exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, car
             }
         }
     ]);
-    // console.log("cardTransactionDetails===", (cardTransactionDetails[0].capturedDate))
+    console.log("cardTransactionDetails===", (cardTransactionDetails.length))
     return cardTransactionDetails
 }
