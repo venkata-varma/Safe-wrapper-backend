@@ -1332,7 +1332,7 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
   let returnDashboardFiltersCardConnect;
   let cashAndCardMixResultArray = []
   let selectDashboardArray = selectDashboard.split(',')
-
+console.log("selectDashboardArray===",selectDashboardArray)
 
 
 
@@ -1341,19 +1341,29 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
     console.log("req.query===", req.query)
     let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
     returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, accountId)
-  } else if (selectDashboardArray.includes("card")) {
+  } 
+  
+  if (selectDashboardArray.includes("card")) {
 
     let { cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange } = req.query
     returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange, accountId)
   }
 
-if(Array.isArray(returnDashboardFiltersSafeCash) ||Array.isArray(returnDashboardFiltersCardConnect)   ){
+  // ✅ Merge & sort results if both exist
+  if (
+    Array.isArray(returnDashboardFiltersSafeCash) ||
+    Array.isArray(returnDashboardFiltersCardConnect)
+  ) {
+    cashAndCardMixResultArray = [
+      ...(returnDashboardFiltersSafeCash || []),
+      ...(returnDashboardFiltersCardConnect || []),
+    ];
 
-  cashAndCardMixResultArray=[
-    ...returnDashboardFiltersSafeCash,
-    ...returnDashboardFiltersCardConnect
-  ]
-}
+    // Sort by transactionDate (descending)
+    cashAndCardMixResultArray.sort(
+      (a, b) => new Date(b.transactionDate) - new Date(a.transactionDate)
+    );
+  }
 
 console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
 
@@ -1361,11 +1371,11 @@ console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
     data: {
-      returnDashboardFiltersSafeCash,
-      returnDashboardFiltersCardConnect
+      // returnDashboardFiltersSafeCash,
+      // returnDashboardFiltersCardConnect
 
 
-      // cashAndCardMixResultArray
+       cashAndCardMixResultArray
     },
   });
 

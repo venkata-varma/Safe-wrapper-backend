@@ -26,7 +26,8 @@ const {
   updateWebhookStatus,
   updateWebhookAutoDataSyncStatus,
   getWebhookDetailsOfAccount,
-  getOneHubPosLogsDetails
+  getOneHubPosLogsDetails,
+  superAdminSmartFilteredDashboard
 } = require("../controllers/superAdminWebhooksController");
 
 router.post(
@@ -68,5 +69,8 @@ router.get('/get-onehubpos-logs-details',getOneHubPosLogsDetails)
 
 //One POS
 router.get('/get-transactions-reports',validateAuthentication, getTransactionsReports)
+
+
+router.get('/super-admin-smart-filtered-dashboard', superAdminSmartFilteredDashboard)
 
 module.exports = router;

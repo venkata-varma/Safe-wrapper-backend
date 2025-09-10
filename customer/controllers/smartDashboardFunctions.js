@@ -70,7 +70,7 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
 
 
     let matchConditions = {
-        transactionDateTimeType: {
+        transactionDate: {
             $gte: fromDate,
             $lte: toDate,
         },
@@ -97,7 +97,7 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
     const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
         {
             $addFields: {
-                transactionDateTimeType: { $toDate: "$transactionDateTime" },
+                transactionDate: { $toDate: "$transactionDateTime" },
                 category: "cash"
             }
         },
@@ -105,7 +105,7 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
         {
             $match: matchConditions
         },
-        { $sort: { transactionDateTime: -1 } },
+        { $sort: { transactionDate: -1 } },
         {
             $project: {
                 webhookMasterId: 0,
@@ -188,7 +188,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
     console.log("fromDate-=-", fromDate)
     console.log("toDate-=-", toDate)
 
-    
+
 
     //----------------------__End of tuning requirements and start of aggregate----------------
     const cardTransactionDetails = await cardConnectTransactionsModel.aggregate([
@@ -203,7 +203,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 currency: "$responseObject.currency",
                 customerCardLastFour: "$customerDetails.lastFour",
                 transactionDate: { $toDate: "$responseObject.date" },
-                batchId: "$responseObject.batchid",
+                batchId: { $toString: { $ifNull: ["$responseObject.batchid", ""] } },
                 // settledDate: {
                 //     $dateFromString: {
                 //         dateString: {
@@ -218,26 +218,78 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 //         }
                 //     }
                 // },
-                // capturedDate: {
-                //     $dateFromString: {
-                //         dateString: {
-                //             $concat: [
-                //                 { $substr: ["$responseObject.capturedate", 0, 4] }, "-",
-                //                 { $substr: ["$responseObject.capturedate", 4, 2] }, "-",
-                //                 { $substr: ["$responseObject.capturedate", 6, 2] }, "T",
-                //                 { $substr: ["$responseObject.capturedate", 8, 2] }, ":",
-                //                 { $substr: ["$responseObject.capturedate", 10, 2] }, ":",
-                //                 { $substr: ["$responseObject.capturedate", 12, 2] }, "Z"
-                //             ]
-                //         }
-                //     }
-                // },
+                capturedDate: {
+                    $switch: {
+                        branches: [
+                            // Case: 14 digits (YYYYMMDDHHmmss)
+                            {
+                                case: {
+                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.capturedate", ""] } }, 14]
+                                },
+                                then: {
+                                    $dateFromString: {
+                                        dateString: {
+                                            $concat: [
+                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 0, 4] }, "-",
+                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 4, 2] }, "-",
+                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 6, 2] }, "T",
+                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 8, 2] }, ":",
+                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 10, 2] }, ":",
+                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 12, 2] }, "Z"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            // Case: 8 digits (YYYYMMDD)
+                            {
+                                case: {
+                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.capturedate", ""] } }, 8]
+                                },
+                                then: {
+                                    $dateFromString: {
+                                        dateString: {
+                                            $concat: [
+                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 0, 4] }, "-",
+                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 4, 2] }, "-",
+                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 6, 2] }, "T00:00:00Z"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            // Case: epoch seconds (10 digits)
+                            {
+                                case: {
+                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.capturedate", ""] } }, 10]
+                                },
+                                then: {
+                                    $toDate: {
+                                        $multiply: [{ $toLong: { $ifNull: ["$responseObject.capturedate", 0] } }, 1000]
+                                    }
+                                }
+                            },
+                            // Case: epoch millis (13 digits)
+                            {
+                                case: {
+                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.capturedate", ""] } }, 13]
+                                },
+                                then: {
+                                    $toDate: { $toLong: { $ifNull: ["$responseObject.capturedate", 0] } }
+                                }
+                            }
+                        ],
+                        // Default: fallback to transactionDate
+                        default: { $toDate: "$responseObject.date" }
+                    }
+                },
+
                 category: "card"
             }
         },
         {
             $match: {
-                transactionDate: {
+                capturedDate: {
                     $gte: fromDate,
                     $lte: toDate
                 },
@@ -252,17 +304,18 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
 
             }
         },
-        { $sort: { transactionDate: -1 } },
+        { $sort: { capturedDate: -1 } },
         {
             $project: {
-                cardConnectIntegrationsCronIdCreate: 0,
-                cardConnectIntegrationsCronIdUpdate: 0,
-                accountId: 0,
-                userId: 0,
-                responseObject: 0,
-                cardConnectTransactionId: 0,
-                updatedBy: 0,
-                createdBy: 0
+                _id:1
+                // cardConnectIntegrationsCronIdCreate: 0,
+                // cardConnectIntegrationsCronIdUpdate: 0,
+                // accountId: 0,
+                // userId: 0,
+                // responseObject: 0,
+                // cardConnectTransactionId: 0,
+                // updatedBy: 0,
+                // createdBy: 0
             }
         }
     ]);

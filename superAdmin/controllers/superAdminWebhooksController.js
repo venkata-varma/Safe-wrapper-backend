@@ -21,6 +21,7 @@ const usersModel = require("../../models/usersModel");
 const onePosLogsModel = require("../../models/onePosLogsModel");
 const { insertPosLogs } = require("../../utils/utilsFunctions");
 const { authentication } = require("../../utils/authentication");
+const { dashboardFiltersSafeCash, dashboardFiltersCardConnect } = require("../../customer/controllers/smartDashboardFunctions");
 
 
 /**
@@ -1172,26 +1173,56 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
     // {
     //   $match: {
-    //     serialNumber : serialNumber
-    //   },
+    //     ...matchCondition
+    //   }
     // },
     {
-      $group: {
-        _id: null,
-        serialNumbers: { $addToSet: "$serialNumber" },
-        transactionTypes: { $addToSet: "$transactionType" },
-        userNames: { $addToSet: "$userName" }
-      },
+      $addFields: {
+        userName: {
+          $cond: {
+            if: { $eq: ["$userName", ""] },  // check if empty string
+            then: "unknown",                  // replace with "unknown"
+            else: "$userName"
+          }
+        }
+      }
+    },
+    {
+      $facet: {
+        serialNumbers: [
+          { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
+          { $project: { _id: 0, serialNumbers: 1 } }
+        ],
+        transactionTypes: [
+          { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
+          { $project: { _id: 0, transactionTypes: 1 } }
+        ],
+        userNamesOfMachine: [
+          {
+            $group: {
+              _id: "$serialNumber",
+              userNames: { $addToSet: "$userName" }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              serialNumber: "$_id",
+              userNames: 1
+            }
+          }
+        ]
+      }
     },
     {
       $project: {
-        _id: 0,
-        serialNumbers: 1,
-        userNames: 1,
-        transactionTypes: 1,
-      },
-    },
+        serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
+        transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
+        userNamesOfMachine: 1
+      }
+    }
   ]);
+
   // const listOfWebhooks = await webHooksMasterModel.find({})
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -2958,4 +2989,61 @@ exports.getOneHubPosLogsDetails = asyncWrapper(async (req, res) => {
       message: customConstants.messages.MESSAGE_GET_ONE_HUB_POS_LOGS,
       data: oneHubposDetails
     });
+})
+
+
+
+exports.superAdminSmartFilteredDashboard=asyncWrapper(async(req,res)=>{
+    let { selectDashboard, } = req.query
+    let returnDashboardFiltersSafeCash;
+    let returnDashboardFiltersCardConnect;
+    let cashAndCardMixResultArray = []
+    let selectDashboardArray = selectDashboard.split(',')
+  console.log("selectDashboardArray===",selectDashboardArray)
+  
+  
+  
+  
+    if (selectDashboardArray.includes("cash")) {
+      console.log("req.query===", req.query)
+      let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
+      returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, "")
+    } 
+    
+    if (selectDashboardArray.includes("card")) {
+  
+      let { cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange } = req.query
+      returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange, "")
+    }
+  
+    // ✅ Merge & sort results if both exist
+    if (
+      Array.isArray(returnDashboardFiltersSafeCash) ||
+      Array.isArray(returnDashboardFiltersCardConnect)
+    ) {
+      cashAndCardMixResultArray = [
+        ...(returnDashboardFiltersSafeCash || []),
+        ...(returnDashboardFiltersCardConnect || []),
+      ];
+  
+      // Sort by transactionDate (descending)
+      cashAndCardMixResultArray.sort(
+        (a, b) => new Date(b.transactionDate) - new Date(a.transactionDate)
+      );
+    }
+  
+  console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
+  
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+      data: {
+        // returnDashboardFiltersSafeCash,
+        // returnDashboardFiltersCardConnect
+  
+  
+         cashAndCardMixResultArray
+      },
+    });
+  
 })
