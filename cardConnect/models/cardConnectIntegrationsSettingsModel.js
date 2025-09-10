@@ -33,7 +33,7 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
         currentStatus: {
             type: String,
             enum: ['start', 'stop'],
-            default: "stop"
+            default: "start"
         },
         interval: {
             type: Number,

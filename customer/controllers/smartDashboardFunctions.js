@@ -188,35 +188,35 @@ exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, car
     console.log("fromDate-=-", fromDate)
     console.log("toDate-=-", toDate)
 
-    let matchConditions = {
-        transactionDate: {
-            $gte: fromDate,
-            $lte: toDate,
-        },
-        amount: {
-            $gte: fromRange,
-            $lte: toRange,
-        },
-    };
+    // let matchConditions = {
+    //     capturedDate: {
+    //         $gte: fromDate,
+    //         $lte: toDate,
+    //     },
+    //     amount: {
+    //         $gte: fromRange,
+    //         $lte: toRange,
+    //     },
+    // };
 
 
-    if (cardTransactionStatusArray.length > 0) {
-        matchConditions.transactionStatus = { $in: cardTransactionStatusArray };
-    }
+    // if (cardTransactionStatusArray.length > 0) {
+    //     matchConditions.transactionStatus = { $in: cardTransactionStatusArray };
+    // }
 
 
-    if (customerDetailsArray.length > 0) {
-        matchConditions.customerCardLastFour = { $in: customerDetailsArray };
-    }
+    // if (customerDetailsArray.length > 0) {
+    //     matchConditions.customerCardLastFour = { $in: customerDetailsArray };
+    // }
 
-    if (batchNumberArray.length > 0) {
-        matchConditions.batchId = { $in: batchNumberArray };
-    }
+    // if (batchNumberArray.length > 0) {
+    //     matchConditions.batchId = { $in: batchNumberArray };
+    // }
 
 
-    if (cardTransactionTypesArray.length > 0) {
-        matchConditions.transactionType = { $in: cardTransactionTypesArray };
-    }
+    // if (cardTransactionTypesArray.length > 0) {
+    //     matchConditions.transactionType = { $in: cardTransactionTypesArray };
+    // }
 
 
     //----------------------__End of tuning requirements and start of aggregate----------------
@@ -264,10 +264,23 @@ exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, car
                 category: "card"
             }
         },
+        {
+            $match: {
+                capturedDate: {
+                    $gte: fromDate,
+                    $lte: toDate
+                },
+                amount: {
+                    $gte: fromRange,
+                    $lte: toRange
+                },
+                ...(cardTransactionStatusArray.length > 0 && { transactionStatus: { $in: cardTransactionStatusArray } }),
+                ...(customerDetailsArray.length > 0 && { customerCardLastFour: { $in: customerDetailsArray } }),
+                ...(batchNumberArray.length > 0 && { batchId: { $in: batchNumberArray } }),
+                ...(cardTransactionTypesArray.length > 0 && { transactionType: { $in: cardTransactionTypesArray } }),
 
-        // {
-        //     $match: matchConditions
-        // },
+            }
+        },
         { $sort: { transactionDate: -1 } },
         {
             $project: {
@@ -282,6 +295,6 @@ exports.dashboardFiltersCardConnect = async (cardConnecttransactionTypeKeys, car
             }
         }
     ]);
-    console.log("cardTransactionDetails===", cardTransactionDetails.length)
+    // console.log("cardTransactionDetails===", (cardTransactionDetails[0].capturedDate))
     return cardTransactionDetails
 }
