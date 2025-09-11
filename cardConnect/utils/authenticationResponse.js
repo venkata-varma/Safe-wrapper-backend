@@ -57,94 +57,114 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
     let totalInserted = 0;
     let totalUpdated = 0;
 
-    for (const txn of txns) {
-        try {
-            // build inquire API url
-            // let callSecondUrlFlowStaic = "https://{{site}}.cardconnect.com/cardconnect/rest//inquire/{{retref}}/{{merchantId}}";
-            // let moidifyFinalUrl = await modifyUrl(callSecondUrlFlowStaic, integrationsMasterCredentials, "");
-            // let txnRetref = txn[urlFlow?.filteredReferenceId];
 
-            // moidifyFinalUrl = moidifyFinalUrl.replace("{{retref}}", txnRetref);
 
-            // // call inquire API
-            // let axiosResponse = await GlobalHTTPMethods.handleGet(moidifyFinalUrl, getAuthenticated, integrationsMasterCredentials);
+    let results = await Promise.allSettled(
+        txns.map(async (txn) => {
+            try {
 
-            // // merge original txn with inquire API response
-            // let mergedTxn = {
-            //     ...txn,
-            //     ...axiosResponse
-            // };
+                let callSecondUrlFlowStaic = "https://{{site}}.cardconnect.com/cardconnect/rest//inquire/{{retref}}/{{merchantId}}"
+                let moidifyFinalUrl = await modifyUrl(callSecondUrlFlowStaic, integrationsMasterCredentials, "")
+                let txnRetref = txn[urlFlow?.filteredReferenceId]
 
-            let filter = {
-                accountId: integrationsMasterCredentials?.accountId,
-                referenceId: mergedTxn[urlFlow?.filteredReferenceId]
-            };
+                let replacePlaceholder = '{{retref}}';
 
-            let existingRecord = await cardConnectTransactionsModel.findOne(filter);
+                moidifyFinalUrl = moidifyFinalUrl.replace(replacePlaceholder, txnRetref)
+                //console.log("moidifyFinalUrl===second api", moidifyFinalUrl)
+                let axiosResponse = await GlobalHTTPMethods.handleGet(moidifyFinalUrl, getAuthenticated, integrationsMasterCredentials);
 
-            let requestObject = {
-                accountId: integrationsMasterCredentials?.accountId,
-                userId: integrationsMasterCredentials?.userId,
-                responseObject: mergedTxn,
-                cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
-                referenceId: mergedTxn[urlFlow?.filteredReferenceId],
-                referenceStatus: mergedTxn[urlFlow?.statusKey],
-                // customerDetails: {
-                //     name: mergedTxn?.name,
-                //     cardNumber: mergedTxn?.cardnumber,
-                //     lastFour: mergedTxn?.lastfour,
-                //     cardBrand: mergedTxn?.cardbrand,
-                //     cardType: mergedTxn?.cardtype
-                // }
-            };
+                txn = {
+                    ...txn,
+                    ...axiosResponse
+                }
 
-            if (!existingRecord) {
-                await cardConnectTransactionsModel.create(requestObject);
-                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
-                await cardConnectIntegrationsCronsModel.findByIdAndUpdate(
-                    integrationsCronId,
-                    { $inc: { pushedCount: 1 } },
-                    { new: true, runValidators: true }
-                );
-                totalInserted++;
-            } else if (existingRecord.referenceStatus !== mergedTxn[urlFlow?.statusKey]) {
-                await cardConnectTransactionsModel.updateOne(
-                    { _id: existingRecord?._id },
-                    {
-                        $set: {
-                            referenceStatus: mergedTxn[urlFlow?.statusKey],
-                            responseObject: mergedTxn,
-                            cardConnectIntegrationsCronIdUpdate: new mongoose.Types.ObjectId(integrationsCronId)
-                        }
+                let filter = {
+                    accountId: integrationsMasterCredentials?.accountId,
+                    referenceId: txn[urlFlow?.filteredReferenceId]
+                };
+
+                let existingRecord = await cardConnectTransactionsModel.findOne(filter);
+
+
+
+                let requestObject = {
+
+                    accountId: integrationsMasterCredentials?.accountId,
+                    userId: integrationsMasterCredentials?.userId,
+                    responseObject: txn,
+                    cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
+                    referenceId: txn[urlFlow?.filteredReferenceId],
+                    referenceStatus: txn[urlFlow?.statusKey],
+                    //There is one array in settins for keys for below customerDetails. 
+                    // we can obviously use that, loop and get the key-value pairs. But, as of now, to lessen time and do it if it is realy necessary when other Stripe or other arrives.
+                    customerDetails: {
+                        name: txn?.name,
+                        cardNumber: txn?.cardnumber,
+                        lastFour: txn?.lastfour,
+                        cardBrand: txn?.cardbrand,
+                        cardType: txn?.cardtype
                     }
+                };
+
+                if (!existingRecord) {
+                    await cardConnectTransactionsModel.create(requestObject);
+                    await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
+                    await cardConnectIntegrationsCronsModel.findByIdAndUpdate(
+                        integrationsCronId,
+                        { $inc: { pushedCount: 1 } },
+                        { new: true, runValidators: true }
+                    );
+                    return { inserted: 1, updated: 0 };
+
+                } else if (existingRecord.referenceStatus !== txn[urlFlow.statusKey]) {
+                    await cardConnectTransactionsModel.updateOne(
+                        { _id: existingRecord?._id },
+                        {
+                            $set: {
+                                referenceStatus: txn[urlFlow?.statusKey],
+                                responseObject: txn,
+                                cardConnectIntegrationsCronIdUpdate: new mongoose.Types.ObjectId(integrationsCronId)
+                            }
+                        }
+                    );
+                    await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
+                    await cardConnectIntegrationsCronsModel.findByIdAndUpdate(
+                        integrationsCronId,
+                        { $inc: { updatedCount: 1 } },
+                        { new: true, runValidators: true }
+                    );
+                    return { inserted: 0, updated: 1 };
+                }
+
+                return { inserted: 0, updated: 0 };
+
+            } catch (error) {
+                console.error("Error in upsert for txn:", error);
+                await cardConnectExceptionLogs(
+                    integrationsMasterCredentials,
+                    error.response?.status || 500,
+                    error?.message,
+                    error?.name,
+                    txn,
+                    finalUrl,
+                    txn[urlFlow?.filteredReferenceId],
+                    integrationsCronId
                 );
-                await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
-                await cardConnectIntegrationsCronsModel.findByIdAndUpdate(
-                    integrationsCronId,
-                    { $inc: { updatedCount: 1 } },
-                    { new: true, runValidators: true }
-                );
-                totalUpdated++;
+                return { inserted: 0, updated: 0 };
             }
-        } catch (error) {
-            console.error("Error in upsert for txn:", error);
-            await cardConnectExceptionLogs(
-                integrationsMasterCredentials,
-                error.response?.status || 500,
-                error?.message,
-                error?.name,
-                txn,
-                finalUrl,
-                txn[urlFlow?.filteredReferenceId],
-                integrationsCronId
-            );
+        })
+    );
+
+    // aggregate results
+    for (const r of results) {
+        if (r.status === "fulfilled") {
+            totalInserted += r.value.inserted;
+            totalUpdated += r.value.updated;
         }
     }
 
     return { totalInserted, totalUpdated };
 }
-
-
 
 
 
