@@ -63,20 +63,6 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
         txns.map(async (txn) => {
             try {
 
-                let callSecondUrlFlowStaic = "https://{{site}}.cardconnect.com/cardconnect/rest//inquire/{{retref}}/{{merchantId}}"
-                let moidifyFinalUrl = await modifyUrl(callSecondUrlFlowStaic, integrationsMasterCredentials, "")
-                let txnRetref = txn[urlFlow?.filteredReferenceId]
-
-                let replacePlaceholder = '{{retref}}';
-
-                moidifyFinalUrl = moidifyFinalUrl.replace(replacePlaceholder, txnRetref)
-                //console.log("moidifyFinalUrl===second api", moidifyFinalUrl)
-                let axiosResponse = await GlobalHTTPMethods.handleGet(moidifyFinalUrl, getAuthenticated, integrationsMasterCredentials);
-
-                txn = {
-                    ...txn,
-                    ...axiosResponse
-                }
 
                 let filter = {
                     accountId: integrationsMasterCredentials?.accountId,
@@ -98,9 +84,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                     //There is one array in settins for keys for below customerDetails. 
                     // we can obviously use that, loop and get the key-value pairs. But, as of now, to lessen time and do it if it is realy necessary when other Stripe or other arrives.
                     customerDetails: {
-                        name: txn?.name,
                         cardNumber: txn?.cardnumber,
-                        lastFour: txn?.lastfour,
                         cardBrand: txn?.cardbrand,
                         cardType: txn?.cardtype
                     }
@@ -108,7 +92,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
 
                 if (!existingRecord) {
                     await cardConnectTransactionsModel.create(requestObject);
-                    await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
+                  //  await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
                     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(
                         integrationsCronId,
                         { $inc: { pushedCount: 1 } },
@@ -127,7 +111,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                             }
                         }
                     );
-                    await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
+                //    await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
                     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(
                         integrationsCronId,
                         { $inc: { updatedCount: 1 } },
