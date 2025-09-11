@@ -307,7 +307,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
         { $sort: { capturedDate: -1 } },
         {
             $project: {
-                _id:1
+              _id:1
                 // cardConnectIntegrationsCronIdCreate: 0,
                 // cardConnectIntegrationsCronIdUpdate: 0,
                 // accountId: 0,
