@@ -62,7 +62,10 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
     let results = await Promise.allSettled(
         txns.map(async (txn) => {
             try {
-
+                txn = {
+                    ...txn,
+                    merchid: integrationsMasterCredentials?.primaryKeyValues?.merchantId
+                }
 
                 let filter = {
                     accountId: integrationsMasterCredentials?.accountId,
@@ -81,6 +84,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                     cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),
                     referenceId: txn[urlFlow?.filteredReferenceId],
                     referenceStatus: txn[urlFlow?.statusKey],
+
                     //There is one array in settins for keys for below customerDetails. 
                     // we can obviously use that, loop and get the key-value pairs. But, as of now, to lessen time and do it if it is realy necessary when other Stripe or other arrives.
                     customerDetails: {
@@ -92,7 +96,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
 
                 if (!existingRecord) {
                     await cardConnectTransactionsModel.create(requestObject);
-                  //  await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
+                    //  await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
                     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(
                         integrationsCronId,
                         { $inc: { pushedCount: 1 } },
@@ -111,7 +115,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                             }
                         }
                     );
-                //    await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
+                    //    await createTransactionLifeCycleRecord(requestObject, integrationsMasterCredentials);
                     await cardConnectIntegrationsCronsModel.findByIdAndUpdate(
                         integrationsCronId,
                         { $inc: { updatedCount: 1 } },

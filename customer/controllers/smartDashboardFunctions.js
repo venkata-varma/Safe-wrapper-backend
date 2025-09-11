@@ -196,7 +196,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
             $addFields: {
 
                 amount: { $toDouble: "$responseObject.amount" },
-                customerName: "$customerDetails.name",
+                customerByCard: "$customerDetails.cardNumber",
                 transactionType: "$responseObject.type",
                 transactionStatus: "$responseObject.status",
                 merchantId: "$responseObject.merchid",
