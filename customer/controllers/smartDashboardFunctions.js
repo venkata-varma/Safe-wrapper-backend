@@ -201,41 +201,27 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 transactionStatus: "$responseObject.status",
                 merchantId: "$responseObject.merchid",
                 currency: "$responseObject.currency",
-                customerCardLastFour: "$customerDetails.lastFour",
                 transactionDate: { $toDate: "$responseObject.date" },
                 batchId: { $toString: { $ifNull: ["$responseObject.batchid", ""] } },
-                // settledDate: {
-                //     $dateFromString: {
-                //         dateString: {
-                //             $concat: [
-                //                 { $substr: ["$responseObject.settledate", 0, 4] }, "-", // YYYY
-                //                 { $substr: ["$responseObject.settledate", 4, 2] }, "-", // MM
-                //                 { $substr: ["$responseObject.settledate", 6, 2] }, "T", // DD
-                //                 { $substr: ["$responseObject.settledate", 8, 2] }, ":", // HH
-                //                 { $substr: ["$responseObject.settledate", 10, 2] }, ":", // mm
-                //                 { $substr: ["$responseObject.settledate", 12, 2] }, "Z" // ss
-                //             ]
-                //         }
-                //     }
-                // },
+               
                 capturedDate: {
                     $switch: {
                         branches: [
                             // Case: 14 digits (YYYYMMDDHHmmss)
                             {
                                 case: {
-                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.capturedate", ""] } }, 14]
+                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.authdate", ""] } }, 14]
                                 },
                                 then: {
                                     $dateFromString: {
                                         dateString: {
                                             $concat: [
-                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 0, 4] }, "-",
-                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 4, 2] }, "-",
-                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 6, 2] }, "T",
-                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 8, 2] }, ":",
-                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 10, 2] }, ":",
-                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 12, 2] }, "Z"
+                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 0, 4] }, "-",
+                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 4, 2] }, "-",
+                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 6, 2] }, "T",
+                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 8, 2] }, ":",
+                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 10, 2] }, ":",
+                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 12, 2] }, "Z"
                                             ]
                                         }
                                     }
@@ -244,15 +230,15 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                             // Case: 8 digits (YYYYMMDD)
                             {
                                 case: {
-                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.capturedate", ""] } }, 8]
+                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.authdate", ""] } }, 8]
                                 },
                                 then: {
                                     $dateFromString: {
                                         dateString: {
                                             $concat: [
-                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 0, 4] }, "-",
-                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 4, 2] }, "-",
-                                                { $substr: [{ $ifNull: ["$responseObject.capturedate", ""] }, 6, 2] }, "T00:00:00Z"
+                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 0, 4] }, "-",
+                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 4, 2] }, "-",
+                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 6, 2] }, "T00:00:00Z"
                                             ]
                                         }
                                     }
@@ -261,21 +247,21 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                             // Case: epoch seconds (10 digits)
                             {
                                 case: {
-                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.capturedate", ""] } }, 10]
+                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.authdate", ""] } }, 10]
                                 },
                                 then: {
                                     $toDate: {
-                                        $multiply: [{ $toLong: { $ifNull: ["$responseObject.capturedate", 0] } }, 1000]
+                                        $multiply: [{ $toLong: { $ifNull: ["$responseObject.authdate", 0] } }, 1000]
                                     }
                                 }
                             },
                             // Case: epoch millis (13 digits)
                             {
                                 case: {
-                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.capturedate", ""] } }, 13]
+                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.authdate", ""] } }, 13]
                                 },
                                 then: {
-                                    $toDate: { $toLong: { $ifNull: ["$responseObject.capturedate", 0] } }
+                                    $toDate: { $toLong: { $ifNull: ["$responseObject.authdate", 0] } }
                                 }
                             }
                         ],
@@ -287,35 +273,35 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 category: "card"
             }
         },
-        {
-            $match: {
-                capturedDate: {
-                    $gte: fromDate,
-                    $lte: toDate
-                },
-                amount: {
-                    $lte: fromRange,    // Both are $lte because as Negative numbers might be involved 
-                    $lte: toRange
-                },
-                ...(cardTransactionStatusArray.length > 0 && { transactionStatus: { $in: cardTransactionStatusArray } }),
-                ...(customerDetailsArray.length > 0 && { customerCardLastFour: { $in: customerDetailsArray } }),
-                ...(batchNumberArray.length > 0 && { batchId: { $in: batchNumberArray } }),
-                ...(cardTransactionTypesArray.length > 0 && { transactionType: { $in: cardTransactionTypesArray } }),
+        // {
+        //     $match: {
+        //         capturedDate: {
+        //             $gte: fromDate,
+        //             $lte: toDate
+        //         },
+        //         amount: {
+        //             $lte: fromRange,    // Both are $lte because as Negative numbers might be involved 
+        //             $lte: toRange
+        //         },
+        //         ...(cardTransactionStatusArray.length > 0 && { transactionStatus: { $in: cardTransactionStatusArray } }),
+        //         ...(customerDetailsArray.length > 0 && { customerCardLastFour: { $in: customerDetailsArray } }),
+        //         ...(batchNumberArray.length > 0 && { batchId: { $in: batchNumberArray } }),
+        //         ...(cardTransactionTypesArray.length > 0 && { transactionType: { $in: cardTransactionTypesArray } }),
 
-            }
-        },
+        //     }
+        // },
         { $sort: { capturedDate: -1 } },
         {
             $project: {
-              _id:1
-                // cardConnectIntegrationsCronIdCreate: 0,
-                // cardConnectIntegrationsCronIdUpdate: 0,
-                // accountId: 0,
-                // userId: 0,
-                // responseObject: 0,
-                // cardConnectTransactionId: 0,
-                // updatedBy: 0,
-                // createdBy: 0
+              //_id:1
+                cardConnectIntegrationsCronIdCreate: 0,
+                cardConnectIntegrationsCronIdUpdate: 0,
+                accountId: 0,
+                userId: 0,
+                responseObject: 0,
+                cardConnectTransactionId: 0,
+                updatedBy: 0,
+                createdBy: 0
             }
         }
     ]);

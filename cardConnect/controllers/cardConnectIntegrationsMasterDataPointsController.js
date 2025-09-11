@@ -113,8 +113,7 @@ exports.getCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
                     customers: [
                         {
                             $group: {
-                                _id: "$customerDetails.lastFour",
-                                name: { $first: "$customerDetails.name" },
+                                _id: "$customerDetails.cardNumber",
                                 cardBrand: { $first: "$customerDetails.cardBrand" },
                                 cardType: { $first: "$customerDetails.cardType" }
                             }
@@ -122,8 +121,7 @@ exports.getCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
                         {
                             $project: {
                                 _id: 0,
-                                lastFour: "$_id",
-                                name: 1,
+                                customerCardNumber: "$_id",
                                 cardBrand: 1,
                                 cardType: 1
                             }
