@@ -3036,7 +3036,7 @@ exports.superAdminSmartFilteredDashboard=asyncWrapper(async(req,res)=>{
   
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
       status: customConstants.messages.MESSAGE_SUCCESS,
-      message: customConstants.messages.MESSAGE_WEBOOK_GET_TRANSACTIONS,
+      message: customConstants.messages.MESSAGE_CASH_OR_AND_CARD_TRANSACTIONS_RETREIVED,
       data: {
         // returnDashboardFiltersSafeCash,
         // returnDashboardFiltersCardConnect

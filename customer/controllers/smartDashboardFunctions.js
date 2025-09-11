@@ -201,27 +201,30 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 transactionStatus: "$responseObject.status",
                 merchantId: "$responseObject.merchid",
                 currency: "$responseObject.currency",
-                transactionDate: { $toDate: "$responseObject.date" },
+                date: { $toDate: "$responseObject.date" },
                 batchId: { $toString: { $ifNull: ["$responseObject.batchid", ""] } },
-               
-                capturedDate: {
+
+                transactionDate: {
                     $switch: {
                         branches: [
                             // Case: 14 digits (YYYYMMDDHHmmss)
                             {
                                 case: {
-                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.authdate", ""] } }, 14]
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        14
+                                    ]
                                 },
                                 then: {
                                     $dateFromString: {
                                         dateString: {
                                             $concat: [
-                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 0, 4] }, "-",
-                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 4, 2] }, "-",
-                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 6, 2] }, "T",
-                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 8, 2] }, ":",
-                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 10, 2] }, ":",
-                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 12, 2] }, "Z"
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 8, 2] }, ":",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 10, 2] }, ":",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 12, 2] }, "Z"
                                             ]
                                         }
                                     }
@@ -230,15 +233,18 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                             // Case: 8 digits (YYYYMMDD)
                             {
                                 case: {
-                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.authdate", ""] } }, 8]
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        8
+                                    ]
                                 },
                                 then: {
                                     $dateFromString: {
                                         dateString: {
                                             $concat: [
-                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 0, 4] }, "-",
-                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 4, 2] }, "-",
-                                                { $substr: [{ $ifNull: ["$responseObject.authdate", ""] }, 6, 2] }, "T00:00:00Z"
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T00:00:00Z"
                                             ]
                                         }
                                     }
@@ -247,7 +253,10 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                             // Case: epoch seconds (10 digits)
                             {
                                 case: {
-                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.authdate", ""] } }, 10]
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        10
+                                    ]
                                 },
                                 then: {
                                     $toDate: {
@@ -258,14 +267,17 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                             // Case: epoch millis (13 digits)
                             {
                                 case: {
-                                    $eq: [{ $strLenCP: { $ifNull: ["$responseObject.authdate", ""] } }, 13]
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        13
+                                    ]
                                 },
                                 then: {
                                     $toDate: { $toLong: { $ifNull: ["$responseObject.authdate", 0] } }
                                 }
                             }
                         ],
-                        // Default: fallback to transactionDate
+                        // Default: fallback to responseObject.date
                         default: { $toDate: "$responseObject.date" }
                     }
                 },
@@ -273,27 +285,27 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 category: "card"
             }
         },
-        // {
-        //     $match: {
-        //         capturedDate: {
-        //             $gte: fromDate,
-        //             $lte: toDate
-        //         },
-        //         amount: {
-        //             $lte: fromRange,    // Both are $lte because as Negative numbers might be involved 
-        //             $lte: toRange
-        //         },
-        //         ...(cardTransactionStatusArray.length > 0 && { transactionStatus: { $in: cardTransactionStatusArray } }),
-        //         ...(customerDetailsArray.length > 0 && { customerCardLastFour: { $in: customerDetailsArray } }),
-        //         ...(batchNumberArray.length > 0 && { batchId: { $in: batchNumberArray } }),
-        //         ...(cardTransactionTypesArray.length > 0 && { transactionType: { $in: cardTransactionTypesArray } }),
+        {
+            $match: {
+                transactionDate: {
+                    $gte: fromDate,
+                    $lte: toDate
+                },
+                amount: {
+                    $lte: fromRange,    // Both are $lte because as Negative numbers might be involved 
+                    $lte: toRange
+                },
+                ...(cardTransactionStatusArray.length > 0 && { transactionStatus: { $in: cardTransactionStatusArray } }),
+                ...(customerDetailsArray.length > 0 && { customerByCard: { $in: customerDetailsArray } }),
+                ...(batchNumberArray.length > 0 && { batchId: { $in: batchNumberArray } }),
+                ...(cardTransactionTypesArray.length > 0 && { transactionType: { $in: cardTransactionTypesArray } }),
 
-        //     }
-        // },
-        { $sort: { capturedDate: -1 } },
+            }
+        },
+        { $sort: { transactionDate: -1 } },
         {
             $project: {
-              //_id:1
+                //_id:1
                 cardConnectIntegrationsCronIdCreate: 0,
                 cardConnectIntegrationsCronIdUpdate: 0,
                 accountId: 0,
