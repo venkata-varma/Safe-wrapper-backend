@@ -55,9 +55,12 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
 
     }
 
-    var [fromRange, toRange] = cashTransactionRange.split('-')
-    fromRange = parseInt(fromRange)
-    toRange = parseInt(toRange)
+
+    const matchRange = cashTransactionRange.match(/-?\d+/g);
+    let fromRange = parseInt(matchRange[0]);
+    let toRange = parseInt(matchRange[1]);
+
+
 
     var userNamesArray = []
     if (userNames) {
@@ -140,12 +143,11 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
     fromDate = moment.utc(fromDate).startOf("day").toDate();
     toDate = moment.utc(toDate).endOf("day").toDate()
 
+    const matchRange = cardTransactionRange.match(/-?\d+/g);
+    let fromRange = parseInt(matchRange[0]);
+    let toRange = parseInt(matchRange[1]);
 
-    var [fromRange, toRange] = cardTransactionRange.split('-')
-    fromRange = parseInt(fromRange)
-    toRange = parseInt(toRange)
-
-
+    console.log("fromRange, toRange===", fromRange, toRange)
     let cardTransactionStatusArray = [];
     if (cardTransactionStatus) {
         cardTransactionStatusArray = cardTransactionStatus.includes(',')
@@ -203,7 +205,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 currency: "$responseObject.currency",
                 date: { $toDate: "$responseObject.date" },
                 batchId: { $toString: { $ifNull: ["$responseObject.batchid", ""] } },
-
+                category: "card",
                 transactionDate: {
                     $switch: {
                         branches: [
@@ -282,7 +284,6 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                     }
                 },
 
-                category: "card"
             }
         },
         {
@@ -292,7 +293,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                     $lte: toDate
                 },
                 amount: {
-                    $lte: fromRange,    // Both are $lte because as Negative numbers might be involved 
+                    $gte: fromRange,    // Both are $lte because as Negative numbers might be involved 
                     $lte: toRange
                 },
                 ...(cardTransactionStatusArray.length > 0 && { transactionStatus: { $in: cardTransactionStatusArray } }),
@@ -305,7 +306,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
         { $sort: { transactionDate: -1 } },
         {
             $project: {
-                //_id:1
+                // _id:1
                 cardConnectIntegrationsCronIdCreate: 0,
                 cardConnectIntegrationsCronIdUpdate: 0,
                 accountId: 0,
