@@ -24,4 +24,7 @@ router.patch('/update-linked-machines-to-account/:accountId', accountsController
 
 router.get('/get-all-merchant-accounts', accountsControllers.getAllMerchantAccounts)
 
+
+
+router.get('/get-account-and-card-connect-integration-details/:accountId',accountsControllers.validateAccountStatus, accountsControllers.getAccountAndCardConnectInterationDetails)
 module.exports = router;

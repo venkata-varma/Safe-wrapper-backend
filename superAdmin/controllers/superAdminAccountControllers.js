@@ -7,7 +7,10 @@ const customConstants = require('../../config/constants.json');
 const { hashPwd } = require('../../utils/helpers');
 const usersModel = require('../../models/usersModel');
 const mongoose = require("mongoose")
-
+const {
+    encryptData,
+    decryptData,
+} = require("../../utils/encryptionAlgorithms");
 const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 
 const path = require('path');
@@ -169,7 +172,7 @@ exports.mapMachinesToAccount = asyncWrapper(async (req, res) => {
         {
             $set: {
                 machines: machines.split(',').length > 0 ? machines.split(',') : machines,
-                updatedBy:req.user._id
+                updatedBy: req.user._id
             }
         },
         { new: true, runValidators: true }
@@ -235,7 +238,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_ACCOUNT_CREATED,
-            data:{
+            data: {
                 accountData,
                 user
             }
@@ -336,7 +339,7 @@ exports.updateLinkedMachinesOfAccount = asyncWrapper(async (req, res) => {
             $set: {
 
                 machines: machines.split(',').length > 0 ? machines.split(',') : machines,
-                 updatedBy:req.user._id
+                updatedBy: req.user._id
             }
         },
         { new: true });
@@ -408,3 +411,100 @@ exports.getAllMerchantAccounts = asyncWrapper(async (req, res) => {
         data: accounts
     })
 })
+
+exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
+ const { accountId } = req.params
+
+    const verifyAccountStatus = await accountsModel.findById(accountId)
+    //const reqAccountType = req.user.accountId.accountType
+    const reqAccountType = verifyAccountStatus.accountType
+
+    if (!verifyAccountStatus) {
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_NOT_EXISTS
+        })
+    }
+    // if (!req.body.phone) {
+    //     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+    //         status: customConstants.messages.MESSAGE_FAIL,
+    //         message: customConstants.messages.MESSAGE_ENTER_MOBILENUMBER,
+    //     });
+    // }
+
+    if (verifyAccountStatus.status !== 'active' ) {
+
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+        });
+    }
+
+
+    next()
+})
+
+
+
+exports.getAccountAndCardConnectInterationDetails = asyncWrapper(async (req, res) => {
+    let { accountId } = req.params;
+
+    let accountAndCardConnectIntegrationDetails = await accountsModel.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(accountId)
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationscredentials",
+                localField: "_id",
+                foreignField: "accountId",
+                as: "cardconnectintegrationscredentials"
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationssettings",
+                localField: "_id",
+                foreignField: "accountId",
+                as: "cardconnectintegrationssettings"
+            }
+        },
+        {
+            $unwind: {
+                path: "$cardconnectintegrationscredentials",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $unwind: {
+                path: "$cardconnectintegrationssettings",
+                preserveNullAndEmptyArrays: true
+            }
+        }
+    ]);
+
+    if (accountAndCardConnectIntegrationDetails.length > 0) {
+        // ensure defaults if null
+        accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials =
+            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials || {};
+
+        accountAndCardConnectIntegrationDetails[0].cardconnectintegrationssettings =
+            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationssettings || {};
+
+        // decrypt only if credentials exist
+        let encryptedData = accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials?.credentials;
+        if (encryptedData) {
+            let encrypted = { iv: process.env.CRYPTO_IV, encryptedData };
+            let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
+            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials.credentials = decryptConfigCredentials;
+        }
+    }
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.ACCOUNT_AND_CARD_CONNECT_INTEGRATION_DETAILS,
+        data: accountAndCardConnectIntegrationDetails
+    });
+});

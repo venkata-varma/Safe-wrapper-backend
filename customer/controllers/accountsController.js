@@ -12,6 +12,7 @@ const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 
 const path = require('path');
 const { preSignedUrlToUpload } = require('../../utils/fileUpload');
+const { decryptData } = require('../../utils/encryptionAlgorithms');
 
 
 exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
@@ -209,3 +210,69 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     }
 });
 
+
+
+
+
+exports.getAccountAndCardConnectInterationDetails = asyncWrapper(async (req, res) => {
+    let { accountId } = req.params;
+
+    let accountAndCardConnectIntegrationDetails = await accountsModel.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(accountId)
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationscredentials",
+                localField: "_id",
+                foreignField: "accountId",
+                as: "cardconnectintegrationscredentials"
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationssettings",
+                localField: "_id",
+                foreignField: "accountId",
+                as: "cardconnectintegrationssettings"
+            }
+        },
+        {
+            $unwind: {
+                path: "$cardconnectintegrationscredentials",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $unwind: {
+                path: "$cardconnectintegrationssettings",
+                preserveNullAndEmptyArrays: true
+            }
+        }
+    ]);
+
+    if (accountAndCardConnectIntegrationDetails.length > 0) {
+        // ensure defaults if null
+        accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials =
+            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials || {};
+
+        accountAndCardConnectIntegrationDetails[0].cardconnectintegrationssettings =
+            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationssettings || {};
+
+        // decrypt only if credentials exist
+        let encryptedData = accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials?.credentials;
+        if (encryptedData) {
+            let encrypted = { iv: process.env.CRYPTO_IV, encryptedData };
+            let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
+            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials.credentials = decryptConfigCredentials;
+        }
+    }
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.ACCOUNT_AND_CARD_CONNECT_INTEGRATION_DETAILS,
+        data: accountAndCardConnectIntegrationDetails
+    });
+});

@@ -40,6 +40,7 @@
     "MESSAGE_ACCOUNT_INTEGRATION_REPORTS_FILTERS_RECEIVED": "Account-Integrations reports by filters provided successfully.",
     "MESSAGE_DASHBOARD_STATISTICS_RECEIVED": "Received Account's dashbaord statistics successfully.",
     "MESSAGE_VERIFIED": "Authentications has been successfully completed.",
+    "ACCOUNT_AND_CARD_CONNECT_INTEGRATION_DETAILS":"Account and card connect integration details retreived succesfully.",
     "MESSAGE_AUTH_VERIFIED": "Authentication has been successfully completed.",
     "MESSAGE_CONFIGURATION_UPDATE": "Configuration details updated successfully.",
     "MESSAGE_AUTH_UN_VERIFIED": "Authentication failed. Please check your credentials and try again.",
