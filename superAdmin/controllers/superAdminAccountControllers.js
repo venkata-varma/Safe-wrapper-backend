@@ -311,17 +311,20 @@ exports.updateAccount = asyncWrapper(async (req, res) => {
             }
         },
         { new: true });
-    const updateUserDetails = await usersModel.findOneAndUpdate({ accountId: new mongoose.Types.ObjectId(accountId) }, {
+    let updateUserDetails = await usersModel.findOneAndUpdate({ accountId: new mongoose.Types.ObjectId(accountId) }, {
         $set: { name: accountName }
     }, { new: true })
 
-    await usersModel.findOneAndUpdate({ phone: findAccount.phone }, { $set: { phone: req.body.phone } }, { runValidators: true, new: true });
+    updateUserDetails = await usersModel.findOneAndUpdate({ phone: findAccount.phone }, { $set: { phone: req.body.phone } }, { runValidators: true, new: true });
 
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_ACCOUNT_UPDATED,
-        data: accountDetails
+        data: {
+            accountData: accountDetails,
+            user: updateUserDetails
+        }
     })
 
 })
@@ -413,7 +416,7 @@ exports.getAllMerchantAccounts = asyncWrapper(async (req, res) => {
 })
 
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
- const { accountId } = req.params
+    const { accountId } = req.params
 
     const verifyAccountStatus = await accountsModel.findById(accountId)
     //const reqAccountType = req.user.accountId.accountType
@@ -432,7 +435,7 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     //     });
     // }
 
-    if (verifyAccountStatus.status !== 'active' ) {
+    if (verifyAccountStatus.status !== 'active') {
 
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
