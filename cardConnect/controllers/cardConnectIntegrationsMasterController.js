@@ -151,7 +151,9 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_INTEGRATION_CREDENTIALS_SAVED,
-            data: { createCardConnectIntegrationsMasterCredentials },
+            data: {
+               cardConnectIntegrationsMasterCredentials:  createCardConnectIntegrationsMasterCredentials 
+                },
         });
 
 
@@ -207,7 +209,9 @@ exports.createCardConnectIntegrationMasterSettings = asyncWrapper(async (req, re
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_INTEGRATIONS_SETTINGS,
-            data: { createCardConnectIntegrationsSettings },
+            data: {
+               cardConnectIntegrationsSettings:  createCardConnectIntegrationsSettings 
+                },
         });
 
 
@@ -260,7 +264,9 @@ exports.editIntegrationsMasterCredentials = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS,
-            data: { editIntegrationsMasterCredentials },
+            data: { 
+            cardConnectIntegrationsMasterCredentials:    editIntegrationsMasterCredentials 
+            },
         });
 
 
@@ -292,7 +298,9 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS,
-            data: { editIntegrationsMasterSettings },
+            data: { 
+                cardConnectIntegrationsSettings:editIntegrationsMasterSettings 
+            },
         });
 
 
