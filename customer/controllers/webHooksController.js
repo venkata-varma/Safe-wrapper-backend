@@ -1422,7 +1422,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     merchantName: accountDetails?.accountName
   }
   allMerchants.push(merchantNames)
-
+  let categories = ["cima-machine", "card-connect"]
 
 
 
@@ -1501,6 +1501,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
     data: {
+      categories,
       merchantNames: allMerchants,
       webhookPayloadHeadersData: webhookPayloadHeadersData[0] ? webhookPayloadHeadersData[0] : {},
       merchantPayloadHeaders: merchantPayloadHeaders

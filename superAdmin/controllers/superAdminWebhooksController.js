@@ -1170,6 +1170,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   const { serialNumber } = req.query
   let matchCondition = {}
+  let categories = ["cima-machine", "card-connect"]
 
   let merchantNames = await accountsModel.aggregate([
     {
@@ -1259,6 +1260,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
     data: {
+      categories,
       merchantNames,
       webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
       allMerchantCardConnectPayloadHeaders: allMerchantCardConnectPayloadHeaders
