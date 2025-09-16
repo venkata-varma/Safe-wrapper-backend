@@ -60,7 +60,7 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
     let fromRange = parseInt(matchRange[0]);
     let toRange = parseInt(matchRange[1]);
 
-
+    console.log("fromRange,toRange", fromRange, toRange)
 
     var userNamesArray = []
     if (userNames) {
@@ -101,7 +101,7 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
         {
             $addFields: {
                 transactionDate: { $toDate: "$transactionDateTime" },
-                category: "cash"
+                category: "cima-machine"
             }
         },
 
@@ -205,7 +205,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 currency: "$responseObject.currency",
                 date: { $toDate: "$responseObject.date" },
                 batchId: { $toString: { $ifNull: ["$responseObject.batchid", ""] } },
-                category: "card",
+                category: "card-connect",
                 transactionDate: {
                     $switch: {
                         branches: [

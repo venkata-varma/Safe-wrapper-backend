@@ -1332,18 +1332,18 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
   let returnDashboardFiltersCardConnect;
   let cashAndCardMixResultArray = []
   let selectDashboardArray = selectDashboard.split(',')
-console.log("selectDashboardArray===",selectDashboardArray)
+  console.log("selectDashboardArray===", selectDashboardArray)
 
 
 
 
-  if (selectDashboardArray.includes("cash")) {
+  if (selectDashboardArray.includes("cima-machine")) {
     console.log("req.query===", req.query)
     let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
     returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, accountId)
-  } 
-  
-  if (selectDashboardArray.includes("card")) {
+  }
+
+  if (selectDashboardArray.includes("card-connect")) {
 
     let { cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange } = req.query
     returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange, accountId)
@@ -1365,17 +1365,18 @@ console.log("selectDashboardArray===",selectDashboardArray)
     );
   }
 
-console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
+  console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_CASH_OR_AND_CARD_TRANSACTIONS_RETREIVED,
     data: {
-      // returnDashboardFiltersSafeCash,
-      // returnDashboardFiltersCardConnect
+
+      cimaMachineTransactionsCount: returnDashboardFiltersSafeCash ? returnDashboardFiltersSafeCash.length : 0,
+      cardConnectTransactionsCount: returnDashboardFiltersCardConnect ? returnDashboardFiltersCardConnect.length : 0,
 
 
-       cashAndCardMixResultArray
+      cashAndCardMixResultArray
     },
   });
 
