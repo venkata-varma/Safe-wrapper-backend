@@ -3006,7 +3006,7 @@ exports.superAdminSmartFilteredDashboard = asyncWrapper(async (req, res) => {
 
   if (selectDashboardArray.includes("cima-machine")) {
     console.log("req.query===", req.query)
-    let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
+    let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, merchantNames } = req.query
     returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, "")
   }
 

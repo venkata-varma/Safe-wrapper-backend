@@ -12,6 +12,8 @@ const cardConnectExceptionsModel = require('../models/cardConnectExceptionsModel
 const customConstants = require('../../config/constants.json');
 const { statusMappings, getProcessedDisplayPoints, transactionTypeMappings } = require('../utils/helpers');
 const accountsModel = require('../../models/accountsModel');
+let { cardConnectPredefinedKeys } = require('../config/predefinedKeys')
+
 
 
 exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
@@ -99,13 +101,13 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
  * 
  */
 
-exports.getCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
+exports.getMerchantCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
 
     const { accountId } = req.params;
 
-    const [cardConnectIntegrationsSettings, cardConnectIntegrationsCredentials, customerDetails] = await Promise.all([
-        cardConnectIntegrationsSettingsModel.findOne({ accountId }).lean(),
-        cardconnectIntegrationsCredentialsModel.findOne({ accountId }),
+    const [accountDetails, customerDetails] = await Promise.all([
+        accountsModel.findOne({ accountId }).lean(),
+
         cardConnectTransactionsModel.aggregate([
             { $match: { accountId: new mongoose.Types.ObjectId(accountId) } },
             {
@@ -148,14 +150,16 @@ exports.getCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
     ]);
 
 
-    let transactionStatusKeys = cardConnectIntegrationsSettings?.transactionStatusKeys;
-    let transactionTypeKeys = cardConnectIntegrationsSettings?.transactionTypeKeys;
-
-
-    let allMerchantIds = cardConnectIntegrationsCredentials?.primaryKeyValues?.merchantId;
+    let transactionStatusKeys = cardConnectPredefinedKeys?.transactionStatusKeys
+    let transactionTypeKeys = cardConnectPredefinedKeys?.transactionTypeKeys
 
 
 
+    let merchantsArray = [];
+    let merchantNames = {
+        merchantName: accountDetails?.accountName
+    }
+    merchantsArray.push(merchantNames)
 
 
     return res
@@ -166,9 +170,100 @@ exports.getCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
             data: {
                 transactionStatusKeys,
                 transactionTypeKeys,
-                allMerchantIds,
+                merchantsArray,
                 customerDetails: customerDetails[0].customers,
                 batches: customerDetails[0].batches
+
+            },
+        });
+
+})
+
+
+
+exports.getAllCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
+
+
+    let customerAndBatchDetails = await cardConnectTransactionsModel.aggregate([
+
+        {
+            $facet: {
+                customers: [
+                    {
+                        $group: {
+                            _id: "$customerDetails.cardNumber",
+                            cardBrand: { $first: "$customerDetails.cardBrand" },
+                            cardType: { $first: "$customerDetails.cardType" }
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            customerCardNumber: "$_id",
+                            cardBrand: 1,
+                            cardType: 1
+                        }
+                    }
+                ],
+                batches: [
+                    {
+                        $group: {
+                            _id: "$responseObject.batchid"
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            batchId: "$_id"
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    let merchantNames = await accountsModel.aggregate([
+        {
+            $match: {
+                status: "active",
+                accountName: {
+                    $nin: ["", null],        // exclude empty string and null
+                    $type: "string"          // ensure it's actually a string
+                }
+            }
+        },
+        {
+            $group: {
+                _id: "$accountName"
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                merchantName: "$_id",
+
+            }
+        }
+
+    ])
+
+
+    let transactionStatusKeys = cardConnectPredefinedKeys?.transactionStatusKeys
+    let transactionTypeKeys = cardConnectPredefinedKeys?.transactionTypeKeys
+
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS,
+            data: {
+                merchantNames,
+                transactionStatusKeys,
+                transactionTypeKeys,
+                customerDetails: customerAndBatchDetails[0].customers,
+                batches: customerAndBatchDetails[0].batches,
+
 
             },
         });

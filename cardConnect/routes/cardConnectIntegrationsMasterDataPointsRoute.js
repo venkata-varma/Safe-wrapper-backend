@@ -4,7 +4,8 @@ const { access } = require('fs');
 
 const {
     getSingleIntegrationView,
-    getCardConnectPayloadHeaders
+    getMerchantCardConnectPayloadHeaders,
+    getAllCardConnectPayloadHeaders
 } = require('../controllers/cardConnectIntegrationsMasterDataPointsController');
 
 const {
@@ -16,7 +17,9 @@ const auth = require('../../middleware/authentication');
 router.use(auth)
 router.get('/get-single-integration-view/:accountId', validateAccountExistAndActiveParams, getSingleIntegrationView)
 
-router.get('/get-card-connect-payload-headers/:accountId', validateAccountExistAndActiveParams, getCardConnectPayloadHeaders)
+router.get('/get-merchant-card-connect-payload-headers/:accountId', validateAccountExistAndActiveParams, getMerchantCardConnectPayloadHeaders)
+
+router.get('/get-all-card-connect-payload-headers', getAllCardConnectPayloadHeaders)
 
 
 
