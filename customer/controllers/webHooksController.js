@@ -20,6 +20,11 @@ const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
 const usersModel = require("../../models/usersModel");
 const onePosLogsModel = require("../../models/onePosLogsModel");
 const { dashboardFiltersCardConnect, dashboardFiltersSafeCash } = require('./smartDashboardFunctions')
+const { getMerchantCardConnectPayloadHeaders } = require('../../cardConnect/controllers/cardConnectIntegrationsMasterDataPointsController');
+const cardConnectIntegrationsCredentialsModel = require("../../cardConnect/models/cardConnectIntegrationsCredentialsModel");
+const cardConnectIntegrationsSettingsModel = require("../../cardConnect/models/cardConnectIntegrationsSettingsModel");
+
+
 
 /**
  * Middleware function for Create webhook functionality
@@ -1463,30 +1468,19 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     }
   ]);
 
-  // let userNamesOfMachine = await webhookPayloadHeaders.aggregate([
-  //   {
-  //     $match: {
-  //       ...matchCondition
-  //     },
-  //   },
-  //   {
-  //     $group: {
-  //       _id: "$serialNumber",        // group by machine
-  //       userNames: { $addToSet: "$userName" }, // distinct usernames
-  //     },
-  //   },
-  //   {
-  //     $project: {
-  //       _id: 0,
-  //       serialNumber: "$_id",
-  //       userNames: 1
-  //     },
-  //   },
-  // ]);
+  let findIntegrationWithCardConnectCredentials = await cardConnectIntegrationsCredentialsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+  let findIntegrationWithCardConnectSettings = await cardConnectIntegrationsSettingsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
 
-  // webhookPayloadHeadersData = webhookPayloadHeadersData?.[0] || {},
+  let merchantPayloadHeaders
 
-  //   webhookPayloadHeadersData.userNamesOfMachine = userNamesOfMachine
+  if (findIntegrationWithCardConnectCredentials && findIntegrationWithCardConnectSettings) {
+    merchantPayloadHeaders = await getMerchantCardConnectPayloadHeaders(accountId)
+  } else {
+    merchantPayloadHeaders = {}
+  }
+
+
+
 
   const listOfWebhooks = await webHooksMasterModel.find({ accountId: accountId })
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -1494,7 +1488,8 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
     data: {
       webhookPayloadHeadersData: webhookPayloadHeadersData[0] ? webhookPayloadHeadersData[0] : {},
-      listOfWebhooks: listOfWebhooks
+      merchantPayloadHeaders: merchantPayloadHeaders
+      // listOfWebhooks: listOfWebhooks
     }
   })
 })

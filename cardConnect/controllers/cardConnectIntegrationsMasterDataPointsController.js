@@ -101,9 +101,9 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
  * 
  */
 
-exports.getMerchantCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
+exports.getMerchantCardConnectPayloadHeaders = async (accountId) => {
 
-    const { accountId } = req.params;
+
 
     const [accountDetails, customerDetails] = await Promise.all([
         accountsModel.findOne({ accountId }).lean(),
@@ -162,26 +162,19 @@ exports.getMerchantCardConnectPayloadHeaders = asyncWrapper(async (req, res) => 
     merchantsArray.push(merchantNames)
 
 
-    return res
-        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-        .json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS,
-            data: {
-                transactionStatusKeys,
-                transactionTypeKeys,
-                merchantsArray,
-                customerDetails: customerDetails[0].customers,
-                batches: customerDetails[0].batches
+    return {
+        transactionStatusKeys,
+        transactionTypeKeys,
+        merchantsArray,
+        customerDetails: customerDetails[0].customers,
+        batches: customerDetails[0].batches
 
-            },
-        });
-
-})
+    }
+}
 
 
 
-exports.getAllCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
+exports.getAllCardConnectPayloadHeaders = async () => {
 
 
     let customerAndBatchDetails = await cardConnectTransactionsModel.aggregate([
@@ -252,20 +245,13 @@ exports.getAllCardConnectPayloadHeaders = asyncWrapper(async (req, res) => {
     let transactionTypeKeys = cardConnectPredefinedKeys?.transactionTypeKeys
 
 
-    return res
-        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-        .json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS,
-            data: {
-                merchantNames,
-                transactionStatusKeys,
-                transactionTypeKeys,
-                customerDetails: customerAndBatchDetails[0].customers,
-                batches: customerAndBatchDetails[0].batches,
+    return {
+        merchantNames,
+        transactionStatusKeys,
+        transactionTypeKeys,
+        customerDetails: customerAndBatchDetails[0].customers,
+        batches: customerAndBatchDetails[0].batches,
 
 
-            },
-        });
-
-})
+    }
+}

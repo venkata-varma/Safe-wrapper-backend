@@ -19,8 +19,5 @@ router.get('/get-single-integration-view/:accountId', validateAccountExistAndAct
 
 router.get('/get-merchant-card-connect-payload-headers/:accountId', validateAccountExistAndActiveParams, getMerchantCardConnectPayloadHeaders)
 
-router.get('/get-all-card-connect-payload-headers', getAllCardConnectPayloadHeaders)
-
-
 
 module.exports = router

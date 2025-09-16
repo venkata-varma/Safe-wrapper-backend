@@ -22,7 +22,7 @@ const onePosLogsModel = require("../../models/onePosLogsModel");
 const { insertPosLogs } = require("../../utils/utilsFunctions");
 const { authentication } = require("../../utils/authentication");
 const { dashboardFiltersSafeCash, dashboardFiltersCardConnect } = require("../../customer/controllers/smartDashboardFunctions");
-
+let { getAllCardConnectPayloadHeaders } = require('../../cardConnect/controllers/cardConnectIntegrationsMasterDataPointsController')
 
 /**
  * Middleware function for Create webhook functionality
@@ -1223,12 +1223,18 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     }
   ]);
 
+  let allMerchantCardConnectPayloadHeaders = await getAllCardConnectPayloadHeaders()
+
+
+
+
   // const listOfWebhooks = await webHooksMasterModel.find({})
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
     data: {
       webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
+      allMerchantCardConnectPayloadHeaders: allMerchantCardConnectPayloadHeaders
       // listOfWebhooks: listOfWebhooks
     }
   })
