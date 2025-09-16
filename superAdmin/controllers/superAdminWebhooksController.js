@@ -1170,6 +1170,32 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   const { serialNumber } = req.query
   let matchCondition = {}
+
+  let merchantNames = await accountsModel.aggregate([
+    {
+      $match: {
+        status: "active",
+        accountName: {
+          $nin: ["", null],        // exclude empty string and null
+          $type: "string"          // ensure it's actually a string
+        }
+      }
+    },
+    {
+      $group: {
+        _id: "$accountName"
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        merchantName: "$_id",
+
+      }
+    }
+
+  ])
+
   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
     // {
     //   $match: {
@@ -1233,6 +1259,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
     data: {
+      merchantNames,
       webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
       allMerchantCardConnectPayloadHeaders: allMerchantCardConnectPayloadHeaders
       // listOfWebhooks: listOfWebhooks

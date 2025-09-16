@@ -105,8 +105,7 @@ exports.getMerchantCardConnectPayloadHeaders = async (accountId) => {
 
 
 
-    const [accountDetails, customerDetails] = await Promise.all([
-        accountsModel.findOne({ accountId }).lean(),
+    const [customerDetails] = await Promise.all([
 
         cardConnectTransactionsModel.aggregate([
             { $match: { accountId: new mongoose.Types.ObjectId(accountId) } },
@@ -155,17 +154,10 @@ exports.getMerchantCardConnectPayloadHeaders = async (accountId) => {
 
 
 
-    let merchantsArray = [];
-    let merchantNames = {
-        merchantName: accountDetails?.accountName
-    }
-    merchantsArray.push(merchantNames)
-
 
     return {
         transactionStatusKeys,
         transactionTypeKeys,
-        merchantsArray,
         customerDetails: customerDetails[0].customers,
         batches: customerDetails[0].batches
 
@@ -215,30 +207,6 @@ exports.getAllCardConnectPayloadHeaders = async () => {
         }
     ])
 
-    let merchantNames = await accountsModel.aggregate([
-        {
-            $match: {
-                status: "active",
-                accountName: {
-                    $nin: ["", null],        // exclude empty string and null
-                    $type: "string"          // ensure it's actually a string
-                }
-            }
-        },
-        {
-            $group: {
-                _id: "$accountName"
-            }
-        },
-        {
-            $project: {
-                _id: 0,
-                merchantName: "$_id",
-
-            }
-        }
-
-    ])
 
 
     let transactionStatusKeys = cardConnectPredefinedKeys?.transactionStatusKeys
@@ -246,7 +214,7 @@ exports.getAllCardConnectPayloadHeaders = async () => {
 
 
     return {
-        merchantNames,
+
         transactionStatusKeys,
         transactionTypeKeys,
         customerDetails: customerAndBatchDetails[0].customers,

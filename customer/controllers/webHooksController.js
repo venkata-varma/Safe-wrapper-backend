@@ -1415,6 +1415,17 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
       accountId: new mongoose.Types.ObjectId(accountId)
     }
   }
+
+  let accountDetails = await accountsModel.findOne({ accountId })
+  let allMerchants = [];
+  let merchantNames = {
+    merchantName: accountDetails?.accountName
+  }
+  allMerchants.push(merchantNames)
+
+
+
+
   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
     {
       $match: {
@@ -1476,7 +1487,10 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   if (findIntegrationWithCardConnectCredentials && findIntegrationWithCardConnectSettings) {
     merchantPayloadHeaders = await getMerchantCardConnectPayloadHeaders(accountId)
   } else {
-    merchantPayloadHeaders = {}
+
+    merchantPayloadHeaders = {
+
+    }
   }
 
 
@@ -1487,6 +1501,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBHOOK_PAYLOAD_HEADERS,
     data: {
+      merchantNames: allMerchants,
       webhookPayloadHeadersData: webhookPayloadHeadersData[0] ? webhookPayloadHeadersData[0] : {},
       merchantPayloadHeaders: merchantPayloadHeaders
       // listOfWebhooks: listOfWebhooks
