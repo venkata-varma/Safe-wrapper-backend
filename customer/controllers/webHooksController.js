@@ -1339,29 +1339,23 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
   let selectDashboardArray = selectDashboard.split(',')
   let merchantNamesArray = merchantNames.split(',')
   console.log("selectDashboardArray===", selectDashboardArray)
+  console.log("merchantNamesArray===", merchantNamesArray)
 
+  let { fromDate, toDate } = req.query  //From date and to date are constant 
+  let { serialNumbers, cashTransactionTypes, } = req.query   //Filters of cima-machine
+  let { cardTransactionTypes, cardTransactionStatus, customerDetails, batchNumber, } = req.query    // Filters of Card-connect
 
-  if (merchantNamesArray.includes('All')) {
-    if (selectDashboardArray.length === 0) {
+  if (selectDashboardArray.includes('cima-machine')) {
+    returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, merchantNamesArray, selectDashboardArray, serialNumbers, cashTransactionTypes, accountId)
+  }
 
-    }
+  if (selectDashboardArray.includes('card-connect')) {
+
+    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardTransactionTypes, cardTransactionStatus, customerDetails, batchNumber, fromDate, toDate, accountId, merchantNamesArray, selectDashboardArray)
 
   }
 
 
-
-
-  if (selectDashboardArray.includes("cima-machine")) {
-    console.log("req.query===", req.query)
-    let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange } = req.query
-    returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, accountId)
-  }
-
-  if (selectDashboardArray.includes("card-connect")) {
-
-    let { cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange } = req.query
-    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange, accountId)
-  }
 
   // ✅ Merge & sort results if both exist
   if (
@@ -1419,7 +1413,8 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   let accountDetails = await accountsModel.findOne({ accountId })
   let allMerchants = [];
   let merchantNames = {
-    merchantName: accountDetails?.accountName
+    merchantName: accountDetails?.accountName,
+    objectId: accountDetails?._id
   }
   allMerchants.push(merchantNames)
   let categories = ["cima-machine", "card-connect"]
@@ -1488,9 +1483,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     merchantPayloadHeaders = await getMerchantCardConnectPayloadHeaders(accountId)
   } else {
 
-    merchantPayloadHeaders = {
-
-    }
+    merchantPayloadHeaders = {}
   }
 
 

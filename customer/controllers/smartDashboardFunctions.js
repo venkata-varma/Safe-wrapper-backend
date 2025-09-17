@@ -8,7 +8,7 @@ const webhookExceptionsModel = require("../../models/webhookExceptionsModel");
 const usersModel = require("../../models/usersModel");
 const onePosLogsModel = require("../../models/onePosLogsModel");
 const moment = require("moment");
-
+let mongoose = require('mongoose')
 const cardConnectTransactionsModel = require("../../cardConnect/models/cardConnectTransactionsModel");
 const cardConnectTransactionLifeCycleModel = require("../../cardConnect/models/cardConnectTransactionLifeCycle");
 const cardConnectIntegrationsCredentialsModel = require("../../cardConnect/models/cardConnectIntegrationsCredentialsModel");
@@ -22,11 +22,11 @@ const cardConnectExceptionsModel = require("../../cardConnect/models/cardConnect
 
 
 
+//fromDate, toDate, merchantNamesArray, selectDashboardArray, serialNumbers, cashTransactionTypes, ""
 
+exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, selectDashboardArray, serialNumbers, cashTransactionTypes, accountId) => {
 
-exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, accountId) => {
-
-    console.log("fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange", fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange)
+    // console.log("fromDate, toDate, merchantNamesArray, selectDashboardArray, serialNumbers, cashTransactionTypes, accountId ", fromDate, toDate, merchantNamesArray, selectDashboardArray, serialNumbers, cashTransactionTypes, accountId)
     if (!fromDate || !toDate) {
         throw new Error(' From date, and To date are required');
     }
@@ -36,6 +36,10 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
     }
     fromDate = moment.utc(fromDate).startOf("day").toDate();
     toDate = moment.utc(toDate).endOf("day").toDate()
+
+
+
+    merchantNamesArray = merchantNamesArray.map(id => new mongoose.Types.ObjectId(id));
 
     let serialNumbersArray = [];
     if (serialNumbers) {
@@ -56,20 +60,7 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
     }
 
 
-    const matchRange = cashTransactionRange.match(/-?\d+/g);
-    let fromRange = parseInt(matchRange[0]);
-    let toRange = parseInt(matchRange[1]);
 
-    console.log("fromRange,toRange", fromRange, toRange)
-
-    var userNamesArray = []
-    if (userNames) {
-        userNamesArray = userNames.includes(',')
-            ? userNames.split(',').map((s) => s.trim())
-            : [userNames];
-
-
-    }
 
 
     let matchConditions = {
@@ -77,15 +68,9 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
             $gte: fromDate,
             $lte: toDate,
         },
-        amount: {
-            $gte: fromRange,
-            $lte: toRange,
-        },
+
     };
 
-    if (userNamesArray.length > 0) {
-        matchConditions.userName = { $in: userNamesArray };
-    }
 
 
     if (serialNumbersArray.length > 0) {
@@ -98,6 +83,13 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
     console.log("fromDate--=", fromDate);
     console.log("toDate--=", toDate);
     const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
+        {
+            $match: {
+                accountId: {
+                    $in: merchantNamesArray
+                }
+            }
+        },
         {
             $addFields: {
                 transactionDate: { $toDate: "$transactionDateTime" },
@@ -131,7 +123,14 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, serialNumbers, cashT
 
 
 
-exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange) => {
+
+
+
+
+
+
+exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransactionStatus, customerDetails, batchNumber, fromDate, toDate, accountId, merchantNamesArray, selectDashboardArray) => {
+
 
     if (!fromDate || !toDate) {
         throw new Error(' From date, and To date are required');
@@ -143,11 +142,8 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
     fromDate = moment.utc(fromDate).startOf("day").toDate();
     toDate = moment.utc(toDate).endOf("day").toDate()
 
-    const matchRange = cardTransactionRange.match(/-?\d+/g);
-    let fromRange = parseInt(matchRange[0]);
-    let toRange = parseInt(matchRange[1]);
+    merchantNamesArray = merchantNamesArray.map(id => new mongoose.Types.ObjectId(id));
 
-    console.log("fromRange, toRange===", fromRange, toRange)
     let cardTransactionStatusArray = [];
     if (cardTransactionStatus) {
         cardTransactionStatusArray = cardTransactionStatus.includes(',')
@@ -194,6 +190,15 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
 
     //----------------------__End of tuning requirements and start of aggregate----------------
     const cardTransactionDetails = await cardConnectTransactionsModel.aggregate([
+        {
+            $match: {
+                accountId: {
+                    $in: merchantNamesArray
+                }
+            }
+        },
+
+
         {
             $addFields: {
 
@@ -292,10 +297,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                     $gte: fromDate,
                     $lte: toDate
                 },
-                amount: {
-                    $gte: fromRange,    // Both are $lte because as Negative numbers might be involved 
-                    $lte: toRange
-                },
+
                 ...(cardTransactionStatusArray.length > 0 && { transactionStatus: { $in: cardTransactionStatusArray } }),
                 ...(customerDetailsArray.length > 0 && { customerByCard: { $in: customerDetailsArray } }),
                 ...(batchNumberArray.length > 0 && { batchId: { $in: batchNumberArray } }),
@@ -320,4 +322,10 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
     ]);
     console.log("cardTransactionDetails===", (cardTransactionDetails.length))
     return cardTransactionDetails
+
+
+
+
+
+
 }

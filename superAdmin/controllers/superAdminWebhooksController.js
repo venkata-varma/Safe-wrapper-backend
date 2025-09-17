@@ -1176,6 +1176,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     {
       $match: {
         status: "active",
+        //accountType: { $ne: "super-admin" },
         accountName: {
           $nin: ["", null],        // exclude empty string and null
           $type: "string"          // ensure it's actually a string
@@ -1184,14 +1185,15 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     },
     {
       $group: {
-        _id: "$accountName"
+        _id: "$accountName",
+        objectId: { $first: "$_id" }
       }
     },
     {
       $project: {
         _id: 0,
         merchantName: "$_id",
-
+        objectId: 1
       }
     }
 
@@ -3029,27 +3031,32 @@ exports.getOneHubPosLogsDetails = asyncWrapper(async (req, res) => {
 
 
 exports.superAdminSmartFilteredDashboard = asyncWrapper(async (req, res) => {
-  let { selectDashboard, } = req.query
+  let { selectDashboard, merchantNames } = req.query
   let returnDashboardFiltersSafeCash;
   let returnDashboardFiltersCardConnect;
   let cashAndCardMixResultArray = []
   let selectDashboardArray = selectDashboard.split(',')
+  let merchantNamesArray = merchantNames.split(',')
   console.log("selectDashboardArray===", selectDashboardArray)
+  console.log("merchantNamesArray===", merchantNamesArray)
 
+  let { fromDate, toDate } = req.query  //From date and to date are constant 
+  let { serialNumbers, cashTransactionTypes, } = req.query   //Filters of cima-machine
+  let { cardTransactionTypes, cardTransactionStatus, customerDetails, batchNumber, } = req.query    // Filters of Card-connect
 
-
-
-  if (selectDashboardArray.includes("cima-machine")) {
-    console.log("req.query===", req.query)
-    let { fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, merchantNames } = req.query
-    returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, serialNumbers, cashTransactionTypes, userNames, cashTransactionRange, "")
+  if (selectDashboardArray.includes('cima-machine')) {
+    returnDashboardFiltersSafeCash = await dashboardFiltersSafeCash(fromDate, toDate, merchantNamesArray, selectDashboardArray, serialNumbers, cashTransactionTypes, "")
   }
 
-  if (selectDashboardArray.includes("card-connect")) {
+  if (selectDashboardArray.includes('card-connect')) {
 
-    let { cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange } = req.query
-    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardTransactionTypes, cardTransactionStatus, allMerchantIds, customerDetails, batchNumber, fromDate, toDate, cardTransactionRange, "")
+    returnDashboardFiltersCardConnect = await dashboardFiltersCardConnect(cardTransactionTypes, cardTransactionStatus, customerDetails, batchNumber, fromDate, toDate, "", merchantNamesArray, selectDashboardArray)
+
   }
+
+
+
+
 
   // ✅ Merge & sort results if both exist
   if (
@@ -3068,7 +3075,7 @@ exports.superAdminSmartFilteredDashboard = asyncWrapper(async (req, res) => {
     );
   }
 
-  console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
+  // console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
