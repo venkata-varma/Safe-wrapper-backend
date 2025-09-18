@@ -1333,6 +1333,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => {
   let { accountId } = req.params
   let { selectDashboard, merchantNames } = req.query
+
   let returnDashboardFiltersSafeCash;
   let returnDashboardFiltersCardConnect;
   let cashAndCardMixResultArray = []

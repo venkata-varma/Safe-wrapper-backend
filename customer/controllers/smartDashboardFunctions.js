@@ -37,9 +37,12 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
     fromDate = moment.utc(fromDate).startOf("day").toDate();
     toDate = moment.utc(toDate).endOf("day").toDate()
 
+    console.log("merchantNamesArray===", merchantNamesArray)
 
+    merchantNamesArray = merchantNamesArray
+        .filter(id => id && id.length === 24) // keep only valid ObjectId strings
+        .map(id => new mongoose.Types.ObjectId(id));
 
-    merchantNamesArray = merchantNamesArray.map(id => new mongoose.Types.ObjectId(id));
 
     let serialNumbersArray = [];
     if (serialNumbers) {
@@ -82,7 +85,15 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
     }
     console.log("fromDate--=", fromDate);
     console.log("toDate--=", toDate);
-    const webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
+
+    var webhookTransactionDetails
+    if (merchantNamesArray.length === 0) {
+        webhookTransactionDetails = []
+        return webhookTransactionDetails
+    }
+
+
+    webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
         {
             $match: {
                 accountId: {
@@ -142,7 +153,9 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
     fromDate = moment.utc(fromDate).startOf("day").toDate();
     toDate = moment.utc(toDate).endOf("day").toDate()
 
-    merchantNamesArray = merchantNamesArray.map(id => new mongoose.Types.ObjectId(id));
+    merchantNamesArray = merchantNamesArray
+        .filter(id => id && id.length === 24) // keep only valid ObjectId strings
+        .map(id => new mongoose.Types.ObjectId(id));
 
     let cardTransactionStatusArray = [];
     if (cardTransactionStatus) {
@@ -185,11 +198,15 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
     }
     console.log("fromDate-=-", fromDate)
     console.log("toDate-=-", toDate)
-
+    var cardTransactionDetails
+    if (merchantNamesArray.length === 0) {
+        cardTransactionDetails = []
+        return cardTransactionDetails
+    }
 
 
     //----------------------__End of tuning requirements and start of aggregate----------------
-    const cardTransactionDetails = await cardConnectTransactionsModel.aggregate([
+    cardTransactionDetails = await cardConnectTransactionsModel.aggregate([
         {
             $match: {
                 accountId: {
