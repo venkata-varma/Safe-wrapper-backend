@@ -21,7 +21,7 @@ const usersModel = require("../../models/usersModel");
 const onePosLogsModel = require("../../models/onePosLogsModel");
 const { insertPosLogs } = require("../../utils/utilsFunctions");
 const { authentication } = require("../../utils/authentication");
-const { dashboardFiltersSafeCash, dashboardFiltersCardConnect } = require("../../customer/controllers/smartDashboardFunctions");
+const { dashboardFiltersSafeCash, dashboardFiltersCardConnect, getSummaryDetails } = require("../../customer/controllers/smartDashboardFunctions");
 let { getAllCardConnectPayloadHeaders } = require('../../cardConnect/controllers/cardConnectIntegrationsMasterDataPointsController')
 
 /**
@@ -3077,6 +3077,39 @@ exports.superAdminSmartFilteredDashboard = asyncWrapper(async (req, res) => {
 
   // console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
 
+
+  //--------------------------------------------------------------------------------------------------------------------------------
+  let machineSummaryDetails = {
+    totalTransactionsCount: returnDashboardFiltersSafeCash ? returnDashboardFiltersSafeCash.length : 0,
+    totalMachinesCount: 0,
+    totalTransactionTypesCount: 0,
+    successfulTransactionsCount: returnDashboardFiltersSafeCash ? returnDashboardFiltersSafeCash.length : 0,
+    failureTransactionsCount: 0,
+    totalAmount: 0,
+    totalMerchantsSelected: merchantNamesArray.length
+  }
+
+
+
+
+  //--------------------------------------------------------------------------------------------------------------------------------
+  let cardConnectSummaryDetails = {
+    totalTransactionsCount: returnDashboardFiltersCardConnect ? returnDashboardFiltersCardConnect.length : 0,
+    successfulTransactionsCount: 0,
+    failureTransactionsCount: 0,
+    totalAmount: 0,
+    totalUsers: 0,
+    totalRefundedTransactionsCount: 0,
+    totalRefundedAmount: 0,
+    totalBatches: 0,
+    totalMerchantsSelected: merchantNamesArray.length
+  }
+  let getSummaryDetailsQueryFunction = await getSummaryDetails(returnDashboardFiltersSafeCash, returnDashboardFiltersCardConnect, machineSummaryDetails, cardConnectSummaryDetails)
+
+
+
+
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_CASH_OR_AND_CARD_TRANSACTIONS_RETREIVED,
@@ -3085,7 +3118,8 @@ exports.superAdminSmartFilteredDashboard = asyncWrapper(async (req, res) => {
       cimaMachineTransactionsCount: returnDashboardFiltersSafeCash ? returnDashboardFiltersSafeCash.length : 0,
       cardConnectTransactionsCount: returnDashboardFiltersCardConnect ? returnDashboardFiltersCardConnect.length : 0,
 
-      cashAndCardMixResultArray
+      cashAndCardMixResultArray,
+      getSummaryDetailsQueryFunction
     },
   });
 

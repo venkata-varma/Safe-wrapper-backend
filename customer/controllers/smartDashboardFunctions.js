@@ -346,3 +346,93 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
 
 
 }
+
+
+
+
+exports.getSummaryDetails = async (returnDashboardFiltersSafeCash, returnDashboardFiltersCardConnect, machineSummaryDetails, cardConnectSummaryDetails) => {
+    if (!(Array.isArray(returnDashboardFiltersSafeCash))) {
+        returnDashboardFiltersSafeCash = []
+    }
+    if (!(Array.isArray(returnDashboardFiltersCardConnect))) {
+        returnDashboardFiltersCardConnect = []
+    }
+
+    if (returnDashboardFiltersCardConnect.length > 0) {
+        let uniqueUsers = new Set();
+        let uniqueBatches = new Set()
+        for (let ccTransaction of returnDashboardFiltersCardConnect) {
+            if ((ccTransaction?.transactionType).toLowerCase() === "sale" && (ccTransaction?.transactionStatus).toLowerCase() === "processed") {
+                cardConnectSummaryDetails.totalAmount += ccTransaction?.amount
+            }
+            if ((ccTransaction?.transactionStatus).toLowerCase() === "processed") {
+                cardConnectSummaryDetails.successfulTransactionsCount += 1
+            } else if ((ccTransaction?.transactionStatus).toLowerCase() !== "processed") {
+                cardConnectSummaryDetails.failureTransactionsCount += 1
+            }
+            if (ccTransaction?.amount < 0 && (ccTransaction?.transactionStatus).toLowerCase() === "processed") {
+                cardConnectSummaryDetails.totalRefundedTransactionsCount += 1
+                cardConnectSummaryDetails.totalRefundedAmount += Math.abs(ccTransaction.amount)
+            }
+
+            if (ccTransaction?.customerByCard) {
+                uniqueUsers.add(ccTransaction?.customerByCard);
+            }
+
+            if (ccTransaction?.batchId) {
+                uniqueBatches.add(ccTransaction?.batchId)
+            }
+        }
+
+
+        cardConnectSummaryDetails.totalUsers = uniqueUsers.size
+        cardConnectSummaryDetails.totalBatches = uniqueBatches.size
+    }
+
+
+    if (returnDashboardFiltersSafeCash.length > 0) {
+
+        let uniqueMachines = new Set()
+        let uniqueTransactionTypes = new Set()
+
+        for (let machineTransaction of returnDashboardFiltersSafeCash) {
+            machineSummaryDetails.totalAmount += parseInt(machineTransaction?.amount);
+
+            if (machineTransaction?.transactionType) {
+                uniqueTransactionTypes.add(machineTransaction?.transactionType);
+            }
+
+            if (machineTransaction?.serialNumber) {
+                uniqueMachines.add(machineTransaction?.serialNumber);
+            }
+
+
+        }
+        machineSummaryDetails.totalMachinesCount = uniqueMachines.size
+        machineSummaryDetails.totalTransactionTypesCount = uniqueTransactionTypes.size
+
+
+    }
+
+    // console.log("machineSummaryDetails===", machineSummaryDetails)
+    // console.log("cardConnectSummaryDetails===", cardConnectSummaryDetails)
+
+    if (returnDashboardFiltersSafeCash.length > 0 && returnDashboardFiltersCardConnect.length > 0) {
+        return {
+            machineSummaryDetails,
+            cardConnectSummaryDetails
+        }
+    } else if (returnDashboardFiltersSafeCash.length === 0 && returnDashboardFiltersCardConnect.length > 0) {
+        return {
+            cardConnectSummaryDetails
+        }
+    } else if (returnDashboardFiltersSafeCash.length > 0 && returnDashboardFiltersCardConnect.length === 0) {
+        return {
+            machineSummaryDetails
+        }
+    }
+
+
+
+
+}

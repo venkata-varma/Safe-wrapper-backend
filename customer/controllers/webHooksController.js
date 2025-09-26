@@ -19,7 +19,7 @@ const webhookPayloadHeaders = require("../../models/webhookPayloadHeaders");
 const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
 const usersModel = require("../../models/usersModel");
 const onePosLogsModel = require("../../models/onePosLogsModel");
-const { dashboardFiltersCardConnect, dashboardFiltersSafeCash } = require('./smartDashboardFunctions')
+const { dashboardFiltersCardConnect, dashboardFiltersSafeCash, getSummaryDetails } = require('./smartDashboardFunctions')
 const { getMerchantCardConnectPayloadHeaders } = require('../../cardConnect/controllers/cardConnectIntegrationsMasterDataPointsController');
 const cardConnectIntegrationsCredentialsModel = require("../../cardConnect/models/cardConnectIntegrationsCredentialsModel");
 const cardConnectIntegrationsSettingsModel = require("../../cardConnect/models/cardConnectIntegrationsSettingsModel");
@@ -1376,6 +1376,38 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
 
   console.log("cashAndCardMixResultArray===", cashAndCardMixResultArray.length)
 
+
+
+  //--------------------------------------------------------------------------------------------------------------------------------
+  let machineSummaryDetails = {
+    totalTransactionsCount: returnDashboardFiltersSafeCash ? returnDashboardFiltersSafeCash.length : 0,
+    totalMachinesCount: 0,
+    totalTransactionTypesCount: 0,
+    successfulTransactionsCount: returnDashboardFiltersSafeCash ? returnDashboardFiltersSafeCash.length : 0,
+    failureTransactionsCount: 0,
+    totalAmount: 0,
+    totalMerchantsSelected: merchantNamesArray.length
+  }
+
+
+
+
+  //--------------------------------------------------------------------------------------------------------------------------------
+  let cardConnectSummaryDetails = {
+    totalTransactionsCount: returnDashboardFiltersCardConnect ? returnDashboardFiltersCardConnect.length : 0,
+    successfulTransactionsCount: 0,
+    failureTransactionsCount: 0,
+    totalAmount: 0,
+    totalUsers: 0,
+    totalRefundedTransactionsCount: 0,
+    totalRefundedAmount: 0,
+    totalBatches: 0,
+    totalMerchantsSelected: merchantNamesArray.length
+  }
+  let getSummaryDetailsQueryFunction = await getSummaryDetails(returnDashboardFiltersSafeCash, returnDashboardFiltersCardConnect, machineSummaryDetails, cardConnectSummaryDetails)
+
+
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_CASH_OR_AND_CARD_TRANSACTIONS_RETREIVED,
@@ -1385,7 +1417,8 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
       cardConnectTransactionsCount: returnDashboardFiltersCardConnect ? returnDashboardFiltersCardConnect.length : 0,
 
 
-      cashAndCardMixResultArray
+      cashAndCardMixResultArray,
+      getSummaryDetailsQueryFunction
     },
   });
 
