@@ -104,7 +104,7 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
         {
             $addFields: {
                 transactionDate: { $toDate: "$transactionDateTime" },
-                category: "cima-machine"
+                paymentType: "cima-machine"
             }
         },
 
@@ -227,7 +227,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 currency: "$responseObject.currency",
                 date: { $toDate: "$responseObject.date" },
                 batchId: { $toString: { $ifNull: ["$responseObject.batchid", ""] } },
-                category: "card-connect",
+                paymentType: "card-connect",
                 transactionDate: {
                     $switch: {
                         branches: [
@@ -351,6 +351,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
 
 
 exports.getSummaryDetails = async (returnDashboardFiltersSafeCash, returnDashboardFiltersCardConnect, machineSummaryDetails, cardConnectSummaryDetails) => {
+    let summaryDetails = []
     if (!(Array.isArray(returnDashboardFiltersSafeCash))) {
         returnDashboardFiltersSafeCash = []
     }
@@ -418,21 +419,23 @@ exports.getSummaryDetails = async (returnDashboardFiltersSafeCash, returnDashboa
     // console.log("cardConnectSummaryDetails===", cardConnectSummaryDetails)
 
     if (returnDashboardFiltersSafeCash.length > 0 && returnDashboardFiltersCardConnect.length > 0) {
-        return {
-            machineSummaryDetails,
-            cardConnectSummaryDetails
-        }
+        summaryDetails.push({
+            machineSummary: machineSummaryDetails,
+            cardConnectSummary: cardConnectSummaryDetails
+        })
+
+
     } else if (returnDashboardFiltersSafeCash.length === 0 && returnDashboardFiltersCardConnect.length > 0) {
-        return {
-            cardConnectSummaryDetails
-        }
+
+        summaryDetails.push({ cardConnectSummary: cardConnectSummaryDetails })
+
     } else if (returnDashboardFiltersSafeCash.length > 0 && returnDashboardFiltersCardConnect.length === 0) {
-        return {
-            machineSummaryDetails
-        }
+        summaryDetails.push({ machineSummary: machineSummaryDetails })
+
+
     }
 
 
-
+    return summaryDetails
 
 }

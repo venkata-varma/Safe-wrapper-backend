@@ -3086,7 +3086,8 @@ exports.superAdminSmartFilteredDashboard = asyncWrapper(async (req, res) => {
     successfulTransactionsCount: returnDashboardFiltersSafeCash ? returnDashboardFiltersSafeCash.length : 0,
     failureTransactionsCount: 0,
     totalAmount: 0,
-    totalMerchantsSelected: merchantNamesArray.length
+    totalMerchantsSelected: merchantNamesArray.length,
+    paymentType: "cima-machine"
   }
 
 
@@ -3102,7 +3103,8 @@ exports.superAdminSmartFilteredDashboard = asyncWrapper(async (req, res) => {
     totalRefundedTransactionsCount: 0,
     totalRefundedAmount: 0,
     totalBatches: 0,
-    totalMerchantsSelected: merchantNamesArray.length
+    totalMerchantsSelected: merchantNamesArray.length,
+    paymentType: "card-connect"
   }
   let getSummaryDetailsQueryFunction = await getSummaryDetails(returnDashboardFiltersSafeCash, returnDashboardFiltersCardConnect, machineSummaryDetails, cardConnectSummaryDetails)
 
