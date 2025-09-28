@@ -805,15 +805,25 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
         }
     ]);
 
-
+    summaryGrid = summaryGrid[0] ? summaryGrid[0] : {
+        totalTransactionsCount: 0,
+        settledTransactionsCount: 0,
+        settledAmount: 0,
+        refundedTransactionsCount: 0,
+        refundedAmount: 0,
+        batchesCount: 0,
+        customersCount: 0,
+        totalExceptionsCount: 0
+    }
     //-----------------------------------------------------
+
 
     let last24HoursStats = await cardConnectTransactionsModel.aggregate([
         {
             $match: {
                 accountId: new mongoose.Types.ObjectId(accountId),
                 createdAt: {
-                    $gte: new Date(new Date().setDate(new Date().getDate() - 1)), // last 24 hours
+                    $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
                     $lte: new Date(),
                 },
             },
@@ -829,24 +839,7 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
                 cardType: "$customerDetails.cardType",
             },
         },
-        {
-            $lookup: {
-                from: "cardconnectexceptions",
-                let: { accId: "$accountId" },
-                pipeline: [
-                    {
-                        $match: {
-                            $expr: { $eq: ["$accountId", "$$accId"] },
-                            createdAt: {
-                                $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
-                                $lte: new Date(),
-                            }
-                        }
-                    }
-                ],
-                as: "exceptions",
-            },
-        },
+
         {
             $group: {
                 _id: null,
@@ -923,7 +916,7 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
                     }
                 },
 
-                exceptions: { $first: "$exceptions" }
+
             }
         },
         {
@@ -936,13 +929,32 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
                 refundedAmount: 1,
                 batchesCount: { $size: "$batchesCount" },
                 customersCount: { $size: "$customersSet" },
-                totalExceptionsCount: { $size: "$exceptions" }
+
             }
         }
     ]);
+    let getExceptionsCountLast24Hours = await cardConnectExceptionsModel.find({
+        accountId: new mongoose.Types.ObjectId(accountId),
+        createdAt: {
+            $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
+            $lte: new Date(),
+        },
 
+    }).countDocuments()
 
+    // 🟢 Ensure last24HoursStats is always one object
+    let responseObjLast24Hours = (last24HoursStats.length > 0 ? last24HoursStats[0] : {
+        totalTransactionsCount: 0,
+        settledTransactionsCount: 0,
+        settledAmount: 0,
+        refundedTransactionsCount: 0,
+        refundedAmount: 0,
+        batchesCount: 0,
+        customersCount: 0
+    });
 
+    // add exceptions count to the object
+    responseObjLast24Hours.totalExceptionsCount = getExceptionsCountLast24Hours;
 
     return res
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -950,13 +962,12 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_GET_MERCHANT_CARD_CONNECT_EXCEPTIONS,
             data: {
-                // sixWeekAggregateFinalResult,
-                // latestTenTransactions,
-                // latestActivityLogs
-                //  latestBatches,
-                //summaryGrid,
-
-                last24HoursStats
+                sixWeekAggregateFinalResult,
+                latestTenTransactions,
+                latestActivityLogs,
+                latestBatches,
+                summaryGrid,
+                responseObjLast24Hours
             },
         });
 
