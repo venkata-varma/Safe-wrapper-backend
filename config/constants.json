@@ -163,7 +163,9 @@
     "MESSAGE_FETCHED_FUNDING_FOR_THE_DAY": "Performed manual trigger succesfully for the given date.",
     "MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION": "Performed manual trigger for the respective integration for its date dump range. ",
     "MESSAGE_RETREIVED_API_URL_FLOWS_OF_INTEGRATION": "API Url flows retreived succesfully.",
-    "MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS": "Details of respective integration retreived succesfully."
+    "MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS": "Details of respective integration retreived succesfully.",
+    "MESSAGE_GET_MERCHANT_CARD_CONNECT_EXCEPTIONS": "Merchant card-connect exceptions retreived succesfully.",
+    "MESSAGE_GET_ALL_CARD_CONNECT_EXCEPTIONS": "All card-connect exceptions retreived succesfully."
   },
   "statusCodes": {
     "FORBIDDEN": 403,

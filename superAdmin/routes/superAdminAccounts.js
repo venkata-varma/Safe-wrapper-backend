@@ -18,7 +18,7 @@ router.post('/upload-image', upload.single('logo'), accountsControllers.uploadIm
 router.patch('/update-account-status', accountsControllers.updateAccountStatus)
 
 router.patch('/update-account/:accountId', upload.single('logo'), accountsControllers.validateAccountForUpdate, accountsControllers.updateAccount)
-router.patch('/update-linked-machines-to-account/:accountId', accountsControllers.validateAccountForUpdate,  accountsControllers.validationMapMachinesToAccountUpdate, accountsControllers.updateLinkedMachinesOfAccount)
+router.patch('/update-linked-machines-to-account/:accountId', accountsControllers.validateAccountForUpdate, accountsControllers.validationMapMachinesToAccountUpdate, accountsControllers.updateLinkedMachinesOfAccount)
 
 
 
@@ -26,5 +26,10 @@ router.get('/get-all-merchant-accounts', accountsControllers.getAllMerchantAccou
 
 
 
-router.get('/get-account-and-card-connect-integration-details/:accountId',accountsControllers.validateAccountStatus, accountsControllers.getAccountAndCardConnectInterationDetails)
+router.get('/get-account-and-card-connect-integration-details/:accountId', accountsControllers.validateAccountStatus, accountsControllers.getAccountAndCardConnectInterationDetails)
+
+router.get('/get-all-card-connect-exceptions', accountsControllers.getAllCardConnectExceptions)
+
+
+
 module.exports = router;

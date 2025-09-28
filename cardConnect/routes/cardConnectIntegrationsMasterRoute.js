@@ -6,7 +6,7 @@ const {
     credentialsValidationsMiddleware,
     createIntegrationMasterCredentials,
     createCardConnectIntegrationMasterSettings,
-validateAccountExistAndActiveParams,
+    validateAccountExistAndActiveParams,
 
     editIntegrationsMasterCredentials,
     editIntegrationsMasterSettings,
@@ -15,7 +15,7 @@ validateAccountExistAndActiveParams,
 
     manualPullDateDumpRange,
     fetchFundingTransactionsForTheDateRange,
-    
+
     getIntegrationsAPIUrlFlows,
     editIntegrationsAPIUrlFlow
 
@@ -43,6 +43,7 @@ router.patch('/edit-card-connect-integrations-master-api-url-flows/:accountId', 
 router.post('/fetch-funding-data-for-the-day/:accountId', validateAccountExistAndActiveParams, fetchFundingTransactionsForTheDay)
 router.get('/manual-pull-for-date-dump-range/:accountId', validateAccountExistAndActiveParams, manualPullDateDumpRange)
 router.post('/fetch-funding-data-for-the-date-range/:accountId', validateAccountExistAndActiveParams, fetchFundingTransactionsForTheDateRange)
+
 
 
 

@@ -15,6 +15,7 @@ const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 
 const path = require('path');
 const { preSignedUrlToUpload } = require('../../utils/fileUpload');
+const cardConnectExceptionsModel = require('../../cardConnect/models/cardConnectExceptionsModel');
 
 
 exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
@@ -511,3 +512,30 @@ exports.getAccountAndCardConnectInterationDetails = asyncWrapper(async (req, res
         data: accountAndCardConnectIntegrationDetails
     });
 });
+
+
+
+
+
+
+exports.getAllCardConnectExceptions = asyncWrapper(async (req, res) => {
+    let getAllExceptions = await cardConnectExceptionsModel.find({}).sort({ createdAt: -1 }).populate({
+        path: 'accountId',
+        select: '_id accountName machines accountType'  // only pick these fields
+    });
+
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_GET_ALL_CARD_CONNECT_EXCEPTIONS,
+            data: {
+                exceptionsCount: getAllExceptions.length,
+                getAllExceptions
+            },
+        });
+
+
+
+})
