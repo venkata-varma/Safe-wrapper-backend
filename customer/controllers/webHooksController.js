@@ -20,11 +20,9 @@ const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
 const usersModel = require("../../models/usersModel");
 const onePosLogsModel = require("../../models/onePosLogsModel");
 const { dashboardFiltersCardConnect, dashboardFiltersSafeCash, getSummaryDetails } = require('./smartDashboardFunctions')
-const { getMerchantCardConnectPayloadHeaders } = require('../../cardConnect/controllers/cardConnectIntegrationsMasterDataPointsController');
+const { getMerchantCardConnectPayloadHeaders, getMerchantCardConnectExceptions } = require('../../cardConnect/controllers/cardConnectIntegrationsMasterDataPointsController');
 const cardConnectIntegrationsCredentialsModel = require("../../cardConnect/models/cardConnectIntegrationsCredentialsModel");
 const cardConnectIntegrationsSettingsModel = require("../../cardConnect/models/cardConnectIntegrationsSettingsModel");
-
-
 
 /**
  * Middleware function for Create webhook functionality
@@ -2928,11 +2926,61 @@ exports.getProgressMeterAndTotalsOfSingleMachine = asyncWrapper(async (req, res)
 
 exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
-  const exceptionsOfAccount = await webhookExceptionsModel.find({ accountId: new mongoose.Types.ObjectId(accountId) })
+  let machineCashExceptions = [];
+  let cardConnectExceptions = []
+  let { fromDate, toDate, paymentType } = req.query;
+  fromDate = moment.utc(fromDate).startOf("day").toDate();
+  toDate = moment.utc(toDate).endOf("day").toDate()
+  console.log("fromDate, toDate===", fromDate, toDate)
+  if (paymentType === "cima-machine") {
+    machineCashExceptions = await webhookExceptionsModel.aggregate([
+      {
+        $match: {
+          accountId: new mongoose.Types.ObjectId(accountId)
+        }
+      },
+      {
+        $addFields: {
+          paymentType: "cima-machine"
+        }
+      },
+      {
+        $match: {
+          createdAt: {
+            $gte: fromDate,
+            $lte: toDate
+          }
+        }
+      },
+
+      {
+        $sort: {
+          createdAt: -1
+        }
+      }
+
+    ])
+  }
+  if (paymentType === "card-connect") {
+    cardConnectExceptions = await getMerchantCardConnectExceptions(fromDate, toDate, paymentType, accountId)
+  }
+  let allExceptionsCount = machineCashExceptions.length > 0 ? machineCashExceptions.length : cardConnectExceptions.length > 0 ? cardConnectExceptions.length : 0
+  let allExceptions = [
+
+    ...machineCashExceptions,
+    ...cardConnectExceptions
+  ]
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
-    data: exceptionsOfAccount || []
+    data: {
+      allExceptionsCount,
+      allExceptions
+    }
+
+
+
   })
 })
 

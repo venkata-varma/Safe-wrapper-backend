@@ -18,7 +18,6 @@ const auth = require('../../middleware/authentication');
 router.use(auth)
 router.get('/get-single-integration-view/:accountId', validateAccountExistAndActiveParams, getSingleIntegrationView)
 
-router.get('/get-merchant-card-connect-exceptions/:accountId', validateAccountExistAndActiveParams, getMerchantCardConnectExceptions)
 
 router.get('/get-merchant-card-connect-dashboard-statistics/:accountId', validateAccountExistAndActiveParams, getMerchantCardConnectDashboardStats)
 module.exports = router

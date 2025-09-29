@@ -12,7 +12,7 @@ const {
   getIndividualWebhookDetails,
   validateWebhookStatus,
   validateAccountStatus,
-  validateWebhookandAccount,updateWebhookSettings,
+  validateWebhookandAccount, updateWebhookSettings,
   getAllWebhookTransactionsOfAccount,
   getAllWebhookPayoadHeadersOfAccount,
   getDashboardStatisticsOfAccount,
@@ -21,7 +21,7 @@ const {
   getPayloadReports,
   validateAuthentication,
   getTransactionsReports,
-  getExceptionsOfAccount,
+  getAllExceptionsWithFilters,
   getTransactionDenominations,
   updateWebhookStatus,
   updateWebhookAutoDataSyncStatus,
@@ -36,7 +36,7 @@ router.post(
   receiveWebhookData
 );
 
-const {superAdminAuth} = require("../middleware/superAdminAuthentication");
+const { superAdminAuth } = require("../middleware/superAdminAuthentication");
 
 router.use(superAdminAuth);
 router.post(
@@ -45,30 +45,30 @@ router.post(
   createWebHook
 );
 
-router.post("/decrypt-string",  decryptString);
-router.patch('/update-webhook-settings',validateWebhookandAccount,updateWebhookSettings)
-router.patch('/update-webhook-status',updateWebhookStatus)
-router.patch('/update-webhook-auto-data-sync-status',updateWebhookAutoDataSyncStatus)
+router.post("/decrypt-string", decryptString);
+router.patch('/update-webhook-settings', validateWebhookandAccount, updateWebhookSettings)
+router.patch('/update-webhook-status', updateWebhookStatus)
+router.patch('/update-webhook-auto-data-sync-status', updateWebhookAutoDataSyncStatus)
 router.get(
   "/get-individual-webhook-details",
   validateWebhookStatus,
   getIndividualWebhookDetails
 );
 
-router.get('/get-machine-transactions',getAllWebhookTransactionsOfAccount)
-router.get('/get-machine-payload-headers',getAllWebhookPayoadHeadersOfAccount)
-router.get('/get-dashboard-statistics',getDashboardStatisticsOfAccount)
-router.get('/get-list-of-machines',getListOfMachines)
-router.get('/get-all-machine-reports',getAllMachineReports)
-router.get('/get-machine-reports',getPayloadReports)
-router.get('/get-exceptions',getExceptionsOfAccount)
-router.get('/get-transaction-denominations',getTransactionDenominations)
-router.get('/get-all-webhook-details-of-account',getWebhookDetailsOfAccount)
-router.get('/get-onehubpos-logs-details',getOneHubPosLogsDetails)
+router.get('/get-machine-transactions', getAllWebhookTransactionsOfAccount)
+router.get('/get-machine-payload-headers', getAllWebhookPayoadHeadersOfAccount)
+router.get('/get-dashboard-statistics', getDashboardStatisticsOfAccount)
+router.get('/get-list-of-machines', getListOfMachines)
+router.get('/get-all-machine-reports', getAllMachineReports)
+router.get('/get-machine-reports', getPayloadReports)
+router.get('/get-all-exceptions', getAllExceptionsWithFilters)
+router.get('/get-transaction-denominations', getTransactionDenominations)
+router.get('/get-all-webhook-details-of-account', getWebhookDetailsOfAccount)
+router.get('/get-onehubpos-logs-details', getOneHubPosLogsDetails)
 // router.get('/get-')
 
 //One POS
-router.get('/get-transactions-reports',validateAuthentication, getTransactionsReports)
+router.get('/get-transactions-reports', validateAuthentication, getTransactionsReports)
 
 
 router.get('/super-admin-smart-filtered-dashboard', superAdminSmartFilteredDashboard)

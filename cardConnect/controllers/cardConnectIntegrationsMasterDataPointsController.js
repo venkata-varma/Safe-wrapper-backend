@@ -226,27 +226,67 @@ exports.getAllCardConnectPayloadHeaders = async () => {
 }
 
 
-exports.getMerchantCardConnectExceptions = asyncWrapper(async (req, res) => {
-    let getExceptions = await cardConnectExceptionsModel.find({ accountId: req.params.accountId }).sort({ createdAt: -1 }).populate({
-        path: 'accountId',
-        select: '_id accountName machines accountType'  // only pick these fields
-    });
+exports.getMerchantCardConnectExceptions = async (fromDate, toDate, paymentType, accountId) => {
+    console.log("fromDate, toDate, paymentType,accountId===", fromDate, toDate, paymentType, accountId)
+    let getMerchantExceptions = await cardConnectExceptionsModel.aggregate([
+        {
+            $match: {
+                accountId: new mongoose.Types.ObjectId(accountId)
+            }
+        },
+        {
+            $addFields: {
+                paymentType: "card-connect"
+            }
+        },
+        {
+            $match: {
+                createdAt: {
+                    $gte: fromDate,
+                    $lte: toDate
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "accounts",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "accountRecord"
+            }
+        },
+        {
+            $unwind: "$accountRecord"
+        },
+        {
+            $project: {
+                "accountRecord.password": 0
+            }
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        }
+    ])
 
 
-    return res
-        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-        .json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_GET_MERCHANT_CARD_CONNECT_EXCEPTIONS,
-            data: {
-                exceptionsCount: getExceptions.length,
-                getExceptions
-            },
-        });
+    return getMerchantExceptions
+
+
+}
 
 
 
-})
+
+
+
+
+
+
+
+
+
 
 
 exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => {

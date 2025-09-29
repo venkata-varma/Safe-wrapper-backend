@@ -23,6 +23,7 @@ const { insertPosLogs } = require("../../utils/utilsFunctions");
 const { authentication } = require("../../utils/authentication");
 const { dashboardFiltersSafeCash, dashboardFiltersCardConnect, getSummaryDetails } = require("../../customer/controllers/smartDashboardFunctions");
 let { getAllCardConnectPayloadHeaders } = require('../../cardConnect/controllers/cardConnectIntegrationsMasterDataPointsController')
+let { getAllCardConnectExceptions } = require('./superAdminAccountControllers')
 
 /**
  * Middleware function for Create webhook functionality
@@ -2545,12 +2546,58 @@ exports.getTransactionsReports = asyncWrapper(async (req, res) => {
   })
 })
 
-exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
-  const exceptionsOfAccount = await webhookExceptionsModel.find({})
+
+exports.getAllExceptionsWithFilters = asyncWrapper(async (req, res) => {
+  let machineCashExceptions = [];
+  let cardConnectExceptions = []
+  let { fromDate, toDate, paymentType } = req.query;
+  fromDate = moment.utc(fromDate).startOf("day").toDate();
+  toDate = moment.utc(toDate).endOf("day").toDate()
+  console.log("fromDate, toDate===", fromDate, toDate)
+  if (paymentType === "cima-machine") {
+    machineCashExceptions = await webhookExceptionsModel.aggregate([
+      {
+        $addFields: {
+          paymentType: "cima-machine"
+        }
+      },
+      {
+        $match: {
+          createdAt: {
+            $gte: fromDate,
+            $lte: toDate
+          }
+        }
+      },
+
+      {
+        $sort: {
+          createdAt: -1
+        }
+      }
+
+    ])
+  }
+  if (paymentType === "card-connect") {
+    cardConnectExceptions = await getAllCardConnectExceptions(fromDate, toDate, paymentType)
+  }
+  let allExceptionsCount = machineCashExceptions.length > 0 ? machineCashExceptions.length : cardConnectExceptions.length > 0 ? cardConnectExceptions.length : 0
+  let allExceptions = [
+
+    ...machineCashExceptions,
+    ...cardConnectExceptions
+  ]
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
-    data: exceptionsOfAccount || []
+    data: {
+      allExceptionsCount,
+      allExceptions
+    }
+
+
+
   })
 })
 

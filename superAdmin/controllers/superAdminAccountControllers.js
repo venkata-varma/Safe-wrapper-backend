@@ -521,27 +521,52 @@ exports.getAccountAndCardConnectInterationDetails = asyncWrapper(async (req, res
 
 
 
-exports.getAllCardConnectExceptions = asyncWrapper(async (req, res) => {
-    let getAllExceptions = await cardConnectExceptionsModel.find({}).sort({ createdAt: -1 }).populate({
-        path: 'accountId',
-        select: '_id accountName machines accountType'  // only pick these fields
-    });
+exports.getAllCardConnectExceptions = async (fromDate, toDate, paymentType) => {
+    console.log("fromDate, toDate, paymentType===", fromDate, toDate, paymentType)
+    let getAllExceptions = await cardConnectExceptionsModel.aggregate([
+        {
+            $addFields: {
+                paymentType: "card-connect"
+            }
+        },
+        {
+            $match: {
+                createdAt: {
+                    $gte: fromDate,
+                    $lte: toDate
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "accounts",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "accountRecord"
+            }
+        },
+        {
+            $unwind: "$accountRecord"
+        },
+        {
+            $project: {
+                "accountRecord.password": 0
+            }
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        }
+    ])
 
 
-    return res
-        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
-        .json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_GET_ALL_CARD_CONNECT_EXCEPTIONS,
-            data: {
-                exceptionsCount: getAllExceptions.length,
-                getAllExceptions
-            },
-        });
+    return getAllExceptions
 
 
 
-})
+
+}
 
 
 
