@@ -30,6 +30,6 @@ router.get('/get-account-and-card-connect-integration-details/:accountId', accou
 
 router.get('/get-all-card-connect-exceptions', accountsControllers.getAllCardConnectExceptions)
 
-
+router.get('/get-super-admin-card-connect-dashboard-statistics', accountsControllers.getSuperAdminCardConnectDashboardStats)
 
 module.exports = router;

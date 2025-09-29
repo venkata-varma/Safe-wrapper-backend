@@ -419,19 +419,15 @@ exports.getSummaryDetails = async (returnDashboardFiltersSafeCash, returnDashboa
     // console.log("cardConnectSummaryDetails===", cardConnectSummaryDetails)
 
     if (returnDashboardFiltersSafeCash.length > 0 && returnDashboardFiltersCardConnect.length > 0) {
-        summaryDetails.push({
-            machineSummary: machineSummaryDetails,
-            cardConnectSummary: cardConnectSummaryDetails
-        })
+        summaryDetails.push(machineSummaryDetails, cardConnectSummaryDetails)
 
 
     } else if (returnDashboardFiltersSafeCash.length === 0 && returnDashboardFiltersCardConnect.length > 0) {
 
-        summaryDetails.push({ cardConnectSummary: cardConnectSummaryDetails })
+        summaryDetails.push(cardConnectSummaryDetails)
 
     } else if (returnDashboardFiltersSafeCash.length > 0 && returnDashboardFiltersCardConnect.length === 0) {
-        summaryDetails.push({ machineSummary: machineSummaryDetails })
-
+        summaryDetails.push(machineSummaryDetails)
 
     }
 

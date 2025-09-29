@@ -16,6 +16,7 @@ const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 const path = require('path');
 const { preSignedUrlToUpload } = require('../../utils/fileUpload');
 const cardConnectExceptionsModel = require('../../cardConnect/models/cardConnectExceptionsModel');
+const cardConnectTransactionsModel = require('../../cardConnect/models/cardConnectTransactionsModel');
 
 
 exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
@@ -539,3 +540,715 @@ exports.getAllCardConnectExceptions = asyncWrapper(async (req, res) => {
 
 
 })
+
+
+
+
+exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) => {
+
+    let getLastSiWeeksResult = getSixWeeksSalesFunction()
+
+    const weeksArray = getLastSiWeeksResult.map(week => ({
+        fromDate: new Date(week.fromDate),
+        toDate: new Date(week.toDate)
+    }));
+
+
+    const fromDate = new Date(getLastSiWeeksResult[0].fromDate);
+    const toDate = new Date(getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate);
+
+    console.log("fromDate type:", typeof fromDate, fromDate);
+    console.log("toDate type:", typeof toDate, toDate);
+    let pipeline = await cardConnectTransactionsModel.aggregate([
+
+        {
+            $addFields: {
+                transactionDate: {
+                    $switch: {
+                        branches: [
+                            // Case: 14 digits (YYYYMMDDHHmmss)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        14
+                                    ]
+                                },
+                                then: {
+                                    $dateFromString: {
+                                        dateString: {
+                                            $concat: [
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 8, 2] }, ":",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 10, 2] }, ":",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 12, 2] }, "Z"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            // Case: 8 digits (YYYYMMDD)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        8
+                                    ]
+                                },
+                                then: {
+                                    $dateFromString: {
+                                        dateString: {
+                                            $concat: [
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T00:00:00Z"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            // Case: epoch seconds (10 digits)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        10
+                                    ]
+                                },
+                                then: {
+                                    $toDate: {
+                                        $multiply: [{ $toLong: { $ifNull: ["$responseObject.authdate", 0] } }, 1000]
+                                    }
+                                }
+                            },
+                            // Case: epoch millis (13 digits)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        13
+                                    ]
+                                },
+                                then: {
+                                    $toDate: { $toLong: { $ifNull: ["$responseObject.authdate", 0] } }
+                                }
+                            }
+                        ],
+                        // Default: fallback to responseObject.date
+                        default: { $toDate: "$responseObject.date" }
+                    }
+                },
+                transactionId: "$responseObject.retref",
+                currency: "$responseObject.currency",
+                transactionStatus: "$responseObject.status",
+                batchId: "$responseObject.batchid",
+                amount: { $toDouble: "$responseObject.amount" },
+                transactionType: "$responseObject.type"
+            }
+        },
+        {
+            $match: {
+                transactionDate: {
+                    $gte: fromDate,
+                    $lte: toDate
+                },
+
+            }
+        },
+        {
+            $sort: {
+                transactionDate: -1
+            }
+        },
+        {
+            $project: {
+                responseObject: 0
+            }
+        },
+        {
+            $addFields: {
+                matchedWeek: {
+                    $arrayElemAt: [
+                        {
+                            $filter: {
+                                input: weeksArray,
+                                as: "week",
+                                cond: {
+                                    $and: [
+                                        { $gte: ["$transactionDate", "$$week.fromDate"] },
+                                        { $lte: ["$transactionDate", "$$week.toDate"] }
+                                    ]
+                                }
+                            }
+                        },
+                        0
+                    ]
+                }
+            }
+        },
+
+        {
+            $group: {
+                _id: {
+                    fromDate: "$matchedWeek.fromDate",
+                    toDate: "$matchedWeek.toDate"
+                },
+                settledTransactionsCount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "SALE"] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                settledAmount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "SALE"] }
+                                ]
+                            },
+                            "$amount",
+                            0
+                        ]
+                    }
+                },
+                batchIds: { $addToSet: "$batchId" }
+            }
+        },
+        {
+            $addFields: {
+                batchCount: { $size: "$batchIds" }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                fromDate: "$_id.fromDate",
+                toDate: "$_id.toDate",
+                settledTransactionsCount: 1,
+                settledAmount: 1,
+                batchIds: 1,
+                batchCount: 1
+
+            }
+        }
+
+
+    ])
+
+
+    const sixWeekAggregateFinalResult = weeksArray.map(week => {
+        const matchingWeek = pipeline.find(r =>
+            String(r.fromDate) === String(week.fromDate) &&
+            String(r.toDate) === String(week.toDate)
+        );
+
+        return matchingWeek || {
+            fromDate: week.fromDate,
+            toDate: week.toDate,
+            "settledTransactionsCount": 0,
+            "settledAmount": 0,
+            "batchIds": [],
+            "batchCount": 0,
+        };
+    });
+    //-------------------------------------------
+    let latestTenTransactions = await cardConnectTransactionsModel.aggregate([
+
+        {
+            $addFields: {
+                transactionDate: {
+                    $switch: {
+                        branches: [
+                            // Case: 14 digits (YYYYMMDDHHmmss)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        14
+                                    ]
+                                },
+                                then: {
+                                    $dateFromString: {
+                                        dateString: {
+                                            $concat: [
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 8, 2] }, ":",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 10, 2] }, ":",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 12, 2] }, "Z"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            // Case: 8 digits (YYYYMMDD)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        8
+                                    ]
+                                },
+                                then: {
+                                    $dateFromString: {
+                                        dateString: {
+                                            $concat: [
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T00:00:00Z"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            // Case: epoch seconds (10 digits)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        10
+                                    ]
+                                },
+                                then: {
+                                    $toDate: {
+                                        $multiply: [{ $toLong: { $ifNull: ["$responseObject.authdate", 0] } }, 1000]
+                                    }
+                                }
+                            },
+                            // Case: epoch millis (13 digits)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        13
+                                    ]
+                                },
+                                then: {
+                                    $toDate: { $toLong: { $ifNull: ["$responseObject.authdate", 0] } }
+                                }
+                            }
+                        ],
+                        // Default: fallback to responseObject.date
+                        default: { $toDate: "$responseObject.date" }
+                    }
+                },
+                transactionId: "$responseObject.retref",
+                currency: "$responseObject.currency",
+                transactionStatus: "$responseObject.status",
+                batchId: "$responseObject.batchid",
+                amount: { $toDouble: "$responseObject.amount" },
+                transactionType: "$responseObject.type"
+            }
+        },
+        {
+            $limit: 10
+        },
+        {
+            $sort: {
+                transactionDate: -1
+            }
+        },
+        {
+            $project: {
+                responseObject: 0
+            }
+        }
+
+    ])
+
+    //-------------------------------------------------------
+    let latestActivityLogs = await cardConnectIntegrationsCronsModel.find({}, { newWOCount: 0 }).limit(10).sort({ createdAt: -1 })
+    //-----------------------------------------------------------------------------------------------
+    let latestBatches = await cardConnectTransactionsModel.aggregate([
+
+        {
+            $addFields: {
+                batchId: "$responseObject.batchid",
+                transactionStatus: "$responseObject.status",
+                transactionType: "$responseObject.type",
+                amount: { $toDouble: "$responseObject.amount" }
+            },
+        },
+        {
+            $group: {
+                _id: "$batchId",
+                transactionsCount: { $sum: 1 },
+                settledTransactionsCount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "SALE"] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                settledAmount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "SALE"] }
+                                ]
+                            },
+                            "$amount",
+                            0
+                        ]
+                    }
+                },
+                refundedTransactionsCount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "REFUND"] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                refundedAmount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "REFUND"] }
+                                ]
+                            },
+                            { $abs: "$amount" }, // convert negative string to number, then abs
+                            0
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                batchId: "$_id",
+                transactionsCount: 1,
+                settledTransactionsCount: 1,
+                settledAmount: 1,
+                refundedTransactionsCount: 1,
+                refundedAmount: 1
+            }
+        },
+        {
+            $sort: { batchId: -1 }  // latest batches first
+        },
+        {
+            $limit: 5
+        }
+    ]);
+
+    //------------------------------------------------------------------
+    let summaryGrid = await cardConnectTransactionsModel.aggregate([
+
+        {
+            $addFields: {
+                batchId: "$responseObject.batchid",
+                transactionStatus: "$responseObject.status",
+                transactionType: "$responseObject.type",
+                amount: { $toDouble: "$responseObject.amount" },
+                cardNumber: "$customerDetails.cardNumber",
+                cardBrand: "$customerDetails.cardBrand",
+                cardType: "$customerDetails.cardType",
+            },
+        },
+        {
+            $lookup: {
+                from: "cardconnectexceptions",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "exceptions",
+            },
+        },
+        {
+            $group: {
+                _id: null,
+
+                // transaction counts
+                totalTransactionsCount: { $sum: 1 },
+
+                settledTransactionsCount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "SALE"] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+
+                settledAmount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "SALE"] }
+                                ]
+                            },
+                            "$amount",
+                            0
+                        ]
+                    }
+                },
+
+                refundedTransactionsCount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "REFUND"] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+
+                refundedAmount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "REFUND"] }
+                                ]
+                            },
+                            { $abs: "$amount" },
+                            0
+                        ]
+                    }
+                },
+
+                // distinct batch count
+                batchesCount: { $addToSet: "$batchId" },
+
+                // distinct customer count based on 3 fields
+                customersSet: {
+                    $addToSet: {
+                        cardNumber: "$cardNumber",
+                        cardBrand: "$cardBrand",
+                        cardType: "$cardType"
+                    }
+                },
+                exceptions: { $first: "$exceptions" }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                totalTransactionsCount: 1,
+                settledTransactionsCount: 1,
+                settledAmount: 1,
+                refundedTransactionsCount: 1,
+                refundedAmount: 1,
+                batchesCount: { $size: "$batchesCount" },
+                customersCount: { $size: "$customersSet" },
+                totalExceptionsCount: { $size: "$exceptions" }
+            }
+        }
+    ]);
+
+    summaryGrid = summaryGrid[0] ? summaryGrid[0] : {
+        totalTransactionsCount: 0,
+        settledTransactionsCount: 0,
+        settledAmount: 0,
+        refundedTransactionsCount: 0,
+        refundedAmount: 0,
+        batchesCount: 0,
+        customersCount: 0,
+        totalExceptionsCount: 0
+    }
+    //-----------------------------------------------------
+
+
+    let last24HoursStats = await cardConnectTransactionsModel.aggregate([
+        {
+            $match: {
+                // accountId: new mongoose.Types.ObjectId(accountId),
+                createdAt: {
+                    $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
+                    $lte: new Date(),
+                },
+            },
+        },
+        {
+            $addFields: {
+                batchId: "$responseObject.batchid",
+                transactionStatus: "$responseObject.status",
+                transactionType: "$responseObject.type",
+                amount: { $toDouble: "$responseObject.amount" },
+                cardNumber: "$customerDetails.cardNumber",
+                cardBrand: "$customerDetails.cardBrand",
+                cardType: "$customerDetails.cardType",
+            },
+        },
+
+        {
+            $group: {
+                _id: null,
+
+                totalTransactionsCount: { $sum: 1 },
+
+                settledTransactionsCount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "SALE"] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+
+                settledAmount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "SALE"] }
+                                ]
+                            },
+                            "$amount",
+                            0
+                        ]
+                    }
+                },
+
+                refundedTransactionsCount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "REFUND"] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+
+                refundedAmount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$transactionStatus", "Processed"] },
+                                    { $eq: ["$transactionType", "REFUND"] }
+                                ]
+                            },
+                            { $abs: "$amount" },
+                            0
+                        ]
+                    }
+                },
+
+                batchesCount: { $addToSet: "$batchId" },
+
+                customersSet: {
+                    $addToSet: {
+                        cardNumber: "$cardNumber",
+                        cardBrand: "$cardBrand",
+                        cardType: "$cardType"
+                    }
+                },
+
+
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                totalTransactionsCount: 1,
+                settledTransactionsCount: 1,
+                settledAmount: 1,
+                refundedTransactionsCount: 1,
+                refundedAmount: 1,
+                batchesCount: { $size: "$batchesCount" },
+                customersCount: { $size: "$customersSet" },
+
+            }
+        }
+    ]);
+    let getExceptionsCountLast24Hours = await cardConnectExceptionsModel.find({
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        createdAt: {
+            $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
+            $lte: new Date(),
+        },
+
+    }).countDocuments()
+
+    // 🟢 Ensure last24HoursStats is always one object
+    let responseObjLast24Hours = (last24HoursStats.length > 0 ? last24HoursStats[0] : {
+        totalTransactionsCount: 0,
+        settledTransactionsCount: 0,
+        settledAmount: 0,
+        refundedTransactionsCount: 0,
+        refundedAmount: 0,
+        batchesCount: 0,
+        customersCount: 0
+    });
+
+    // add exceptions count to the object
+    responseObjLast24Hours.totalExceptionsCount = getExceptionsCountLast24Hours;
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_GET_MERCHANT_CARD_CONNECT_EXCEPTIONS,
+            data: {
+                sixWeekAggregateFinalResult,
+                latestTenTransactions,
+                latestActivityLogs,
+                latestBatches,
+                summaryGrid,
+                responseObjLast24Hours
+            },
+        });
+
+
+
+
+})
+
