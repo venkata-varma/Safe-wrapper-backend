@@ -532,7 +532,13 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
 
     let dateRange = generateDateRange(dateDumpRange);
     console.log("dateRange===", dateRange)
-
+    let storeDateRange = dateRange.map((unformattedDate) => {
+        return (
+            unformattedDate.slice(0, 4) + "-" +    // year
+            unformattedDate.slice(4, 6) + "-" +    // month
+            unformattedDate.slice(6, 8)            // day
+        );
+    });
     //-------------------------
 
 
@@ -542,7 +548,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
 
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
-        dateRange,
+        dateRange: storeDateRange,
         cronJobType: "manual"
     })
 
@@ -567,7 +573,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
+            message: customConstants.messages.MESSAGE_LIVE_FUNDING_DATA_DUMP_RANGE_OF_SETTINGS,
             data: {
                 finalResult: {
                     accountId: finalCronDetails?.accountId,
@@ -633,12 +639,18 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
     let generatedDateArray = generateDateArray(fromDate, toDate)
     console.log("generatedDateArray===", generatedDateArray)
 
-
+    let storeDateRange = generatedDateArray.map((unformattedDate) => {
+        return (
+            unformattedDate.slice(0, 4) + "-" +    // year
+            unformattedDate.slice(4, 6) + "-" +    // month
+            unformattedDate.slice(6, 8)            // day
+        );
+    });
     let createIntegrationsCron = await cardConnectIntegrationsCronsModel.create({
 
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
-        dateRange: generatedDateArray,
+        dateRange: storeDateRange,
         cronJobType: "manual"
     })
 
@@ -665,7 +677,7 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
+            message: customConstants.messages.MESSAGE_LIVE_FUNDING_DATA_DATE_RANGE,
             data: {
                 finalResult: {
                     accountId: finalCronDetails?.accountId,

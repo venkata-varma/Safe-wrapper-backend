@@ -267,12 +267,13 @@ components:
 #-----------------------------------------------------------------------------------------------------------------------------------
 
 paths:
-  /api/users/user-login:
+  /api/users/super-admin-login:
     post:
       tags:
         - Authorize
       summary: "1. Copy access_token from response || 2. Click Authorize button   ||  3. Place access_token in input box to authorize."
       description: |
+        - Accessible only for Super-admin
         - Copy `access_token` from response  
         - Click the **Authorize** button  
         - Place `access_token` in the input box to authorize.
@@ -313,7 +314,54 @@ paths:
      
       security: [] # No authentication required for login
     
-            
+  /api/merchants/users/user-login:
+    post:
+      tags:
+        - Authorize
+      summary: "1. Copy access_token from response || 2. Click Authorize button   ||  3. Place access_token in input box to authorize."
+      description: |
+        - For `Merchant's` login 
+        - Copy `access_token` from response  
+        - Click the **Authorize** button  
+        - Place `access_token` in the input box to authorize.
+        - Set `desired expiration time` for a session in days only.  
+          Examples:  
+          default is set to `1 day  (1d)`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mobileEmail:
+                  type: string
+                  description: "User's mobile number or email"
+                  example: "9989765432"
+                password:
+                  type: string
+                  format: password
+                  description: "User's password"
+                  example: "Integrations9@"
+                sessionExpirationTime:
+                  type: string
+                  description: "Set desired expiration time for a session in either seconds, minutes ,hours,days, weeks, or years. Example: For minutes- 5m; For hours- 5h; For days - 5d; For Weeks- 5w; For Years- 5y"
+                  example: "1d"
+      responses:
+       200:
+        description: "Successful login response"
+        content:
+          application/json:
+            example:
+              status: "success"
+              message: "Login successfull."
+              data:
+                accountId:    "68b6e54bcb20acc23122****"
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2RkNTg2ZTZkNjJmYjhkN2FlMWU5NTIiLCJpYXQiOjE3NDQxNzMwNDcsImV4cCI6MTc0NDE3NjY0N30.jQe7XNYuDSkwB3HQNjO2tGfkmyd0aHFO6nMMzj-Mjcc"
+               
+     
+      security: [] # No authentication required for login
+              
 
   #-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -514,3 +562,87 @@ paths:
                           type: integer
                           example: 0
     
+
+  
+  /api/card-connect/integrations-master/fetch-funding-data-for-the-day/{accountId}:
+   post:
+     tags:
+      - Card-connect Integration - Fetching live from Card-connect and also Insights with filters
+     summary: "Retrieve live funding data from card-connect for the given day"
+     description: |
+      - This API takes a date in `YYYY-MM-DD` format in the body.  
+      - Calls `Funding API` for the given day.  
+      - For each transaction:
+        - If it does not exist, creates an entry.  
+        - If it exists with the same `status`, no entry is made.  
+        - If it exists with different `status`, the record is updated.  
+      - Requires authentication via the `Authorization` header.  
+      - Returns statistics about pulled, pushed, updated, and exception counts.  
+     security:
+      - Authorization: [] # Requires Authorization header with token
+     parameters:
+      - name: accountId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: "Unique account identifier"
+     requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              date:
+                type: string
+                items:
+                  type: string
+                  format: date
+                example: "2025-09-11"
+            required:
+              - date
+     responses:
+      200:
+        description: Fetched live funding-txns data succesfully for the given date.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: success
+                message:
+                  type: string
+                  example: "Fetched live funding-txns data succesfully for the given date."
+                data:
+                  type: object
+                  properties:
+                    finalResult:
+                      type: object
+                      properties:
+                        accountId:
+                          type: string
+                          example: "68b6e54bcb20acc231225479"
+                        cronJobType:
+                          type: string
+                          example: "manual"
+                        dateRange:
+                          type: array
+                          items:
+                            type: string
+                            format: date
+                          example: ["2025-09-11"]
+                        pulledCount:
+                          type: integer
+                          example: 115
+                        pushedCount:
+                          type: integer
+                          example: 0
+                        updatedCount:
+                          type: integer
+                          example: 0
+                        exceptionsCount:
+                          type: integer
+                          example: 0

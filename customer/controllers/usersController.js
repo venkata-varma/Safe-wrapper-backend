@@ -33,7 +33,7 @@ exports.validateUserRegistration = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PHONE_NUMBER_VALIDATE
     });
   }
-  if (!['super-admin','merchant'].includes(req.user.role)) {
+  if (!['super-admin', 'merchant'].includes(req.user.role)) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_SESSION_NO_ACCESS_TO_ADD_USER,
@@ -70,7 +70,7 @@ exports.createUser = asyncWrapper(async (req, res) => {
       role: req.user.accountId.accountType === "super-admin" ? "admin" : req.user.accountId.accountType === "merchant" ? "manager" : "manager",
       userId: customId,
       createdBy: req.body.createdBy, //Super-admin user among set 0f 4 -5 users
-      accountId:req.user.accountId || null
+      accountId: req.user.accountId || null
 
     })
     delete userData._doc.password;
@@ -103,7 +103,7 @@ exports.middlewareToDeleteUser = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_USER_ALREADY_DELETED,
     });
   }
-  if (!['merchant','super-admin'].includes(req.user.role)) {
+  if (!['merchant', 'super-admin'].includes(req.user.role)) {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
       message: customConstants.messages.MESSAGE_SESSION_NO_ACCESS_TO_DELETE_USER,
@@ -127,22 +127,22 @@ exports.updateUserStatus = asyncWrapper(async (req, res) => {
   // delete deactivateUser.password;
   let userDetails
   const { status } = req.body
-    if (status === 'delete') {
-      userDetails = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'deleted', updatedBy: req.user_id } }, { new: true });
-      delete userDetails.password
-        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_USER_DELETED,
-        })
-    }
-    else if (status === 'active') {
-        userDetails = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'active', updatedBy: req.user_id } }, { new: true });
-      delete userDetails.password
-        return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-            status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_USER_ACTIVATED,
-        })
-    }
+  if (status === 'delete') {
+    userDetails = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'deleted', updatedBy: req.user_id } }, { new: true });
+    delete userDetails.password
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_USER_DELETED,
+    })
+  }
+  else if (status === 'active') {
+    userDetails = await usersModel.findByIdAndUpdate(req.params.userId, { $set: { status: 'active', updatedBy: req.user_id } }, { new: true });
+    delete userDetails.password
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+      status: customConstants.messages.MESSAGE_SUCCESS,
+      message: customConstants.messages.MESSAGE_USER_ACTIVATED,
+    })
+  }
   // Return success response
   // return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
   //   status: customConstants.messages.MESSAGE_SUCCESS,
@@ -157,8 +157,8 @@ exports.updateUserStatus = asyncWrapper(async (req, res) => {
  
  */
 exports.getUserDetails = asyncWrapper(async (req, res) => {
-  
-  const user = await usersModel.findOne({_id:req.params.userId}, { password: 0 }).lean()
+
+  const user = await usersModel.findOne({ _id: req.params.userId }, { password: 0 }).lean()
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -175,15 +175,15 @@ exports.getUserDetails = asyncWrapper(async (req, res) => {
  */
 exports.getAllUsers = asyncWrapper(async (req, res) => {
   // const users = await usersModel.find({ accountId: req.params.accountId, role:{$eq:req.user.role === "super-admin"} }, { password: 0 });
-  console.log('req.user.role:===',req.user.role)
+  console.log('req.user.role:===', req.user.role)
   const users = await usersModel.find(
-    { 
-      accountId: req.params.accountId, 
-      role: req.user.role === "super-admin" ? { $in: ["super-admin","admin","merchant"] } : req.user.role === "merchant" ? { $in: ["manager","merchant"] } : { $eq: "manager" }
-    }, 
+    {
+      accountId: req.params.accountId,
+      role: req.user.role === "super-admin" ? { $in: ["super-admin", "admin", "merchant"] } : req.user.role === "merchant" ? { $in: ["manager", "merchant"] } : { $eq: "manager" }
+    },
     { password: 0 }
   );
-  
+
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_ALL_USERS_DETAILS,
@@ -259,7 +259,7 @@ Funtion to check
 If returns True, moves to "next" function , "loginUser"
 */
 exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
-  
+
   const { mobileEmail, password } = req.body;
 
   if (!mobileEmail || !password) {
@@ -361,6 +361,57 @@ exports.loginUser = asyncWrapper(async (req, res) => {
   });
 
 
+});
+
+/*
+If middleware returns True, this function create session with valid JWT token
+Mandatory fields -> Phone and Password 
+*/
+exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
+
+  const { mobileEmail, password, sessionExpirationTime } = req.body;
+  let user_details = {};
+  // Find user by email or phone
+  const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }, { _id: 0, password: 0 });
+  // const respectiveAccount = await accountsModel.findOne({ _id: user.accountId }, { password: 0 });
+  const userData = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] });
+
+  user_details.userDetails = user.toObject();
+
+  // Generate JWT token
+  const jwtToken = await userData.getJWTToken(sessionExpirationTime);
+  const jwtTokenExpires = await userData.getJWTTokenExpireDate(jwtToken);
+
+  // Create session
+  req.body.accessToken = jwtToken;
+  req.body.expirationTime = jwtTokenExpires.exp;
+  req.body.userId = userData._id;
+  req.body.accountId = userData.accountId;
+
+  const sesssionDetails = await sessionsModel.create(req.body);
+  user_details.sesssionDetails = sesssionDetails;
+  user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
+
+  if (userData.authUser === "OnePOS") {
+    await onePosLogsModel.create({
+      accountId: userData.accountId,
+      userId: userData._id,
+      apiCalled: req.url,
+      authenticationCount: 1,
+      expirationTime: new Date((req.body.expirationTime) * 1000)
+    })
+  }
+
+
+  // Return success response
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_USER_LOGIN,
+    data: {
+      accountId: req.body.accountId,
+      access_token: sesssionDetails.accessToken
+    }
+  });
 });
 
 
