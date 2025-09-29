@@ -4,7 +4,7 @@ const mongoose = require('mongoose')
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
 const cardConnectIntegrationsAPIUrlsFlowModel = require('../models/cardConnectIntegrationsAPIUrlFlowModel')
-
+let cardConnectExceptionsModel = require('../models/cardConnectExceptionsModel')
 const cardConnectTransactionsModel = require('../models/cardConnectTransactionsModel')
 const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrationsCronsModel')
 const customConstants = require('../../config/constants.json')
@@ -152,8 +152,8 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_INTEGRATION_CREDENTIALS_SAVED,
             data: {
-               cardConnectIntegrationsMasterCredentials:  createCardConnectIntegrationsMasterCredentials 
-                },
+                cardConnectIntegrationsMasterCredentials: createCardConnectIntegrationsMasterCredentials
+            },
         });
 
 
@@ -210,8 +210,8 @@ exports.createCardConnectIntegrationMasterSettings = asyncWrapper(async (req, re
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_INTEGRATIONS_SETTINGS,
             data: {
-               cardConnectIntegrationsSettings:  createCardConnectIntegrationsSettings 
-                },
+                cardConnectIntegrationsSettings: createCardConnectIntegrationsSettings
+            },
         });
 
 
@@ -264,8 +264,8 @@ exports.editIntegrationsMasterCredentials = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS,
-            data: { 
-            cardConnectIntegrationsMasterCredentials:    editIntegrationsMasterCredentials 
+            data: {
+                cardConnectIntegrationsMasterCredentials: editIntegrationsMasterCredentials
             },
         });
 
@@ -298,8 +298,8 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_EDITED_INTEGRATION_MASTER_CREDENTIALS_SUCCESS,
-            data: { 
-                cardConnectIntegrationsSettings:editIntegrationsMasterSettings 
+            data: {
+                cardConnectIntegrationsSettings: editIntegrationsMasterSettings
             },
         });
 
@@ -449,7 +449,7 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 
 
 
-    await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
+    let finalCronDetails = await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
         {
             $set: {
 
@@ -457,7 +457,7 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 
             }
         }, { new: true, runValidators: true })
-
+    let cardConnectExceptionsOfCronCount = await cardConnectExceptionsModel.find({ cardConnectIntegrationsCronId: createIntegrationsCron._id }).countDocuments()
 
 
     return res
@@ -465,9 +465,17 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_FETCHED_FUNDING_FOR_THE_DAY,
-            // data: {
-            //     ...processFlows
-            // },
+            data: {
+                finalResult: {
+                    accountId: finalCronDetails?.accountId,
+                    cronJobType: finalCronDetails?.cronJobType,
+                    dateRange: finalCronDetails?.dateRange,
+                    pulledCount: finalCronDetails?.pulledCount,
+                    pushedCount: finalCronDetails?.pushedCount,
+                    updatedCount: finalCronDetails?.updatedCount
+                },
+                exceptionsCount: cardConnectExceptionsOfCronCount
+            }
         });
 
 
@@ -544,7 +552,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
 
 
 
-    await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
+    let finalCronDetails = await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
         {
             $set: {
 
@@ -552,6 +560,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
 
             }
         }, { new: true, runValidators: true })
+    let cardConnectExceptionsOfCronCount = await cardConnectExceptionsModel.find({ cardConnectIntegrationsCronId: createIntegrationsCron._id }).countDocuments()
 
 
     return res
@@ -559,9 +568,17 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
-            // data: {
-            //     initiateManualPull
-            // },
+            data: {
+                finalResult: {
+                    accountId: finalCronDetails?.accountId,
+                    cronJobType: finalCronDetails?.cronJobType,
+                    dateRange: finalCronDetails?.dateRange,
+                    pulledCount: finalCronDetails?.pulledCount,
+                    pushedCount: finalCronDetails?.pushedCount,
+                    updatedCount: finalCronDetails?.updatedCount
+                },
+                exceptionsCount: cardConnectExceptionsOfCronCount
+            }
         });
 
 })
@@ -631,7 +648,8 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
     let initiateManualPull = await initiateManualTrigger(generatedDateArray, integrationsMasterDetails[0], accountId, createIntegrationsCron._id);
 
 
-    await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
+
+    let finalCronDetails = await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
         {
             $set: {
 
@@ -639,6 +657,7 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
 
             }
         }, { new: true, runValidators: true })
+    let cardConnectExceptionsOfCronCount = await cardConnectExceptionsModel.find({ cardConnectIntegrationsCronId: createIntegrationsCron._id }).countDocuments()
 
 
 
@@ -647,7 +666,17 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_PERFORMED_MANUAL_TRIGGER_SINGLE_INTEGRATION,
-
+            data: {
+                finalResult: {
+                    accountId: finalCronDetails?.accountId,
+                    cronJobType: finalCronDetails?.cronJobType,
+                    dateRange: finalCronDetails?.dateRange,
+                    pulledCount: finalCronDetails?.pulledCount,
+                    pushedCount: finalCronDetails?.pushedCount,
+                    updatedCount: finalCronDetails?.updatedCount
+                },
+                exceptionsCount: cardConnectExceptionsOfCronCount
+            }
         });
 })
 

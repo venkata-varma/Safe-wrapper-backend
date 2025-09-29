@@ -35,10 +35,7 @@ const cardConnectintegrationsCronsSchema = mongoose.Schema({
         type: Number,
         default: 0
     },
-    newWOCount: {
-        type: Number,
-        default: 0
-    },
+
     pushedCount: {
         type: Number,
         default: 0
