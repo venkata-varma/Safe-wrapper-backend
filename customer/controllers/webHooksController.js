@@ -2924,63 +2924,73 @@ exports.getProgressMeterAndTotalsOfSingleMachine = asyncWrapper(async (req, res)
   })
 })
 
+// exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
+//   const { accountId } = req.params
+//   let machineCashExceptions = [];
+//   let cardConnectExceptions = []
+//   let { fromDate, toDate, paymentType } = req.query;
+//   fromDate = moment.utc(fromDate).startOf("day").toDate();
+//   toDate = moment.utc(toDate).endOf("day").toDate()
+//   console.log("fromDate, toDate===", fromDate, toDate)
+//   if (paymentType === "cima-machine") {
+//     machineCashExceptions = await webhookExceptionsModel.aggregate([
+//       {
+//         $match: {
+//           accountId: new mongoose.Types.ObjectId(accountId)
+//         }
+//       },
+//       {
+//         $addFields: {
+//           paymentType: "cima-machine"
+//         }
+//       },
+//       {
+//         $match: {
+//           createdAt: {
+//             $gte: fromDate,
+//             $lte: toDate
+//           }
+//         }
+//       },
+
+//       {
+//         $sort: {
+//           createdAt: -1
+//         }
+//       }
+
+//     ])
+//   }
+//   if (paymentType === "card-connect") {
+//     cardConnectExceptions = await getMerchantCardConnectExceptions(fromDate, toDate, paymentType, accountId)
+//   }
+//   let allExceptionsCount = machineCashExceptions.length > 0 ? machineCashExceptions.length : cardConnectExceptions.length > 0 ? cardConnectExceptions.length : 0
+//   let allExceptions = [
+
+//     ...machineCashExceptions,
+//     ...cardConnectExceptions
+//   ]
+
+//   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+//     status: customConstants.messages.MESSAGE_SUCCESS,
+//     message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
+//     data: {
+//       allExceptionsCount,
+//       allExceptions
+//     }
+
+
+
+//   })
+// })
+
 exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
-  let machineCashExceptions = [];
-  let cardConnectExceptions = []
-  let { fromDate, toDate, paymentType } = req.query;
-  fromDate = moment.utc(fromDate).startOf("day").toDate();
-  toDate = moment.utc(toDate).endOf("day").toDate()
-  console.log("fromDate, toDate===", fromDate, toDate)
-  if (paymentType === "cima-machine") {
-    machineCashExceptions = await webhookExceptionsModel.aggregate([
-      {
-        $match: {
-          accountId: new mongoose.Types.ObjectId(accountId)
-        }
-      },
-      {
-        $addFields: {
-          paymentType: "cima-machine"
-        }
-      },
-      {
-        $match: {
-          createdAt: {
-            $gte: fromDate,
-            $lte: toDate
-          }
-        }
-      },
-
-      {
-        $sort: {
-          createdAt: -1
-        }
-      }
-
-    ])
-  }
-  if (paymentType === "card-connect") {
-    cardConnectExceptions = await getMerchantCardConnectExceptions(fromDate, toDate, paymentType, accountId)
-  }
-  let allExceptionsCount = machineCashExceptions.length > 0 ? machineCashExceptions.length : cardConnectExceptions.length > 0 ? cardConnectExceptions.length : 0
-  let allExceptions = [
-
-    ...machineCashExceptions,
-    ...cardConnectExceptions
-  ]
-
+  const exceptionsOfAccount = await webhookExceptionsModel.find({ accountId: new mongoose.Types.ObjectId(accountId) })
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
-    data: {
-      allExceptionsCount,
-      allExceptions
-    }
-
-
-
+    data: exceptionsOfAccount || []
   })
 })
 

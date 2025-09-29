@@ -27,7 +27,8 @@ const {
   updateWebhookAutoDataSyncStatus,
   getWebhookDetailsOfAccount,
   getOneHubPosLogsDetails,
-  superAdminSmartFilteredDashboard
+  superAdminSmartFilteredDashboard,
+  getExceptionsOfAccount
 } = require("../controllers/superAdminWebhooksController");
 
 router.post(
@@ -62,6 +63,7 @@ router.get('/get-list-of-machines', getListOfMachines)
 router.get('/get-all-machine-reports', getAllMachineReports)
 router.get('/get-machine-reports', getPayloadReports)
 router.get('/get-all-exceptions', getAllExceptionsWithFilters)
+router.get('/get-exceptions', getExceptionsOfAccount)
 router.get('/get-transaction-denominations', getTransactionDenominations)
 router.get('/get-all-webhook-details-of-account', getWebhookDetailsOfAccount)
 router.get('/get-onehubpos-logs-details', getOneHubPosLogsDetails)

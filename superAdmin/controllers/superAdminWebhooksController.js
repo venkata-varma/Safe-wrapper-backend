@@ -2602,6 +2602,18 @@ exports.getAllExceptionsWithFilters = asyncWrapper(async (req, res) => {
 })
 
 
+exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
+  const exceptionsOfAccount = await webhookExceptionsModel.find({})
+  return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+    status: customConstants.messages.MESSAGE_SUCCESS,
+    message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
+    data: exceptionsOfAccount || []
+  })
+})
+
+
+
+
 exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
   const { serialNumbers, accountId } = req.query;
 
