@@ -17,6 +17,8 @@ const path = require('path');
 const { preSignedUrlToUpload } = require('../../utils/fileUpload');
 const cardConnectExceptionsModel = require('../../cardConnect/models/cardConnectExceptionsModel');
 const cardConnectTransactionsModel = require('../../cardConnect/models/cardConnectTransactionsModel');
+const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
+const cardConnectIntegrationsCronsModel = require('../../cardConnect/models/cardConnectIntegrationsCronsModel');
 
 
 exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
