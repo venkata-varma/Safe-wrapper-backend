@@ -907,6 +907,84 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                 transactionStatus: "$responseObject.status",
                 transactionType: "$responseObject.type",
                 amount: { $toDouble: "$responseObject.amount" }
+                  transactionDate: {
+                    $switch: {
+                        branches: [
+                            // Case: 14 digits (YYYYMMDDHHmmss)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        14
+                                    ]
+                                },
+                                then: {
+                                    $dateFromString: {
+                                        dateString: {
+                                            $concat: [
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 8, 2] }, ":",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 10, 2] }, ":",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 12, 2] }, "Z"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            // Case: 8 digits (YYYYMMDD)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        8
+                                    ]
+                                },
+                                then: {
+                                    $dateFromString: {
+                                        dateString: {
+                                            $concat: [
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T00:00:00Z"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            // Case: epoch seconds (10 digits)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        10
+                                    ]
+                                },
+                                then: {
+                                    $toDate: {
+                                        $multiply: [{ $toLong: { $ifNull: ["$responseObject.authdate", 0] } }, 1000]
+                                    }
+                                }
+                            },
+                            // Case: epoch millis (13 digits)
+                            {
+                                case: {
+                                    $eq: [
+                                        { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                        13
+                                    ]
+                                },
+                                then: {
+                                    $toDate: { $toLong: { $ifNull: ["$responseObject.authdate", 0] } }
+                                }
+                            }
+                        ],
+                        // Default: fallback to responseObject.date
+                        default: { $toDate: "$responseObject.date" }
+                    }
+                },
+                transactionId: "$responseObject.retref",
             },
         },
         {
@@ -968,6 +1046,15 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                             0
                         ]
                     }
+                },
+                lastTransactionCaptured: {
+                    $top: {
+                        sortBy: { transactionDate: -1 },
+                        output: {
+                            transactionId: "$transactionId",
+                            transactionDate: "$transactionDate"
+                        }
+                    }
                 }
             }
         },
@@ -979,7 +1066,8 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                 settledTransactionsCount: 1,
                 settledAmount: 1,
                 refundedTransactionsCount: 1,
-                refundedAmount: 1
+                refundedAmount: 1,
+                lastTransactionCaptured
             }
         },
         {
