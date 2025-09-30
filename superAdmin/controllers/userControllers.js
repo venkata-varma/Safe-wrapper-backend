@@ -290,6 +290,7 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
     data: {
       accountId: req.body.accountId,
       accountType: user_details.accountDetails.accountType,
+      merchantName: user_details.accountDetails.accountName,
       access_token: sesssionDetails.accessToken,
       machineDetails
     }
