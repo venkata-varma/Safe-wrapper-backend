@@ -1357,14 +1357,14 @@ exports.getAllWebhookPayoadHeadersOfAllAccountsFn = async () => {
     }
   ]);
 
-  let allMerchantCardConnectPayloadHeaders = await getAllCardConnectPayloadHeaders()
+  //let allMerchantCardConnectPayloadHeaders = await getAllCardConnectPayloadHeaders()
 
 
   return {
     categories,
     merchantNames,
     webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
-    allMerchantCardConnectPayloadHeaders: allMerchantCardConnectPayloadHeaders
+    // allMerchantCardConnectPayloadHeaders: allMerchantCardConnectPayloadHeaders
   }
 }
 

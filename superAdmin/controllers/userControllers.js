@@ -281,7 +281,7 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
       expirationTime: new Date((req.body.expirationTime) * 1000)
     })
   }
-  let usefulDetails = await getAllWebhookPayoadHeadersOfAllAccountsFn()
+  let machineDetails = await getAllWebhookPayoadHeadersOfAllAccountsFn()
 
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -289,8 +289,9 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
     message: customConstants.messages.MESSAGE_USER_LOGIN,
     data: {
       accountId: req.body.accountId,
+      accountType: user_details.accountDetails.accountType,
       access_token: sesssionDetails.accessToken,
-      usefulDetails
+      machineDetails
     }
   });
 });

@@ -403,7 +403,7 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
   }
 
 
-  let usefulDetails = await getAllWebhookPayoadHeadersOfAccountFn(req.body.accountId)
+  let machineDetails = await getAllWebhookPayoadHeadersOfAccountFn(req.body.accountId)
 
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -411,8 +411,9 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
     message: customConstants.messages.MESSAGE_USER_LOGIN,
     data: {
       accountId: req.body.accountId,
+      accountType: user_details.accountDetails.accountType,
       access_token: sesssionDetails.accessToken,
-      usefulDetails
+      machineDetails
     }
   });
 });

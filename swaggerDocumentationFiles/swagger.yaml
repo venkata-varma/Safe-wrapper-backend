@@ -270,15 +270,17 @@ paths:
     post:
       tags:
         - Authorize -  Super-admin only
-      summary: "1. Copy access_token from response || 2. Click Authorize button   ||  3. Place access_token in input box to authorize."
+      summary: "1. Copy access_token from response || 2. Click Authorize button   ||  3. Place access_token in input box to authorize.   ||  4.Also visit Useful details which resembles details of all existing merchant accounts"
       description: |
-        - Accessible only for Super-admin
+        - Accessible only for `Super-admin`
         - Copy `access_token` from response  
         - Click the **Authorize** button  
         - Place `access_token` in the input box to authorize.
         - Set `desired expiration time` for a session in days only.  
           Examples:  
           default is set to `1 day  (1d)`.
+
+        - Visit  `machineDetails` which resembles `all merchant details`, onboarded `machine's serial numbers`, `transaction types`, and various possibilities of `transaction types`, `status`, `batches` of `card -connect integration` of all `merchant-accounts`.
       requestBody:
         required: true
         content:
@@ -299,6 +301,7 @@ paths:
                   type: string
                   description: "Set desired expiration time for a session in either seconds, minutes ,hours,days, weeks, or years. Example: For minutes- 5m; For hours- 5h; For days - 5d; For Weeks- 5w; For Years- 5y"
                   example: "1d"
+
       responses:
         200:
           description: "Successful login response"
@@ -308,7 +311,58 @@ paths:
                 status: "success"
                 message: "Login successfull."
                 data:
-                  access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2RkNTg2ZTZkNjJmYjhkN2FlMWU5NTIiLCJpYXQiOjE3NDQxNzMwNDcsImV4cCI6MTc0NDE3NjY0N30.jQe7XNYuDSkwB3HQNjO2tGfkmyd0aHFO6nMMzj-Mjcc"
+                  accountId: "67eb81cb45715d3e5b678ebb"
+                  accountType: "super-admin"
+                  access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ViODFjYjQ1NzE1ZDNlNWI2NzhlYmQiLCJpYXQiOjE3NTkyMjIxMDIsImV4cCI6MTc1OTMwODUwMn0.vYun79q8JBBqshIWgETD0JpswclGaLjEt9wSN7fzePo"
+                  usefulDetails:
+                    categories:
+                      - "cima-machine"
+                      - "card-connect"
+                    merchantNames:
+                      - objectId: "67f5f980368cc56a87df8ca9"
+                        merchantName: "fourtwo-2"
+                      - objectId: "680213209f97bd8e0787c035"
+                        merchantName: "DR-Testing"
+                    webhookPayloadHeadersData:
+                      serialNumbers:
+                        - "QA0158"
+                        - "QA0230"
+                        - "QA0104"
+                        - "..........to be continued"
+                      transactionTypes:
+                        - "ManualCashTransaction"
+                        - "CashIn"
+                        - "LockOpened"
+                        - "LockClosed"
+                        - "DoorWhine"
+                        - "DoorClosed"
+                    # allMerchantCardConnectPayloadHeaders:
+                    #   transactionStatusKeys:
+                    #     - "Auth"
+                    #     - "Captured"
+                    #     - "Voided"
+                    #     - "Failure"
+                    #     - "Rejected"
+                    #     - "Declined"
+                    #     - "Settled"
+                    #     - "Processed"
+                    #     - "Unknown"
+                    #   transactionTypeKeys:
+                    #     - "ACCOUNT VERIFY"
+                    #     - "AUTH REQUEST"
+                    #     - "CASH ADVANCE"
+                    #     - "REFUND"
+                    #     - "SALE"
+                    #     - "UNKNOWN"
+                    #     - "VOID REFUND"
+                    #     - "VOID SALE"
+                    #   customerDetails:
+                    #     - cardBrand: "visa"
+                    #       cardType: "Credit"
+                    #       customerCardNumber: "47XXXXXXXXXX1443"
+                    #   batches:
+                    #     - batchId: 104
+                    #     - batchId: 106
 
       security: [] # No authentication required for login
 
@@ -316,15 +370,17 @@ paths:
     post:
       tags:
         - Authorize -  Merchant only
-      summary: "1. Copy access_token from response || 2. Click Authorize button   ||  3. Place access_token in input box to authorize."
+      summary: "1. Copy access_token from response || 2. Click Authorize button   ||  3. Place access_token in input box to authorize.  ||  4.Also visit Useful details which resembles details of respective logged-in account only."
       description: |
-        - For `Merchant's` login 
+        - For `Merchant's` login only.
         - Copy `access_token` from response  
         - Click the **Authorize** button  
         - Place `access_token` in the input box to authorize.
         - Set `desired expiration time` for a session in days only.  
           Examples:  
           default is set to `1 day  (1d)`.
+
+        - Visit  `machineDetails` which resembles `all merchant details`, onboarded `machine's serial numbers`, `transaction types`, and various possibilities of `transaction types`, `status`, `batches` of `card -connect integration` of respective logged-in `merchant-account` only.
       requestBody:
         required: true
         content:
@@ -354,22 +410,73 @@ paths:
                 status: "success"
                 message: "Login successfull."
                 data:
-                  accountId: "68b6e54bcb20acc23122****"
-                  access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2RkNTg2ZTZkNjJmYjhkN2FlMWU5NTIiLCJpYXQiOjE3NDQxNzMwNDcsImV4cCI6MTc0NDE3NjY0N30.jQe7XNYuDSkwB3HQNjO2tGfkmyd0aHFO6nMMzj-Mjcc"
+                  accountId: "67eb81cb45715d3e5b678ebb"
+                  accountType: "merchant"
+                  access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ViODFjYjQ1NzE1ZDNlNWI2NzhlYmQiLCJpYXQiOjE3NTkyMjIxMDIsImV4cCI6MTc1OTMwODUwMn0.vYun79q8JBBqshIWgETD0JpswclGaLjEt9wSN7fzePo"
+                  usefulDetails:
+                    categories:
+                      - "cima-machine"
+                      - "card-connect"
+                    merchantNames:
+                      - objectId: "67f5f980368cc56a87df8ca9"
+                        merchantName: "fourtwo-2"
+                      - objectId: "680213209f97bd8e0787c035"
+                        merchantName: "DR-Testing"
+                    webhookPayloadHeadersData:
+                      serialNumbers:
+                        - "QA0158"
+                        - "QA0230"
+                        - "QA0104"
+                        - "..........to be continued"
+                      transactionTypes:
+                        - "ManualCashTransaction"
+                        - "CashIn"
+                        - "LockOpened"
+                        - "LockClosed"
+                        - "DoorWhine"
+                        - "DoorClosed"
+                    # cardConnectPayloadHeaders:
+                    #   transactionStatusKeys:
+                    #     - "Auth"
+                    #     - "Captured"
+                    #     - "Voided"
+                    #     - "Failure"
+                    #     - "Rejected"
+                    #     - "Declined"
+                    #     - "Settled"
+                    #     - "Processed"
+                    #     - "Unknown"
+                    #   transactionTypeKeys:
+                    #     - "ACCOUNT VERIFY"
+                    #     - "AUTH REQUEST"
+                    #     - "CASH ADVANCE"
+                    #     - "REFUND"
+                    #     - "SALE"
+                    #     - "UNKNOWN"
+                    #     - "VOID REFUND"
+                    #     - "VOID SALE"
+                    #   customerDetails:
+                    #     - cardBrand: "visa"
+                    #       cardType: "Credit"
+                    #       customerCardNumber: "47XXXXXXXXXX1443"
+                    #   batches:
+                    #     - batchId: 104
+                    #     - batchId: 106
 
       security: [] # No authentication required for login
 
   /api/machines/get-machine-transactions:
     get:
       tags:
-        - API calls
-      summary: "Retrieve statistical insights for an individual machine based on desired filters"
+        - Authorize -  Super-admin only
+      summary: "Retrieve statistical insights for an individual or multiple machines of all merchants based on desired filters"
       description: |
-        - This API provides detailed insights about a specific machine based on desired filters.  
+        - This API provides detailed insights about a machines `(single or multiple)`  of `all merchants` based on desired filters.  
+        - Details about all onboarded machines of all merchants can be retreived [super-admin]
         - By providing query parameters, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
           The available query parameters are:  
-          - `serialNumbers`: Filter by the machine's serial numbers.  
-          - `transactionTypes`: Filter by the types of transaction `(e.g., CashIn, CashOut)`.  
+          - `serialNumbers`: Filter by the machine's serial numbers. `(e.g., QA0158, QA0230, QA0104, QA0275 )` 
+          - `transactionTypes`: Filter by the types of transaction `(e.g., CashIn, CashOut, LockClosed, DoorWhine, ManualCashTransaction)`.  
           - `fromDate`: Retrieve records from this date onward.  `(e.g., 2025-04-21T10:40Z)`
           - `toDate`: Retrieve records up to this date.  `(e.g., 2025-04-28T10:40Z)`
         - Requires authentication via the `Authorization` header.
@@ -380,13 +487,13 @@ paths:
           in: query
           schema:
             type: string
-          description: "Unique serial number identifying the machine."
+          description: "Unique serial number (or) numbers identifying the machine. (e.g., QA0275,QA0068,QA0120) "
 
         - name: transactionTypes
           in: query
           schema:
             type: string
-          description: "Desired transaction types"
+          description: "Desired transaction type (or) types (e.g., CashIn,CashOut,DoorClosed)"
 
         - name: fromDate
           in: query
@@ -402,7 +509,7 @@ paths:
 
       responses:
         200:
-          description: Successful response with machine report details
+          description: Machine / Machine's  transactions.
           content:
             application/json:
               schema:
@@ -413,7 +520,7 @@ paths:
                     example: success
                   message:
                     type: string
-                    example: Reports of a single machine based on desired filters
+                    example: Machine / Machine's  transactions.
                   data:
                     type: array
                     items:
@@ -488,133 +595,51 @@ paths:
                           type: integer
                           example: 0
 
-  /api/card-connect/integrations-master/fetch-funding-data-for-the-day/{accountId}:
-    post:
+  /api/merchants/machines/get-machine-transactions:
+    get:
       tags:
-        - Card-connect Integration - Fetching live from Card-connect and also Insights with filters
-      summary: "Retrieve live funding data from card-connect for the given day"
+        - Authorize -  Merchant only
+      summary: "Retrieve statistical insights for an individual or multiple machines respective `logged-in merchant` based on desired filters"
       description: |
-        - This API takes a date in `YYYY-MM-DD` format in the body.  
-        - Calls `Funding API` for the given day.  
-        - For each transaction:
-          - If it does not exist, creates an entry.  
-          - If it exists with the same `status`, no entry is made.  
-          - If it exists with different `status`, the record is updated.  
-        - Requires authentication via the `Authorization` header.  
-        - Returns statistics about pulled, pushed, updated, and exception counts.
+        - This API provides detailed insights about a machines `(single or multiple)`  of respective `logged-in merchant` based on desired filters.  
+        - Details about all onboarded machines of `logged-in merchant` can be retreived. 
+        - By providing query parameters, users can retrieve denomination details, transaction summaries, and other key performance metrics.  
+          The available query parameters are:  
+          - `serialNumbers`: Filter by the machine's serial numbers. `(e.g., QA0158, QA0230, QA0104, QA0275 )` 
+          - `transactionTypes`: Filter by the types of transaction `(e.g., CashIn, CashOut, LockClosed, DoorWhine, ManualCashTransaction)`.  
+          - `fromDate`: Retrieve records from this date onward.  `(e.g., 2025-04-21T10:40Z)`
+          - `toDate`: Retrieve records up to this date.  `(e.g., 2025-04-28T10:40Z)`
+        - Requires authentication via the `Authorization` header.
       security:
         - Authorization: [] # Requires Authorization header with token
       parameters:
-        - name: accountId
-          in: path
-          required: true
+        - name: serialNumbers
+          in: query
           schema:
             type: string
-          description: "Unique account identifier"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                date:
-                  type: string
-                  items:
-                    type: string
-                    format: date
-                  example: "2025-09-11"
-              required:
-                - date
-      responses:
-        200:
-          description: Fetched live funding-txns data succesfully for the given date.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  message:
-                    type: string
-                    example: "Fetched live funding-txns data succesfully for the given date."
-                  data:
-                    type: object
-                    properties:
-                      finalResult:
-                        type: object
-                        properties:
-                          accountId:
-                            type: string
-                            example: "68b6e54bcb20acc231225479"
-                          cronJobType:
-                            type: string
-                            example: "manual"
-                          dateRange:
-                            type: array
-                            items:
-                              type: string
-                              format: date
-                            example: ["2025-09-11"]
-                          pulledCount:
-                            type: integer
-                            example: 115
-                          pushedCount:
-                            type: integer
-                            example: 0
-                          updatedCount:
-                            type: integer
-                            example: 0
-                          exceptionsCount:
-                            type: integer
-                            example: 0
+          description: "Unique serial number (or) numbers identifying the machine. (e.g., QA0275,QA0068,QA0120) "
 
-  /api/card-connect/integrations-master/fetch-funding-data-for-the-date-range/{accountId}:
-    post:
-      tags:
-        - Card-connect Integration - Fetching live from Card-connect and also Insights with filters
-      summary: "Retrieve live funding data from card-connect for the given date range"
-      description: |
-        - This API takes a `from date` and `to date` in `YYYY-MM-DD` format in the body.  
-        - Calls `Funding API` for the each day between the date range with inclusive.  
-        - For each transaction:
-          - If it does not exist, creates an entry.  
-          - If it exists with the same `status`, no entry is made.  
-          - If it exists with different `status`, the record is updated.  
-        - Requires authentication via the `Authorization` header.  
-        - Returns statistics about pulled, pushed, updated, and exception counts.
-      security:
-        - Authorization: [] # Requires Authorization header with token
-      parameters:
-        - name: accountId
-          in: path
-          required: true
+        - name: transactionTypes
+          in: query
           schema:
             type: string
-          description: "Unique account identifier"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                fromDate:
-                  type: string
-                  format: date
-                  example: "2025-09-09"
-                toDate:
-                  type: string
-                  format: date
-                  example: "2025-09-10"
-              required:
-                - fromDate
-                - toDate
+          description: "Desired transaction type (or) types (e.g., CashIn,CashOut,DoorClosed)"
+
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+          description: "Desired date from which data to be retreived from.(e.g., 2025-04-21T19:09Z) "
+
+        - name: toDate
+          in: query
+          schema:
+            type: string
+          description: "Desired date to which data to be retreived from. (e.g., 2025-04-28T20:09Z)"
+
       responses:
         200:
-          description: Fetched live funding-txns data succesfully for the given date range.
+          description: Machine / Machine's  transactions.
           content:
             application/json:
               schema:
@@ -625,34 +650,246 @@ paths:
                     example: success
                   message:
                     type: string
-                    example: "Fetched live funding-txns data succesfully for the given date range."
+                    example: Machine / Machine's  transactions.
                   data:
-                    type: object
-                    properties:
-                      finalResult:
-                        type: object
-                        properties:
-                          accountId:
-                            type: string
-                            example: "68b6e54bcb20acc231225479"
-                          cronJobType:
-                            type: string
-                            example: "manual"
-                          dateRange:
-                            type: array
-                            items:
-                              type: string
-                              format: date
-                            example: ["2025-09-11"]
-                          pulledCount:
-                            type: integer
-                            example: 115
-                          pushedCount:
-                            type: integer
-                            example: 0
-                          updatedCount:
-                            type: integer
-                            example: 0
-                          exceptionsCount:
-                            type: integer
-                            example: 0
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "67eceef889c3a34af5486760"
+                        # webhookMasterId:
+                        #   type: string
+                        #   example: "67eb8490233046c701342349"
+                        # webhookMetaPayloadId:
+                        #   type: string
+                        #   example: "67eb8588233046c70134244c"
+                        # accountId:
+                        #   type: string
+                        #   example: "67eb81cb45715d3e5b678ebb"
+                        pickupGroupId:
+                          type: integer
+                          example: 566758091
+                        serialNumber:
+                          type: string
+                          example: "QA00577"
+                        retrievedOn:
+                          type: string
+                          format: date-time
+                          example: "2025-03-27T17:33:05.4670000Z"
+                        transactionDateTime:
+                          type: string
+                          example: "2025-03-27T09:57:05"
+                        userName:
+                          type: string
+                          example: "TITAN"
+                        transactionType:
+                          type: string
+                          example: "CashIn"
+                        amount:
+                          type: number
+                          example: 10
+                        denominations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              UnitValue:
+                                type: number
+                                example: 5
+                              Count:
+                                type: integer
+                                example: 2
+                              Currency:
+                                type: string
+                                example: "USD"
+                        location:
+                          type: string
+                          example: "Opal"
+                        status:
+                          type: string
+                          example: "active"
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: "2025-04-02T18:02:00.120Z"
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: "2025-04-02T08:02:00.120Z"
+                        webhookTransactionId:
+                          type: string
+                          example: "67eceef889c3a34af5486760"
+                        __v:
+                          type: integer
+                          example: 0
+
+  # /api/card-connect/integrations-master/fetch-funding-data-for-the-day/{accountId}:
+  #   post:
+  #     tags:
+  #       - Card-connect Integration - Fetching live from Card-connect and also Insights with filters
+  #     summary: "Retrieve live funding data from card-connect for the given day"
+  #     description: |
+  #       - This API takes a date in `YYYY-MM-DD` format in the body.
+  #       - Calls `Funding API` for the given day.
+  #       - For each transaction:
+  #         - If it does not exist, creates an entry.
+  #         - If it exists with the same `status`, no entry is made.
+  #         - If it exists with different `status`, the record is updated.
+  #       - Requires authentication via the `Authorization` header.
+  #       - Returns statistics about pulled, pushed, updated, and exception counts.
+  #     security:
+  #       - Authorization: [] # Requires Authorization header with token
+  #     parameters:
+  #       - name: accountId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: "Unique account identifier"
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               date:
+  #                 type: string
+  #                 items:
+  #                   type: string
+  #                   format: date
+  #                 example: "2025-09-11"
+  #             required:
+  #               - date
+  #     responses:
+  #       200:
+  #         description: Fetched live funding-txns data succesfully for the given date.
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 status:
+  #                   type: string
+  #                   example: success
+  #                 message:
+  #                   type: string
+  #                   example: "Fetched live funding-txns data succesfully for the given date."
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     finalResult:
+  #                       type: object
+  #                       properties:
+  #                         accountId:
+  #                           type: string
+  #                           example: "68b6e54bcb20acc231225479"
+  #                         cronJobType:
+  #                           type: string
+  #                           example: "manual"
+  #                         dateRange:
+  #                           type: array
+  #                           items:
+  #                             type: string
+  #                             format: date
+  #                           example: ["2025-09-11"]
+  #                         pulledCount:
+  #                           type: integer
+  #                           example: 115
+  #                         pushedCount:
+  #                           type: integer
+  #                           example: 0
+  #                         updatedCount:
+  #                           type: integer
+  #                           example: 0
+  #                         exceptionsCount:
+  #                           type: integer
+  #                           example: 0
+
+  # /api/card-connect/integrations-master/fetch-funding-data-for-the-date-range/{accountId}:
+  #   post:
+  #     tags:
+  #       - Card-connect Integration - Fetching live from Card-connect and also Insights with filters
+  #     summary: "Retrieve live funding data from card-connect for the given date range"
+  #     description: |
+  #       - This API takes a `from date` and `to date` in `YYYY-MM-DD` format in the body.
+  #       - Calls `Funding API` for the each day between the date range with inclusive.
+  #       - For each transaction:
+  #         - If it does not exist, creates an entry.
+  #         - If it exists with the same `status`, no entry is made.
+  #         - If it exists with different `status`, the record is updated.
+  #       - Requires authentication via the `Authorization` header.
+  #       - Returns statistics about pulled, pushed, updated, and exception counts.
+  #     security:
+  #       - Authorization: [] # Requires Authorization header with token
+  #     parameters:
+  #       - name: accountId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #         description: "Unique account identifier"
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               fromDate:
+  #                 type: string
+  #                 format: date
+  #                 example: "2025-09-09"
+  #               toDate:
+  #                 type: string
+  #                 format: date
+  #                 example: "2025-09-10"
+  #             required:
+  #               - fromDate
+  #               - toDate
+  #     responses:
+  #       200:
+  #         description: Fetched live funding-txns data succesfully for the given date range.
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 status:
+  #                   type: string
+  #                   example: success
+  #                 message:
+  #                   type: string
+  #                   example: "Fetched live funding-txns data succesfully for the given date range."
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     finalResult:
+  #                       type: object
+  #                       properties:
+  #                         accountId:
+  #                           type: string
+  #                           example: "68b6e54bcb20acc231225479"
+  #                         cronJobType:
+  #                           type: string
+  #                           example: "manual"
+  #                         dateRange:
+  #                           type: array
+  #                           items:
+  #                             type: string
+  #                             format: date
+  #                           example: ["2025-09-11"]
+  #                         pulledCount:
+  #                           type: integer
+  #                           example: 115
+  #                         pushedCount:
+  #                           type: integer
+  #                           example: 0
+  #                         updatedCount:
+  #                           type: integer
+  #                           example: 0
+  #                         exceptionsCount:
+  #                           type: integer
+  #                           example: 0

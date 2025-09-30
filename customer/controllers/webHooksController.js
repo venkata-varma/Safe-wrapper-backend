@@ -1615,17 +1615,17 @@ exports.getAllWebhookPayoadHeadersOfAccountFn = async (accountId) => {
     }
   ]);
 
-  let findIntegrationWithCardConnectCredentials = await cardConnectIntegrationsCredentialsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
-  let findIntegrationWithCardConnectSettings = await cardConnectIntegrationsSettingsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+  // let findIntegrationWithCardConnectCredentials = await cardConnectIntegrationsCredentialsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+  // let findIntegrationWithCardConnectSettings = await cardConnectIntegrationsSettingsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
 
-  let merchantPayloadHeaders
+  // let cardConnectPayloadHeaders
 
-  if (findIntegrationWithCardConnectCredentials && findIntegrationWithCardConnectSettings) {
-    merchantPayloadHeaders = await getMerchantCardConnectPayloadHeaders(accountId)
-  } else {
+  // if (findIntegrationWithCardConnectCredentials && findIntegrationWithCardConnectSettings) {
+  //   cardConnectPayloadHeaders = await getMerchantCardConnectPayloadHeaders(accountId)
+  // } else {
 
-    merchantPayloadHeaders = {}
-  }
+  //   cardConnectPayloadHeaders = {}
+  // }
 
 
 
@@ -1635,7 +1635,7 @@ exports.getAllWebhookPayoadHeadersOfAccountFn = async (accountId) => {
     categories,
     merchantNames: allMerchants,
     webhookPayloadHeadersData: webhookPayloadHeadersData[0] ? webhookPayloadHeadersData[0] : {},
-    merchantPayloadHeaders: merchantPayloadHeaders
+    //cardConnectPayloadHeaders: cardConnectPayloadHeaders
   }
 }
 
