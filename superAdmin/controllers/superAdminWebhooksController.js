@@ -1248,7 +1248,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
       $project: {
         serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
         transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
-        userNamesOfMachine: 1
+        // userNamesOfMachine: 1
       }
     }
   ]);
