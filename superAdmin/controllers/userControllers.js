@@ -6,6 +6,7 @@ const { hashPwd, comparePassword } = require('../../utils/helpers')
 const customConstants = require('../config/customConstants.json')
 const sessionsModel = require('../../models/sessionsModel');
 const onePosLogsModel = require('../../models/onePosLogsModel');
+const { getAllWebhookPayoadHeadersOfAllAccountsFn } = require('./superAdminWebhooksController');
 
 
 /*
@@ -247,8 +248,8 @@ If middleware returns True, this function create session with valid JWT token
 Mandatory fields -> Phone and Password 
 */
 exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
-  console.log('Requwest:====',req.url)
-  const { mobileEmail, password,sessionExpirationTime } = req.body;
+  console.log('Requwest:====', req.url)
+  const { mobileEmail, password, sessionExpirationTime } = req.body;
   let user_details = {};
   // Find user by email or phone
   const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }, { _id: 0, password: 0 });
@@ -271,24 +272,25 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
   user_details.sesssionDetails = sesssionDetails;
   user_details.accountDetails = await accountsModel.findById(user.accountId, { password: 0 })
 
-  if(userData.authUser === "OnePOS"){ 
+  if (userData.authUser === "OnePOS") {
     await onePosLogsModel.create({
-      accountId:userData.accountId,
-      userId:userData._id,
-      apiCalled:req.url,
-      authenticationCount:1,
-      expirationTime: new Date((req.body.expirationTime)*1000)
+      accountId: userData.accountId,
+      userId: userData._id,
+      apiCalled: req.url,
+      authenticationCount: 1,
+      expirationTime: new Date((req.body.expirationTime) * 1000)
     })
   }
-  
+  let usefulDetails = await getAllWebhookPayoadHeadersOfAllAccountsFn()
 
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_USER_LOGIN,
-    data:{
-      // accountId:req.body.accountId,
-      access_token:sesssionDetails.accessToken
+    data: {
+      accountId: req.body.accountId,
+      access_token: sesssionDetails.accessToken,
+      usefulDetails
     }
   });
 });

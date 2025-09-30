@@ -14,7 +14,7 @@ const {
   validateAccountStatus,
   validateWebhookandAccount, updateWebhookSettings,
   getAllWebhookTransactionsOfAccount,
-  getAllWebhookPayoadHeadersOfAccount,
+  getAllWebhookPayoadHeadersOfAllAccounts,
   getDashboardStatisticsOfAccount,
   getListOfMachines,
   getAllMachineReports,
@@ -57,7 +57,7 @@ router.get(
 );
 
 router.get('/get-machine-transactions', getAllWebhookTransactionsOfAccount)
-router.get('/get-machine-payload-headers', getAllWebhookPayoadHeadersOfAccount)
+router.get('/get-machine-payload-headers', getAllWebhookPayoadHeadersOfAllAccounts)
 router.get('/get-dashboard-statistics', getDashboardStatisticsOfAccount)
 router.get('/get-list-of-machines', getListOfMachines)
 router.get('/get-all-machine-reports', getAllMachineReports)

@@ -1537,6 +1537,110 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   })
 })
 
+exports.getAllWebhookPayoadHeadersOfAccountFn = async (accountId) => {
+  let accountDetails = await accountsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+  let matchCondition = {}
+  if (accountDetails.accountType === "merchant") {
+    matchCondition = {
+      serialNumber: { $in: accountDetails.machines }
+    }
+  }
+  else {
+    matchCondition = {
+      accountId: new mongoose.Types.ObjectId(accountId)
+    }
+  }
+
+
+  let allMerchants = [];
+  let merchantNames = {
+    merchantName: accountDetails?.accountName,
+    objectId: accountDetails?._id
+  }
+  allMerchants.push(merchantNames)
+  let categories = ["cima-machine", "card-connect"]
+
+
+
+  const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
+    {
+      $match: {
+        ...matchCondition
+      }
+    },
+    {
+      $addFields: {
+        userName: {
+          $cond: {
+            if: { $eq: ["$userName", ""] },  // check if empty string
+            then: "unknown",                  // replace with "unknown"
+            else: "$userName"
+          }
+        }
+      }
+    },
+    {
+      $facet: {
+        serialNumbers: [
+          { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
+          { $project: { _id: 0, serialNumbers: 1 } }
+        ],
+        transactionTypes: [
+          { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
+          { $project: { _id: 0, transactionTypes: 1 } }
+        ],
+        userNamesOfMachine: [
+          {
+            $group: {
+              _id: "$serialNumber",
+              userNames: { $addToSet: "$userName" }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              serialNumber: "$_id",
+              userNames: 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      $project: {
+        serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
+        transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
+        //userNamesOfMachine: 1
+      }
+    }
+  ]);
+
+  let findIntegrationWithCardConnectCredentials = await cardConnectIntegrationsCredentialsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+  let findIntegrationWithCardConnectSettings = await cardConnectIntegrationsSettingsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+
+  let merchantPayloadHeaders
+
+  if (findIntegrationWithCardConnectCredentials && findIntegrationWithCardConnectSettings) {
+    merchantPayloadHeaders = await getMerchantCardConnectPayloadHeaders(accountId)
+  } else {
+
+    merchantPayloadHeaders = {}
+  }
+
+
+
+
+  const listOfWebhooks = await webHooksMasterModel.find({ accountId: accountId })
+  return {
+    categories,
+    merchantNames: allMerchants,
+    webhookPayloadHeadersData: webhookPayloadHeadersData[0] ? webhookPayloadHeadersData[0] : {},
+    merchantPayloadHeaders: merchantPayloadHeaders
+  }
+}
+
+
+
 
 
 exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {

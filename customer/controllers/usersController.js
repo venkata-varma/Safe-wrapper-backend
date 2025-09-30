@@ -9,7 +9,7 @@ const accountsModel = require('../../models/accountsModel');
 const mongoose = require('mongoose')
 
 const { validateUserMobileEmailData, validatePhoneNumber } = require('../../utils/userLoginValidation');
-
+let { getAllWebhookPayoadHeadersOfAccountFn } = require("./webHooksController")
 const accountSettingsModel = require('../../models/accountSettingsModel');
 const { deleteAccount } = require('./accountsController');
 
@@ -403,13 +403,16 @@ exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
   }
 
 
+  let usefulDetails = await getAllWebhookPayoadHeadersOfAccountFn(req.body.accountId)
+
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_USER_LOGIN,
     data: {
       accountId: req.body.accountId,
-      access_token: sesssionDetails.accessToken
+      access_token: sesssionDetails.accessToken,
+      usefulDetails
     }
   });
 });
