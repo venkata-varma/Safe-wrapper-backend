@@ -2929,9 +2929,14 @@ exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
   let machineCashExceptions = [];
   let cardConnectExceptions = []
   let { fromDate, toDate, paymentType } = req.query;
-  fromDate = moment.utc(fromDate).startOf("day").toDate();
-  toDate = moment.utc(toDate).endOf("day").toDate()
-  console.log("fromDate, toDate===", fromDate, toDate)
+
+
+
+
+  fromDate = new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss'))
+  toDate = new Date(moment(toDate).format('YYYY-MM-DDTHH:mm:ss'))
+  console.log("fromDate===", fromDate)
+  console.log("toDate===", toDate)
   if (paymentType === "cima-machine") {
     machineCashExceptions = await webhookExceptionsModel.aggregate([
       {
@@ -2957,7 +2962,8 @@ exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
         $sort: {
           createdAt: -1
         }
-      }
+      },
+
 
     ])
   }

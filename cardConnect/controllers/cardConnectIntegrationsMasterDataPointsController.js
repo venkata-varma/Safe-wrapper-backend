@@ -227,7 +227,7 @@ exports.getAllCardConnectPayloadHeaders = async () => {
 
 
 exports.getMerchantCardConnectExceptions = async (fromDate, toDate, paymentType, accountId) => {
-    console.log("fromDate, toDate, paymentType,accountId===", fromDate, toDate, paymentType, accountId)
+    // console.log("fromDate, toDate, paymentType,accountId===", fromDate, toDate, paymentType, accountId)
     let getMerchantExceptions = await cardConnectExceptionsModel.aggregate([
         {
             $match: {
@@ -261,6 +261,7 @@ exports.getMerchantCardConnectExceptions = async (fromDate, toDate, paymentType,
         {
             $project: {
                 "accountRecord.password": 0
+
             }
         },
         {

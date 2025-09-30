@@ -34,8 +34,11 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
     if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
         throw new Error('Invalid date format for fromDate or toDate');
     }
-    fromDate = moment.utc(fromDate).startOf("day").toDate();
-    toDate = moment.utc(toDate).endOf("day").toDate()
+    fromDate = new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss'))
+    toDate = new Date(moment(toDate).format('YYYY-MM-DDTHH:mm:ss'))
+    console.log("fromDate===", fromDate)
+    console.log("toDate===", toDate)
+
 
     console.log("merchantNamesArray===", merchantNamesArray)
 
@@ -150,8 +153,11 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
     if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
         throw new Error('Invalid date format for fromDate or toDate');
     }
-    fromDate = moment.utc(fromDate).startOf("day").toDate();
-    toDate = moment.utc(toDate).endOf("day").toDate()
+    fromDate = new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss'))
+    toDate = new Date(moment(toDate).format('YYYY-MM-DDTHH:mm:ss'))
+    console.log("fromDate===", fromDate)
+    console.log("toDate===", toDate)
+
 
     merchantNamesArray = merchantNamesArray
         .filter(id => id && id.length === 24) // keep only valid ObjectId strings
