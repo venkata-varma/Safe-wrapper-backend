@@ -278,124 +278,125 @@ paths:
         - Follow below security patterns to follow to succesfully send transactions.
           - Place Number and AccountId assigned to your webhook in path params.
           - Place secret token given in headers with prefix - Bearer  in Authorization section of Headers.
-
+      security:
+        - Authorization: [] # Requires Authorization header with token
       parameters:
         - name: randomNumber
           in: path
           required: true
           description: "Random number assigned to your webhook"
           schema:
-            type: integer
-            example: 22842
+            type: string
+            example: "14909"
         - name: accountId
           in: path
           required: true
           description: "Account ID assigned to your webhook"
           schema:
             type: string
-            example: 67eb81cb45715d3e5b678ebb
+            example: 68b6e54bcb20acc231225479
 
-        - name: Authorization
-          in: header
-          required: true
-          description: "Bearer token assigned to your webhook"
-          schema:
-            type: string
-            example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50SWQiOiI2N2ViODFjYjQ1NzE1ZDNlNWI2NzhlYmIiLCJpYXQiOjE3NDM0ODgxNDR9.gOXAlI6q2-lUBnPrEsI8_hVkz1eNoplkuowb-LMKfasdg"
+        # - name: Authorization
+        #   in: header
+        #   required: true
+        #   description: "Bearer token assigned to your webhook (e.g. `Bearer eyJhbGci...`)"
+        #   schema:
+        #     type: string
+        #     example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50SWQiOiI2OGI2ZTU0YmNiMjBhY2MyMzEyMjU0NzkiLCJpYXQiOjE3NTkzNDQ1NTJ9.xBODZJosMKE1N22YHYT1zd2ZuuVmJqS3v5qq9IE8U-4"
 
       requestBody:
         required: true
         content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              Metadata:
-                type: object
-                properties:
-                LocationInformation:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Metadata:
+                  type: object
+                  properties:
+                    LocationInformation:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          SerialNumber:
+                            type: string
+                            example: "LOATD00876"
+                          Name:
+                            type: string
+                            example: "Opal Demo"
+                          StoreId:
+                            type: string
+                            nullable: true
+                          Location:
+                            type: string
+                            example: "Opal"
+                    MessageId:
+                      type: string
+                      example: "767b8fbb-f948-413f-acad-15736aee785b"
+                    CorrelationId:
+                      type: string
+                      example: "eb221b40-53cb-4449-a5c0-bd761180b67e"
+
+                Transactions:
                   type: array
                   items:
                     type: object
                     properties:
+                      PickupGroupId:
+                        type: integer
+                        example: 566758091
                       SerialNumber:
                         type: string
                         example: "LOATD00876"
-                      Name:
+                      RetrievedOn:
                         type: string
-                        example: "Opal Demo"
-                      StoreId:
+                        format: date-time
+                        example: "2025-03-27T17:33:05.4670000Z"
+                      TransactionDateTime:
                         type: string
-                        nullable: true
-                      Location:
+                        format: date-time
+                        example: "2025-04-11T03:01:10"
+                      UserName:
                         type: string
-                        example: "Opal"
-                MessageId:
-                  type: string
-                  example: "767b8fbb-f948-413f-acad-15736aee785b"
-                CorrelationId:
-                  type: string
-                  example: "eb221b40-53cb-4449-a5c0-bd761180b67e"
-
-              Transactions:
-                type: array
-                items:
-                  type: object
-                  properties:
-                  PickupGroupId:
-                    type: integer
-                    example: 566758091
-                  SerialNumber:
-                    type: string
-                    example: "LOATD00876"
-                  RetrievedOn:
-                    type: string
-                    format: date-time
-                    example: "2025-03-27T17:33:05.4670000Z"
-                  TransactionDateTime:
-                    type: string
-                    format: date-time
-                    example: "2025-04-11T03:01:10"
-                  UserName:
-                    type: string
-                    example: "TITAN"
-                  TransactionType:
-                    type: string
-                    example: "CashIn"
-                  Amount:
-                    type: number
-                    example: 25
-                  DoorName:
-                    type: string
-                    example: "Main vault opened"
-                  Denominations:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        UnitValue:
-                          type: number
-                          example: 5
-                        Count:
-                          type: integer
-                          example: 1
-                        Currency:
-                          type: string
-                          example: "USD"
-                  Register:
-                    type: string
-                    example: "0"
+                        example: "TITAN"
+                      TransactionType:
+                        type: string
+                        example: "CashIn"
+                      Amount:
+                        type: number
+                        example: 25
+                      DoorName:
+                        type: string
+                        example: "Main vault opened"
+                      Denominations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            UnitValue:
+                              type: number
+                              example: 5
+                            Count:
+                              type: integer
+                              example: 1
+                            Currency:
+                              type: string
+                              example: "USD"
+                      Register:
+                        type: string
+                        example: "0"
 
       responses:
         200:
-          description: "Successful login response"
+          description: "Successful webhook request"
           content:
             application/json:
               example:
                 status: "success"
-                message: "Login successfull."
+                message: "Webhook request created."
 
-      security: [] # No authentication required for login
+      # security: [] # No authentication required for login
 
   /api/users/super-admin-login:
     post:
@@ -856,174 +857,174 @@ paths:
                           type: integer
                           example: 0
 
-  # /api/card-connect/integrations-master/fetch-funding-data-for-the-day/{accountId}:
-  #   post:
-  #     tags:
-  #       - Card-connect Integration - Fetching live from Card-connect and also Insights with filters
-  #     summary: "Retrieve live funding data from card-connect for the given day"
-  #     description: |
-  #       - This API takes a date in `YYYY-MM-DD` format in the body.
-  #       - Calls `Funding API` for the given day.
-  #       - For each transaction:
-  #         - If it does not exist, creates an entry.
-  #         - If it exists with the same `status`, no entry is made.
-  #         - If it exists with different `status`, the record is updated.
-  #       - Requires authentication via the `Authorization` header.
-  #       - Returns statistics about pulled, pushed, updated, and exception counts.
-  #     security:
-  #       - Authorization: [] # Requires Authorization header with token
-  #     parameters:
-  #       - name: accountId
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #         description: "Unique account identifier"
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               date:
-  #                 type: string
-  #                 items:
-  #                   type: string
-  #                   format: date
-  #                 example: "2025-09-11"
-  #             required:
-  #               - date
-  #     responses:
-  #       200:
-  #         description: Fetched live funding-txns data succesfully for the given date.
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: object
-  #               properties:
-  #                 status:
-  #                   type: string
-  #                   example: success
-  #                 message:
-  #                   type: string
-  #                   example: "Fetched live funding-txns data succesfully for the given date."
-  #                 data:
-  #                   type: object
-  #                   properties:
-  #                     finalResult:
-  #                       type: object
-  #                       properties:
-  #                         accountId:
-  #                           type: string
-  #                           example: "68b6e54bcb20acc231225479"
-  #                         cronJobType:
-  #                           type: string
-  #                           example: "manual"
-  #                         dateRange:
-  #                           type: array
-  #                           items:
-  #                             type: string
-  #                             format: date
-  #                           example: ["2025-09-11"]
-  #                         pulledCount:
-  #                           type: integer
-  #                           example: 115
-  #                         pushedCount:
-  #                           type: integer
-  #                           example: 0
-  #                         updatedCount:
-  #                           type: integer
-  #                           example: 0
-  #                         exceptionsCount:
-  #                           type: integer
-  #                           example: 0
+  /api/card-connect/integrations-master/fetch-funding-data-for-the-day/{accountId}:
+    post:
+      tags:
+        - Authorize -  Merchant only
+      summary: "Retrieve live funding data from card-connect for the given day"
+      description: |
+        - This API takes a date in `YYYY-MM-DD` format in the body.
+        - Calls `Funding API` for the given day.
+        - For each transaction:
+          - If it does not exist, creates an entry.
+          - If it exists with the same `status`, no entry is made.
+          - If it exists with different `status`, the record is updated.
+        - Requires authentication via the `Authorization` header.
+        - Returns statistics about pulled, pushed, updated, and exception counts.
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique account identifier"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  items:
+                    type: string
+                    format: date
+                  example: "2025-09-11"
+              required:
+                - date
+      responses:
+        200:
+          description: Fetched live funding-txns data succesfully for the given date.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: "Fetched live funding-txns data succesfully for the given date."
+                  data:
+                    type: object
+                    properties:
+                      finalResult:
+                        type: object
+                        properties:
+                          accountId:
+                            type: string
+                            example: "68b6e54bcb20acc231225479"
+                          cronJobType:
+                            type: string
+                            example: "manual"
+                          dateRange:
+                            type: array
+                            items:
+                              type: string
+                              format: date
+                            example: ["2025-09-11"]
+                          pulledCount:
+                            type: integer
+                            example: 115
+                          pushedCount:
+                            type: integer
+                            example: 0
+                          updatedCount:
+                            type: integer
+                            example: 0
+                          exceptionsCount:
+                            type: integer
+                            example: 0
 
-  # /api/card-connect/integrations-master/fetch-funding-data-for-the-date-range/{accountId}:
-  #   post:
-  #     tags:
-  #       - Card-connect Integration - Fetching live from Card-connect and also Insights with filters
-  #     summary: "Retrieve live funding data from card-connect for the given date range"
-  #     description: |
-  #       - This API takes a `from date` and `to date` in `YYYY-MM-DD` format in the body.
-  #       - Calls `Funding API` for the each day between the date range with inclusive.
-  #       - For each transaction:
-  #         - If it does not exist, creates an entry.
-  #         - If it exists with the same `status`, no entry is made.
-  #         - If it exists with different `status`, the record is updated.
-  #       - Requires authentication via the `Authorization` header.
-  #       - Returns statistics about pulled, pushed, updated, and exception counts.
-  #     security:
-  #       - Authorization: [] # Requires Authorization header with token
-  #     parameters:
-  #       - name: accountId
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #         description: "Unique account identifier"
-  #     requestBody:
-  #       required: true
-  #       content:
-  #         application/json:
-  #           schema:
-  #             type: object
-  #             properties:
-  #               fromDate:
-  #                 type: string
-  #                 format: date
-  #                 example: "2025-09-09"
-  #               toDate:
-  #                 type: string
-  #                 format: date
-  #                 example: "2025-09-10"
-  #             required:
-  #               - fromDate
-  #               - toDate
-  #     responses:
-  #       200:
-  #         description: Fetched live funding-txns data succesfully for the given date range.
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: object
-  #               properties:
-  #                 status:
-  #                   type: string
-  #                   example: success
-  #                 message:
-  #                   type: string
-  #                   example: "Fetched live funding-txns data succesfully for the given date range."
-  #                 data:
-  #                   type: object
-  #                   properties:
-  #                     finalResult:
-  #                       type: object
-  #                       properties:
-  #                         accountId:
-  #                           type: string
-  #                           example: "68b6e54bcb20acc231225479"
-  #                         cronJobType:
-  #                           type: string
-  #                           example: "manual"
-  #                         dateRange:
-  #                           type: array
-  #                           items:
-  #                             type: string
-  #                             format: date
-  #                           example: ["2025-09-11"]
-  #                         pulledCount:
-  #                           type: integer
-  #                           example: 115
-  #                         pushedCount:
-  #                           type: integer
-  #                           example: 0
-  #                         updatedCount:
-  #                           type: integer
-  #                           example: 0
-  #                         exceptionsCount:
-  #                           type: integer
-  #                           example: 0
+  /api/card-connect/integrations-master/fetch-funding-data-for-the-date-range/{accountId}:
+    post:
+      tags:
+        - Authorize -  Merchant only
+      summary: "Retrieve live funding data from card-connect for the given date range"
+      description: |
+        - This API takes a `from date` and `to date` in `YYYY-MM-DD` format in the body.
+        - Calls `Funding API` for the each day between the date range with inclusive.
+        - For each transaction:
+          - If it does not exist, creates an entry.
+          - If it exists with the same `status`, no entry is made.
+          - If it exists with different `status`, the record is updated.
+        - Requires authentication via the `Authorization` header.
+        - Returns statistics about pulled, pushed, updated, and exception counts.
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Unique account identifier"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fromDate:
+                  type: string
+                  format: date
+                  example: "2025-09-09"
+                toDate:
+                  type: string
+                  format: date
+                  example: "2025-09-10"
+              required:
+                - fromDate
+                - toDate
+      responses:
+        200:
+          description: Fetched live funding-txns data succesfully for the given date range.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: "Fetched live funding-txns data succesfully for the given date range."
+                  data:
+                    type: object
+                    properties:
+                      finalResult:
+                        type: object
+                        properties:
+                          accountId:
+                            type: string
+                            example: "68b6e54bcb20acc231225479"
+                          cronJobType:
+                            type: string
+                            example: "manual"
+                          dateRange:
+                            type: array
+                            items:
+                              type: string
+                              format: date
+                            example: ["2025-09-11"]
+                          pulledCount:
+                            type: integer
+                            example: 115
+                          pushedCount:
+                            type: integer
+                            example: 0
+                          updatedCount:
+                            type: integer
+                            example: 0
+                          exceptionsCount:
+                            type: integer
+                            example: 0
 
   /api/merchants/machines/merchant-smart-filtered-dashboard/{accountId}:
     get:
