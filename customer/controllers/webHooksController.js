@@ -586,6 +586,7 @@ const createWebhookException = async (
  * Validates the webhook data for webhook log.
  */
 exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
+
   const splitUrlToGetParams = req.originalUrl.split("/");
 
   let accountId = splitUrlToGetParams[splitUrlToGetParams.length - 1];

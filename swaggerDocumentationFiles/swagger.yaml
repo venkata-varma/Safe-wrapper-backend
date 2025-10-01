@@ -266,6 +266,137 @@ components:
 #-----------------------------------------------------------------------------------------------------------------------------------
 
 paths:
+  /api/webhook/{randomNumber}/{accountId}:
+    post:
+      tags:
+        - Post transactions of machine to webhook.
+      summary: "1. Place Number and AccountId assigned to your webhook in path params  || 2. Place secret token given in headers with prefix - Bearer  in Authorization section of Headers    ||  3. Place access_token in input box to authorize.   ||  4.Also visit Useful details which resembles details of all existing merchant accounts"
+      description: |
+        - Above HTTPS end-point is webhook assigned
+        - Purpose is to send transactions of your machine (or) machines. 
+        - Use `https://lhswapi.dev.devrabbit.co/api/merchants/machines/get-machine-transactions` to be able to store in ONEPOS Cloud`
+        - Follow below security patterns to follow to succesfully send transactions.
+          - Place Number and AccountId assigned to your webhook in path params.
+          - Place secret token given in headers with prefix - Bearer  in Authorization section of Headers.
+
+      parameters:
+        - name: randomNumber
+          in: path
+          required: true
+          description: "Random number assigned to your webhook"
+          schema:
+            type: integer
+            example: 22842
+        - name: accountId
+          in: path
+          required: true
+          description: "Account ID assigned to your webhook"
+          schema:
+            type: string
+            example: 67eb81cb45715d3e5b678ebb
+
+        - name: Authorization
+          in: header
+          required: true
+          description: "Bearer token assigned to your webhook"
+          schema:
+            type: string
+            example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50SWQiOiI2N2ViODFjYjQ1NzE1ZDNlNWI2NzhlYmIiLCJpYXQiOjE3NDM0ODgxNDR9.gOXAlI6q2-lUBnPrEsI8_hVkz1eNoplkuowb-LMKfasdg"
+
+      requestBody:
+        required: true
+        content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              Metadata:
+                type: object
+                properties:
+                LocationInformation:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      SerialNumber:
+                        type: string
+                        example: "LOATD00876"
+                      Name:
+                        type: string
+                        example: "Opal Demo"
+                      StoreId:
+                        type: string
+                        nullable: true
+                      Location:
+                        type: string
+                        example: "Opal"
+                MessageId:
+                  type: string
+                  example: "767b8fbb-f948-413f-acad-15736aee785b"
+                CorrelationId:
+                  type: string
+                  example: "eb221b40-53cb-4449-a5c0-bd761180b67e"
+
+              Transactions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                  PickupGroupId:
+                    type: integer
+                    example: 566758091
+                  SerialNumber:
+                    type: string
+                    example: "LOATD00876"
+                  RetrievedOn:
+                    type: string
+                    format: date-time
+                    example: "2025-03-27T17:33:05.4670000Z"
+                  TransactionDateTime:
+                    type: string
+                    format: date-time
+                    example: "2025-04-11T03:01:10"
+                  UserName:
+                    type: string
+                    example: "TITAN"
+                  TransactionType:
+                    type: string
+                    example: "CashIn"
+                  Amount:
+                    type: number
+                    example: 25
+                  DoorName:
+                    type: string
+                    example: "Main vault opened"
+                  Denominations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        UnitValue:
+                          type: number
+                          example: 5
+                        Count:
+                          type: integer
+                          example: 1
+                        Currency:
+                          type: string
+                          example: "USD"
+                  Register:
+                    type: string
+                    example: "0"
+
+      responses:
+        200:
+          description: "Successful login response"
+          content:
+            application/json:
+              example:
+                status: "success"
+                message: "Login successfull."
+
+      security: [] # No authentication required for login
+
   /api/users/super-admin-login:
     post:
       tags:
@@ -894,7 +1025,7 @@ paths:
   #                           type: integer
   #                           example: 0
 
-  /api/merchants/machines/merchant-smart-filtered-dashboard/:accountId:
+  /api/merchants/machines/merchant-smart-filtered-dashboard/{accountId}:
     get:
       tags:
         - Authorize -  Merchant only
@@ -902,53 +1033,118 @@ paths:
       description: |
         - Visit `machineDetails` during `login` to see options allocated to you to use here.     
         - This API provides statistical insights for both `CIMA-machine` and `Card-connect` transactions of  respective `logged-in merchant` based on desired filters.  
-        - Below fields are mandatory at their respective places respects both or either of payment-types `(cima-machine or card-connect)`:-
-          - `accountId` - `params`  `(e.g., 68b6e54bcb20acc231225454)`
+        - Below fields are `mandatory` in `params`:-
+           - `accountId` - `params`  `(e.g., 68b6e54bcb20acc231225454)`
+        - Below fields are `mandatory` in `query`  that respects both or either of payment-types `(cima-machine or card-connect)`:-
           - `selectDashboard` (Payment type) - `query`  `(e.g., cima-machine, card-connect)` 
-          - `merchantNames` -  `query`  `(e.g., Devrabbit, Test merchant sandbox)`
+          - `merchantNames` -  `query`  `(e.g., 680213209f97bd8e0787c035,67f5f980368cc56a87df8ca9)`. `Id's` will be found while you `login` 
           - `fromDate`  -  `select time and date to retreive transactions from this date & time`  `(e.g., 2025-09-10T05:50Z)`
           - `toDate`  -  `select time and date to retreive transactions upto this date & time`   `(e.g., 2025-09-10T15:50Z)`
-          
-        - By providing below query parameters which are optional, results will be filtered based on your desired filters 
+
+        - By providing below query parameters which are `optional`, results will be filtered based on your desired filters 
           cima-machine filter options:  
-          - `serialNumbers`: `(None or single or multiple)` Filter by the machine's serial numbers. `(e.g., QA0158, QA0230, QA0104, QA0275 )` 
-          - `cashTransactionTypes`: `(None or single or multiple)`   Filter by the types of transaction `(e.g., CashIn, CashOut, LockClosed, DoorWhine, ManualCashTransaction)`. 
+          - `serialNumbers`  :  `(None or single or multiple)` Filter by the machine's serial numbers. `(e.g., QA0158, QA0230, QA0104, QA0275 )` 
+          - `cashTransactionTypes`  : `(None or single or multiple)`   Filter by the types of transaction `(e.g., CashIn, CashOut, LockClosed, DoorWhine, ManualCashTransaction)`. 
           card-connect filter options: 
-          - `batchNumber`: `(None or single or multiple)`   Give desired Batch Id  to retreive transactions of respective batch  `(e.g., 104,105,106 )`
-          - `cardTransactionTypes`: Retrieve records up to this date.  `(e.g.,SALE,REFUND,ACCOUNT VERIFY,AUTH REQUEST, CASH ADVANCE,VOID SALE,VOID REFUND )`
-          - `customerDetails`: `(None or single or multiple)` Paritally hidden card number `(e.g., 47XXXXXXXXXX1444,47XXXXXXXXXX1443)`
-          - `cardTransactionStatus`:   `(None or single or multiple)` Give desired status or stauses seperate by commas to get transactions of respective given statuses `(e.g., Processed, Rejected,Auth, Captured,Voided,Failure)`
+          - `batchNumber` : `(None or single or multiple)`   Give desired Batch Id  to retreive transactions of respective batch  `(e.g., 104,105,106 )`
+          - `cardTransactionTypes` :  Retrieve records up to this date.  `(e.g.,SALE,REFUND,ACCOUNT VERIFY,AUTH REQUEST, CASH ADVANCE,VOID SALE,VOID REFUND )`
+          - `customerDetails` :  `(None or single or multiple)` Paritally hidden card number `(e.g., 47XXXXXXXXXX1444,47XXXXXXXXXX1443)`
+          - `cardTransactionStatus` :  `(None or single or multiple)` Give desired status or stauses seperate by commas to get transactions of respective given statuses `(e.g., Processed, Rejected,Auth, Captured,Voided,Failure)`
         - Requires authentication via the `Authorization` header.
       security:
         - Authorization: [] # Requires Authorization header with token
       parameters:
-        - name: serialNumbers
-          in: query
+        - name: accountId
+          in: path
+          required: true
+          description: "Unique identifier for the account"
           schema:
             type: string
-          description: "Unique serial number (or) numbers identifying the machine. (e.g., QA0275,QA0068,QA0120) "
+            example: 68b6e54bcb20acc231225479
 
-        - name: transactionTypes
+        - name: selectDashboard
           in: query
+          description: "Choose one or more dashboards (hold Ctrl to select multiple)"
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - cima-machine
+                - card-connect
+                - snow
+                - others
+
+        - name: merchantNames
+          in: query
+          description: "Unique Id's of Merchant name(s), comma-separated. Id's will be found while you login."
           schema:
             type: string
-          description: "Desired transaction type (or) types (e.g., CashIn,CashOut,DoorClosed)"
+            example: "680213209f97bd8e0787c035,67f5f980368cc56a87df8ca9"
 
         - name: fromDate
           in: query
+          description: "Start date (ISO format)"
           schema:
             type: string
-          description: "Desired date from which data to be retreived from.(e.g., 2025-04-21T19:09Z) "
+            format: date-time
+            example: 2025-01-10T05:50Z
 
         - name: toDate
           in: query
+          description: "End date (ISO format)"
           schema:
             type: string
-          description: "Desired date to which data to be retreived from. (e.g., 2025-04-28T20:09Z)"
+            format: date-time
+            example: 2025-01-10T05:56Z
+
+        - name: serialNumbers
+          in: query
+          description: "Serial number(s) of CIMA-machine's, comma-separated"
+          schema:
+            type: string
+            example: "QA0230, QA0158"
+
+        - name: cashTransactionTypes
+          in: query
+          description: "Cash transaction type(s), comma-separated"
+          schema:
+            type: string
+            example: "CashIn, ManualCashTransaction, LockOpened, DoorWhine"
+
+        - name: batchNumber
+          in: query
+          description: "Batch id to retreive transactions of respective batch"
+          schema:
+            type: string
+            example: "100,101"
+
+        - name: cardTransactionTypes
+          in: query
+          description: "Card transaction type(s), comma-separated"
+          schema:
+            type: string
+            example: "REFUND, SALE, VOID REFUND"
+
+        - name: customerDetails
+          in: query
+          description: "Customer card details (Partially hidden) , comma-separated"
+          schema:
+            type: string
+            example: "47XXXXXXXXXX1444, 47XXXXXXXXXX1443"
+
+        - name: cardTransactionStatus
+          in: query
+          description: "Card transaction status"
+          schema:
+            type: string
+            example: "Processed, Rejected, Auth, Captured, Failure"
 
       responses:
         200:
-          description: Machine / Machine's  transactions.
+          description: Smart filtered transaction's data retrieved successfully
           content:
             application/json:
               schema:
@@ -959,77 +1155,353 @@ paths:
                     example: success
                   message:
                     type: string
-                    example: Machine / Machine's  transactions.
+                    example: "Smart filtered transaction's data retreived succesfully."
                   data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        _id:
-                          type: string
-                          example: "67eceef889c3a34af5486760"
-                        # webhookMasterId:
-                        #   type: string
-                        #   example: "67eb8490233046c701342349"
-                        # webhookMetaPayloadId:
-                        #   type: string
-                        #   example: "67eb8588233046c70134244c"
-                        # accountId:
-                        #   type: string
-                        #   example: "67eb81cb45715d3e5b678ebb"
-                        pickupGroupId:
-                          type: integer
-                          example: 566758091
-                        serialNumber:
-                          type: string
-                          example: "QA00577"
-                        retrievedOn:
-                          type: string
-                          format: date-time
-                          example: "2025-03-27T17:33:05.4670000Z"
-                        transactionDateTime:
-                          type: string
-                          example: "2025-03-27T09:57:05"
-                        userName:
-                          type: string
-                          example: "TITAN"
-                        transactionType:
-                          type: string
-                          example: "CashIn"
-                        amount:
-                          type: number
-                          example: 10
-                        denominations:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              UnitValue:
-                                type: number
-                                example: 5
-                              Count:
-                                type: integer
-                                example: 2
-                              Currency:
-                                type: string
-                                example: "USD"
-                        location:
-                          type: string
-                          example: "Opal"
-                        status:
-                          type: string
-                          example: "active"
-                        createdAt:
-                          type: string
-                          format: date-time
-                          example: "2025-04-02T18:02:00.120Z"
-                        updatedAt:
-                          type: string
-                          format: date-time
-                          example: "2025-04-02T08:02:00.120Z"
-                        webhookTransactionId:
-                          type: string
-                          example: "67eceef889c3a34af5486760"
-                        __v:
-                          type: integer
-                          example: 0
+                    type: object
+                    properties:
+                      cimaMachineTransactionsCount:
+                        type: integer
+                        example: 0
+                      cardConnectTransactionsCount:
+                        type: integer
+                        example: 22
+                      cashAndCardMixResultArray:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "68c28dc2e08cfb5a3549248b"
+                            referenceId:
+                              type: string
+                              example: "252273002845"
+                            customerDetails:
+                              type: object
+                              properties:
+                                cardNumber:
+                                  type: string
+                                  example: "47XXXXXXXXXX1443"
+                                cardBrand:
+                                  type: string
+                                  example: "visa"
+                                cardType:
+                                  type: string
+                                  example: "Credit"
+                            referenceStatus:
+                              type: string
+                              example: "Processed"
+                            createdAt:
+                              type: string
+                              format: date-time
+                              example: "2025-09-11T08:52:18.244Z"
+                            updatedAt:
+                              type: string
+                              format: date-time
+                              example: "2025-09-11T08:52:18.244Z"
+                            __v:
+                              type: integer
+                              example: 0
+                            amount:
+                              type: number
+                              example: -9
+                            customerByCard:
+                              type: string
+                              example: "47XXXXXXXXXX1443"
+                            transactionType:
+                              type: string
+                              example: "REFUND"
+                            transactionStatus:
+                              type: string
+                              example: "Processed"
+                            merchantId:
+                              type: string
+                              example: "800000019059"
+                            currency:
+                              type: string
+                              example: "USD"
+                            date:
+                              type: string
+                              format: date
+                              example: "2025-09-09T00:00:00.000Z"
+                            batchId:
+                              type: string
+                              example: "112"
+                            paymentType:
+                              type: string
+                              example: "card-connect"
+                            transactionDate:
+                              type: string
+                              format: date-time
+                              example: "2025-09-09T00:47:25.000Z"
+                      getSummaryDetailsQueryFunction:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            totalTransactionsCount:
+                              type: integer
+                              example: 22
+                            successfulTransactionsCount:
+                              type: integer
+                              example: 22
+                            failureTransactionsCount:
+                              type: integer
+                              example: 0
+                            totalAmount:
+                              type: number
+                              example: 174
+                            totalUsers:
+                              type: integer
+                              example: 1
+                            totalRefundedTransactionsCount:
+                              type: integer
+                              example: 3
+                            totalRefundedAmount:
+                              type: number
+                              example: 23
+                            totalBatches:
+                              type: integer
+                              example: 4
+                            totalMerchantsSelected:
+                              type: integer
+                              example: 1
+                            paymentType:
+                              type: string
+                              example: "card-connect"
+
+  /api/machines/super-admin-smart-filtered-dashboard:
+    get:
+      tags:
+        - Authorize -  Super-admin only
+      summary: "Retrieve statistical insights for both CIMA-machine and Card-connect transactions of  respective all-merchants based on desired filters"
+      description: |
+        - Visit `machineDetails` during `login` to see options allocated to you to use here.     
+        - This API provides statistical insights for both `CIMA-machine` and `Card-connect` transactions of  `all-merchants` based on desired filters.  
+
+        - Below fields are `mandatory` in `query`  that respects both or either of payment-types `(cima-machine or card-connect)`:-
+          - `selectDashboard` (Payment type) - `query`  `(e.g., cima-machine, card-connect)` 
+          - `merchantNames` -  `query`  `(e.g.,680213209f97bd8e0787c035,67f5f980368cc56a87df8ca9 )`. `Id's` will be found while you `login` 
+          - `fromDate`  -  `select time and date to retreive transactions from this date & time`  `(e.g., 2025-09-10T05:50Z)`
+          - `toDate`  -  `select time and date to retreive transactions upto this date & time`   `(e.g., 2025-09-10T15:50Z)`
+
+        - By providing below query parameters which are `optional`, results will be filtered based on your desired filters 
+          cima-machine filter options:  
+          - `serialNumbers`  :  `(None or single or multiple)` Filter by the machine's serial numbers. `(e.g., QA0158, QA0230, QA0104, QA0275 )` 
+          - `cashTransactionTypes`  : `(None or single or multiple)`   Filter by the types of transaction `(e.g., CashIn, CashOut, LockClosed, DoorWhine, ManualCashTransaction)`. 
+          card-connect filter options: 
+          - `batchNumber` : `(None or single or multiple)`   Give desired Batch Id  to retreive transactions of respective batch  `(e.g., 104,105,106 )`
+          - `cardTransactionTypes` :  Retrieve records up to this date.  `(e.g.,SALE,REFUND,ACCOUNT VERIFY,AUTH REQUEST, CASH ADVANCE,VOID SALE,VOID REFUND )`
+          - `customerDetails` :  `(None or single or multiple)` Paritally hidden card number `(e.g., 47XXXXXXXXXX1444,47XXXXXXXXXX1443)`
+          - `cardTransactionStatus` :  `(None or single or multiple)` Give desired status or stauses seperate by commas to get transactions of respective given statuses `(e.g., Processed, Rejected,Auth, Captured,Voided,Failure)`
+        - Requires authentication via the `Authorization` header.
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      parameters:
+        - name: selectDashboard
+          in: query
+          description: "Choose one or more dashboards (hold Ctrl to select multiple)"
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - cima-machine
+                - card-connect
+                - snow
+                - others
+
+        - name: merchantNames
+          in: query
+          description: "Unique Id's of Merchant name(s), comma-separated. Id's will be found while you login."
+          schema:
+            type: string
+            example: "680213209f97bd8e0787c035,67f5f980368cc56a87df8ca9"
+
+        - name: fromDate
+          in: query
+          description: "Start date (ISO format)"
+          schema:
+            type: string
+            format: date-time
+            example: 2025-01-10T05:50Z
+
+        - name: toDate
+          in: query
+          description: "End date (ISO format)"
+          schema:
+            type: string
+            format: date-time
+            example: 2025-01-10T05:56Z
+
+        - name: serialNumbers
+          in: query
+          description: "Serial number(s) of CIMA-machine's, comma-separated"
+          schema:
+            type: string
+            example: "QA0230, QA0158"
+
+        - name: cashTransactionTypes
+          in: query
+          description: "Cash transaction type(s), comma-separated"
+          schema:
+            type: string
+            example: "CashIn, ManualCashTransaction, LockOpened, DoorWhine"
+
+        - name: batchNumber
+          in: query
+          description: "Batch id to retreive transactions of respective batch"
+          schema:
+            type: string
+            example: "100,101"
+
+        - name: cardTransactionTypes
+          in: query
+          description: "Card transaction type(s), comma-separated"
+          schema:
+            type: string
+            example: "REFUND, SALE, VOID REFUND"
+
+        - name: customerDetails
+          in: query
+          description: "Customer card details (Partially hidden) , comma-separated"
+          schema:
+            type: string
+            example: "47XXXXXXXXXX1444, 47XXXXXXXXXX1443"
+
+        - name: cardTransactionStatus
+          in: query
+          description: "Card transaction status"
+          schema:
+            type: string
+            example: "Processed, Rejected, Auth, Captured, Failure"
+
+      responses:
+        200:
+          description: Smart filtered transaction's data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: "Smart filtered transaction's data retreived succesfully."
+                  data:
+                    type: object
+                    properties:
+                      cimaMachineTransactionsCount:
+                        type: integer
+                        example: 0
+                      cardConnectTransactionsCount:
+                        type: integer
+                        example: 22
+                      cashAndCardMixResultArray:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "68c28dc2e08cfb5a3549248b"
+                            referenceId:
+                              type: string
+                              example: "252273002845"
+                            customerDetails:
+                              type: object
+                              properties:
+                                cardNumber:
+                                  type: string
+                                  example: "47XXXXXXXXXX1443"
+                                cardBrand:
+                                  type: string
+                                  example: "visa"
+                                cardType:
+                                  type: string
+                                  example: "Credit"
+                            referenceStatus:
+                              type: string
+                              example: "Processed"
+                            createdAt:
+                              type: string
+                              format: date-time
+                              example: "2025-09-11T08:52:18.244Z"
+                            updatedAt:
+                              type: string
+                              format: date-time
+                              example: "2025-09-11T08:52:18.244Z"
+                            __v:
+                              type: integer
+                              example: 0
+                            amount:
+                              type: number
+                              example: -9
+                            customerByCard:
+                              type: string
+                              example: "47XXXXXXXXXX1443"
+                            transactionType:
+                              type: string
+                              example: "REFUND"
+                            transactionStatus:
+                              type: string
+                              example: "Processed"
+                            merchantId:
+                              type: string
+                              example: "800000019059"
+                            currency:
+                              type: string
+                              example: "USD"
+                            date:
+                              type: string
+                              format: date
+                              example: "2025-09-09T00:00:00.000Z"
+                            batchId:
+                              type: string
+                              example: "112"
+                            paymentType:
+                              type: string
+                              example: "card-connect"
+                            transactionDate:
+                              type: string
+                              format: date-time
+                              example: "2025-09-09T00:47:25.000Z"
+                      getSummaryDetailsQueryFunction:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            totalTransactionsCount:
+                              type: integer
+                              example: 22
+                            successfulTransactionsCount:
+                              type: integer
+                              example: 22
+                            failureTransactionsCount:
+                              type: integer
+                              example: 0
+                            totalAmount:
+                              type: number
+                              example: 174
+                            totalUsers:
+                              type: integer
+                              example: 1
+                            totalRefundedTransactionsCount:
+                              type: integer
+                              example: 3
+                            totalRefundedAmount:
+                              type: number
+                              example: 23
+                            totalBatches:
+                              type: integer
+                              example: 4
+                            totalMerchantsSelected:
+                              type: integer
+                              example: 1
+                            paymentType:
+                              type: string
+                              example: "card-connect"
