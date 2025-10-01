@@ -1272,102 +1272,198 @@ exports.getAllWebhookPayoadHeadersOfAllAccounts = asyncWrapper(async (req, res) 
   })
 })
 
+// exports.getAllWebhookPayoadHeadersOfAllAccountsFn = async () => {
+
+//   let matchCondition = {}
+//   let categories = ["cima-machine", "card-connect"]
+
+//   let merchantNames = await accountsModel.aggregate([
+//     {
+//       $match: {
+//         status: "active",
+//         //accountType: { $ne: "super-admin" },
+//         accountName: {
+//           $nin: ["", null],        // exclude empty string and null
+//           $type: "string"          // ensure it's actually a string
+//         }
+//       }
+//     },
+//     {
+//       $group: {
+//         _id: "$accountName",
+//         objectId: { $first: "$_id" }
+//       }
+//     },
+//     {
+//       $project: {
+//         _id: 0,
+//         merchantName: "$_id",
+//         objectId: 1
+//       }
+//     }
+
+//   ])
+
+//   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
+//     // {
+//     //   $match: {
+//     //     ...matchCondition
+//     //   }
+//     // },
+//     {
+//       $addFields: {
+//         userName: {
+//           $cond: {
+//             if: { $eq: ["$userName", ""] },  // check if empty string
+//             then: "unknown",                  // replace with "unknown"
+//             else: "$userName"
+//           }
+//         }
+//       }
+//     },
+//     {
+//       $facet: {
+//         serialNumbers: [
+//           { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
+//           { $project: { _id: 0, serialNumbers: 1 } }
+//         ],
+//         transactionTypes: [
+//           { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
+//           { $project: { _id: 0, transactionTypes: 1 } }
+//         ],
+//         userNamesOfMachine: [
+//           {
+//             $group: {
+//               _id: "$serialNumber",
+//               userNames: { $addToSet: "$userName" }
+//             }
+//           },
+//           {
+//             $project: {
+//               _id: 0,
+//               serialNumber: "$_id",
+//               userNames: 1
+//             }
+//           }
+//         ]
+//       }
+//     },
+//     {
+//       $project: {
+//         serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
+//         transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
+//         // userNamesOfMachine: 1
+//       }
+//     }
+//   ]);
+
+//   let allMerchantCardConnectPayloadHeaders = await getAllCardConnectPayloadHeaders()
+
+
+//   return {
+//     categories,
+//     merchantNames,
+//     webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
+//     allMerchantCardConnectPayloadHeaders: allMerchantCardConnectPayloadHeaders
+//   }
+// }
+
+
 exports.getAllWebhookPayoadHeadersOfAllAccountsFn = async () => {
+  const categories = ["cima-machine", "card-connect"];
 
-  let matchCondition = {}
-  let categories = ["cima-machine", "card-connect"]
-
-  let merchantNames = await accountsModel.aggregate([
-    {
-      $match: {
-        status: "active",
-        //accountType: { $ne: "super-admin" },
-        accountName: {
-          $nin: ["", null],        // exclude empty string and null
-          $type: "string"          // ensure it's actually a string
-        }
-      }
-    },
-    {
-      $group: {
-        _id: "$accountName",
-        objectId: { $first: "$_id" }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        merchantName: "$_id",
-        objectId: 1
-      }
-    }
-
-  ])
-
-  const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
-    // {
-    //   $match: {
-    //     ...matchCondition
-    //   }
-    // },
-    {
-      $addFields: {
-        userName: {
-          $cond: {
-            if: { $eq: ["$userName", ""] },  // check if empty string
-            then: "unknown",                  // replace with "unknown"
-            else: "$userName"
+  // 🔹 Run all independent queries in parallel
+  const [
+    merchantNames,
+    webhookPayloadHeadersData,
+    allMerchantCardConnectPayloadHeaders
+  ] = await Promise.all([
+    // 1. Get merchant names
+    accountsModel.aggregate([
+      {
+        $match: {
+          status: "active",
+          accountName: {
+            $nin: ["", null], // exclude empty/null names
+            $type: "string"   // ensure it's string
           }
         }
+      },
+      {
+        $group: {
+          _id: "$accountName",
+          objectId: { $first: "$_id" }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          merchantName: "$_id",
+          objectId: 1
+        }
       }
-    },
-    {
-      $facet: {
-        serialNumbers: [
-          { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
-          { $project: { _id: 0, serialNumbers: 1 } }
-        ],
-        transactionTypes: [
-          { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
-          { $project: { _id: 0, transactionTypes: 1 } }
-        ],
-        userNamesOfMachine: [
-          {
-            $group: {
-              _id: "$serialNumber",
-              userNames: { $addToSet: "$userName" }
-            }
-          },
-          {
-            $project: {
-              _id: 0,
-              serialNumber: "$_id",
-              userNames: 1
+    ]),
+
+    // 2. Get webhook payload headers
+    webhookPayloadHeaders.aggregate([
+      {
+        $addFields: {
+          userName: {
+            $cond: {
+              if: { $eq: ["$userName", ""] },
+              then: "unknown",
+              else: "$userName"
             }
           }
-        ]
+        }
+      },
+      {
+        $facet: {
+          serialNumbers: [
+            { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
+            { $project: { _id: 0, serialNumbers: 1 } }
+          ],
+          transactionTypes: [
+            { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
+            { $project: { _id: 0, transactionTypes: 1 } }
+          ],
+          userNamesOfMachine: [
+            {
+              $group: {
+                _id: "$serialNumber",
+                userNames: { $addToSet: "$userName" }
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                serialNumber: "$_id",
+                userNames: 1
+              }
+            }
+          ]
+        }
+      },
+      {
+        $project: {
+          serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
+          transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
+          // userNamesOfMachine: 1
+        }
       }
-    },
-    {
-      $project: {
-        serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
-        transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
-        // userNamesOfMachine: 1
-      }
-    }
+    ]),
+
+    // 3. Get card connect payload headers for all merchants
+    getAllCardConnectPayloadHeaders()
   ]);
-
-  //let allMerchantCardConnectPayloadHeaders = await getAllCardConnectPayloadHeaders()
-
 
   return {
     categories,
     merchantNames,
     webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
-    // allMerchantCardConnectPayloadHeaders: allMerchantCardConnectPayloadHeaders
-  }
-}
-
+    allMerchantCardConnectPayloadHeaders
+  };
+};
 
 
 exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {

@@ -1537,107 +1537,192 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   })
 })
 
+// exports.getAllWebhookPayoadHeadersOfAccountFn = async (accountId) => {
+//   let accountDetails = await accountsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+//   let matchCondition = {}
+//   if (accountDetails.accountType === "merchant") {
+//     matchCondition = {
+//       serialNumber: { $in: accountDetails.machines }
+//     }
+//   }
+//   else {
+//     matchCondition = {
+//       accountId: new mongoose.Types.ObjectId(accountId)
+//     }
+//   }
+
+
+//   let allMerchants = [];
+//   let merchantNames = {
+//     merchantName: accountDetails?.accountName,
+//     objectId: accountDetails?._id
+//   }
+//   allMerchants.push(merchantNames)
+//   let categories = ["cima-machine", "card-connect"]
+
+
+
+//   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
+//     {
+//       $match: {
+//         ...matchCondition
+//       }
+//     },
+//     {
+//       $addFields: {
+//         userName: {
+//           $cond: {
+//             if: { $eq: ["$userName", ""] },  // check if empty string
+//             then: "unknown",                  // replace with "unknown"
+//             else: "$userName"
+//           }
+//         }
+//       }
+//     },
+//     {
+//       $facet: {
+//         serialNumbers: [
+//           { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
+//           { $project: { _id: 0, serialNumbers: 1 } }
+//         ],
+//         transactionTypes: [
+//           { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
+//           { $project: { _id: 0, transactionTypes: 1 } }
+//         ],
+//         userNamesOfMachine: [
+//           {
+//             $group: {
+//               _id: "$serialNumber",
+//               userNames: { $addToSet: "$userName" }
+//             }
+//           },
+//           {
+//             $project: {
+//               _id: 0,
+//               serialNumber: "$_id",
+//               userNames: 1
+//             }
+//           }
+//         ]
+//       }
+//     },
+//     {
+//       $project: {
+//         serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
+//         transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
+//         //userNamesOfMachine: 1
+//       }
+//     }
+//   ]);
+
+//   let findIntegrationWithCardConnectCredentials = await cardConnectIntegrationsCredentialsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+//   let findIntegrationWithCardConnectSettings = await cardConnectIntegrationsSettingsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+
+//   let cardConnectPayloadHeaders
+
+//   if (findIntegrationWithCardConnectCredentials && findIntegrationWithCardConnectSettings) {
+//     cardConnectPayloadHeaders = await getMerchantCardConnectPayloadHeaders(accountId)
+//   } else {
+
+//     cardConnectPayloadHeaders = {}
+//   }
+
+
+
+
+//   const listOfWebhooks = await webHooksMasterModel.find({ accountId: accountId })
+//   return {
+//     categories,
+//     merchantNames: allMerchants,
+//     webhookPayloadHeadersData: webhookPayloadHeadersData[0] ? webhookPayloadHeadersData[0] : {},
+//     cardConnectPayloadHeaders: cardConnectPayloadHeaders
+//   }
+// }
+
 exports.getAllWebhookPayoadHeadersOfAccountFn = async (accountId) => {
-  let accountDetails = await accountsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
-  let matchCondition = {}
+  const objectId = new mongoose.Types.ObjectId(accountId);
+
+  // 🔹 Fetch accountDetails first (because matchCondition depends on it)
+  const accountDetails = await accountsModel.findOne({ accountId: objectId });
+
+  let matchCondition = {};
   if (accountDetails.accountType === "merchant") {
     matchCondition = {
       serialNumber: { $in: accountDetails.machines }
-    }
-  }
-  else {
-    matchCondition = {
-      accountId: new mongoose.Types.ObjectId(accountId)
-    }
+    };
+  } else {
+    matchCondition = { accountId: objectId };
   }
 
-
-  let allMerchants = [];
-  let merchantNames = {
+  let allMerchants = [{
     merchantName: accountDetails?.accountName,
     objectId: accountDetails?._id
-  }
-  allMerchants.push(merchantNames)
-  let categories = ["cima-machine", "card-connect"]
+  }];
 
+  let categories = ["cima-machine", "card-connect"];
 
-
-  const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
-    {
-      $match: {
-        ...matchCondition
-      }
-    },
-    {
-      $addFields: {
-        userName: {
-          $cond: {
-            if: { $eq: ["$userName", ""] },  // check if empty string
-            then: "unknown",                  // replace with "unknown"
-            else: "$userName"
+  // 🔹 Run the rest in parallel
+  const [
+    webhookPayloadHeadersData,
+    findIntegrationWithCardConnectCredentials,
+    findIntegrationWithCardConnectSettings,
+    listOfWebhooks
+  ] = await Promise.all([
+    webhookPayloadHeaders.aggregate([
+      { $match: { ...matchCondition } },
+      {
+        $addFields: {
+          userName: {
+            $cond: {
+              if: { $eq: ["$userName", ""] }, // empty string
+              then: "unknown",
+              else: "$userName"
+            }
           }
         }
+      },
+      {
+        $facet: {
+          serialNumbers: [
+            { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
+            { $project: { _id: 0, serialNumbers: 1 } }
+          ],
+          transactionTypes: [
+            { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
+            { $project: { _id: 0, transactionTypes: 1 } }
+          ],
+          userNamesOfMachine: [
+            { $group: { _id: "$serialNumber", userNames: { $addToSet: "$userName" } } },
+            { $project: { _id: 0, serialNumber: "$_id", userNames: 1 } }
+          ]
+        }
+      },
+      {
+        $project: {
+          serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
+          transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
+          // userNamesOfMachine: 1  // uncomment if needed
+        }
       }
-    },
-    {
-      $facet: {
-        serialNumbers: [
-          { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
-          { $project: { _id: 0, serialNumbers: 1 } }
-        ],
-        transactionTypes: [
-          { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
-          { $project: { _id: 0, transactionTypes: 1 } }
-        ],
-        userNamesOfMachine: [
-          {
-            $group: {
-              _id: "$serialNumber",
-              userNames: { $addToSet: "$userName" }
-            }
-          },
-          {
-            $project: {
-              _id: 0,
-              serialNumber: "$_id",
-              userNames: 1
-            }
-          }
-        ]
-      }
-    },
-    {
-      $project: {
-        serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
-        transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
-        //userNamesOfMachine: 1
-      }
-    }
+    ]),
+    cardConnectIntegrationsCredentialsModel.findOne({ accountId: objectId }),
+    cardConnectIntegrationsSettingsModel.findOne({ accountId: objectId }),
+    webHooksMasterModel.find({ accountId: accountId }) // ⚡️ already string works if schema type is ObjectId
   ]);
 
-  // let findIntegrationWithCardConnectCredentials = await cardConnectIntegrationsCredentialsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
-  // let findIntegrationWithCardConnectSettings = await cardConnectIntegrationsSettingsModel.findOne({ accountId: new mongoose.Types.ObjectId(accountId) })
+  // 🔹 Handle cardConnectPayloadHeaders conditionally
+  let cardConnectPayloadHeaders = {};
+  if (findIntegrationWithCardConnectCredentials && findIntegrationWithCardConnectSettings) {
+    cardConnectPayloadHeaders = await getMerchantCardConnectPayloadHeaders(accountId);
+  }
 
-  // let cardConnectPayloadHeaders
-
-  // if (findIntegrationWithCardConnectCredentials && findIntegrationWithCardConnectSettings) {
-  //   cardConnectPayloadHeaders = await getMerchantCardConnectPayloadHeaders(accountId)
-  // } else {
-
-  //   cardConnectPayloadHeaders = {}
-  // }
-
-
-
-
-  const listOfWebhooks = await webHooksMasterModel.find({ accountId: accountId })
   return {
     categories,
     merchantNames: allMerchants,
-    webhookPayloadHeadersData: webhookPayloadHeadersData[0] ? webhookPayloadHeadersData[0] : {},
-    //cardConnectPayloadHeaders: cardConnectPayloadHeaders
-  }
-}
+    webhookPayloadHeadersData: webhookPayloadHeadersData[0] || {},
+    cardConnectPayloadHeaders
+  };
+};
 
 
 
