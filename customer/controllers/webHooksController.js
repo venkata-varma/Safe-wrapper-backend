@@ -1337,6 +1337,19 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
   let cashAndCardMixResultArray = []
   let selectDashboardArray = selectDashboard.split(',')
   let merchantNamesArray = merchantNames.split(',')
+  if (!selectDashboard) {
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_CASH_OR_AND_CARD_TRANSACTIONS_RETREIVED,
+    })
+  }
+  if (!merchantNames) {
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_MERCHANT_NAMES_MANDATORY,
+    })
+  }
+
   console.log("selectDashboardArray===", selectDashboardArray)
   console.log("merchantNamesArray===", merchantNamesArray)
 

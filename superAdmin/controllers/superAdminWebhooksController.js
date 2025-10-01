@@ -3296,6 +3296,18 @@ exports.superAdminSmartFilteredDashboard = asyncWrapper(async (req, res) => {
   console.log("selectDashboardArray===", selectDashboardArray)
   console.log("merchantNamesArray===", merchantNamesArray)
 
+  if (!selectDashboard) {
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_CASH_OR_AND_CARD_TRANSACTIONS_RETREIVED,
+    })
+  }
+  if (!merchantNames) {
+    return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+      status: customConstants.messages.MESSAGE_FAIL,
+      message: customConstants.messages.MESSAGE_MERCHANT_NAMES_MANDATORY,
+    })
+  }
   let { fromDate, toDate } = req.query  //From date and to date are constant 
   let { serialNumbers, cashTransactionTypes, } = req.query   //Filters of cima-machine
   let { cardTransactionTypes, cardTransactionStatus, customerDetails, batchNumber, } = req.query    // Filters of Card-connect

@@ -146,6 +146,8 @@
     "MESSAGE_WEBOOK_SETTINGS_UPDATED": "Webhook settings updated succesfully.",
     "MESSAGE_WEBOOK_GET_SETTINGS": "Webhook settings.",
     "MESSAGE_WEBOOK_GET_TRANSACTIONS": "Machine / Machine's  transactions.",
+    "MESSAGE_PAYMENT_TYPE_QUERY_MANDATORY": "Payment type/ category is mandatory.",
+    "MESSAGE_MERCHANT_NAMES_MANDATORY": "Merchant names is mandatory",
     "MESSAGE_CASH_OR_AND_CARD_TRANSACTIONS_RETREIVED": "Smart filtered transaction's data retreived succesfully.",
     "MESSAGE_PROGRESS_METER_SINGLE_MACHINE": "Progress meter of single machine retrieved succesfully.",
     "MESSAGE_GET_SINGLE_MACHINE_REPORTS": "Get single machine reports based on desired filters.",

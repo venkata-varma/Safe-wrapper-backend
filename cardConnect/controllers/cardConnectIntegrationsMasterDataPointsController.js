@@ -478,6 +478,7 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
                             ]
                         }
                     },
+
                     settledAmount: {
                         $sum: {
                             $cond: [
@@ -657,6 +658,8 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
             },
             {
                 $addFields: {
+                    merchantId: { $literal: merchantId },
+                    merchantName: { $literal: merchantName },
                     batchId: "$responseObject.batchid",
                     transactionStatus: "$responseObject.status",
                     transactionType: "$responseObject.type",
@@ -811,13 +814,18 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
                                 transactionDate: "$transactionDate"
                             }
                         }
-                    }
+                    },
+                    merchantId: { $first: "$merchantId" },
+                    merchantName: { $first: "$merchantName" }
+
                 }
             },
             {
                 $project: {
                     _id: 0,
                     batchId: "$_id",
+                    merchantId: 1,
+                    merchantName: 1,
                     transactionsCount: 1,
                     settledTransactionsCount: 1,
                     settledAmount: 1,

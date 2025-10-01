@@ -925,6 +925,27 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
     let latestActivityLogs = await cardConnectIntegrationsCronsModel.find({}, { newWOCount: 0 }).limit(10).sort({ createdAt: -1 })
     //-----------------------------------------------------------------------------------------------
     let latestBatches = await cardConnectTransactionsModel.aggregate([
+        {
+            $lookup: {
+                from: "accounts",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "accountRecord",
+            }
+        },
+
+        {
+            $lookup: {
+                from: "cardconnectintegrationscredentials",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "cardConnectDetails",
+            }
+        },
+        { $unwind: "$accountRecord" },
+        { $unwind: "$cardConnectDetails" },
+
+
 
         {
             $addFields: {
@@ -1010,7 +1031,18 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                     }
                 },
                 transactionId: "$responseObject.retref",
+                merchantName: "$accountRecord.accountName",
+                accountType: "$accountRecord.accountType",
+                merchantId: "$cardConnectDetails.primaryKeyValues.merchantId",
+                siteUrl: "$cardConnectDetails.primaryKeyValues.site",
             },
+        },
+        {
+            $project: {
+                responseObject: 0,
+                accountRecord: 0,
+                cardConnectDetails: 0
+            }
         },
         {
             $group: {
@@ -1080,13 +1112,17 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                             transactionDate: "$transactionDate"
                         }
                     }
-                }
+                },
+                merchantId: { $first: "$merchantId" },
+                merchantName: { $first: "$merchantName" }
             }
         },
         {
             $project: {
                 _id: 0,
                 batchId: "$_id",
+                merchantId: 1,
+                merchantName: 1,
                 transactionsCount: 1,
                 settledTransactionsCount: 1,
                 settledAmount: 1,

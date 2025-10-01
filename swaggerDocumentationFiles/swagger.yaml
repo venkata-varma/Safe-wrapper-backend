@@ -893,3 +893,140 @@ paths:
   #                         exceptionsCount:
   #                           type: integer
   #                           example: 0
+
+  /api/merchants/machines/merchant-smart-filtered-dashboard/:accountId:
+    get:
+      tags:
+        - Authorize -  Merchant only
+      summary: "Retrieve statistical insights for both CIMA-machine and Card-connect transactions of  respective `logged-in merchant` based on desired filters"
+      description: |
+        - Visit `machineDetails` during `login` to see options allocated to you to use here.     
+        - This API provides statistical insights for both `CIMA-machine` and `Card-connect` transactions of  respective `logged-in merchant` based on desired filters.  
+        - Below fields are mandatory at their respective places respects both or either of payment-types `(cima-machine or card-connect)`:-
+          - `accountId` - `params`
+          - `selectDashboard` (Payment type) - `query`
+          - `merchantNames` -  `query` 
+          - `fromDate`  -  `select time and date`
+          - `toDate`  -  `select time and date`
+        - By providing below query parameters which are optional, results will be filtered based on your desired filters 
+          cima-machine filter options:  
+          - `serialNumbers`: `(None or single or multiple)` Filter by the machine's serial numbers. `(e.g., QA0158, QA0230, QA0104, QA0275 )` 
+          - `cashTransactionTypes`: `(None or single or multiple)`   Filter by the types of transaction `(e.g., CashIn, CashOut, LockClosed, DoorWhine, ManualCashTransaction)`. 
+          card-connect filter options: 
+          - `batchNumber`: `(None or single or multiple)`   Give desired Batch Id  to retreive transactions of respective batch  `(e.g.,)`
+          - `cardTransactionTypes`: Retrieve records up to this date.  `(e.g., 2025-04-28T10:40Z)`
+        - Requires authentication via the `Authorization` header.
+      security:
+        - Authorization: [] # Requires Authorization header with token
+      parameters:
+        - name: serialNumbers
+          in: query
+          schema:
+            type: string
+          description: "Unique serial number (or) numbers identifying the machine. (e.g., QA0275,QA0068,QA0120) "
+
+        - name: transactionTypes
+          in: query
+          schema:
+            type: string
+          description: "Desired transaction type (or) types (e.g., CashIn,CashOut,DoorClosed)"
+
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+          description: "Desired date from which data to be retreived from.(e.g., 2025-04-21T19:09Z) "
+
+        - name: toDate
+          in: query
+          schema:
+            type: string
+          description: "Desired date to which data to be retreived from. (e.g., 2025-04-28T20:09Z)"
+
+      responses:
+        200:
+          description: Machine / Machine's  transactions.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Machine / Machine's  transactions.
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "67eceef889c3a34af5486760"
+                        # webhookMasterId:
+                        #   type: string
+                        #   example: "67eb8490233046c701342349"
+                        # webhookMetaPayloadId:
+                        #   type: string
+                        #   example: "67eb8588233046c70134244c"
+                        # accountId:
+                        #   type: string
+                        #   example: "67eb81cb45715d3e5b678ebb"
+                        pickupGroupId:
+                          type: integer
+                          example: 566758091
+                        serialNumber:
+                          type: string
+                          example: "QA00577"
+                        retrievedOn:
+                          type: string
+                          format: date-time
+                          example: "2025-03-27T17:33:05.4670000Z"
+                        transactionDateTime:
+                          type: string
+                          example: "2025-03-27T09:57:05"
+                        userName:
+                          type: string
+                          example: "TITAN"
+                        transactionType:
+                          type: string
+                          example: "CashIn"
+                        amount:
+                          type: number
+                          example: 10
+                        denominations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              UnitValue:
+                                type: number
+                                example: 5
+                              Count:
+                                type: integer
+                                example: 2
+                              Currency:
+                                type: string
+                                example: "USD"
+                        location:
+                          type: string
+                          example: "Opal"
+                        status:
+                          type: string
+                          example: "active"
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: "2025-04-02T18:02:00.120Z"
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: "2025-04-02T08:02:00.120Z"
+                        webhookTransactionId:
+                          type: string
+                          example: "67eceef889c3a34af5486760"
+                        __v:
+                          type: integer
+                          example: 0
