@@ -922,7 +922,59 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
     ])
 
     //-------------------------------------------------------
-    let latestActivityLogs = await cardConnectIntegrationsCronsModel.find({}, { newWOCount: 0 }).limit(10).sort({ createdAt: -1 })
+
+    let latestActivityLogs = await cardConnectIntegrationsCronsModel.aggregate([
+        {
+            $limit: 10
+        },
+        {
+            $project: {
+                newWOCount: 0
+            }
+        },
+        {
+            $lookup: {
+                from: "accounts",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "accountRecord",
+            }
+        },
+
+        {
+            $lookup: {
+                from: "cardconnectintegrationscredentials",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "cardConnectDetails",
+            }
+        },
+        { $unwind: "$accountRecord" },
+        { $unwind: "$cardConnectDetails" },
+
+        {
+            $addFields: {
+                merchantName: "$accountRecord.accountName",
+                accountType: "$accountRecord.accountType",
+                merchantId: "$cardConnectDetails.primaryKeyValues.merchantId",
+                siteUrl: "$cardConnectDetails.primaryKeyValues.site",
+            }
+        },
+        {
+            $project: {
+
+                accountRecord: 0,
+                cardConnectDetails: 0
+            }
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        }
+
+    ])
+
     //-----------------------------------------------------------------------------------------------
     let latestBatches = await cardConnectTransactionsModel.aggregate([
         {

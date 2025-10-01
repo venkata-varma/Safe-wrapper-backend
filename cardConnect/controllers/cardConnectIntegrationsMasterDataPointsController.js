@@ -648,7 +648,44 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
         ])
 
         //-------------------------------------------------------
-        let latestActivityLogs = await cardConnectIntegrationsCronsModel.find({ accountId: new mongoose.Types.ObjectId(accountId), }, { newWOCount: 0 }).limit(10).sort({ createdAt: -1 })
+
+
+        let latestActivityLogs = await cardConnectIntegrationsCronsModel.aggregate([
+            {
+                $match: {
+                    accountId: new mongoose.Types.ObjectId(accountId)
+                }
+            },
+            {
+                $limit: 10
+            },
+            {
+                $project: {
+                    newWOCount: 0
+                }
+            },
+
+
+            {
+                $addFields: {
+                    merchantId: { $literal: merchantId },
+                    merchantName: { $literal: merchantName },
+                    accountType: { $literal: accountDetails.accountType },
+
+                    siteUrl: { $literal: merchantSiteUrl },
+                }
+            },
+
+            {
+                $sort: {
+                    createdAt: -1
+                }
+            }
+
+        ])
+
+
+
         //-----------------------------------------------------------------------------------------------
         let latestBatches = await cardConnectTransactionsModel.aggregate([
             {
