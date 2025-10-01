@@ -903,18 +903,21 @@ paths:
         - Visit `machineDetails` during `login` to see options allocated to you to use here.     
         - This API provides statistical insights for both `CIMA-machine` and `Card-connect` transactions of  respective `logged-in merchant` based on desired filters.  
         - Below fields are mandatory at their respective places respects both or either of payment-types `(cima-machine or card-connect)`:-
-          - `accountId` - `params`
-          - `selectDashboard` (Payment type) - `query`
-          - `merchantNames` -  `query` 
-          - `fromDate`  -  `select time and date`
-          - `toDate`  -  `select time and date`
+          - `accountId` - `params`  `(e.g., 68b6e54bcb20acc231225454)`
+          - `selectDashboard` (Payment type) - `query`  `(e.g., cima-machine, card-connect)` 
+          - `merchantNames` -  `query`  `(e.g., Devrabbit, Test merchant sandbox)`
+          - `fromDate`  -  `select time and date to retreive transactions from this date & time`  `(e.g., 2025-09-10T05:50Z)`
+          - `toDate`  -  `select time and date to retreive transactions upto this date & time`   `(e.g., 2025-09-10T15:50Z)`
+          
         - By providing below query parameters which are optional, results will be filtered based on your desired filters 
           cima-machine filter options:  
           - `serialNumbers`: `(None or single or multiple)` Filter by the machine's serial numbers. `(e.g., QA0158, QA0230, QA0104, QA0275 )` 
           - `cashTransactionTypes`: `(None or single or multiple)`   Filter by the types of transaction `(e.g., CashIn, CashOut, LockClosed, DoorWhine, ManualCashTransaction)`. 
           card-connect filter options: 
-          - `batchNumber`: `(None or single or multiple)`   Give desired Batch Id  to retreive transactions of respective batch  `(e.g.,)`
-          - `cardTransactionTypes`: Retrieve records up to this date.  `(e.g., 2025-04-28T10:40Z)`
+          - `batchNumber`: `(None or single or multiple)`   Give desired Batch Id  to retreive transactions of respective batch  `(e.g., 104,105,106 )`
+          - `cardTransactionTypes`: Retrieve records up to this date.  `(e.g.,SALE,REFUND,ACCOUNT VERIFY,AUTH REQUEST, CASH ADVANCE,VOID SALE,VOID REFUND )`
+          - `customerDetails`: `(None or single or multiple)` Paritally hidden card number `(e.g., 47XXXXXXXXXX1444,47XXXXXXXXXX1443)`
+          - `cardTransactionStatus`:   `(None or single or multiple)` Give desired status or stauses seperate by commas to get transactions of respective given statuses `(e.g., Processed, Rejected,Auth, Captured,Voided,Failure)`
         - Requires authentication via the `Authorization` header.
       security:
         - Authorization: [] # Requires Authorization header with token
