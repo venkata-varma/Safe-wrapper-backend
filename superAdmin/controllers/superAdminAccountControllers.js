@@ -792,7 +792,25 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
     });
     //-------------------------------------------
     let latestTenTransactions = await cardConnectTransactionsModel.aggregate([
+        {
+            $lookup: {
+                from: "accounts",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "accountRecord",
+            }
+        },
 
+        {
+            $lookup: {
+                from: "cardconnectintegrationscredentials",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "cardConnectDetails",
+            }
+        },
+        { $unwind: "$accountRecord" },
+        { $unwind: "$cardConnectDetails" },
         {
             $addFields: {
                 transactionDate: {
@@ -877,7 +895,18 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                 transactionStatus: "$responseObject.status",
                 batchId: "$responseObject.batchid",
                 amount: { $toDouble: "$responseObject.amount" },
-                transactionType: "$responseObject.type"
+                transactionType: "$responseObject.type",
+                merchantName: "$accountRecord.accountName",
+                accountType: "$accountRecord.accountType",
+                merchantId: "$cardConnectDetails.primaryKeyValues.merchantId",
+                siteUrl: "$cardConnectDetails.primaryKeyValues.site",
+            }
+        },
+        {
+            $project: {
+                responseObject: 0,
+                accountRecord: 0,
+                cardConnectDetails: 0
             }
         },
         {
@@ -888,11 +917,7 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                 transactionDate: -1
             }
         },
-        {
-            $project: {
-                responseObject: 0
-            }
-        }
+
 
     ])
 
@@ -906,8 +931,8 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                 batchId: "$responseObject.batchid",
                 transactionStatus: "$responseObject.status",
                 transactionType: "$responseObject.type",
-                amount: { $toDouble: "$responseObject.amount" }
-                  transactionDate: {
+                amount: { $toDouble: "$responseObject.amount" },
+                transactionDate: {
                     $switch: {
                         branches: [
                             // Case: 14 digits (YYYYMMDDHHmmss)
@@ -1067,7 +1092,7 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                 settledAmount: 1,
                 refundedTransactionsCount: 1,
                 refundedAmount: 1,
-                lastTransactionCaptured
+                lastTransactionCaptured: 1
             }
         },
         {
@@ -1359,6 +1384,7 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                 latestBatches,
                 summaryGrid,
                 responseObjLast24Hours
+
             },
         });
 
