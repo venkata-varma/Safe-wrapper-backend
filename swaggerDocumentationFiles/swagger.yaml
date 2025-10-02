@@ -269,7 +269,7 @@ paths:
   /api/webhook/{randomNumber}/{accountId}:
     post:
       tags:
-        - Post transactions of machine to webhook.
+        - Post transactions of machine to / via webhook.
       summary: "1. Place Number and AccountId assigned to your webhook in path params  || 2. Place secret token given in headers with prefix - Bearer  in Authorization section of Headers    ||  3. Place access_token in input box to authorize.   ||  4.Also visit Useful details which resembles details of all existing merchant accounts"
       description: |
         - Above HTTPS end-point is webhook assigned
