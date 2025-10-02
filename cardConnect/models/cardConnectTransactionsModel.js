@@ -31,6 +31,10 @@ const cardConnectTransactionsSchema = new mongoose.Schema(
             index: true,
             default: null,
         },
+        merchantName: {
+            type: String,
+            default: ""
+        },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "users",

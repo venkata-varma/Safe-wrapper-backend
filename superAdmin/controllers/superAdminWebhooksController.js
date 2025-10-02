@@ -1177,24 +1177,23 @@ exports.getAllWebhookPayoadHeadersOfAllAccounts = asyncWrapper(async (req, res) 
     {
       $match: {
         status: "active",
-        //accountType: { $ne: "super-admin" },
-        accountName: {
-          $nin: ["", null],        // exclude empty string and null
-          $type: "string"          // ensure it's actually a string
-        }
+
+        accountName: { $nin: ["", null] },
+        $expr: { $eq: [{ $type: "$accountName" }, "string"] }
       }
     },
+
     {
       $group: {
-        _id: "$accountName",
-        objectId: { $first: "$_id" }
+        _id: "$_id",                // group by unique record id
+        merchantName: { $first: "$accountName" }
       }
     },
     {
       $project: {
         _id: 0,
-        merchantName: "$_id",
-        objectId: 1
+        objectId: "$_id",           // keep original _id as objectId
+        merchantName: 1
       }
     }
 
@@ -1272,101 +1271,7 @@ exports.getAllWebhookPayoadHeadersOfAllAccounts = asyncWrapper(async (req, res) 
   })
 })
 
-// exports.getAllWebhookPayoadHeadersOfAllAccountsFn = async () => {
 
-//   let matchCondition = {}
-//   let categories = ["cima-machine", "card-connect"]
-
-//   let merchantNames = await accountsModel.aggregate([
-//     {
-//       $match: {
-//         status: "active",
-//         //accountType: { $ne: "super-admin" },
-//         accountName: {
-//           $nin: ["", null],        // exclude empty string and null
-//           $type: "string"          // ensure it's actually a string
-//         }
-//       }
-//     },
-//     {
-//       $group: {
-//         _id: "$accountName",
-//         objectId: { $first: "$_id" }
-//       }
-//     },
-//     {
-//       $project: {
-//         _id: 0,
-//         merchantName: "$_id",
-//         objectId: 1
-//       }
-//     }
-
-//   ])
-
-//   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
-//     // {
-//     //   $match: {
-//     //     ...matchCondition
-//     //   }
-//     // },
-//     {
-//       $addFields: {
-//         userName: {
-//           $cond: {
-//             if: { $eq: ["$userName", ""] },  // check if empty string
-//             then: "unknown",                  // replace with "unknown"
-//             else: "$userName"
-//           }
-//         }
-//       }
-//     },
-//     {
-//       $facet: {
-//         serialNumbers: [
-//           { $group: { _id: null, serialNumbers: { $addToSet: "$serialNumber" } } },
-//           { $project: { _id: 0, serialNumbers: 1 } }
-//         ],
-//         transactionTypes: [
-//           { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
-//           { $project: { _id: 0, transactionTypes: 1 } }
-//         ],
-//         userNamesOfMachine: [
-//           {
-//             $group: {
-//               _id: "$serialNumber",
-//               userNames: { $addToSet: "$userName" }
-//             }
-//           },
-//           {
-//             $project: {
-//               _id: 0,
-//               serialNumber: "$_id",
-//               userNames: 1
-//             }
-//           }
-//         ]
-//       }
-//     },
-//     {
-//       $project: {
-//         serialNumbers: { $arrayElemAt: ["$serialNumbers.serialNumbers", 0] },
-//         transactionTypes: { $arrayElemAt: ["$transactionTypes.transactionTypes", 0] },
-//         // userNamesOfMachine: 1
-//       }
-//     }
-//   ]);
-
-//   let allMerchantCardConnectPayloadHeaders = await getAllCardConnectPayloadHeaders()
-
-
-//   return {
-//     categories,
-//     merchantNames,
-//     webhookPayloadHeadersData: webhookPayloadHeadersData?.[0] || {},
-//     allMerchantCardConnectPayloadHeaders: allMerchantCardConnectPayloadHeaders
-//   }
-// }
 
 
 exports.getAllWebhookPayoadHeadersOfAllAccountsFn = async () => {
@@ -1383,23 +1288,23 @@ exports.getAllWebhookPayoadHeadersOfAllAccountsFn = async () => {
       {
         $match: {
           status: "active",
-          accountName: {
-            $nin: ["", null], // exclude empty/null names
-            $type: "string"   // ensure it's string
-          }
+
+          accountName: { $nin: ["", null] },
+          $expr: { $eq: [{ $type: "$accountName" }, "string"] }
         }
       },
+
       {
         $group: {
-          _id: "$accountName",
-          objectId: { $first: "$_id" }
+          _id: "$_id",                // group by unique record id
+          merchantName: { $first: "$accountName" }
         }
       },
       {
         $project: {
           _id: 0,
-          merchantName: "$_id",
-          objectId: 1
+          objectId: "$_id",           // keep original _id as objectId
+          merchantName: 1
         }
       }
     ]),

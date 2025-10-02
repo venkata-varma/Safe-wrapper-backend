@@ -54,6 +54,7 @@ async function createTransactionLifeCycleRecord(requestObject, integrationsMaste
 
 
 async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalUrl, integrationsCronId, getAuthenticated) {
+    let accountRecord = await accountsModel.findOne({ _id: new mongoose.Types.ObjectId(integrationsMasterCredentials?.accountId) })
     let totalInserted = 0;
     let totalUpdated = 0;
 
@@ -79,6 +80,7 @@ async function upSertRecord(txns, integrationsMasterCredentials, urlFlow, finalU
                 let requestObject = {
 
                     accountId: integrationsMasterCredentials?.accountId,
+                    merchantName: accountRecord?.accountName,
                     userId: integrationsMasterCredentials?.userId,
                     responseObject: txn,
                     cardConnectIntegrationsCronIdCreate: new mongoose.Types.ObjectId(integrationsCronId),

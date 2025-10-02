@@ -105,7 +105,18 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
             }
         },
         {
+            $lookup: {
+                from: "accounts",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "accountRecord"
+            }
+        },
+        { $unwind: "$accountRecord" },
+
+        {
             $addFields: {
+                merchantName: "$accountRecord.accountName",
                 transactionDate: { $toDate: "$transactionDateTime" },
                 paymentType: "cima-machine"
             }
@@ -119,9 +130,9 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
             $project: {
                 webhookMasterId: 0,
                 webhookMetaPayloadId: 0,
-                accountId: 0,
                 webhookTransactionId: 0,
-                transactionDateTime: 0
+                transactionDateTime: 0,
+                accountRecord: 0
             }
         }
     ]);
@@ -220,11 +231,20 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 }
             }
         },
+        {
+            $lookup: {
+                from: "accounts",
+                localField: "accountId",
+                foreignField: "accountId",
+                as: "accountRecord"
+            }
+        },
+        { $unwind: "$accountRecord" },
 
 
         {
             $addFields: {
-
+                merchantName: "$accountRecord.accountName",
                 amount: { $toDouble: "$responseObject.amount" },
                 customerByCard: "$customerDetails.cardNumber",
                 transactionType: "$responseObject.type",
@@ -334,12 +354,13 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
                 // _id:1
                 cardConnectIntegrationsCronIdCreate: 0,
                 cardConnectIntegrationsCronIdUpdate: 0,
-                accountId: 0,
+
                 userId: 0,
                 responseObject: 0,
                 cardConnectTransactionId: 0,
                 updatedBy: 0,
-                createdBy: 0
+                createdBy: 0,
+                accountRecord: 0
             }
         }
     ]);
