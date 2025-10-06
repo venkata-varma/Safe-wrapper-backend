@@ -201,7 +201,7 @@ exports.transactionTypeMappings = async (transactions, transactionTypeKeys) => {
 
 
   transactions.forEach(txn => {
-    const txnType = txn?.Transaction_type?.toLowerCase();
+    const txnType = txn?.transactionType?.toLowerCase();
 
     if (txnType && normalizedKeys[txnType]) {
       const originalKey = normalizedKeys[txnType];
