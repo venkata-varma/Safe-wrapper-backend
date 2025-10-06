@@ -2848,6 +2848,7 @@ exports.updateWebhookAutoDataSyncStatus = asyncWrapper(async (req, res) => {
 
 exports.getWebhookDetailsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.query
+  let webhookMetaPayloadsDetails
   let exceptionsCount = await webhookExceptionsModel.find({}).countDocuments()
   let accountDetails = await accountsModel.findById(accountId, { password: 0 }).lean()
   let webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
@@ -2877,7 +2878,8 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async (req, res) => {
   let webhookDetails = await webHooksMasterModel.aggregate([
     {
       $match: {
-        accountId: new mongoose.Types.ObjectId(accountId)
+        // accountId: new mongoose.Types.ObjectId(accountId),
+        status: "active"
       }
     },
     {
@@ -2975,24 +2977,29 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async (req, res) => {
       $replaceRoot: { newRoot: '$results' }
     },
   ]);
+  if (webhookDetails.length > 0) {
+    webhookMetaPayloadsDetails = await webhookMetaPayloadModel.aggregate([
+      {
+        $match: {
+          // accountId: new mongoose.Types.ObjectId(accountId),
+          webhookMasterId: new mongoose.Types.ObjectId(webhookDetails[0]?.webhookMaster?._id)
+        }
+      },
+      {
+        $project: {
+          serialNumber: "$primaryHookId",
+          transactionDateAndTime: "$createdAt",
+          location: { $arrayElemAt: ["$dataPoint.Metadata.LocationInformation.Location", 0] },
+          name: { $arrayElemAt: ["$dataPoint.Metadata.LocationInformation.Name", 0] },
+          dataPoint: 1,
+          _id: 0
+        }
+      }
+    ]);
+  } else {
+    webhookMetaPayloadsDetails = []
+  }
 
-  const webhookMetaPayloadsDetails = await webhookMetaPayloadModel.aggregate([
-    {
-      $match: {
-        accountId: new mongoose.Types.ObjectId(accountId)
-      }
-    },
-    {
-      $project: {
-        serialNumber: "$primaryHookId",
-        transactionDateAndTime: "$createdAt",
-        location: { $arrayElemAt: ["$dataPoint.Metadata.LocationInformation.Location", 0] },
-        name: { $arrayElemAt: ["$dataPoint.Metadata.LocationInformation.Name", 0] },
-        dataPoint: 1,
-        _id: 0
-      }
-    }
-  ]);
 
   const onePosLogs = await onePosLogsModel.aggregate([
     {
