@@ -97,6 +97,13 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
 
 
 
+exports.getDetailsOfCronJobId = asyncWrapper(async (req, res) => {
+    let { cronJobId } = req.params
+
+
+})
+
+
 /**
  * 
  * 
