@@ -12,6 +12,7 @@ const { cardConnectExceptionLogs } = require('../middleware/cardConnectException
 const { generateDateRange } = require('./helpers')
 const cardConnectIntegrationsCronsModel = require('../models/cardConnectIntegrationsCronsModel')
 const { default: mongoose } = require('mongoose')
+const accountsModel = require('../../models/accountsModel')
 
 //-----------------------------------------------------------------------
 
