@@ -319,8 +319,9 @@ exports.updateAccount = asyncWrapper(async (req, res) => {
         $set: { name: accountName }
     }, { new: true })
 
-    updateUserDetails = await usersModel.findOneAndUpdate({ phone: findAccount.phone }, { $set: { phone: req.body.phone } }, { runValidators: true, new: true });
+    updateUserDetails = await usersModel.findOneAndUpdate({ phone: findAccount.phone, }, { $set: { phone: req.body.phone, } }, { runValidators: true, new: true });
 
+    updateUserDetails = await usersModel.findOneAndUpdate({ email: findAccount.email }, { $set: { email: req.body.email } }, { runValidators: true, new: true });
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
