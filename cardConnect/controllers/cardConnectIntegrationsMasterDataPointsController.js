@@ -667,8 +667,11 @@ exports.getDetailsOfCronJobId = asyncWrapper(async (req, res) => {
 
     ])
 
+    if (statisticsOfCron.length > 0) {
+        statisticsOfCron[0].totalExceptionsCount = getExceptionsOfCron.length
+    }
 
-    summaryGrid = statisticsOfCron[0] ? statisticsOfCron[0] : {
+    summaryGrid = statisticsOfCron.length > 0 ? statisticsOfCron[0] : {
         totalTransactionsCount: 0,
         settledTransactionsCount: 0,
         settledAmount: 0,
