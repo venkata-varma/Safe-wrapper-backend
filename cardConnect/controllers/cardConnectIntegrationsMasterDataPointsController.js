@@ -28,22 +28,22 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
                     _id: new mongoose.Types.ObjectId(accountId)
                 }
             },
-            {
-                $lookup: {
-                    from: "cardconnectintegrationscredentials",
-                    localField: "_id",
-                    foreignField: "accountId",
-                    as: "cardconnectintegrationscredentials"
-                }
-            },
-            {
-                $lookup: {
-                    from: "cardconnectintegrationsapiurlflows",
-                    localField: "_id",
-                    foreignField: "accountId",
-                    as: "cardconnectintegrationsapiurlflows"
-                }
-            },
+            // {
+            //     $lookup: {
+            //         from: "cardconnectintegrationscredentials",
+            //         localField: "_id",
+            //         foreignField: "accountId",
+            //         as: "cardconnectintegrationscredentials"
+            //     }
+            // },
+            // {
+            //     $lookup: {
+            //         from: "cardconnectintegrationsapiurlflows",
+            //         localField: "_id",
+            //         foreignField: "accountId",
+            //         as: "cardconnectintegrationsapiurlflows"
+            //     }
+            // },
             {
                 $lookup: {
                     from: "cardconnectintegrationssettings",
@@ -52,8 +52,8 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
                     as: "cardconnectintegrationssettings"
                 }
             },
-            { $unwind: "$cardconnectintegrationscredentials" },
-            { $unwind: "$cardconnectintegrationsapiurlflows" },
+            // { $unwind: "$cardconnectintegrationscredentials" },
+            // { $unwind: "$cardconnectintegrationsapiurlflows" },
             { $unwind: "$cardconnectintegrationssettings" }
 
         ]),

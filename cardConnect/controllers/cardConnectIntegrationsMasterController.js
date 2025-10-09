@@ -277,7 +277,7 @@ exports.editIntegrationsMasterCredentials = asyncWrapper(async (req, res) => {
  */
 exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
 
-    let { cardConnectIntegrationsSettingId, accountId, userId, ...newSettings } = req.body;
+    let { cardConnectIntegrationsSettingId, accountId, ...newSettings } = req.body;
     let findExistenceOfIntegrationSettingsRecord = await cardConnectIntegrationsSettingsModel.findById(cardConnectIntegrationsSettingId);
     if (!findExistenceOfIntegrationSettingsRecord) {
         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
