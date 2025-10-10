@@ -37,37 +37,21 @@ exports.generateDateArray = (fromDate, toDate) => {
 
 
 
-exports.statusMappings = async (getAllTransactions, cardconnectintegrationssettings) => {
-  // console.log("getAllTransactions===", getAllTransactions[0])
+exports.statusMappings = async (statusGroupBy, possibleTransactionStatusKeys) => {
+  let statusMap = statusGroupBy.reduce((acc, item) => {
+    acc[item._id] = item.count;
+    return acc;
+  }, {});
 
-  //console.log("cardconnectintegrationssettings===", cardconnectintegrationssettings.transactionStatusKeys)
-
-  let statusCounts = {};
-  const normalizedKeys = {};
-
-  cardconnectintegrationssettings.transactionStatusKeys.forEach(key => {
-    statusCounts[key] = 0;                 // store original case for output
-    normalizedKeys[key.toLowerCase()] = key; // map lowercase -> original key
-  });
-
-  // console.log("statusCounts===", statusCounts)
-  // console.log("normalizedKeys===", normalizedKeys)
-
-
-  getAllTransactions.forEach(txn => {
-    const txnStatus = txn.referenceStatus?.toLowerCase();
-
-    if (txnStatus && normalizedKeys[txnStatus]) {
-      const originalKey = normalizedKeys[txnStatus];
-      statusCounts[originalKey] += 1;
+  // Step 3: Ensure all possible statuses are included
+  let finalStatusCounts = possibleTransactionStatusKeys.reduce((acc, status) => {
+    if (!acc[status]) {
+      acc[status] = 0;  // If status doesn't exist in statusM, set count to 0
     }
-  });
+    return acc;
+  }, statusMap); // Start with the existing status counts
 
-
-
-  return statusCounts
-
-
+  return finalStatusCounts
 }
 
 function normalizeDate(value) {
@@ -190,24 +174,19 @@ exports.getProcessedDisplayPoints = async (getAllTransactions, requiredDataPoint
  * 
  * 
  */
-exports.transactionTypeMappings = async (transactions, transactionTypeKeys) => {
-  let typeCounts = {};
-  const normalizedKeys = {};
+exports.transactionTypeMappings = async (transactionTypesGroup, possibleTransactionTypeKeys) => {
+  let typesMap = transactionTypesGroup.reduce((acc, item) => {
+    acc[item._id] = item.count;
+    return acc;
+  }, {});
 
-  transactionTypeKeys.forEach(key => {
-    typeCounts[key] = 0;                 // store original case for output
-    normalizedKeys[key.toLowerCase()] = key; // map lowercase -> original key
-  });
-
-
-  transactions.forEach(txn => {
-    const txnType = txn?.transactionType?.toLowerCase();
-
-    if (txnType && normalizedKeys[txnType]) {
-      const originalKey = normalizedKeys[txnType];
-      typeCounts[originalKey] += 1;
+  // Step 3: Ensure all possible statuses are included
+  let finalTypeCounts = possibleTransactionTypeKeys.reduce((acc, status) => {
+    if (!acc[status]) {
+      acc[status] = 0;  // If status doesn't exist in statusM, set count to 0
     }
-  });
+    return acc;
+  }, typesMap); // Start with the existing status counts
 
-  return typeCounts
+  return finalTypeCounts
 }

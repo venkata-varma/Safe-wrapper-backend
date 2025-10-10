@@ -91,7 +91,7 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
         }
     } else {
 
-        let [integrationsMasterDetails, summaryGrid] = await Promise.all([
+        let [integrationsMasterDetails, summaryGrid, statusGroupBy, transactionTypesGroup] = await Promise.all([
 
             accountsModel.aggregate([
                 {
@@ -241,16 +241,70 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
 
                     }
                 }
+            ]),
+            cardConnectTransactionsModel.aggregate([
+                {
+                    $match: {
+                        accountId: new mongoose.Types.ObjectId(accountId),
+                    },
+                },
+                {
+                    $addFields: {
+                        transactionStatus: "$responseObject.status"
+                    }
+                },
+                {
+                    $project: {
+                        responseObject: 0
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$transactionStatus",
+                        count: { $sum: 1 }
+
+                    }
+                },
+
+            ]),
+            cardConnectTransactionsModel.aggregate([
+                {
+                    $match: {
+                        accountId: new mongoose.Types.ObjectId(accountId),
+                    },
+                },
+                {
+                    $addFields: {
+                        transactionType: "$responseObject.type"
+                    }
+                },
+                {
+                    $project: {
+                        responseObject: 0
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$transactionType",
+                        count: { $sum: 1 }
+
+                    }
+                },
+
             ])
 
 
 
         ])
-        console.log("getAllTransactions===", getAllTransactions.length)
-        let getStatusMappings = await statusMappings(getAllTransactions, integrationsMasterDetails[0].cardconnectintegrationssettings);
+        let possibleTransactionStatusKeys = integrationsMasterDetails[0]?.cardconnectintegrationssettings?.transactionStatusKeys
+        let possibleTransactionTypeKeys = integrationsMasterDetails[0]?.cardconnectintegrationssettings?.transactionTypeKeys
 
 
-        let getTransactionTypeMappings = await transactionTypeMappings(getAllTransactions, integrationsMasterDetails[0].cardconnectintegrationssettings.transactionTypeKeys);
+        // console.log("getAllTransactions===", getAllTransactions.length)
+        let getStatusMappings = await statusMappings(statusGroupBy, possibleTransactionStatusKeys);
+
+
+        let getTransactionTypeMappings = await transactionTypeMappings(transactionTypesGroup, possibleTransactionTypeKeys);
 
 
 
@@ -269,9 +323,10 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
         data = {
             findExistenseOfCardConnectIntegration,
             integrationDetails: integrationsMasterDetails[0],
-            getStatusMappings,
-            getTransactionTypeMappings,
-            summaryGrid
+            getTransactionTypeMappings: getTransactionTypeMappings,
+            summaryGrid,
+            getStatusMappings: getStatusMappings
+
         }
 
     }
