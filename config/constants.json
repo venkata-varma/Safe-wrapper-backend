@@ -171,7 +171,8 @@
     "MESSAGE_MERCHANT_LEVEL_CARD_CONNECT_DASHBOARD": "Merchant-level card-connect dashboard stats retreived succesfully.",
     "MESSAGE_GET_ALL_CARD_CONNECT_EXCEPTIONS": "All card-connect exceptions retreived succesfully.",
     "MESSAGE_MERCHANT_PAYLOAD_HEADERS": "Merchant payload headers retrieved succesfully.",
-    "MESSAGE_SUPER_ADMIN_PAYLOAD_HEADERS": "Super-admin level payload headers retreived succesfully."
+    "MESSAGE_SUPER_ADMIN_PAYLOAD_HEADERS": "Super-admin level payload headers retreived succesfully.",
+    "MERCHANT_MERCHANT_NAMES_IN_DROPDOWN": "Getting merchant names in dropdown done succesfully."
   },
   "statusCodes": {
     "FORBIDDEN": 403,

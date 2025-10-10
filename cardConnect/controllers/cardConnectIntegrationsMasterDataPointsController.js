@@ -17,6 +17,62 @@ const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
 
 
 
+exports.getMerchantsNamesInDropdown = asyncWrapper(async (req, res, next) => {
+
+    let merchantNames;
+    if (req.user.accountId.accountType === 'super-admin') {
+        console.log("its suprr admin")
+        merchantNames = await accountsModel.aggregate([
+            {
+                $match: {
+                    status: "active",
+
+                    accountName: { $nin: ["", null] },
+                    $expr: { $eq: [{ $type: "$accountName" }, "string"] }
+                }
+            },
+
+            {
+                $group: {
+                    _id: "$_id",                // group by unique record id
+                    merchantName: { $first: "$accountName" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    objectId: "$_id",           // keep original _id as objectId
+                    merchantName: 1
+                }
+            }
+        ])
+    } else if (req.user.accountId.accountType === 'merchant') {
+        console.log("its merchant")
+        let accountDetails = req.user.accountId   //(Populated object)
+        merchantNames = [{
+            merchantName: accountDetails?.accountName,
+            objectId: accountDetails?._id
+        }];
+    }
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MERCHANT_MERCHANT_NAMES_IN_DROPDOWN,
+            data: {
+
+                merchantNames
+            },
+        });
+
+
+
+
+
+})
+
+
 exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
     const { accountId } = req.params
 
