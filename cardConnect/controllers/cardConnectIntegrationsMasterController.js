@@ -468,13 +468,16 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
             data: {
                 finalResult: {
                     accountId: finalCronDetails?.accountId,
+                    cronId: finalCronDetails?._id,
                     cronJobType: finalCronDetails?.cronJobType,
                     dateRange: finalCronDetails?.dateRange,
                     pulledCount: finalCronDetails?.pulledCount,
-                    pushedCount: finalCronDetails?.pushedCount,
-                    updatedCount: finalCronDetails?.updatedCount
+                    receivedCount: finalCronDetails?.pulledCount,
+                    newTransactionsCount: finalCronDetails?.pushedCount,
+                    updatedTransactionsCount: finalCronDetails?.updatedCount
+
                 },
-                exceptionsCount: cardConnectExceptionsOfCronCount
+
             }
         });
 
@@ -578,12 +581,14 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
                 finalResult: {
                     accountId: finalCronDetails?.accountId,
                     cronJobType: finalCronDetails?.cronJobType,
+                    cronId: finalCronDetails?._id,
                     dateRange: finalCronDetails?.dateRange,
                     pulledCount: finalCronDetails?.pulledCount,
-                    pushedCount: finalCronDetails?.pushedCount,
-                    updatedCount: finalCronDetails?.updatedCount
+                    receivedCount: finalCronDetails?.pulledCount,
+                    newTransactionsCount: finalCronDetails?.pushedCount,
+                    updatedTransactionsCount: finalCronDetails?.updatedCount
                 },
-                exceptionsCount: cardConnectExceptionsOfCronCount
+
             }
         });
 
@@ -681,13 +686,15 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
             data: {
                 finalResult: {
                     accountId: finalCronDetails?.accountId,
+                    cronId: finalCronDetails?._id,
                     cronJobType: finalCronDetails?.cronJobType,
+                    exceptionsCount: cardConnectExceptionsOfCronCount,
                     dateRange: finalCronDetails?.dateRange,
-                    pulledCount: finalCronDetails?.pulledCount,
-                    pushedCount: finalCronDetails?.pushedCount,
-                    updatedCount: finalCronDetails?.updatedCount
+                    receivedCount: finalCronDetails?.pulledCount,
+                    newTransactionsCount: finalCronDetails?.pushedCount,
+                    updatedTransactionsCount: finalCronDetails?.updatedCount
                 },
-                exceptionsCount: cardConnectExceptionsOfCronCount
+
             }
         });
 })
