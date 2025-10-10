@@ -91,7 +91,7 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
         }
     } else {
 
-        let [integrationsMasterDetails, exceptions, getAllTransactions, activityLogs, summaryGrid] = await Promise.all([
+        let [integrationsMasterDetails, summaryGrid] = await Promise.all([
 
             accountsModel.aggregate([
                 {
@@ -128,116 +128,7 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
                 { $unwind: "$cardconnectintegrationssettings" }
 
             ]),
-            cardConnectExceptionsModel.find({ accountId }).sort({ createdAt: -1 }),
-            cardConnectTransactionsModel.aggregate([
-                {
-                    $match: {
-                        accountId: new mongoose.Types.ObjectId(accountId),
 
-                    }
-                },
-
-                {
-                    $addFields: {
-                        transactionDate: {
-                            $switch: {
-                                branches: [
-                                    // Case: 14 digits (YYYYMMDDHHmmss)
-                                    {
-                                        case: {
-                                            $eq: [
-                                                { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
-                                                14
-                                            ]
-                                        },
-                                        then: {
-                                            $dateFromString: {
-                                                dateString: {
-                                                    $concat: [
-                                                        { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
-                                                        { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
-                                                        { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T",
-                                                        { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 8, 2] }, ":",
-                                                        { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 10, 2] }, ":",
-                                                        { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 12, 2] }, "Z"
-                                                    ]
-                                                }
-                                            }
-                                        }
-                                    },
-                                    // Case: 8 digits (YYYYMMDD)
-                                    {
-                                        case: {
-                                            $eq: [
-                                                { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
-                                                8
-                                            ]
-                                        },
-                                        then: {
-                                            $dateFromString: {
-                                                dateString: {
-                                                    $concat: [
-                                                        { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
-                                                        { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
-                                                        { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T00:00:00Z"
-                                                    ]
-                                                }
-                                            }
-                                        }
-                                    },
-                                    // Case: epoch seconds (10 digits)
-                                    {
-                                        case: {
-                                            $eq: [
-                                                { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
-                                                10
-                                            ]
-                                        },
-                                        then: {
-                                            $toDate: {
-                                                $multiply: [{ $toLong: { $ifNull: ["$responseObject.authdate", 0] } }, 1000]
-                                            }
-                                        }
-                                    },
-                                    // Case: epoch millis (13 digits)
-                                    {
-                                        case: {
-                                            $eq: [
-                                                { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
-                                                13
-                                            ]
-                                        },
-                                        then: {
-                                            $toDate: { $toLong: { $ifNull: ["$responseObject.authdate", 0] } }
-                                        }
-                                    }
-                                ],
-                                // Default: fallback to responseObject.date
-                                default: { $toDate: "$responseObject.date" }
-                            }
-                        },
-                        transactionId: "$responseObject.retref",
-                        currency: "$responseObject.currency",
-                        transactionStatus: "$responseObject.status",
-                        batchId: "$responseObject.batchid",
-                        amount: { $toDouble: "$responseObject.amount" },
-                        transactionType: "$responseObject.type",
-                        customerDetails: "$responseObject.customerDetails"
-                    }
-                },
-                {
-                    $project: {
-                        responseObject: 0
-                    }
-                },
-                {
-                    $sort: {
-                        transactionDate: -1
-                    }
-                }
-            ]),
-
-            cardConnectIntegrationsCronsModel.find({ accountId }).sort({ createdAt: -1 }),
             cardConnectTransactionsModel.aggregate([
                 {
                     $match: {
@@ -378,11 +269,8 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
         data = {
             findExistenseOfCardConnectIntegration,
             integrationDetails: integrationsMasterDetails[0],
-            exceptions,
             getStatusMappings,
             getTransactionTypeMappings,
-            getAllTransactions,
-            activityLogs,
             summaryGrid
         }
 
@@ -407,6 +295,140 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
 
 })
 
+
+
+exports.getSingleIntegrationLoadedData = asyncWrapper(async (req, res) => {
+    const { accountId } = req.params
+
+
+    let [exceptions, transactions, activityLogs] = await Promise.all([
+        cardConnectExceptionsModel.find({ accountId }).sort({ createdAt: -1 }),
+        cardConnectTransactionsModel.aggregate([
+            {
+                $match: {
+                    accountId: new mongoose.Types.ObjectId(accountId),
+
+                }
+            },
+
+            {
+                $addFields: {
+                    transactionDate: {
+                        $switch: {
+                            branches: [
+                                // Case: 14 digits (YYYYMMDDHHmmss)
+                                {
+                                    case: {
+                                        $eq: [
+                                            { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                            14
+                                        ]
+                                    },
+                                    then: {
+                                        $dateFromString: {
+                                            dateString: {
+                                                $concat: [
+                                                    { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                    { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                    { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T",
+                                                    { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 8, 2] }, ":",
+                                                    { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 10, 2] }, ":",
+                                                    { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 12, 2] }, "Z"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                // Case: 8 digits (YYYYMMDD)
+                                {
+                                    case: {
+                                        $eq: [
+                                            { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                            8
+                                        ]
+                                    },
+                                    then: {
+                                        $dateFromString: {
+                                            dateString: {
+                                                $concat: [
+                                                    { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 0, 4] }, "-",
+                                                    { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 4, 2] }, "-",
+                                                    { $substr: [{ $toString: { $ifNull: ["$responseObject.authdate", ""] } }, 6, 2] }, "T00:00:00Z"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                // Case: epoch seconds (10 digits)
+                                {
+                                    case: {
+                                        $eq: [
+                                            { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                            10
+                                        ]
+                                    },
+                                    then: {
+                                        $toDate: {
+                                            $multiply: [{ $toLong: { $ifNull: ["$responseObject.authdate", 0] } }, 1000]
+                                        }
+                                    }
+                                },
+                                // Case: epoch millis (13 digits)
+                                {
+                                    case: {
+                                        $eq: [
+                                            { $strLenCP: { $toString: { $ifNull: ["$responseObject.authdate", ""] } } },
+                                            13
+                                        ]
+                                    },
+                                    then: {
+                                        $toDate: { $toLong: { $ifNull: ["$responseObject.authdate", 0] } }
+                                    }
+                                }
+                            ],
+                            // Default: fallback to responseObject.date
+                            default: { $toDate: "$responseObject.date" }
+                        }
+                    },
+                    transactionId: "$responseObject.retref",
+                    currency: "$responseObject.currency",
+                    transactionStatus: "$responseObject.status",
+                    batchId: "$responseObject.batchid",
+                    amount: { $toDouble: "$responseObject.amount" },
+                    transactionType: "$responseObject.type",
+                    customerDetails: "$responseObject.customerDetails"
+                }
+            },
+            {
+                $project: {
+                    responseObject: 0
+                }
+            },
+            {
+                $sort: {
+                    transactionDate: -1
+                }
+            }
+        ]),
+
+        cardConnectIntegrationsCronsModel.find({ accountId }).sort({ createdAt: -1 }),
+    ])
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS,
+            data: {
+                exceptions,
+                transactions,
+                activityLogs
+            }
+        });
+
+
+
+})
 
 
 exports.getDetailsOfCronJobId = asyncWrapper(async (req, res) => {
