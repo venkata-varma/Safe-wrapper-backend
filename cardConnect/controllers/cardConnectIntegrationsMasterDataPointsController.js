@@ -1,6 +1,6 @@
 const asyncWrapper = require('../middleware/asyncWrapper');
 const mongoose = require('mongoose')
-
+let moment = require('moment')
 const cardconnectIntegrationsCredentialsModel = require('../models/cardConnectIntegrationsCredentialsModel')
 const cardConnectIntegrationsSettingsModel = require('../models/cardConnectIntegrationsSettingsModel')
 const cardConnectIntegrationsAPIUrlsFlowModel = require('../models/cardConnectIntegrationsAPIUrlFlowModel')
@@ -299,11 +299,28 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
 
 exports.getSingleIntegrationLoadedData = asyncWrapper(async (req, res) => {
     const { accountId } = req.params
+    let { fromDate, toDate, type } = req.query
+    let data;
+
+    if (!fromDate || !toDate) {
+        throw new Error(' From date, and To date are required');
+    }
+
+    if (!moment(fromDate).isValid() || !moment(toDate).isValid()) {
+        throw new Error('Invalid date format for fromDate or toDate');
+    }
+    fromDate = new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss'))
+    toDate = new Date(moment(toDate).format('YYYY-MM-DDTHH:mm:ss'))
+    console.log("fromDate===", fromDate)
+    console.log("toDate===", toDate)
 
 
-    let [exceptions, transactions, activityLogs] = await Promise.all([
-        cardConnectExceptionsModel.find({ accountId }).sort({ createdAt: -1 }),
-        cardConnectTransactionsModel.aggregate([
+
+
+    if (type === "exceptions") {
+        data = await cardConnectExceptionsModel.find({ accountId, createdAt: { $gte: fromDate, $lte: toDate } }).sort({ createdAt: -1 })
+    } else if (type === "transactions") {
+        data = await cardConnectTransactionsModel.aggregate([
             {
                 $match: {
                     accountId: new mongoose.Types.ObjectId(accountId),
@@ -405,14 +422,25 @@ exports.getSingleIntegrationLoadedData = asyncWrapper(async (req, res) => {
                 }
             },
             {
+                $match: {
+                    transactionDate: {
+                        $gte: fromDate,
+                        $lte: toDate
+                    }
+                }
+            },
+            {
                 $sort: {
                     transactionDate: -1
                 }
             }
-        ]),
+        ])
 
-        cardConnectIntegrationsCronsModel.find({ accountId }).sort({ createdAt: -1 }),
-    ])
+    } else if (type === "activity-logs") {
+        data = await cardConnectIntegrationsCronsModel.find({ accountId, createdAt: { $gte: fromDate, $lte: toDate } }).sort({ createdAt: -1 })
+    }
+
+
 
     return res
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -420,9 +448,9 @@ exports.getSingleIntegrationLoadedData = asyncWrapper(async (req, res) => {
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS,
             data: {
-                exceptions,
-                transactions,
-                activityLogs
+                type: type,
+                responseCount: data?.length,
+                response: data
             }
         });
 
