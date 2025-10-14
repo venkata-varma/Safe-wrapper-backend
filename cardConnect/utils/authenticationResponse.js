@@ -391,8 +391,8 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
                 page++;
 
                 if (urlFlow?.rateLimit?.status === true && urlFlow.rateLimit?.limit) {
-                    //    let delayMs = (60 / urlFlow.rateLimit.limit) * 1000;
-                    let delayMs = 1;
+                    let delayMs = (60 / urlFlow.rateLimit.limit) * 1000;
+
                     // Only wait if you're going to fetch the next page
                     await new Promise(res => setTimeout(res, delayMs));
                 }
@@ -428,7 +428,10 @@ const processAPIUrlFlows = async (apiUrlFlows, getAuthenticated, integrationsMas
  */
 async function initiateManualTrigger(dateRange, integrationsMasterDetails, accountId, integrationsCronId) {
 
-
+    let envType = integrationsMasterDetails?.cardconnectintegrationscredentials?.primaryKeyValues?.site
+    if (envType.includes('uat')) {
+        envType = "uat"
+    }
 
     for (let date of dateRange) {
         console.log("Cron running for date===", date)
@@ -440,6 +443,9 @@ async function initiateManualTrigger(dateRange, integrationsMasterDetails, accou
 
         let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterDetails.cardconnectintegrationscredentials, date, integrationsCronId);
         console.log("processFlows===", processFlows)
+        if (envType === "uat") {
+            await new Promise(res => setTimeout(res, 3100));
+        }
 
 
     }
