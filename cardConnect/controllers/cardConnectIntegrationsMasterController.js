@@ -474,7 +474,8 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
                     // "Below are statistics related to newly stored / updated transactions of this particular activity. ",
                     totalFetchedTransactionsCount: finalCronDetails?.pulledCount,
                     newlyAddedTransactionsCount: finalCronDetails?.pushedCount,
-                    updatedTransactionsCount: finalCronDetails?.updatedCount
+                    updatedTransactionsCount: finalCronDetails?.updatedCount,
+                    exceptionsCount: cardConnectExceptionsOfCronCount
 
                 },
 
@@ -586,7 +587,8 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
                     // "Below are statistics related to newly stored / updated transactions of this particular activity. ",
                     totalFetchedTransactionsCount: finalCronDetails?.pulledCount,
                     newlyAddedTransactionsCount: finalCronDetails?.pushedCount,
-                    updatedTransactionsCount: finalCronDetails?.updatedCount
+                    updatedTransactionsCount: finalCronDetails?.updatedCount,
+                    exceptionsCount: cardConnectExceptionsOfCronCount
                 },
 
             }
