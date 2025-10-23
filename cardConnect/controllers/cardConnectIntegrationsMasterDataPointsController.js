@@ -516,7 +516,7 @@ exports.getSingleIntegrationLoadedData = asyncWrapper(async (req, res) => {
 
 exports.getDetailsOfCronJobId = asyncWrapper(async (req, res) => {
     let { cronJobId, accountId } = req.params
-    let [getDetalsOfCron, getTransactionsOfCron, getExceptionsOfCron, statisticsOfCron] = await Promise.all([
+    let [getCronJobDetails, getTransactionsOfCron, getExceptionsOfCron, statisticsOfCron] = await Promise.all([
         await cardConnectIntegrationsCronsModel.findById(cronJobId),
 
 
@@ -846,6 +846,7 @@ exports.getDetailsOfCronJobId = asyncWrapper(async (req, res) => {
     }
 
     summaryGrid = statisticsOfCron.length > 0 ? statisticsOfCron[0] : {
+        statement: "Below are statistics related to newly stored / updated transactions of this particular activity. ",
         totalTransactionsCount: 0,
         settledTransactionsCount: 0,
         settledAmount: 0,
@@ -856,6 +857,17 @@ exports.getDetailsOfCronJobId = asyncWrapper(async (req, res) => {
         totalExceptionsCount: 0
     }
 
+    let getDetalsOfCron = {
+        ...getCronJobDetails,
+        totalFetchedTransactionsCount: getCronJobDetails?.pulledCount,
+        newlyAddedTransactionsCount: getCronJobDetails?.pushedCount,
+        updatedTransactionsCount: getCronJobDetails?.updatedCount
+    }
+
+    delete getDetalsOfCron?._doc?.pulledCount;
+    delete getDetalsOfCron?._doc?.newWOCount;
+    delete getDetalsOfCron?._doc?.pushedCount;
+    delete getDetalsOfCron?._doc?.updatedCount;
 
     return res
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
@@ -863,7 +875,13 @@ exports.getDetailsOfCronJobId = asyncWrapper(async (req, res) => {
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_SINGLE_INTEGRATION_VIEW_DETAILS,
             data: {
-                getDetalsOfCron,
+
+                getDetalsOfCron: {
+                    ...getDetalsOfCron?._doc,
+                    totalFetchedTransactionsCount: getDetalsOfCron?.totalFetchedTransactionsCount,
+                    newlyAddedTransactionsCount: getDetalsOfCron?.newlyAddedTransactionsCount,
+                    updatedTransactionsCount: getDetalsOfCron?.updatedTransactionsCount
+                },
                 getTransactionsOfCron,
                 getExceptionsOfCron,
                 statisticsOfCron: summaryGrid

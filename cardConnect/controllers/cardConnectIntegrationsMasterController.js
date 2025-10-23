@@ -471,9 +471,9 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
                     cronId: finalCronDetails?._id,
                     cronJobType: finalCronDetails?.cronJobType,
                     dateRange: finalCronDetails?.dateRange,
-                    pulledCount: finalCronDetails?.pulledCount,
-                    receivedCount: finalCronDetails?.pulledCount,
-                    newTransactionsCount: finalCronDetails?.pushedCount,
+                    // "Below are statistics related to newly stored / updated transactions of this particular activity. ",
+                    totalFetchedTransactionsCount: finalCronDetails?.pulledCount,
+                    newlyAddedTransactionsCount: finalCronDetails?.pushedCount,
                     updatedTransactionsCount: finalCronDetails?.updatedCount
 
                 },
@@ -583,9 +583,9 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
                     cronJobType: finalCronDetails?.cronJobType,
                     cronId: finalCronDetails?._id,
                     dateRange: finalCronDetails?.dateRange,
-                    pulledCount: finalCronDetails?.pulledCount,
-                    receivedCount: finalCronDetails?.pulledCount,
-                    newTransactionsCount: finalCronDetails?.pushedCount,
+                    // "Below are statistics related to newly stored / updated transactions of this particular activity. ",
+                    totalFetchedTransactionsCount: finalCronDetails?.pulledCount,
+                    newlyAddedTransactionsCount: finalCronDetails?.pushedCount,
                     updatedTransactionsCount: finalCronDetails?.updatedCount
                 },
 
@@ -690,8 +690,9 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
                     cronJobType: finalCronDetails?.cronJobType,
                     exceptionsCount: cardConnectExceptionsOfCronCount,
                     dateRange: finalCronDetails?.dateRange,
-                    receivedCount: finalCronDetails?.pulledCount,
-                    newTransactionsCount: finalCronDetails?.pushedCount,
+                    // "Below are statistics related to newly stored / updated transactions of this particular activity. ",
+                    totalFetchedTransactionsCount: finalCronDetails?.pulledCount,
+                    newlyAddedTransactionsCount: finalCronDetails?.pushedCount,
                     updatedTransactionsCount: finalCronDetails?.updatedCount
                 },
 
