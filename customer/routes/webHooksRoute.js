@@ -28,12 +28,7 @@ const {
   merchantSmartFilteredDashboard
 } = require("../controllers/webHooksController");
 
-router.post(
-  "/:randomNumber/:accountId",
-  validateWebHookReceiveData,
-  receiveWebhookData
-);
-
+// 
 const auth = require("../../middleware/authentication");
 
 router.use(auth);

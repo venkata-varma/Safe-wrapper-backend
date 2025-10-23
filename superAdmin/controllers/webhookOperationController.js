@@ -47,7 +47,7 @@ const createWebhookException = async (
  * Validates the webhook data for webhook log.
  */
 exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
-  console.log("wtf-swagger headers?", typeof req.params.randomNumber)
+
   const splitUrlToGetParams = req.originalUrl.split("/");
   console.log("req.headers", req.headers)
   let accountId = splitUrlToGetParams[splitUrlToGetParams.length - 1];

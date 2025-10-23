@@ -493,6 +493,7 @@ exports.getSingleIntegrationLoadedData = asyncWrapper(async (req, res) => {
 
     } else if (type === "activity-logs") {
         data = await cardConnectIntegrationsCronsModel.find({ accountId, createdAt: { $gte: fromDate, $lte: toDate } }).sort({ createdAt: -1 })
+   
     }
 
 
@@ -513,7 +514,11 @@ exports.getSingleIntegrationLoadedData = asyncWrapper(async (req, res) => {
 
 })
 
-
+/**
+ * API end-point's function
+ * Function to give details related to Cron job.
+ * It will return important statistics such stored transactions , exceptions, few insights
+ */
 exports.getDetailsOfCronJobId = asyncWrapper(async (req, res) => {
     let { cronJobId, accountId } = req.params
     let [getCronJobDetails, getTransactionsOfCron, getExceptionsOfCron, statisticsOfCron] = await Promise.all([
@@ -1083,7 +1088,9 @@ exports.getMerchantCardConnectExceptions = async (fromDate, toDate, paymentType,
 
 
 
-
+/**
+ * API end-point 's funciton for dashboard stats for specific to merchant login
+ */
 
 exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => {
 

@@ -1329,6 +1329,12 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
   });
 });
 
+
+/**
+ * API End-point specific to merchant login . Functionality:- Smart filtered dashboard
+ * Giving input to Select dashboard and merchant names is mandatory
+ * All fields in payload are multi-select 
+ */
 exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => {
   let { accountId } = req.params
   let { selectDashboard, merchantNames } = req.query
@@ -1442,7 +1448,11 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
 
 
 
-
+/**
+ * API end-point Functionality :- Giving options to drop-down in statistics related to smart-filtered dashboard.
+ * Specific to merchant login only.
+ * Returns options such Machine's serial numbers onboarded by respective account and Possible Transaction types
+ */
 
 exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
@@ -2821,7 +2831,9 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   })
 })
 
-
+/**
+ * API End-point specifically for registering Session log-in by ONEHUB POS team either via Swagger or other means
+ */
 exports.validateAuthentication = asyncWrapper(async (req, res, next) => {
   const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
   const userActivity = await usersModel.findById(req.user._id)
@@ -2856,7 +2868,11 @@ exports.validateAuthentication = asyncWrapper(async (req, res, next) => {
   }
 })
 
-
+/**
+ * Below function is for Transaction's menu which contains table to show statistics about selected serial number and Transaction type
+ * Deprecated at present . 
+ * Present , transactions menu is the Smart-filtered dashboard for which a seperate end-point is written for merchant and super-admin seperately (/merchant-smart-filtered-dashboard/:accountId) 
+ */
 exports.getTransactionsReports = asyncWrapper(async (req, res) => {
   const { accountId, serialNumbers, transactionTypes, fromDate, toDate } = req.query;
   console.log('fromDate, toDate:===', fromDate, toDate)
@@ -3027,6 +3043,11 @@ exports.getProgressMeterAndTotalsOfSingleMachine = asyncWrapper(async (req, res)
   })
 })
 
+/**
+ * API end-point for Exceptions menu --- Specific to merchant account
+ * Dropdowns visible- 1. Select cateory [cima-machine, or Card-connect] , 2.From date  3.To date
+ * 
+ */
 exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
   let machineCashExceptions = [];
@@ -3104,6 +3125,10 @@ exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
 // })
 
 
+/**
+ * API end-point functionality for dashboard
+ * Returns the stattistics about distinct denominations and their counts of a machine's serial number
+ */
 exports.getTransactionDenominations = asyncWrapper(async (req, res) => {
   const { serialNumbers, accountId } = req.query;
 

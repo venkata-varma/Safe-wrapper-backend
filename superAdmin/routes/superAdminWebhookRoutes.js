@@ -31,11 +31,6 @@ const {
   getExceptionsOfAccount
 } = require("../controllers/superAdminWebhooksController");
 
-router.post(
-  "/:randomNumber/:accountId",
-  validateWebHookReceiveData,
-  receiveWebhookData
-);
 
 const { superAdminAuth } = require("../middleware/superAdminAuthentication");
 
