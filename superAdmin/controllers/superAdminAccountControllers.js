@@ -1486,6 +1486,8 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
 
 
 exports.getWebhookToken = asyncWrapper(async (req, res) => {
+    let wehookUrl = "https://lhswapi.dev.devrabbit.co/api/webhook/74412/67fe2e3cea71e038c913d4c2"
+    let getWebhook = await webhookMasterModel.findOne({ webHookUrl: wehookUrl })
 
 
     return res
@@ -1493,7 +1495,7 @@ exports.getWebhookToken = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             data: {
-                webhookToken: process.env.webhookToken
+                webhookToken: getWebhook?.webhookToken
             },
         });
 
