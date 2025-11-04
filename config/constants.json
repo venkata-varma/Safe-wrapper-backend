@@ -127,7 +127,7 @@
     "MESSAGE_GET_ALL_WEBHOOK": "All webhook details of account.",
     "MESSAGE_WEBHOOK_NOT_FOUND": "Respective webhook details not found / inactive.",
     "MESSAGE_GET_INDIVIDUAL_WEBHOOK": "Webhook details.",
-    "MESSAGE_CREATE_WEBHOOK_LOG": "Webhook request created.",
+    "MESSAGE_CREATE_WEBHOOK_LOG": "Data send request succesfully created.",
     "MESSAGE_DELETE_WEBHOOK": "Webhook deleted succesfully.",
     "MESSAGE_API_KEY_NOT_SENT_FROM_WEBHOOK_HEADERS": "API key (token) is missing from webhook's headers.",
     "MESSAGE_ACTIVATE_WEBHOOK": "Webhook activated succesfully.",
@@ -172,7 +172,9 @@
     "MESSAGE_GET_ALL_CARD_CONNECT_EXCEPTIONS": "All card-connect exceptions retreived succesfully.",
     "MESSAGE_MERCHANT_PAYLOAD_HEADERS": "Merchant payload headers retrieved succesfully.",
     "MESSAGE_SUPER_ADMIN_PAYLOAD_HEADERS": "Super-admin level payload headers retreived succesfully.",
-    "MERCHANT_MERCHANT_NAMES_IN_DROPDOWN": "Getting merchant names in dropdown done succesfully."
+    "MERCHANT_MERCHANT_NAMES_IN_DROPDOWN": "Getting merchant names in dropdown done succesfully.",
+    "ACCOUNT_VALIDATION_FAILED": "Account doesn't exists or is inactive",
+    "WEBHOOK_VALIDATION_FAILED": "Webhook doesn't exists / inactive."
   },
   "statusCodes": {
     "FORBIDDEN": 403,

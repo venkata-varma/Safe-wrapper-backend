@@ -200,7 +200,7 @@ exports.createCardConnectIntegrationMasterSettings = asyncWrapper(async (req, re
         transactionStatusKeys: cardConnectPredefinedKeys.transactionStatusKeys,
         transactionTypeKeys: cardConnectPredefinedKeys.transactionTypeKeys,
         requiredDatapoints: cardConnectPredefinedKeys.requiredDatapoints,
-        customerObjectKeys: cardConnectPredefinedKeys.customerObjectKeys
+        customerObjectKeys: cardConnectPredefinedKeys.customerObjectKeys   //Not useful as of now
     });
 
 

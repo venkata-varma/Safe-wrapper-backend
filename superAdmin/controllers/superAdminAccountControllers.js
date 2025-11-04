@@ -19,7 +19,7 @@ const cardConnectExceptionsModel = require('../../cardConnect/models/cardConnect
 const cardConnectTransactionsModel = require('../../cardConnect/models/cardConnectTransactionsModel');
 const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
 const cardConnectIntegrationsCronsModel = require('../../cardConnect/models/cardConnectIntegrationsCronsModel');
-
+let webhookMasterModel = require('../../models/webHooksMasterModel')
 
 exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
     const getImageUrl = await preSignedUrlToUpload(req.file)
@@ -1482,3 +1482,59 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
 
 })
 
+
+exports.validateGetWebhookToken = asyncWrapper(async (req, res, next) => {
+    let getAccountDetails = await accountsModel.findOne({ accountId: req.user.accountId._id })
+
+    if (!getAccountDetails || getAccountDetails.status !== "active") {
+
+        return res
+            .status(customConstants.statusCodes.FORBIDDEN)
+            .json({
+                status: customConstants.messages.MESSAGE_FAIL,
+                message: customConstants.messages.ACCOUNT_VALIDATION_FAILED,
+
+            });
+    }
+
+    let getWebhook = await webhookMasterModel.findOne({ webHookUrl: process.env.webhook_url })
+    if (!getWebhook || getWebhook.status !== "active") {
+
+        return res
+            .status(customConstants.statusCodes.FORBIDDEN)
+            .json({
+                status: customConstants.messages.MESSAGE_FAIL,
+                message: customConstants.messages.WEBHOOK_VALIDATION_FAILED,
+
+            });
+    }
+
+
+
+    next()
+
+})
+
+exports.getWebhookToken = asyncWrapper(async (req, res) => {
+
+    let getWebhookOfAccount = await webhookMasterModel.findOne({ webHookUrl: process.env.webhook_url })
+
+    let encrypted = {
+        encryptedData: getWebhookOfAccount?.authenticationCode,
+        iv: process.env.CRYPTO_IV
+    }
+
+    let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            data: {
+                webhookToken: decryptConfigCredentials?.authenticationCode
+            },
+        });
+
+
+
+})

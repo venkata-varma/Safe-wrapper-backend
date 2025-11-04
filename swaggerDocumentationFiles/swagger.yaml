@@ -394,7 +394,7 @@ paths:
             application/json:
               example:
                 status: "success"
-                message: "Webhook request created."
+                message: "Data send request succesfully created."
 
       # security: [] # No authentication required for login
 
