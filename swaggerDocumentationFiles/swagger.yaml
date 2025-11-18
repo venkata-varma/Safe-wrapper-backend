@@ -1075,7 +1075,7 @@ paths:
               enum:
                 - cima-machine
                 - card-connect
-                - snow
+                - stripe
                 - others
 
         - name: merchantNames
@@ -1311,7 +1311,7 @@ paths:
               enum:
                 - cima-machine
                 - card-connect
-                - snow
+                - stripe
                 - others
 
         - name: merchantNames
