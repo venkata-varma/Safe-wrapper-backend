@@ -13,26 +13,7 @@ const job_each_month = humanToCron('once each month')
 
 exports.cardConnectScheduleCronJobs = asyncWrapper(async () => {
 
-    schedule.scheduleJob(job_each_minute, async () => {
-
-        console.log("each minute")
-        const cardConnectIntegrationsMasterSettingsDetails = await cardConnectIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each minute', "periodSettings.currentStatus": "start" }).populate("accountId")
-
-
-        if (cardConnectIntegrationsMasterSettingsDetails.length > 0) {
-            for (const integration of cardConnectIntegrationsMasterSettingsDetails) {
-                await schedulerIntegrationCronJobs(integration)
-
-            }
-        }
-    });
-
-
-
-
-
-
-
+    //Each hour
     schedule.scheduleJob(job_each_hour, async () => {
         const cardConnectIntegrationsMasterSettingsDetails = await cardConnectIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each hour', "periodSettings.currentStatus": "start" }).populate("accountId")
 
@@ -46,6 +27,7 @@ exports.cardConnectScheduleCronJobs = asyncWrapper(async () => {
         }
     });
 
+    //Each day
     schedule.scheduleJob(job_each_day, async () => {
         const cardConnectIntegrationsMasterSettingsDetails = await cardConnectIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each day', "periodSettings.currentStatus": "start" }).populate("accountId")
 
@@ -59,8 +41,8 @@ exports.cardConnectScheduleCronJobs = asyncWrapper(async () => {
         }
     });
 
-
- schedule.scheduleJob(job_each_month, async () => {
+    //Each month
+    schedule.scheduleJob(job_each_month, async () => {
         const cardConnectIntegrationsMasterSettingsDetails = await cardConnectIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each month', "periodSettings.currentStatus": "start" }).populate("accountId")
 
 

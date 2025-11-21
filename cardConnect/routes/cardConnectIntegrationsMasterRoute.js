@@ -17,7 +17,9 @@ const {
     fetchFundingTransactionsForTheDateRange,
 
     getIntegrationsAPIUrlFlows,
-    editIntegrationsAPIUrlFlow
+    editIntegrationsAPIUrlFlow,
+    fixDefaultAPIUrlForCardConnect,
+
 
 } = require('../controllers/cardConnectIntegrationsMasterController');
 const auth = require('../../middleware/authentication');
@@ -30,6 +32,7 @@ router.post('/create-card-connect-integrations-master-credentials', validateAcco
 router.post('/create-card-connect-integrations-master-api-url-flow', validateAccountExistAndActive, createCardConnectIntegrationsAPIUrlFlow)
 router.post('/create-card-connect-integrations-master-settings', validateAccountExistAndActive, createCardConnectIntegrationMasterSettings)
 
+router.get('/get-default-card-connect-api-urls/:accountId', validateAccountExistAndActiveParams, fixDefaultAPIUrlForCardConnect)
 
 router.patch('/edit-card-connect-integrations-master-credentials/:accountId', validateAccountExistAndActiveParams, credentialsValidationsMiddleware,
     editIntegrationsMasterCredentials

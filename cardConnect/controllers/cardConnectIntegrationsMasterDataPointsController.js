@@ -16,7 +16,9 @@ let { cardConnectPredefinedKeys } = require('../config/predefinedKeys');
 const { getSixWeeksSalesFunction } = require('../../utils/sixWeeksTimeline');
 
 
-
+/**
+ * 
+ */
 exports.getMerchantsNamesInDropdown = asyncWrapper(async (req, res, next) => {
 
     let merchantNames;

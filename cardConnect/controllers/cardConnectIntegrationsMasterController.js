@@ -26,7 +26,8 @@ const { cardConnectPredefinedKeys } = require('../config/predefinedKeys')
 
 
 /**
- * 
+ * Middleware for Validating existence of "accountId" in payload (body)
+ * If validation is passed, then function call is passed to next immediate function of respective end-point
  */
 exports.validateAccountExistAndActive = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.body;
@@ -50,12 +51,19 @@ exports.validateAccountExistAndActive = asyncWrapper(async (req, res, next) => {
 
 });
 
+
 /**
- * 
+ * Middleware for Validating existence of "accountId" in params
+ * If validation is passed, then function call is passed to next immediate function of respective end-point
  */
 exports.validateAccountExistAndActiveParams = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params;
-
+    if (!accountId) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ID_MANDATORY_PARAMS,
+        });
+    }
 
     const accountDetails = await accountsModel.findById(accountId);
 
@@ -75,7 +83,8 @@ exports.validateAccountExistAndActiveParams = asyncWrapper(async (req, res, next
 
 
 /**
- * 
+  * Middleware for Validating existence of "cardConnectIntegrationsMasterId" in params
+  * If validation is passed, then function call is passed to next immediate function of respective end-point
  */
 exports.validateintegrationsMasterExistenceParams = asyncWrapper(async (req, res, next) => {
     const { cardConnectIntegrationsMasterId } = req.params;
@@ -96,8 +105,9 @@ exports.validateintegrationsMasterExistenceParams = asyncWrapper(async (req, res
 
 
 /**
- * 
- * 
+ * Middleware for validation of Card-connect credentials entered by customer.
+ * Values for few keys such as "authorizationType", etc; are hard-coded as said.
+ * If credentials are not valid, Error will be thrown. Else, will be stored in card-connect credentials model
  */
 exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
     var payload;
@@ -129,7 +139,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
 
 
 /**
- * 
+ * Function call will be passed to this function only if middleware function called "credentialsValidationsMiddleware" is passed & successful. 
  * 
  */
 exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next) => {
@@ -161,7 +171,38 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
 
 
 /**
- * 
+ * Below API service will be immediately called after credentials are authorized, and stored.
+ * A pre-defined service record is stored in "PredefinedKeys" file.
+ * It will be fixed for Account Id which is intending to onboard card-connect integrations
+ */
+exports.fixDefaultAPIUrlForCardConnect = asyncWrapper(async (req, res) => {
+    let { accountId } = req.params;
+
+    let insertAPIUrl = cardConnectPredefinedKeys?.APIUrls?.[0];
+
+    await cardConnectIntegrationsAPIUrlsFlowModel.findOneAndUpdate(
+        { accountId },
+        {
+            accountId,
+            userId: req?.user?._id,
+            APIUrlFlows: insertAPIUrl,   // ALWAYS replace with file
+            updatedBy: req?.user?._id
+        },
+        { upsert: true, new: true }
+    );
+
+    return res
+        .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
+        .json({
+            status: customConstants.messages.MESSAGE_SUCCESS,
+            message: customConstants.messages.MESSAGE_INTEGRATION_API_URL_SERVICES_SAVED
+        });
+});
+
+
+/**
+ * Front-end does - not exists .
+ * Need to write a "GET API" immediately after credentials are stored and to be redirected to settings screen.
  */
 exports.createCardConnectIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) => {
     let payload = req.body;
@@ -179,7 +220,7 @@ exports.createCardConnectIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) 
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
-            message: customConstants.messages.MESSAGE_INTEGRATION_API_URL_FLOWS_SAVED,
+            message: customConstants.messages.MESSAGE_INTEGRATION_API_URL_SERVICES_SAVED,
             data: {
                 createIntegrationAPIUrlFlow
             }
@@ -190,7 +231,7 @@ exports.createCardConnectIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) 
 })
 
 /**
- * 
+ * Front-end screen exists for giving values to settings for card-connect integration.
  */
 exports.createCardConnectIntegrationMasterSettings = asyncWrapper(async (req, res) => {
 
@@ -214,11 +255,13 @@ exports.createCardConnectIntegrationMasterSettings = asyncWrapper(async (req, re
             },
         });
 
-
-
 })
 
 
+
+/**
+ * End-point to get 
+ */
 exports.getIntegrationsAPIUrlFlows = asyncWrapper(async (req, res) => {
     const { accountId } = req.params;
     const getAPIUrlFlows = await cardConnectIntegrationsAPIUrlsFlowModel.find({ accountId });
@@ -238,7 +281,9 @@ exports.getIntegrationsAPIUrlFlows = asyncWrapper(async (req, res) => {
 
 
 /**
- * 
+ * Front-end screen exists to edit card-connect credentials
+ * Middleware function called "credentialsValidationMiddleware" is called to validate the credentials.
+ * End-point's functionality to edit card-connect credentials
  */
 exports.editIntegrationsMasterCredentials = asyncWrapper(async (req, res) => {
 
@@ -273,7 +318,8 @@ exports.editIntegrationsMasterCredentials = asyncWrapper(async (req, res) => {
 })
 
 /**
- * 
+ * Front-end screen exists to edit card-connect settings
+ * End-point's functionality to edit card-connect settings
  */
 exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
 
@@ -310,7 +356,7 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
 
 
 /**
- * 
+ * Front-end screen does not exists for below end-point as said. 
  */
 exports.editIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) => {
 
@@ -342,7 +388,11 @@ exports.editIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) => {
 
 
 
-
+/**
+ * Functionality is to call Card-connect Funding API live to get transactions for the given day.
+ * Even if transactions are fetched, if they are already stored , they will not be stored
+ * Front-end screen does not exists for below end-point.
+ */
 exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
     let { date } = req.body;
     let { accountId } = req.params;
@@ -420,7 +470,11 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 })
 
 
-
+/**
+ *  The key "Data dump range" of card-connect settings is used here . Based on it, Funding API of card -connect will be called for those days of that range
+ * For every day, interval of 3 seconds of time is applied because, only 20 requests per minute is accepted by card-connect 
+ * Front-end screen does not exists for below end-point. But, same code runs for Crons
+ */
 exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
     const { accountId } = req.params;
     let integrationsMasterDetails = await accountsModel.aggregate([
@@ -531,7 +585,10 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
 
 
 /**
- * 
+ * Requires fromDate and toDate
+ * Front-end screen gives only option for 7 days. So, all the between dates are extracted including given fromDate and toDate
+ *  For every day, interval of 3 seconds of time is applied because, only 20 requests per minute is accepted by card-connect 
+ *  
  */
 exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) => {
     let { fromDate, toDate } = req.body
