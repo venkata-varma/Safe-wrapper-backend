@@ -154,6 +154,19 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
 
     }
     let createCardConnectIntegrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.create(prepareReqObj);
+    //------Insert API service
+    let insertAPIUrl = cardConnectPredefinedKeys?.APIUrls?.uat?.[0];
+
+    await cardConnectIntegrationsAPIUrlsFlowModel.findOneAndUpdate(
+        { accountId: req.payload.accountId },
+        {
+            accountId: req.payload.accountId,
+            userId: req.payload.userId,
+            APIUrlFlows: insertAPIUrl,   // ALWAYS replace with file
+            updatedBy: req.payload.userId,
+        },
+        { upsert: true, new: true }
+    );
 
 
     return res
@@ -304,6 +317,23 @@ exports.editIntegrationsMasterCredentials = asyncWrapper(async (req, res) => {
     let editIntegrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findByIdAndUpdate(cardConnectIntegrationsCredentialsId,
         { $set: prepareReqObj }, { new: true, runValidators: true }
     )
+
+    //------------------------Fixing default services in this step itself
+    let upsertAPIUrl = cardConnectPredefinedKeys?.APIUrls?.uat?.[0];
+
+    await cardConnectIntegrationsAPIUrlsFlowModel.findOneAndUpdate(
+        { accountId: req.payload.accountId },
+        {
+            accountId: req.payload.accountId,
+            userId: req.payload.userId,
+            APIUrlFlows: upsertAPIUrl,   // ALWAYS replace with file
+            updatedBy: req.payload.userId,
+        },
+        { upsert: true, new: true }
+    );
+
+
+
     return res
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
         .json({
