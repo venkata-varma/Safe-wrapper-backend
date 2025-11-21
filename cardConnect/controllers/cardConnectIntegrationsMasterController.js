@@ -38,7 +38,7 @@ exports.validateAccountExistAndActive = asyncWrapper(async (req, res, next) => {
         });
     }
     const accountDetails = await accountsModel.findById(accountId);
-    console.log("accountDetails===", accountDetails)
+
     if (!accountDetails || accountDetails.status !== 'active') {
         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -80,7 +80,7 @@ exports.validateAccountExistAndActiveParams = asyncWrapper(async (req, res, next
 exports.validateintegrationsMasterExistenceParams = asyncWrapper(async (req, res, next) => {
     const { cardConnectIntegrationsMasterId } = req.params;
 
-    console.log('cardConnectIntegrationsMasterId:===', cardConnectIntegrationsMasterId)
+
     const integrationMasterDetails = await cardconnectIntegrationsMastersModel.findById(cardConnectIntegrationsMasterId)
     if (!integrationMasterDetails) {
         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
@@ -111,7 +111,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
     }
 
     let credentialsValidation = await validateServiceProviders(payload)
-    // console.log("credentialsValidation===validated", credentialsValidation)
+
 
     if (credentialsValidation.status === "fail" || credentialsValidation === undefined || credentialsValidation.statusCode !== 200) {
         return res.status(credentialsValidation?.statusCode).json({
@@ -285,7 +285,7 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
             message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_SETTINGS_RECORD_NOT_FOUND,
         });
     }
-    console.log("newSettings==", newSettings)
+
     let prepareReqObj = {
         ...newSettings,
         updatedBy: req.user._id
@@ -307,73 +307,6 @@ exports.editIntegrationsMasterSettings = asyncWrapper(async (req, res) => {
 })
 
 
-
-
-/**
- * 
- */
-// exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
-//     let { date } = req.body;
-//     let { cardConnectIntegrationsMasterId } = req.params;
-//     let integrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.findOne({ cardConnectIntegrationsMasterId });
-
-
-
-
-//     let getAuthenticated = await authenticationResponse(cardConnectIntegrationsMasterId);
-//     console.log("getAuthenticated===", getAuthenticated)
-
-
-
-//     let baseUrl = 'https://{{site}}.cardconnect.com/cardconnect/rest/funding?merchid={{merchid}}&date={{date}}';
-//     let prepareUrlWithPKV = await modifyUrl(baseUrl, integrationsMasterCredentials, date)
-//     console.log("prepareUrlWithPKV===", prepareUrlWithPKV)
-//     let allTxns = [];
-//     let page = 1;
-//     let totalInserted = 0;
-
-//     while (true) {
-//         let finalUrl = `${prepareUrlWithPKV}&page=${page}&limit=10000`;
-
-//         let response = await axios.get(finalUrl, {
-//             headers: getAuthenticated?.requestMethod === "headers" ? getAuthenticated.responseData : {},
-//             data: getAuthenticated?.requestMethod === "body" ? getAuthenticated.responseData : {}
-//         });
-
-//         let txns = response.data.txns || [];
-//         if (txns.length === 0) break;
-
-//         if (txns.length > 0) {
-//             // prepare bulk insert objects
-//             let recordsToInsert = txns.map(txn => ({
-//                 cardConnectIntegrationsMasterId: req.params.cardConnectIntegrationsMasterId,
-//                 accountId: integrationsMasterCredentials.accountId,
-//                 userId: integrationsMasterCredentials.userId,
-//                 transaction: txn,
-//                 status: txn.status,
-//                 transactionType: txn.type,
-//                 createdBy: req.user._id
-//             }));
-
-//             // bulk insert
-//             await cardConnectTransactionsModel.insertMany(recordsToInsert, { ordered: false });
-//             totalInserted += recordsToInsert.length;
-//         }
-
-
-
-//         console.log(`Fetched page ${page}, ${txns.length} records`);
-//         page++;
-
-//         // Only wait if you're going to fetch the next page
-//         await new Promise(res => setTimeout(res, 3100));
-//     }
-
-//     console.log(`Total Inserted: ${totalInserted}`);
-//     res.json({ message: "Funding transactions fetched and stored", totalInserted });
-
-
-// })
 
 
 /**
@@ -435,17 +368,16 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
 
 
     let getAuthenticated = await authenticationResponse(accountId);
-    console.log("getAuthenticated===", getAuthenticated)
+
 
     let integrationAPIUrlFlows = await cardConnectIntegrationsAPIUrlsFlowModel.findOne({ accountId, status: "active" });
 
 
 
     let apiUrlFlows = integrationAPIUrlFlows.APIUrlFlows.filter((url) => url.status === 'active');
-    console.log("apiUrlFlows.length===", apiUrlFlows.length)
+
 
     let processFlows = await processAPIUrlFlows(apiUrlFlows, getAuthenticated, integrationsMasterCredentials, date, createIntegrationsCron._id);
-    console.log("processFlows===", processFlows)
 
 
 
@@ -532,10 +464,10 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
 
 
     let dateDumpRange = integrationsMasterDetails[0].cardconnectintegrationssettings.dataDumpRange;
-    console.log("dateDumpRange===", dateDumpRange)
+
 
     let dateRange = generateDateRange(dateDumpRange);
-    console.log("dateRange===", dateRange)
+
     let storeDateRange = dateRange.map((unformattedDate) => {
         return (
             unformattedDate.slice(0, 4) + "-" +    // year
@@ -644,7 +576,6 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
 
     //----------------------------------
     let generatedDateArray = generateDateArray(fromDate, toDate)
-    console.log("generatedDateArray===", generatedDateArray)
 
     let storeDateRange = generatedDateArray.map((unformattedDate) => {
         return (

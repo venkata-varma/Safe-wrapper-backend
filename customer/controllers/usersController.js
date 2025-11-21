@@ -54,7 +54,7 @@ Returns newly created user
 exports.createUser = asyncWrapper(async (req, res) => {
   const { name, email, phone, role, password, createdBy } = req.body
   const userDetails = await usersModel.findOne({ $or: [{ email }, { phone }] })
-  console.log(password, "password")
+
   if (userDetails) {
     return res.status(customConstants.statusCodes.DATA_CONFLICAT).json({
       status: customConstants.messages.MESSAGE_FAIL,
@@ -175,7 +175,7 @@ exports.getUserDetails = asyncWrapper(async (req, res) => {
  */
 exports.getAllUsers = asyncWrapper(async (req, res) => {
   // const users = await usersModel.find({ accountId: req.params.accountId, role:{$eq:req.user.role === "super-admin"} }, { password: 0 });
-  console.log('req.user.role:===', req.user.role)
+
   const users = await usersModel.find(
     {
       accountId: req.params.accountId,
@@ -201,7 +201,7 @@ exports.getAllUsers = asyncWrapper(async (req, res) => {
  */
 exports.middlewareUpdateUserDetails = asyncWrapper(async (req, res, next) => {
   const userStatusCheck = await usersModel.findById(req.params.userId);
-  console.log('userStatusCheck', userStatusCheck)
+
   if (userStatusCheck.status === 'deleted') {
     return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
       status: customConstants.messages.MESSAGE_FAIL,
@@ -236,7 +236,7 @@ exports.updateUserDetails = asyncWrapper(async (req, res) => {
   }
   const userObject = updateUser.toObject();
   delete userObject.password;
-  console.log("updateUser-delete password", userObject);
+
   // Return success response
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -306,7 +306,6 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
 
   // Compare password 
   const comparePasswordResult = await comparePassword(password, user.password);
-  console.log(comparePasswordResult, "comparePasswordResult");
 
   // If password does not match
   if (!comparePasswordResult) {
@@ -432,7 +431,7 @@ Funtion to check
 If returns True, moves to "next" function , "updatePassword"
 */
 exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
-  // console.log("Rweq", req.body)
+
   const { userId } = req.params
   const { currentPassword, newPassword } = req.body;
 
@@ -457,11 +456,9 @@ exports.middlewareToUpdatePassword = asyncWrapper(async (req, res, next) => {
     });
   }
 
-  console.log(currentPassword, "comparePasswordResult");
-  console.log(user.password, "user.password");
+
   // Compare password 
   const comparePasswordResult = await comparePassword(currentPassword, user.password);
-  console.log(comparePasswordResult, "comparePasswordResult");
 
   // If password does not match
   if (!comparePasswordResult) {

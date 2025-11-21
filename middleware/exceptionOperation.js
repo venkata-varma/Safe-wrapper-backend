@@ -2,8 +2,8 @@ const { default: mongoose } = require("mongoose")
 const exceptionsModel = require('../models/webhookExceptionsModel')
 
 exports.exceptionLogs = async (exceptionObject, status, exceptionMessage, exceptionTitle, exceptionErrorObject, exceptionApiService) => {
-   
-    console.log('exceptionObject:===', exceptionObject)
+
+
     const validObjectId = (id) => {
         return mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : null;
     };

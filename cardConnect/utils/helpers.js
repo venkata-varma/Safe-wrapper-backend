@@ -114,15 +114,14 @@ const getRequiredWODetailsTODisplay = async (responseObject, requiredDatapoints)
 
     // 👉 Convert numeric UNIX timestamp (seconds) to Date
     if (mappedKey.toLowerCase().includes("date")) {
-      //console.log("mappedKey===", mappedKey)
-      //  console.log("result===", result)
+
       result = normalizeDate(result);
 
     }
     prePareResult[`${mappedKey}`] = result
   }
 
-  //console.log("prePareResult:===", prePareResult)
+
   return prePareResult
 }
 
@@ -135,9 +134,7 @@ const getRequiredWODetailsTODisplay = async (responseObject, requiredDatapoints)
 
 
 exports.getProcessedDisplayPoints = async (getAllTransactions, requiredDataPoints) => {
-  //  console.log("getAllTransactions===", getAllTransactions[0])
 
-  // console.log("requiredDataPoints===", requiredDataPoints)
 
   let WOData = []
   await Promise.all(
@@ -149,7 +146,6 @@ exports.getProcessedDisplayPoints = async (getAllTransactions, requiredDataPoint
         ...record,
         ...rawMetaData,
       }
-      //console.log("parsedMetaData", parsedMetaData)
 
       let processedRecord = await getRequiredWODetailsTODisplay(
         parsedMetaData,

@@ -33,7 +33,7 @@ exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
     const { accountName, companyName, email, phone, password, location } = req.body;
 
 
-    if (!accountName || !companyName || !email || !phone || !password || !location ) {
+    if (!accountName || !companyName || !email || !phone || !password || !location) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
@@ -78,9 +78,9 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            role:"admin",
+            role: "admin",
 
-           logo: req.file ? await preSignedUrlToUpload(req.file) : ""
+            logo: req.file ? await preSignedUrlToUpload(req.file) : ""
         })
         const customId = new mongoose.Types.ObjectId();
 
@@ -94,7 +94,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             companyName: companyName,
             phone: phone,
             email: email,
-            role:"admin",
+            role: "admin",
         });
         await accountSettingsModel.create({
             accountId: accountData._id,
@@ -195,10 +195,10 @@ exports.deleteAccount = asyncWrapper(async (req, res) => {
 */
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
-    console.log('accountId:===',accountId)
-    const verifyAccountStatus = await accountsModel.findById({_id: new mongoose.Types.ObjectId(accountId)})
+
+    const verifyAccountStatus = await accountsModel.findById({ _id: new mongoose.Types.ObjectId(accountId) })
     const reqAccountType = req.user.accountId.accountType
-    // console.log('verifyAccountStatus:===',verifyAccountStatus)
+
     if (!verifyAccountStatus || verifyAccountStatus.status !== 'active' && reqAccountType === 'customer') {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,

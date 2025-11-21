@@ -21,7 +21,7 @@ exports.getMerchantsNamesInDropdown = asyncWrapper(async (req, res, next) => {
 
     let merchantNames;
     if (req.user.accountId.accountType === 'super-admin') {
-        console.log("its suprr admin")
+
         merchantNames = await accountsModel.aggregate([
             {
                 $match: {
@@ -47,7 +47,7 @@ exports.getMerchantsNamesInDropdown = asyncWrapper(async (req, res, next) => {
             }
         ])
     } else if (req.user.accountId.accountType === 'merchant') {
-        console.log("its merchant")
+
         let accountDetails = req.user.accountId   //(Populated object)
         merchantNames = [{
             merchantName: accountDetails?.accountName,
@@ -300,7 +300,7 @@ exports.getSingleIntegrationView = asyncWrapper(async (req, res) => {
         let possibleTransactionTypeKeys = integrationsMasterDetails[0]?.cardconnectintegrationssettings?.transactionTypeKeys
 
 
-        // console.log("getAllTransactions===", getAllTransactions.length)
+
         let getStatusMappings = await statusMappings(statusGroupBy, possibleTransactionStatusKeys);
 
 
@@ -366,9 +366,6 @@ exports.getSingleIntegrationLoadedData = asyncWrapper(async (req, res) => {
     }
     fromDate = new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss'))
     toDate = new Date(moment(toDate).format('YYYY-MM-DDTHH:mm:ss'))
-    console.log("fromDate===", fromDate)
-    console.log("toDate===", toDate)
-
 
 
 
@@ -493,7 +490,7 @@ exports.getSingleIntegrationLoadedData = asyncWrapper(async (req, res) => {
 
     } else if (type === "activity-logs") {
         data = await cardConnectIntegrationsCronsModel.find({ accountId, createdAt: { $gte: fromDate, $lte: toDate } }).sort({ createdAt: -1 })
-   
+
     }
 
 
@@ -1027,7 +1024,7 @@ exports.getAllCardConnectPayloadHeaders = async () => {
 
 
 exports.getMerchantCardConnectExceptions = async (fromDate, toDate, paymentType, accountId) => {
-    // console.log("fromDate, toDate, paymentType,accountId===", fromDate, toDate, paymentType, accountId)
+
     let getMerchantExceptions = await cardConnectExceptionsModel.aggregate([
         {
             $match: {
@@ -1123,8 +1120,7 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
         const fromDate = new Date(getLastSiWeeksResult[0].fromDate);
         const toDate = new Date(getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate);
 
-        console.log("fromDate type:", typeof fromDate, fromDate);
-        console.log("toDate type:", typeof toDate, toDate);
+
         let pipeline = await cardConnectTransactionsModel.aggregate([
             {
                 $match: {

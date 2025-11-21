@@ -26,7 +26,7 @@ const cardConnectExceptionsModel = require("../../cardConnect/models/cardConnect
 
 exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, selectDashboardArray, serialNumbers, cashTransactionTypes, accountId) => {
 
-    // console.log("fromDate, toDate, merchantNamesArray, selectDashboardArray, serialNumbers, cashTransactionTypes, accountId ", fromDate, toDate, merchantNamesArray, selectDashboardArray, serialNumbers, cashTransactionTypes, accountId)
+
     if (!fromDate || !toDate) {
         throw new Error(' From date, and To date are required');
     }
@@ -36,11 +36,6 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
     }
     fromDate = new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss'))
     toDate = new Date(moment(toDate).format('YYYY-MM-DDTHH:mm:ss'))
-    console.log("fromDate===", fromDate)
-    console.log("toDate===", toDate)
-
-
-    console.log("merchantNamesArray===", merchantNamesArray)
 
     merchantNamesArray = merchantNamesArray
         .filter(id => id && id.length === 24) // keep only valid ObjectId strings
@@ -86,8 +81,6 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
     if (cashTransactionTypesArray.length > 0) {
         matchConditions.transactionType = { $in: cashTransactionTypesArray };
     }
-    console.log("fromDate--=", fromDate);
-    console.log("toDate--=", toDate);
 
     var webhookTransactionDetails
     if (merchantNamesArray.length === 0) {
@@ -137,7 +130,6 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
         }
     ]);
 
-    console.log("webhookTransactionDetails===", webhookTransactionDetails.length)
 
     return webhookTransactionDetails
 
@@ -166,8 +158,6 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
     }
     fromDate = new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss'))
     toDate = new Date(moment(toDate).format('YYYY-MM-DDTHH:mm:ss'))
-    console.log("fromDate===", fromDate)
-    console.log("toDate===", toDate)
 
 
     merchantNamesArray = merchantNamesArray
@@ -213,8 +203,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
 
 
     }
-    console.log("fromDate-=-", fromDate)
-    console.log("toDate-=-", toDate)
+
     var cardTransactionDetails
     if (merchantNamesArray.length === 0) {
         cardTransactionDetails = []
@@ -364,7 +353,7 @@ exports.dashboardFiltersCardConnect = async (cardTransactionTypes, cardTransacti
             }
         }
     ]);
-    console.log("cardTransactionDetails===", (cardTransactionDetails.length))
+
     return cardTransactionDetails
 
 
@@ -442,8 +431,7 @@ exports.getSummaryDetails = async (returnDashboardFiltersSafeCash, returnDashboa
 
     }
 
-    // console.log("machineSummaryDetails===", machineSummaryDetails)
-    // console.log("cardConnectSummaryDetails===", cardConnectSummaryDetails)
+
 
     if (returnDashboardFiltersSafeCash.length > 0 && returnDashboardFiltersCardConnect.length > 0) {
         summaryDetails.push(machineSummaryDetails, cardConnectSummaryDetails)

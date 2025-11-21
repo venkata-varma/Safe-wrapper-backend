@@ -11,7 +11,7 @@ const asyncWrapper = require('./asyncWrapper')
 const accountsModel = require('../../models/accountsModel')
 
 
-const initiateCronJob =async (integration) => {
+const initiateCronJob = async (integration) => {
     const { accountId } = integration?.accountId;
 
     let integrationsMasterDetails = await accountsModel.aggregate([
@@ -67,7 +67,7 @@ const initiateCronJob =async (integration) => {
         dateRange,
         cronJobType: "automated"
     })
-    // console.log("createIntegrationsCron===", createIntegrationsCron)
+
     await cardConnectIntegrationsSettingsModel.findOneAndUpdate({ accountId }, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
 
     let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], accountId, createIntegrationsCron._id);
@@ -95,7 +95,7 @@ const initiateCronJob =async (integration) => {
 
 exports.schedulerIntegrationCronJobs = async (integration) => {
     try {
-        console.log("try block",)
+
 
 
         let schedulePeriodType = integration?.periodSettings?.periodType;
@@ -106,7 +106,7 @@ exports.schedulerIntegrationCronJobs = async (integration) => {
 
         if (schedulePeriodType === 'once each minute') {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60);
-            console.log('scheduleTime:===', scheduleTime)
+
         } else if (schedulePeriodType === 'once each hour') {
             scheduleTime = (currentTime - lastPullTime) / (1000 * 60 * 60);
         } else if (schedulePeriodType === 'once each day') {
@@ -118,13 +118,10 @@ exports.schedulerIntegrationCronJobs = async (integration) => {
 
 
 
-        console.log('lastPullDate:===', lastPullTime)
-        console.log('currentTime:===', currentTime)
-        console.log('scheduleTime:===', scheduleTime)
 
         if (Math.round(scheduleTime) >= scheduleInterval) {
             if (integration?.accountId?.status === 'active') {
-                console.log("write main function here")
+
                 await initiateCronJob(integration)
             }
         }

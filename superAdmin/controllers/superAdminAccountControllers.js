@@ -208,7 +208,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         })
     }
     else {
-        console.log("req.user===", req.user)
+
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
@@ -396,10 +396,10 @@ exports.updateAccountStatus = asyncWrapper(async (req, res) => {
 */
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
-    console.log('accountId:===', accountId)
+
     const verifyAccountStatus = await accountsModel.findById({ _id: new mongoose.Types.ObjectId(accountId) })
     const reqAccountType = req.user.accountId.accountType
-    // console.log('verifyAccountStatus:===',verifyAccountStatus)
+
     if (!verifyAccountStatus || verifyAccountStatus.status !== 'active' && reqAccountType === 'merchant') {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -523,7 +523,7 @@ exports.getAccountAndCardConnectInterationDetails = asyncWrapper(async (req, res
 
 
 exports.getAllCardConnectExceptions = async (fromDate, toDate, paymentType) => {
-    console.log("fromDate, toDate, paymentType===", fromDate, toDate, paymentType)
+
     let getAllExceptions = await cardConnectExceptionsModel.aggregate([
         {
             $addFields: {
@@ -585,8 +585,7 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
     const fromDate = new Date(getLastSiWeeksResult[0].fromDate);
     const toDate = new Date(getLastSiWeeksResult[getLastSiWeeksResult.length - 1].toDate);
 
-    console.log("fromDate type:", typeof fromDate, fromDate);
-    console.log("toDate type:", typeof toDate, toDate);
+
     let pipeline = await cardConnectTransactionsModel.aggregate([
 
         {

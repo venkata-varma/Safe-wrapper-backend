@@ -15,7 +15,7 @@ const superAdminAuth = asyncWrapper(async (req, _res, next) => {
     throw new Error(customConstants.messages.MESSAGE_SESSION_NO_TOKEN);
   } else {
     const payload = await jwt.verify(token, "secret");
-    console.log(payload.userId, token, "goood");
+
     const user = await usersModel.findById(payload.userId).populate('accountId');
     const sessionObject = await sessionModel.findOne({
       userId: payload.userId,
@@ -34,21 +34,21 @@ const superAdminAuth = asyncWrapper(async (req, _res, next) => {
           status: customConstants.messages.MESSAGE_EXPIRED,
           message: customConstants.messages.MESSAGE_SESSION_EXPIRED,
         });
-    } else if(user.accountId.accountType!=='super-admin'){
+    } else if (user.accountId.accountType !== 'super-admin') {
       _res
-      .status(customConstants.statusCodes.FORBIDDEN)
-      .json({
-        status: customConstants.messages.MESSAGE_FAIL,
-        message: customConstants.messages.MESSAGE_SUPER_ADMIN_ENTRY,
-      });
+        .status(customConstants.statusCodes.FORBIDDEN)
+        .json({
+          status: customConstants.messages.MESSAGE_FAIL,
+          message: customConstants.messages.MESSAGE_SUPER_ADMIN_ENTRY,
+        });
     }
-    
-    else{
-      req.user=user;
+
+    else {
+      req.user = user;
 
       next();
     }
   }
 });
 
-module.exports = {superAdminAuth};
+module.exports = { superAdminAuth };

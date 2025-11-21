@@ -9,98 +9,7 @@ const onePosLogsModel = require('../../models/onePosLogsModel');
 const { getAllWebhookPayoadHeadersOfAllAccountsFn } = require('./superAdminWebhooksController');
 
 
-/*
-Miidleware function to controller, "loginUser"
-Mandatory fields -> Phone and Password
-Funtion to check 
-  1.Existence of mandatory fields, 
-  2.Mandatorys status of Account, 
-  3.Validation of credentials, password
-If returns True, moves to "next" function , "loginUser"
-*/
-
-/*
-
 exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
-
-  console.log("Rweq", req.body)
-
-  const { mobileEmail, password, sessionExpirationTime } = req.body;
-
-  if (!mobileEmail || !password) {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_FIELDS_MANDATORY,
-    });
-  }
-  const value = String(sessionExpirationTime).trim().toLowerCase();
-  const dayPattern = /^(\d+)(d)?$/;
-
-  if (!dayPattern.test(value)) {
-    return res.status(400).json({
-      message: customConstants.messages.MESSAGE_REQUEST_BODY_ERROR,
-      status: customConstants.messages.MESSAGE_FAIL,
-      error: "Invalid sessionExpirationTime. It must be specified in days only (e.g.'2d'). Hours, minutes, or other formats are not allowed."
-    });
-  }
-  let validatedUserMobileAndEmailData = validateUserMobileEmailData(req.body);
-  if (validatedUserMobileAndEmailData.error) {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      message: customConstants.messages.MESSAGE_REQUEST_BODY_ERROR,
-      status: customConstants.messages.MESSAGE_FAIL,
-      error: validatedUserMobileAndEmailData.error.details
-    });
-  }
-  const user = await usersModel.findOne({ $or: [{ phone: mobileEmail }, { email: mobileEmail }] }).populate('accountId');
-  
-  // If user not found
-  if (!user) {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_PHONE_NOT_EXISTS,
-    });
-  }
-  if (req.originalUrl.includes("super-admin")&& user.accountId.accountType !== 'super-admin') {
-    return res.status(customConstants.statusCodes.FORBIDDEN).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_SUPER_ADMIN_ENTRY,
-    });
-  }
-  if (user.accountId.status === 'in-progress') {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_IN_PROGRESS,
-    });
-  }
-  if (user.accountId.status === 'deleted' || user.status === 'deleted') {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED,
-    });
-  }
-  
-
-  // Compare password 
-  const comparePasswordResult = await comparePassword(password, user.password);
-  console.log(comparePasswordResult, "comparePasswordResult");
-
-  // If password does not match
-  if (!comparePasswordResult) {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_WRONG_PASSWORD,
-    });
-  }
-  next()
-
-})
-
-
-*/
-
-
-exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
-  console.log("Req Body:", req.body);
 
   const { mobileEmail, password } = req.body;
 
@@ -168,7 +77,6 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
 
 
 exports.validateLoginProcessForSwagger = asyncWrapper(async (req, res, next) => {
-  console.log("Req Body:", req.body);
 
   const { mobileEmail, password, sessionExpirationTime } = req.body;
 
@@ -248,7 +156,7 @@ If middleware returns True, this function create session with valid JWT token
 Mandatory fields -> Phone and Password 
 */
 exports.loginUserForSwagger = asyncWrapper(async (req, res) => {
-  console.log('Requwest:====', req.url)
+
   const { mobileEmail, password, sessionExpirationTime } = req.body;
   let user_details = {};
   // Find user by email or phone

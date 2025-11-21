@@ -28,29 +28,6 @@ async function createTransactionLifeCycleRecord(requestObject, integrationsMaste
         customerDetails: requestObject?.customerDetails
     })
 
-
-
-    // let findExisting = await cardConnectTransactionLifeCycleModel.findOne(
-    //     {
-    //         accountId: integrationsMasterCredentials?.accountId,
-    //         transactionId: requestObject?.referenceId,
-    //         transactionStatus: requestObject?.referenceStatus
-    //     }
-    // );
-    // if (!findExisting) {
-    //     await cardConnectTransactionLifeCycleModel.create({
-
-    //         accountId: integrationsMasterCredentials?.accountId,
-    //         userId: integrationsMasterCredentials?.userId,
-    //         transactionId: requestObject?.referenceId,
-    //         transactionStatus: requestObject?.referenceStatus,
-    //         responseObject: JSON.stringify(requestObject?.responseObject)
-    //     })
-    // } else if (findExisting) {
-    //     console.log("record with same status exisis")
-    //     return;
-    // }
-
 }
 
 
@@ -219,7 +196,6 @@ async function authenticationResponse(accountId) {
 
     let encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationsMasterCredentials.credentials };
     let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-    // console.log("decryptConfigCredentials====", decryptConfigCredentials)
 
 
 
@@ -275,7 +251,7 @@ async function authenticationResponse(accountId) {
 
 
     } catch (error) {
-        //console.log('ERORRR:===', error)
+
         return { statusCode: error?.response?.status, statusText: error?.response?.statusText, status: customConstants.messages.MESSAGE_FAIL, message: customConstants.messages.MESSAGE_CARD_CONNECT_CREDENTIALS_VALIDATION_FAILED, data: error?.response?.data }
     }
 
@@ -436,7 +412,7 @@ async function initiateManualTrigger(dateRange, integrationsMasterDetails, accou
     for (let date of dateRange) {
         console.log("Cron running for date===", date)
         let getAuthenticated = await authenticationResponse(accountId);
-        //     console.log("getAuthenticated===", getAuthenticated)
+
 
         let apiUrlFlows = integrationsMasterDetails.cardconnectintegrationsapiurlflows.APIUrlFlows;
         apiUrlFlows = apiUrlFlows.filter((url) => url.status === 'active');

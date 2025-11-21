@@ -49,7 +49,7 @@ const createWebhookException = async (
 exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
 
   const splitUrlToGetParams = req.originalUrl.split("/");
-  console.log("req.headers", req.headers)
+
   let accountId = splitUrlToGetParams[splitUrlToGetParams.length - 1];
   if (!req.headers.authorization) {
     await createWebhookException(
@@ -74,8 +74,6 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
   let token = req.headers.authorization;
 
 
-  console.log("accountId", accountId);
-  console.log("token:===", token);
 
   if (!["Bearer"].includes(req.headers.authorization.split(" ")[0])) {
     await createWebhookException(
@@ -113,7 +111,7 @@ exports.validateWebHookReceiveData = asyncWrapper(async (req, res, next) => {
   let encryptReceivedToken = await encryptData({
     authenticationCode: token,
   });
-  console.log("encryptReceivedToken:===", encryptReceivedToken);
+
   const webHookDetails = await webHooksMasterModel
     .findOne({ authenticationCode: encryptReceivedToken })
     .populate("accountId")
