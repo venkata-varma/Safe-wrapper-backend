@@ -1,3 +1,5 @@
+const onePosLogsModel = require("../models/onePosLogsModel");
+
 function formatDate(date, isEndOfDay = false) {
   const pad = (num) => String(num).padStart(2, '0');
   const year = date.getFullYear();
@@ -31,16 +33,16 @@ function dateAsset() {
 
   // Array to hold the 7 objects
   return Array.from({ length: 7 }, (_, i) => {
-      const currentDate = new Date(now);
-      currentDate.setDate(now.getDate() - i);
-      const fromDate = new Date(currentDate);
-      const toDate = new Date(currentDate);
-      toDate.setHours(23, 59, 59, 999);
-      return {
-          fromDate: formatDate(fromDate),
-          toDate: formatDate(toDate, true),
-          day: formatDate(fromDate).split('T')[0]
-      };
+    const currentDate = new Date(now);
+    currentDate.setDate(now.getDate() - i);
+    const fromDate = new Date(currentDate);
+    const toDate = new Date(currentDate);
+    toDate.setHours(23, 59, 59, 999);
+    return {
+      fromDate: formatDate(fromDate),
+      toDate: formatDate(toDate, true),
+      day: formatDate(fromDate).split('T')[0]
+    };
   });
 }
 
@@ -49,28 +51,43 @@ function EmailDateAsset(currentDateAndTime) {
 
   // Array to hold the 7 objects
   return Array.from({ length: 7 }, (_, i) => {
-      const currentDate = new Date(now);
-      currentDate.setDate(now.getDate() - i);
-      const fromDate = new Date(currentDate);
-      const toDate = new Date(currentDate);
-      toDate.setHours(23, 59, 59, 999);
-      return {
-          fromDate: formatDate(fromDate),
-          toDate: formatDate(toDate, true),
-          day: formatDate(fromDate).split('T')[0]
-      };
+    const currentDate = new Date(now);
+    currentDate.setDate(now.getDate() - i);
+    const fromDate = new Date(currentDate);
+    const toDate = new Date(currentDate);
+    toDate.setHours(23, 59, 59, 999);
+    return {
+      fromDate: formatDate(fromDate),
+      toDate: formatDate(toDate, true),
+      day: formatDate(fromDate).split('T')[0]
+    };
   });
 }
 
-function returnIndianDate(currentTime){
+function returnIndianDate(currentTime) {
 
-var currentOffset = currentTime.getTimezoneOffset();
+  var currentOffset = currentTime.getTimezoneOffset();
 
-var ISTOffset = 330;   // IST offset UTC +5:30 
+  var ISTOffset = 330;   // IST offset UTC +5:30 
 
-var ISTTime = new Date(currentTime.getTime() + (ISTOffset + currentOffset)*60000);
-return ISTTime
+  var ISTTime = new Date(currentTime.getTime() + (ISTOffset + currentOffset) * 60000);
+  return ISTTime
 }
 
 
-module.exports = { dateAsset,EmailDateAsset, returnIndianDate }
+const insertPosLogs = async (accountId, userId, url, serialNumbers,
+  transactionTypes,
+  fromDate,
+  toDate) => {
+  await onePosLogsModel.create({
+    accountId: accountId,
+    userId: userId,
+    apiCalled: url,
+    serialNumbers: serialNumbers,
+    transactionTypes:transactionTypes,
+    transactionDateAndTimes:[fromDate,toDate]
+  })
+}
+
+
+module.exports = { dateAsset, EmailDateAsset, returnIndianDate, insertPosLogs }

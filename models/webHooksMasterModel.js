@@ -31,13 +31,17 @@ const webhookMastersSchema = new mongoose.Schema(
     },
     webHookUrl: {
       type: String,
-
       required: [true, "Webhook URL code is mandatory"]
     },
     authenticationCode: {
       type: String,
       required: [true, "Authentication code is mandatory"],
       unique: [true, "Authentication code must be unique"]
+    },
+    webhookToken: {
+      type: String,
+      default: null,
+      required: [true, "Webhook token code is mandatory"],
     },
 
     requestObject: {
@@ -46,6 +50,7 @@ const webhookMastersSchema = new mongoose.Schema(
     },
     primaryHookId: {
       type: String,
+      index: true,
       default: "",
     },
     comments: {
@@ -54,12 +59,12 @@ const webhookMastersSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "offline", "delete"],
+      enum: ["active", "offline", "deleted"],
       default: "active",
     },
-    lastPullDate:{
-      type:Date,
-      default:null
+    lastPullDate: {
+      type: Date,
+      default: null
     },
     webhookSettings: {
       periodType: {

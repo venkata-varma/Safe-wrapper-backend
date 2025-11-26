@@ -12,6 +12,7 @@ const { validatePhoneNumber } = require('../../utils/userLoginValidation');
 
 const path = require('path');
 const { preSignedUrlToUpload } = require('../../utils/fileUpload');
+const { decryptData } = require('../../utils/encryptionAlgorithms');
 
 
 exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
@@ -29,10 +30,10 @@ Mandatory fields ->  AccountName, CompanyName, Email, Phone, Password, City, Sta
 If returns True, moves to "next" function,-> "createAccount"
 */
 exports.validateAccountRegistration = asyncWrapper(async (req, res, next) => {
-    const { accountName, companyName, email, phone, password, city, state, pincode, country } = req.body;
+    const { accountName, companyName, email, phone, password, location } = req.body;
 
 
-    if (!accountName || !companyName || !email || !phone || !password || !city || !state || !country || !pincode) {
+    if (!accountName || !companyName || !email || !phone || !password || !location) {
         return res.status(customConstants.statusCodes.UNPROCESSABLE_STATUS_CODE_FAIL).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_MANDATORY_FIELDS
@@ -77,9 +78,9 @@ exports.createAccount = asyncWrapper(async (req, res) => {
         req.body.password = await hashPwd(password)
         const accountData = await accountsModel.create({
             ...req.body,
-            role:"super-admin",
+            role: "admin",
 
-           logo: req.file ? await preSignedUrlToUpload(req.file) : ""
+            logo: req.file ? await preSignedUrlToUpload(req.file) : ""
         })
         const customId = new mongoose.Types.ObjectId();
 
@@ -93,7 +94,7 @@ exports.createAccount = asyncWrapper(async (req, res) => {
             companyName: companyName,
             phone: phone,
             email: email,
-            role:"super-admin",
+            role: "admin",
         });
         await accountSettingsModel.create({
             accountId: accountData._id,
@@ -194,10 +195,10 @@ exports.deleteAccount = asyncWrapper(async (req, res) => {
 */
 exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     const { accountId } = req.params
-    console.log('accountId:===',accountId)
-    const verifyAccountStatus = await accountsModel.findById({_id: new mongoose.Types.ObjectId(accountId)})
+
+    const verifyAccountStatus = await accountsModel.findById({ _id: new mongoose.Types.ObjectId(accountId) })
     const reqAccountType = req.user.accountId.accountType
-    // console.log('verifyAccountStatus:===',verifyAccountStatus)
+
     if (!verifyAccountStatus || verifyAccountStatus.status !== 'active' && reqAccountType === 'customer') {
         return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
             status: customConstants.messages.MESSAGE_FAIL,
@@ -209,3 +210,69 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
     }
 });
 
+
+
+
+
+exports.getAccountAndCardConnectInterationDetails = asyncWrapper(async (req, res) => {
+    let { accountId } = req.params;
+
+    let accountAndCardConnectIntegrationDetails = await accountsModel.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(accountId)
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationscredentials",
+                localField: "_id",
+                foreignField: "accountId",
+                as: "cardconnectintegrationscredentials"
+            }
+        },
+        {
+            $lookup: {
+                from: "cardconnectintegrationssettings",
+                localField: "_id",
+                foreignField: "accountId",
+                as: "cardconnectintegrationssettings"
+            }
+        },
+        {
+            $unwind: {
+                path: "$cardconnectintegrationscredentials",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $unwind: {
+                path: "$cardconnectintegrationssettings",
+                preserveNullAndEmptyArrays: true
+            }
+        }
+    ]);
+
+    if (accountAndCardConnectIntegrationDetails.length > 0) {
+        // ensure defaults if null
+        accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials =
+            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials || {};
+
+        accountAndCardConnectIntegrationDetails[0].cardconnectintegrationssettings =
+            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationssettings || {};
+
+        // decrypt only if credentials exist
+        let encryptedData = accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials?.credentials;
+        if (encryptedData) {
+            let encrypted = { iv: process.env.CRYPTO_IV, encryptedData };
+            let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
+            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials.credentials = decryptConfigCredentials;
+        }
+    }
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.ACCOUNT_AND_CARD_CONNECT_INTEGRATION_DETAILS,
+        data: accountAndCardConnectIntegrationDetails
+    });
+});

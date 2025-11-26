@@ -1,12 +1,4 @@
 const crypto = require('crypto');
-// const key = crypto.randomBytes(32); // 32 bytes = 256 bits
-// const iv = crypto.randomBytes(16);  // 16 bytes = 128 bits
-
-// console.log('ENCRYPTION_KEY:', key.toString('hex'));
-// console.log('ENCRYPTION_IV:', iv.toString('hex'));
-
-
-// Algorithm, key, and IV setup
 
 /*
 Function to Encrypt credentials
@@ -20,7 +12,7 @@ function encryptData(text) {
     const cipher = crypto.createCipheriv(process.env.CRYPTO_ALGORITHM, key, iv);
     let encrypted = cipher.update(jsonText, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    // console.log("encrypted", encrypted)
+
     return encrypted;
 }
 

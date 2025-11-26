@@ -4,74 +4,77 @@ const jwt = require('jsonwebtoken')
 const usersSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        default:null
+        default: null
     },
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref:"accounts",
-        index : true,
-        default:null
+        ref: "accounts",
+        index: true,
+        default: null
     },
-    name:{
-        type:String,
-        require:[true, 'Account name is required.'],
-        default:""
+    name: {
+        type: String,
+        require: [true, 'Account name is required.'],
+        default: ""
     },
-    password:{
-        type:String,
-        required:[true, 'Password is required.'],
-        default:""
+    password: {
+        type: String,
+        required: [true, 'Password is required.'],
+        default: ""
     },
-    role:{
-        type:String,
-        default:""
+    role: {
+        type: String,
+        default: ""
     },
-    phone:{
-        type:String,
-        required:[true, 'Mobile number is required.'],
+    phone: {
+        type: String,
+        required: [true, 'Mobile number is required.'],
         minlength: 10,
         maxlength: 15,
         match: /^[0-9]+$/,
-        default:"",
-        unique:[true, 'Phone must be unique']
+        default: "",
+        unique: [true, 'Phone must be unique']
     },
-    email:{
-        type:String,
-        required:[true, 'Email is required.'],
-        default:"",
-        unique:[true, 'Email must be unique']
+    email: {
+        type: String,
+        required: [true, 'Email is required.'],
+        default: "",
+        unique: [true, 'Email must be unique']
     },
-    role:{
-        type:String,
-        enum:['super-admin','admin','manager', 'support'],
-        required:[true, 'Role is required.'],
-        default:"admin"
+    role: {
+        type: String,
+        enum: ['super-admin', 'admin', 'manager', 'support', "merchant"],
+        // required:[true, 'Role is required.'],
+        default: "admin"
     },
-    authUser:{
-        type:"String",
-        default:"loomis"
+    authUser: {
+        type: "String",
+        default: "loomis"
     },
-    status:{
-        type:String,
-        enum:['active','deleted', 'blocked'],
-        default:"active"
+    status: {
+        type: String,
+        enum: ['active', 'deleted', 'blocked'],
+        default: "active"
     },
-    createdBy:{
+    createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
-       // required:[true, 'Created by is required.'],    // To be un-commented later when provision for admin to create User is provided from Front-end
-        default:null
+        // required:[true, 'Created by is required.'],    // To be un-commented later when provision for admin to create User is provided from Front-end
+        default: null
     },
-    updatedBy:{
+    updatedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
-        default:null
+        default: null
     },
-},{timestamps:true});
+}, { timestamps: true });
 
-usersSchema.methods.getJWTToken = function () {
+usersSchema.methods.getJWTToken = function (sessionExpirationTime) {
+    let jwtExpiresInput;
+    jwtExpiresInput = sessionExpirationTime ? sessionExpirationTime : process.env.JWT_EXPIRES_IN
+
     return jwt.sign({ userId: this._id }, 'secret', {
-        expiresIn: process.env.JWT_EXPIRES_IN,
+        expiresIn: jwtExpiresInput,
     });
 }
 
@@ -81,4 +84,4 @@ usersSchema.methods.getJWTTokenExpireDate = async (jwtToken) => {
 }
 
 
-module.exports = mongoose.model('users',usersSchema)
+module.exports = mongoose.model('users', usersSchema)

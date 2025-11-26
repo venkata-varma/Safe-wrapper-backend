@@ -3,15 +3,9 @@ const router = require("express").Router();
 const {
   createWebHook,
   validateAccountStatusToCreateWebHook,
-  //validateIntegrationForWebHook,
-  //updateWebHook,
-  //getAllWebHooks,
-  //getIndividualWebHook,
-  //updateWebHookStatus,
   generateWebhookToken,
   validateWebHookData,
   createWebHookLog,
-  //getWebHookLogsReports,
   validateWebHookReceiveData,
   receiveWebhookData,
   decryptString,
@@ -19,7 +13,7 @@ const {
   validateWebhookStatus,
   validateAccountStatus,
   getAllWebhooksOfAccount,
-  validateWebhookandAccount,updateWebhookSettings,
+  validateWebhookandAccount, updateWebhookSettings,
   getAllWebhookTransactionsOfAccount,
   getAllWebhookPayoadHeadersOfAccount,
   getDashboardStatisticsOfAccount,
@@ -29,15 +23,12 @@ const {
   validateAuthentication,
   getTransactionsReports,
   getProgressMeterAndTotalsOfSingleMachine,
-  getExceptionsOfAccount
+  getExceptionsOfAccount,
+  getTransactionDenominations,
+  merchantSmartFilteredDashboard
 } = require("../controllers/webHooksController");
 
-router.post(
-  "/:randomNumber/:accountId",
-  validateWebHookReceiveData,
-  receiveWebhookData
-);
-
+// 
 const auth = require("../../middleware/authentication");
 
 router.use(auth);
@@ -47,8 +38,8 @@ router.post(
   createWebHook
 );
 
-router.post("/decrypt-string",  decryptString);
-router.patch('/update-webhook-settings/:webhookMasterId',validateWebhookandAccount,updateWebhookSettings)
+router.post("/decrypt-string", decryptString);
+router.patch('/update-webhook-settings/:webhookMasterId', validateWebhookandAccount, updateWebhookSettings)
 
 router.get(
   "/get-individual-webhook-details/:webhookMasterId",
@@ -56,28 +47,24 @@ router.get(
   getIndividualWebhookDetails
 );
 
-router.get('/get-all-webhook-details/:accountId', validateAccountStatus,getAllWebhooksOfAccount)
+router.get('/get-all-webhook-details/:accountId', validateAccountStatus, getAllWebhooksOfAccount)
 
-router.get('/get-webhook-transactions',getAllWebhookTransactionsOfAccount)
-router.get('/get-webhook-payload-headers/:accountId',getAllWebhookPayoadHeadersOfAccount)
-router.get('/get-dashboard-statistics/:accountId',getDashboardStatisticsOfAccount)
-router.get('/get-list-of-machines',getListOfMachines)
-router.get('/get-all-machine-reports',getAllMachineReports)
-router.get('/get-payload-reports',getPayloadReports)
-router.get('/get-exceptions/:accountId',getExceptionsOfAccount)
+router.get('/get-machine-transactions', getAllWebhookTransactionsOfAccount)
+router.get('/get-machine-payload-headers/:accountId', getAllWebhookPayoadHeadersOfAccount)
+router.get('/get-dashboard-statistics/:accountId', getDashboardStatisticsOfAccount)
+router.get('/get-list-of-machines', getListOfMachines)
+router.get('/get-all-machine-reports', getAllMachineReports)
+router.get('/get-machine-reports', getPayloadReports)
+router.get('/get-exceptions/:accountId', getExceptionsOfAccount)
+router.get('/get-transaction-denominations', getTransactionDenominations)
 
 //One POS
-router.get('/get-transactions-reports',validateAuthentication, getTransactionsReports)
-// router.patch('/update-webhook',validateIntegrationForWebHook, updateWebHook)
-// router.patch('/update-webhook-status',validateIntegrationForWebHook, updateWebHookStatus)
-
- //router.get('/get-all-webhooks',validateIntegrationForWebHook, getAllWebHooks)
-// router.get('/get-single-webhook',validateIntegrationForWebHook,getIndividualWebHook)
-
-// router.get('/get-webhook-logs-reports',validateIntegrationForWebHook, getWebHookLogsReports)
-
-
-
+router.get('/get-transactions-reports', validateAuthentication, getTransactionsReports)
 
 router.get('/get-progres-meter-total-single-machine', getProgressMeterAndTotalsOfSingleMachine)
+
+
+
+
+router.get('/merchant-smart-filtered-dashboard/:accountId', merchantSmartFilteredDashboard)
 module.exports = router;

@@ -35,6 +35,7 @@ const sessionsSchema = new mongoose.Schema({
         enum:['open','closed'],
         default:"open"
     },
+    
 },{timestamps:true});
 
 sessionsSchema.pre('save', function(next) {

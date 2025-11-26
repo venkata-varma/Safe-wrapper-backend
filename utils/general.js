@@ -206,11 +206,11 @@ const getDynamicServiceWorkOrdersAndStatus = async (integrationsMasterId, servic
   let serviceWorkOrdersAndStatus = { presentWeekData: dateAsset() };
   const integrationDetails = await integrationsMasterModel.findById(integrationsMasterId)
   const sourceAndDestinationDatabaseNames = await serviceProviderIntegrationsModel.findOne({ from: integrationDetails.from, to: integrationDetails.to })
-  console.log("operationType:==", operationType)
+
   if (![null, undefined].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName) && ![null, undefined].includes(sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)) {
 
 
-    // console.log('GetData:===', await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName))
+
     serviceWorkOrdersAndStatus.dynamicSourceRecords = operationType === "source"
       ? await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
       : await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName)
@@ -219,7 +219,7 @@ const getDynamicServiceWorkOrdersAndStatus = async (integrationsMasterId, servic
     if (serviceWorkOrdersAndStatus?.dynamicSourceRecords?.sourceAndDestinationRecords?.length > 0) {
       let i = 0;
       if (operationType === "source") {
-        console.log('Enter---Source')
+
         let sourceAndDestinationResults = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.sourceDataBaseName)
         serviceWorkOrdersAndStatus.sourceWorkOrders = sourceAndDestinationResults.sourceAndDestinationRecords
         for (let week of presentWeekData) {
@@ -231,7 +231,7 @@ const getDynamicServiceWorkOrdersAndStatus = async (integrationsMasterId, servic
         }
       }
       else if (operationType === "destination") {
-        console.log('Enter---destination')
+
         let sourceAndDestinationResults = await getSourceAndDestinationDynamicRecords(integrationsMasterId, sourceAndDestinationDatabaseNames?.metrics?.destinationDataBaseName)
         serviceWorkOrdersAndStatus.destinationWorkOrders = sourceAndDestinationResults.sourceAndDestinationRecords
         for (let week of presentWeekData) {
@@ -427,7 +427,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
 
     if (sourceWorkOrderDetails) {
 
-      console.log('source workOrderId');
+
       if (from === 'CPD' && to === 'DF') {
         destinationWorkOrderDetails = await fetchWorkOrderDetails(DFWorkOrdersModel, {
           accountId,
@@ -452,7 +452,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
       destinationWorkOrderLifeCycleDetails = await fetchWorkOrderLifeCycleDetails(destinationWorkOrderDetails?.DFWorkOrderId || destinationWorkOrderDetails?.CYSWorkOrderId || destinationWorkOrderDetails?.SNOWWorkOrderId);
     } else {
       //If Input work order Id is Number type and of from Destination side
-      console.log('destination WorkorderID');
+
       if (from === 'CPD' && to === 'DF') {
         destinationWorkOrderDetails = await fetchWorkOrderDetails(DFWorkOrdersModel, {
           accountId,
@@ -514,7 +514,7 @@ const getSourceAndDestinationWOLifeCycle = async (accountId, integrationsMasterI
     }
   } else {
     //If given input workOrderId is of type "String". Ex: "TMC.....", "CR....."
-    console.log('source WorkOrderNumber');
+
     sourceWorkOrderDetails = await fetchWorkOrderDetails(CPDWorkordersModel, {
       accountId,
       integrationsMasterId,
@@ -713,10 +713,9 @@ const getCPDFullWorkOrderDetails = async (integrationsMasterId, workOrderDetails
   // Find integration credentails and then decrypt and pull CPD calls.
   encrypted = { iv: process.env.CRYPTO_IV, encryptedData: integrationObject.credentials };
   decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-  console.log('decryptConfigCredentials:===', decryptConfigCredentials)
 
   const corrigoToken = await CPDAuthentication(decryptConfigCredentials?.client_id || decryptConfigCredentials?.data?.client_id, decryptConfigCredentials?.client_secret || decryptConfigCredentials?.data?.client_secret, decryptConfigCredentials?.grant_type || decryptConfigCredentials?.data?.grant_type, decryptConfigCredentials.baseUrl, integrationObject);
-  // console.log('corrigoToken:===',corrigoToken)
+
   let getCPDWorkOrderDetails = await axios.get(`${serviceProviderCongiguration.CPD.getWorkOrder.URL}messageId=${workOrderDetails.MessageId}&ids=${workOrderDetails.CPDWorkOrderId}`,
     {
       headers: { Authorization: `bearer ${corrigoToken}` }

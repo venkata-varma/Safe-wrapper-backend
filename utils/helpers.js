@@ -8,13 +8,13 @@ let iv = Buffer.from(process.env.CRYPTO_IV, 'hex')
 async function hashPwd(pwd) {
 
     var hmac = await bcrypt.hash(pwd, Number(process.env.WEBSITE_SALT));
-    console.log('hmac', hmac)
+
     return hmac;
 };
 
 async function comparePassword(password, hashedPassword) {
-    const hashedString =await  bcrypt.compare(password, hashedPassword)
-    console.log("hashed", hashedString)
+    const hashedString = await bcrypt.compare(password, hashedPassword)
+
     return hashedString;
     //if(hashedString)
 }
@@ -57,7 +57,7 @@ for (let i = 0; i < 12; i++) {
 
 
 module.exports = {
-    hashPwd, 
+    hashPwd,
     comparePassword,
-    twelveWeeksSales   
+    twelveWeeksSales
 }

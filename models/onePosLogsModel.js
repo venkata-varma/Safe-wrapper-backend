@@ -28,13 +28,21 @@ const onePosLogsSchema = mongoose.Schema({
         type: [String],
         default: []
     },
+    transactionDateAndTimes:{
+        type:Array,
+        default:[]
+    },
     authenticationDateAndTime: {
         type: Date,
         default: Date.now
     },
     authenticationCount: {
         type: Number,
-        default: 1,
+        default: 0,
+    },
+    expirationTime:{
+        type:Date,
+        default:null
     }
 },
 {timestamps: true});

@@ -26,6 +26,7 @@ const webhookPayloadHeaders = new mongoose.Schema({
     },
     serialNumber: {
         type: String,
+        index:true,
         default: ""
     },
     retrievedOn: {
@@ -34,6 +35,7 @@ const webhookPayloadHeaders = new mongoose.Schema({
     },
     transactionDateTime: {
         type: String,
+        index:true,
         default: ""
     },
     userName: {
@@ -42,6 +44,7 @@ const webhookPayloadHeaders = new mongoose.Schema({
     },
     transactionType: {
         type: String,
+        index:true,
         default: ""
     },
     location:{

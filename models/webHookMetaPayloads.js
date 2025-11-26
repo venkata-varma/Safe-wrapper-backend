@@ -27,6 +27,10 @@ const webhookMetaPayloads = new mongoose.Schema({
         dataType: String,
         default: {}
     },
+    transactionsCount:{
+        type:Number,
+        default:0
+    },
     status: {
         type: String,
         enum: ['received', 'in-progress', 'executed', 'execution-failed', 'deleted'],
@@ -35,6 +39,7 @@ const webhookMetaPayloads = new mongoose.Schema({
     primaryHookId: {
         type: String,
         // unique:true,
+        index:true,
         default: ""
     }
 }, { timestamps: true })
