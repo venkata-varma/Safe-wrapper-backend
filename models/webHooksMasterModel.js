@@ -41,7 +41,7 @@ const webhookMastersSchema = new mongoose.Schema(
     webhookToken: {
       type: String,
       default: null,
-      required: [true, "Webhook token code is mandatory"],
+      // required: [true, "Webhook token code is mandatory"],
     },
 
     requestObject: {
