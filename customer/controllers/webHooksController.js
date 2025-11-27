@@ -57,7 +57,7 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
   const { accountId } = req.body;
   const randomNumber = Math.floor(10000 + Math.random() * 90000);
 
-  let webHookUrl = `${process.env.DOMAIN_NAME}api/webhook/${randomNumber}/${accountId}`;
+  let webHookUrl = `${process.env.DOMAIN}api/webhook/${randomNumber}/${accountId}`;
   let webHookAuthenticationCode = `Bearer ${jwt.sign(
     { accountId: accountId },
     process.env.JWT_SECRET

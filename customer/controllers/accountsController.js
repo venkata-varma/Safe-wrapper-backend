@@ -64,7 +64,7 @@ Returns newly created Account with one associated user.
 exports.createAccount = asyncWrapper(async (req, res) => {
 
 
-    const baseUrl = process.env.DOMAIN_NAME;
+    const baseUrl = process.env.DOMAIN;
     const { accountName, companyName, email, phone, password, status } = req.body
     const accountDetails = await usersModel.findOne({ $or: [{ email }, { phone }] })
     if (accountDetails) {
@@ -147,7 +147,7 @@ exports.validateAccountForUpdate = asyncWrapper(async (req, res, next) => {
  */
 
 exports.updateAccount = asyncWrapper(async (req, res) => {
-    const baseUrl = process.env.DOMAIN_NAME;
+    const baseUrl = process.env.DOMAIN;
     const { accountId } = req.params
     const { accountName, companyName, phone, } = req.body
 
