@@ -79,8 +79,10 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
     userId: req.user._id,
     webHookUrl,
     authenticationCode: encryptedWebHookAuthCode,
+    webhookToken: webHookAuthenticationCode,
     webhookSettings: defaultWebhookSettings
   });
+
   return res
     .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
     .json({
