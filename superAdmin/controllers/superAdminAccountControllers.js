@@ -1501,6 +1501,7 @@ exports.getWebhookToken = asyncWrapper(async (req, res) => {
         .json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             data: {
+                accountId: getWebhook?.accountId,
                 webhookToken: getWebhook?.webhookToken
             },
         });
