@@ -1484,16 +1484,42 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
 
 
 
-exports.getWebhookToken = asyncWrapper(async (req, res) => {
-    let webhookUrl
-    if (process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "DEV") {
-        webhookUrl = process.env.DEV_WEBHOOK_URL
-    } else if (process.env.NODE_ENV === "prod" || process.env.NODE_ENV === "PROD") {
-        webhookUrl = process.env.PROD_WEBHOOK_URL
+/*
+* Verify the status of account.
+* If status is active pass the middleware.
+*/
+exports.validateGetWebhookToken = asyncWrapper(async (req, res, next) => {
+    const { accountId } = req.params
+
+    const verifyAccountStatus = await accountsModel.findById({ _id: new mongoose.Types.ObjectId(accountId) })
+    const reqAccountType = req.user.accountId.accountType
+
+    if (!verifyAccountStatus || verifyAccountStatus.status !== 'active') {
+        return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNT_ALREADY_DELETED,
+        });
     }
+    else {
+        next()
+    }
+});
 
 
-    let getWebhook = await webhookMasterModel.findOne({ webHookUrl: webhookUrl })
+exports.getWebhookToken = asyncWrapper(async (req, res) => {
+    const { accountId } = req.params
+
+    // let webhookUrl
+    // if (process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "DEV") {
+    //     webhookUrl = process.env.DEV_WEBHOOK_URL
+    // } else if (process.env.NODE_ENV === "prod" || process.env.NODE_ENV === "PROD") {
+    //     webhookUrl = process.env.PROD_WEBHOOK_URL
+    // }
+
+
+    // let getWebhook = await webhookMasterModel.findOne({ webHookUrl: webhookUrl })
+
+    let getWebhook = await webhookMasterModel.findOne({ accountId: accountId, status: "active" })
 
 
     return res

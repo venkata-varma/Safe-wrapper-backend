@@ -32,7 +32,7 @@ router.get('/get-account-and-card-connect-integration-details/:accountId', accou
 router.get('/get-super-admin-card-connect-dashboard-statistics', accountsControllers.getSuperAdminCardConnectDashboardStats)
 
 
-router.get('/get-webhook-token', accountsControllers.getWebhookToken)
+router.get('/get-webhook-token/:accountId', accountsControllers.validateGetWebhookToken, accountsControllers.getWebhookToken)
 
 
 module.exports = router;
