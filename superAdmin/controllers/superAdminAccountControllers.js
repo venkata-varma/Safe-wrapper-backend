@@ -1505,7 +1505,9 @@ exports.validateGetWebhookToken = asyncWrapper(async (req, res, next) => {
     }
 });
 
-
+/**
+ * Comments will be added soon as possible 
+ */
 exports.getWebhookToken = asyncWrapper(async (req, res) => {
     const { accountId } = req.params
 
