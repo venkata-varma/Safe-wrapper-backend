@@ -90,13 +90,14 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
 
 
     webhookTransactionDetails = await webhookPayloadTransactions.aggregate([
-        {
-            $match: {
-                accountId: {
-                    $in: merchantNamesArray
-                }
-            }
-        },
+        //Taking merchant account id is unnecessary for cima machines transactions
+        // {
+        //     $match: {
+        //         accountId: {
+        //             $in: merchantNamesArray
+        //         }
+        //     }
+        // },
         {
             $lookup: {
                 from: "accounts",
