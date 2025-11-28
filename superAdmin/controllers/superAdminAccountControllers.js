@@ -1485,8 +1485,15 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
 
 
 exports.getWebhookToken = asyncWrapper(async (req, res) => {
-    let wehookUrl = "https://lhswapi.dev.devrabbit.co/api/webhook/74412/67fe2e3cea71e038c913d4c2"
-    let getWebhook = await webhookMasterModel.findOne({ webHookUrl: wehookUrl })
+    let webhookUrl
+    if (process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "DEV") {
+        webhookUrl = process.env.DEV_WEBHOOK_URL
+    } else if (process.env.NODE_ENV === "prod" || process.env.NODE_ENV === "PROD") {
+        webhookUrl = process.env.PROD_WEBHOOK_URL
+    }
+
+
+    let getWebhook = await webhookMasterModel.findOne({ webHookUrl: webhookUrl })
 
 
     return res

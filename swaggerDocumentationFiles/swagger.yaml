@@ -15,7 +15,10 @@ info:
 
 servers:
   - url: "https://lhswapi.dev.devrabbit.co"
-    description: "Pre Production Server"
+    description: "Development Server"
+
+  - url: "https://lhswapi.devrabbit.co"
+    description: "Production Server"
 
   - url: "http://localhost:8201"
     description: "Local Server"
