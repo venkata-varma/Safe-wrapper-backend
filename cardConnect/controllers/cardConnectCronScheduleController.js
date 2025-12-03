@@ -12,6 +12,20 @@ const job_each_month = humanToCron('once each month')
 
 
 exports.cardConnectScheduleCronJobs = asyncWrapper(async () => {
+    //Each minute
+    schedule.scheduleJob(job_each_minute, async () => {
+        const cardConnectIntegrationsMasterSettingsDetails = await cardConnectIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each minute', "periodSettings.currentStatus": "start" }).populate("accountId")
+
+
+
+        if (cardConnectIntegrationsMasterSettingsDetails.length > 0) {
+            for (const integration of cardConnectIntegrationsMasterSettingsDetails) {
+                await schedulerIntegrationCronJobs(integration)
+
+            }
+        }
+    });
+
 
     //Each hour
     schedule.scheduleJob(job_each_hour, async () => {
