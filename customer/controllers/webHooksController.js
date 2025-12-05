@@ -1789,106 +1789,45 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
       },
     },
     {
-      $lookup: {
-        from: "webhookmetapayloads",
-        let: { sn: "$_id.serialNumber", location: "$_id.location" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $isArray: "$dataPoint.Metadata.LocationInformation" },
-                  {
-                    $anyElementTrue: {
-                      $map: {
-                        input: "$dataPoint.Metadata.LocationInformation",
-                        as: "loc",
-                        in: {
-                          $and: [
-                            { $eq: ["$$loc.SerialNumber", "$$sn"] },
-                            { $eq: ["$$loc.Location", "$$location"] },
-                          ],
-                        },
-                      },
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        ],
-        as: "metapayloads",
-      },
-    },
-    {
-      $addFields: {
-        statusCount: {
-          $arrayToObject: {
-            $map: {
-              input: predefinedStatuses,
-              as: "status",
-              in: {
-                k: "$$status",
-                v: {
-                  $size: {
-                    $filter: {
-                      input: "$metapayloads",
-                      as: "meta",
-                      cond: { $eq: ["$$meta.status", "$$status"] },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    {
-      $lookup: {
-        from: "webhookpayloadtransactions",
-        foreignField: "serialNumber",
-        localField: "_id.serialNumber",
-        as: "webhooktransactionsresults",
-      },
-    },
-    {
-      $unwind: {
-        path: "$webhooktransactionsresults",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $match: {
-        "webhooktransactionsresults.amount": { $exists: true, $ne: 0 },
-      },
-    },
-    {
-      $group: {
-        _id: {
-          serialNumber: "$_id.serialNumber",
-          location: "$_id.location",
-        },
-        statusCount: { $first: "$statusCount" },
-        metapayloads: { $first: "$metapayloads" },
-        transactionIds: { $addToSet: "$webhooktransactionsresults._id" },
-        totalAmount: {
-          $sum: "$webhooktransactionsresults.amount"
-        }
-      },
-    },
-    {
       $project: {
-        _id: 0,
         serialNumber: "$_id.serialNumber",
         location: "$_id.location",
-        statusCount: 1,
-        metapayloads: 1,
-        transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
-        totalAmount: 1
-      },
-    },
+        accountId: "$accountId",
+        _id: 0
+      }
+    }
   ]);
+
+  for (let groupBy of machineDetails) {
+    groupBy.statusCount = {
+      received: 0,
+      executed: 0,
+      "execution-failed": 0,
+      "in-progress": 0
+    }
+    let findAllTransactions = await webhookPayloadTransactions.find({ serialNumber: groupBy?.serialNumber, location: groupBy?.location, accountId: new mongoose.Types.ObjectId(groupBy?.accountId) })
+    groupBy.transactionsCount = findAllTransactions?.length || 0
+
+    groupBy.totalAmount = findAllTransactions.reduce(
+      (sum, item) => sum + (item.amount || 0),
+      0
+    );
+    let getMetaPayloads = await webhookMetaPayloadModel.find({
+      primaryHookId: groupBy?.serialNumber,
+      "dataPoint.Metadata.LocationInformation.0.Location": groupBy?.location
+    })
+    for (let eachStatus of getMetaPayloads) {
+      if (predefinedStatuses.includes(eachStatus?.status)) {
+        groupBy.statusCount[eachStatus?.status]++
+      }
+    }
+
+
+
+
+
+  }
+
 
 
 

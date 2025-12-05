@@ -53,7 +53,7 @@ const initiateCronJob = async (integration) => {
     //----------------------------------
 
 
-    let dateDumpRange = integrationsMasterDetails[0].cardconnectintegrationssettings.dataDumpRange;
+    let dateDumpRange = integrationsMasterDetails[0]?.cardconnectintegrationssettings.dataDumpRange;
     console.log("dateDumpRange===", dateDumpRange)
 
     let dateRange = generateDateRange(dateDumpRange);
