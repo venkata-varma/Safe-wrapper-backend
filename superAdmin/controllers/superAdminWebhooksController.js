@@ -1409,124 +1409,150 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
       accountId: new mongoose.Types.ObjectId(accountId)
     }
   }
+
   const predefinedStatuses = ["received", "in-progress", "executed", "execution-failed"];
 
   const machineDetails = await webhookPayloadHeaders.aggregate([
-    // {
-    //   $match: {
-    //     // accountId: new mongoose.Types.ObjectId(accountId),
-    //     ...matchCondition
-    //   },
-    // },
+
+    // --- SORT TO PICK LATEST RECORD PER MACHINE ---
+    { $sort: { createdAt: -1 } },
+
+    // --- UNIQUE MACHINES ---
     {
       $group: {
         _id: {
           serialNumber: "$serialNumber",
           location: "$location",
-        },
-        accountId: { $first: "$accountId" },
-      },
+          accountId: "$accountId"
+        }
+      }
     },
+
+    // --- LOOKUP TRANSACTION COUNTS & AMOUNTS ---
     {
       $lookup: {
-        from: "webhookmetapayloads",
-        let: { sn: "$_id.serialNumber", location: "$_id.location" },
+        from: "webhookpayloadtransactions",
+        let: {
+          sn: "$_id.serialNumber",
+          loc: "$_id.location",
+          acc: "$_id.accountId"
+        },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $isArray: "$dataPoint.Metadata.LocationInformation" },
-                  {
-                    $anyElementTrue: {
-                      $map: {
-                        input: "$dataPoint.Metadata.LocationInformation",
-                        as: "loc",
-                        in: {
-                          $and: [
-                            { $eq: ["$$loc.SerialNumber", "$$sn"] },
-                            { $eq: ["$$loc.Location", "$$location"] },
-                          ],
-                        },
-                      },
-                    },
-                  },
-                ],
-              },
-            },
+                  { $eq: ["$serialNumber", "$$sn"] },
+                  { $eq: ["$location", "$$loc"] },
+                  { $eq: ["$accountId", "$$acc"] }
+                ]
+              }
+            }
           },
+          {
+            $group: {
+              _id: null,
+              transactionsCount: { $sum: 1 },
+              totalAmount: { $sum: "$amount" }
+            }
+          }
         ],
-        as: "metapayloads",
-      },
+        as: "tx"
+      }
     },
+
+    // --- LOOKUP META PAYLOAD STATUSES ---
+    {
+      $lookup: {
+        from: "webhookmetapayloads",
+        let: {
+          sn: "$_id.serialNumber",
+          loc: "$_id.location"
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$primaryHookId", "$$sn"] },
+                  {
+                    $eq: [
+                      {
+                        $arrayElemAt: [
+                          "$dataPoint.Metadata.LocationInformation.Location",
+                          0
+                        ]
+                      },
+                      "$$loc"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 }
+            }
+          }
+        ],
+        as: "rawStatusCounts"
+      }
+    },
+
+    // --- BUILD statusCount OBJECT WITH ALL PREDEFINED STATUSES (INCLUDING ZERO) ---
     {
       $addFields: {
         statusCount: {
           $arrayToObject: {
             $map: {
               input: predefinedStatuses,
-              as: "status",
+              as: "st",
               in: {
-                k: "$$status",
+                k: "$$st",
                 v: {
-                  $size: {
-                    $filter: {
-                      input: "$metapayloads",
-                      as: "meta",
-                      cond: { $eq: ["$$meta.status", "$$status"] },
+                  $let: {
+                    vars: {
+                      match: {
+                        $first: {
+                          $filter: {
+                            input: "$rawStatusCounts",
+                            as: "rc",
+                            cond: { $eq: ["$$rc._id", "$$st"] }
+                          }
+                        }
+                      }
                     },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    {
-      $lookup: {
-        from: "webhookpayloadtransactions",
-        foreignField: "serialNumber",
-        localField: "_id.serialNumber",
-        as: "webhooktransactionsresults",
-      },
-    },
-    {
-      $unwind: {
-        path: "$webhooktransactionsresults",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $match: {
-        "webhooktransactionsresults.amount": { $exists: true, $ne: 0 },
-      },
-    },
-    {
-      $group: {
-        _id: {
-          serialNumber: "$_id.serialNumber",
-          location: "$_id.location",
-        },
-        statusCount: { $first: "$statusCount" },
-        metapayloads: { $first: "$metapayloads" },
-        transactionIds: { $addToSet: "$webhooktransactionsresults._id" },
-        totalAmount: {
-          $sum: "$webhooktransactionsresults.amount"
+                    in: { $ifNull: ["$$match.count", 0] }
+                  }
+                }
+              }
+            }
+          }
         }
-      },
+      }
     },
+
+    // --- FINAL PROJECT ---
     {
       $project: {
         _id: 0,
         serialNumber: "$_id.serialNumber",
         location: "$_id.location",
-        statusCount: 1,
-        metapayloads: 1,
-        transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
-        totalAmount: 1
-      },
-    },
+        accountId: "$_id.accountId",
+
+        transactionsCount: {
+          $ifNull: [{ $arrayElemAt: ["$tx.transactionsCount", 0] }, 0]
+        },
+        totalAmount: {
+          $ifNull: [{ $arrayElemAt: ["$tx.totalAmount", 0] }, 0]
+        },
+
+        statusCount: 1
+      }
+    }
+
   ]);
 
 
@@ -1534,6 +1560,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_MACHINE_REPORTS,
+    machineByLocationsLength: machineDetails.length,
     data: machineDetails
   })
 

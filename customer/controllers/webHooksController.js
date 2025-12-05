@@ -1779,61 +1779,153 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
         ...matchCondition
       },
     },
+    // --- SORT TO PICK LATEST RECORD PER MACHINE ---
+    { $sort: { createdAt: -1 } },
+
+    // --- UNIQUE MACHINES ---
     {
       $group: {
         _id: {
           serialNumber: "$serialNumber",
           location: "$location",
-        },
-        accountId: { $first: "$accountId" },
-      },
+          accountId: "$accountId"
+        }
+      }
     },
+
+    // --- LOOKUP TRANSACTION COUNTS & AMOUNTS ---
+    {
+      $lookup: {
+        from: "webhookpayloadtransactions",
+        let: {
+          sn: "$_id.serialNumber",
+          loc: "$_id.location",
+          acc: "$_id.accountId"
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$serialNumber", "$$sn"] },
+                  { $eq: ["$location", "$$loc"] },
+                  { $eq: ["$accountId", "$$acc"] }
+                ]
+              }
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              transactionsCount: { $sum: 1 },
+              totalAmount: { $sum: "$amount" }
+            }
+          }
+        ],
+        as: "tx"
+      }
+    },
+
+    // --- LOOKUP META PAYLOAD STATUSES ---
+    {
+      $lookup: {
+        from: "webhookmetapayloads",
+        let: {
+          sn: "$_id.serialNumber",
+          loc: "$_id.location"
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$primaryHookId", "$$sn"] },
+                  {
+                    $eq: [
+                      {
+                        $arrayElemAt: [
+                          "$dataPoint.Metadata.LocationInformation.Location",
+                          0
+                        ]
+                      },
+                      "$$loc"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 }
+            }
+          }
+        ],
+        as: "rawStatusCounts"
+      }
+    },
+
+    // --- BUILD statusCount OBJECT WITH ALL PREDEFINED STATUSES (INCLUDING ZERO) ---
+    {
+      $addFields: {
+        statusCount: {
+          $arrayToObject: {
+            $map: {
+              input: predefinedStatuses,
+              as: "st",
+              in: {
+                k: "$$st",
+                v: {
+                  $let: {
+                    vars: {
+                      match: {
+                        $first: {
+                          $filter: {
+                            input: "$rawStatusCounts",
+                            as: "rc",
+                            cond: { $eq: ["$$rc._id", "$$st"] }
+                          }
+                        }
+                      }
+                    },
+                    in: { $ifNull: ["$$match.count", 0] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    // --- FINAL PROJECT ---
     {
       $project: {
+        _id: 0,
         serialNumber: "$_id.serialNumber",
         location: "$_id.location",
-        accountId: "$accountId",
-        _id: 0
+        accountId: "$_id.accountId",
+
+        transactionsCount: {
+          $ifNull: [{ $arrayElemAt: ["$tx.transactionsCount", 0] }, 0]
+        },
+        totalAmount: {
+          $ifNull: [{ $arrayElemAt: ["$tx.totalAmount", 0] }, 0]
+        },
+
+        statusCount: 1
       }
     }
+
   ]);
-
-  for (let groupBy of machineDetails) {
-    groupBy.statusCount = {
-      received: 0,
-      executed: 0,
-      "execution-failed": 0,
-      "in-progress": 0
-    }
-    let findAllTransactions = await webhookPayloadTransactions.find({ serialNumber: groupBy?.serialNumber, location: groupBy?.location, accountId: new mongoose.Types.ObjectId(groupBy?.accountId) })
-    groupBy.transactionsCount = findAllTransactions?.length || 0
-
-    groupBy.totalAmount = findAllTransactions.reduce(
-      (sum, item) => sum + (item.amount || 0),
-      0
-    );
-    let getMetaPayloads = await webhookMetaPayloadModel.find({
-      primaryHookId: groupBy?.serialNumber,
-      "dataPoint.Metadata.LocationInformation.0.Location": groupBy?.location
-    })
-    for (let eachStatus of getMetaPayloads) {
-      if (predefinedStatuses.includes(eachStatus?.status)) {
-        groupBy.statusCount[eachStatus?.status]++
-      }
-    }
-
-
-
-
-
-  }
-
 
 
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_MACHINE_REPORTS,
+    machineByLocationsLength: machineDetails.length,
     data: machineDetails
   })
 
