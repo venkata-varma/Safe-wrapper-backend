@@ -1432,13 +1432,14 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
                 }
             },
             {
-                $limit: 10
-            },
-            {
                 $sort: {
                     transactionDate: -1
                 }
             },
+            {
+                $limit: 10
+            },
+
             {
                 $project: {
                     responseObject: 0
@@ -1454,6 +1455,11 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
             {
                 $match: {
                     accountId: new mongoose.Types.ObjectId(accountId)
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1
                 }
             },
             {
@@ -1476,11 +1482,7 @@ exports.getMerchantCardConnectDashboardStats = asyncWrapper(async (req, res) => 
                 }
             },
 
-            {
-                $sort: {
-                    createdAt: -1
-                }
-            }
+
 
         ])
 

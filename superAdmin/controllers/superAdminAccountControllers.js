@@ -910,13 +910,14 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
             }
         },
         {
-            $limit: 10
-        },
-        {
             $sort: {
                 transactionDate: -1
             }
         },
+        {
+            $limit: 10
+        },
+
 
 
     ])
@@ -925,8 +926,14 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
 
     let latestActivityLogs = await cardConnectIntegrationsCronsModel.aggregate([
         {
+            $sort: {
+                createdAt: -1
+            }
+        },
+        {
             $limit: 10
         },
+
         {
             $project: {
                 newWOCount: 0
@@ -967,11 +974,7 @@ exports.getSuperAdminCardConnectDashboardStats = asyncWrapper(async (req, res) =
                 cardConnectDetails: 0
             }
         },
-        {
-            $sort: {
-                createdAt: -1
-            }
-        }
+
 
     ])
 
