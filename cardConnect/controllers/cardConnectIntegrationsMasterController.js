@@ -437,6 +437,7 @@ exports.fetchFundingTransactionsForTheDay = asyncWrapper(async (req, res) => {
         accountId: integrationsMasterCredentials.accountId,
         userId: integrationsMasterCredentials.userId,
         dateRange,
+        status: "initiated",
         cronJobType: "manual"
     })
 
@@ -569,6 +570,7 @@ exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
         dateRange: storeDateRange,
+        status: "initiated",
         cronJobType: "manual"
     })
 
@@ -676,6 +678,7 @@ exports.fetchFundingTransactionsForTheDateRange = asyncWrapper(async (req, res) 
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
         dateRange: storeDateRange,
+        status: "initiated",
         cronJobType: "manual"
     })
 

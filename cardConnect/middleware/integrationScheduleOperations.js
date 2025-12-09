@@ -55,7 +55,7 @@ const initiateCronJob = async (integration) => {
 
     let dateDumpRange = integrationsMasterDetails[0]?.cardconnectintegrationssettings.dataDumpRange;
     console.log("dateDumpRange===", dateDumpRange)
-
+    console.log("........................................")
     let dateRange = generateDateRange(dateDumpRange);
     console.log("dateRange===", dateRange)
 
@@ -65,6 +65,7 @@ const initiateCronJob = async (integration) => {
         accountId: integrationsMasterDetails[0].accountId,
         userId: integrationsMasterDetails[0].userId,
         dateRange,
+        status: "initiated",
         cronJobType: "automated"
     })
 
