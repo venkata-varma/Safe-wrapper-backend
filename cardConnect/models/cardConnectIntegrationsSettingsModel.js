@@ -26,7 +26,7 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
     periodSettings: {
         periodType: {
             type: String,
-            enum: ["once each minute", "each 5 minutes", "once each hour", "once each three hours", "once each twelve hours", "once each day"],
+            enum: ["once each minute", "once each hour", "once each day", "once each month"],
             required: [true, 'periodType required'],
             default: ""
         },

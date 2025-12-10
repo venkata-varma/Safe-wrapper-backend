@@ -408,7 +408,7 @@ async function initiateManualTrigger(dateRange, integrationsMasterDetails, accou
     if (envType.includes('uat')) {
         envType = "uat"
     }
-
+    console.log("DateRange===", dateRange)
     for (let date of dateRange) {
         console.log("Cron running for date===", date)
         let getAuthenticated = await authenticationResponse(accountId);

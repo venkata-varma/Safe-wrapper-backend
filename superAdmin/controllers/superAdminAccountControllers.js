@@ -93,7 +93,7 @@ exports.validationMapMachinesToAccount = asyncWrapper(async (req, res, next) => 
         : [machines];
     let accountDetails = await accountsModel.find({
         machines: { $in: machinesArray },
-
+        accountId: { $ne: new mongoose.Types.ObjectId(accountId) }
     }, { machines: 1 }); // only fetch machines field
 
     if (accountDetails.length > 0) {
