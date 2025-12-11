@@ -981,6 +981,7 @@ exports.merchantSmartFilteredDashboard = asyncWrapper(async (req, res, next) => 
 
 exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   const { accountId } = req.params
+
   let matchCondition = {}
   if (req.user.accountId.accountType === "merchant") {
     matchCondition = {
@@ -997,13 +998,14 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
   let allMerchants = [];
   let merchantNames = {
     merchantName: accountDetails?.accountName,
-    objectId: accountDetails?._id
+    objectId: accountDetails?._id,
+    machines: accountDetails?.machines
   }
   allMerchants.push(merchantNames)
   let categories = ["cima-machine", "card-connect"]
 
 
-
+  console.log(" req.user.accountId.machines", req.user.accountId.machines)
   const webhookPayloadHeadersData = await webhookPayloadHeaders.aggregate([
     {
       $match: {
@@ -1080,7 +1082,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
       categories,
       merchantNames: allMerchants,
       webhookPayloadHeadersData: webhookPayloadHeadersData[0] ? webhookPayloadHeadersData[0] : {},
-      merchantPayloadHeaders: merchantPayloadHeaders
+      allMerchantCardConnectPayloadHeaders: merchantPayloadHeaders
       // listOfWebhooks: listOfWebhooks
     }
   })

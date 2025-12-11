@@ -621,14 +621,16 @@ exports.getAllWebhookPayoadHeadersOfAllAccounts = asyncWrapper(async (req, res) 
     {
       $group: {
         _id: "$_id",                // group by unique record id
-        merchantName: { $first: "$accountName" }
+        merchantName: { $first: "$accountName" },
+        machines: { $first: "$machines" }
       }
     },
     {
       $project: {
         _id: 0,
         objectId: "$_id",           // keep original _id as objectId
-        merchantName: 1
+        merchantName: 1,
+        machines: 1
       }
     }
 

@@ -261,7 +261,7 @@ If returns True, moves to "next" function , "loginUser"
 exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
 
   const { mobileEmail, password } = req.body;
-
+  console.log("mobileEmail, password", mobileEmail, password)
   if (!mobileEmail || !password) {
     return res.status(customConstants.statusCodes.BAD_REQUEST).json({
       status: customConstants.messages.MESSAGE_FAIL,
