@@ -1424,7 +1424,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
       $group: {
         _id: {
           serialNumber: "$serialNumber",
-          location: "$location",
+          //location: "$location",
           accountId: "$accountId"
         }
       }
@@ -1436,7 +1436,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
         from: "webhookpayloadtransactions",
         let: {
           sn: "$_id.serialNumber",
-          loc: "$_id.location",
+          //    loc: "$_id.location",
           acc: "$_id.accountId"
         },
         pipeline: [
@@ -1445,7 +1445,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
               $expr: {
                 $and: [
                   { $eq: ["$serialNumber", "$$sn"] },
-                  { $eq: ["$location", "$$loc"] },
+                  //  { $eq: ["$location", "$$loc"] },
                   { $eq: ["$accountId", "$$acc"] }
                 ]
               }
@@ -1469,7 +1469,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
         from: "webhookmetapayloads",
         let: {
           sn: "$_id.serialNumber",
-          loc: "$_id.location"
+          //  loc: "$_id.location"
         },
         pipeline: [
           {
@@ -1477,17 +1477,17 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
               $expr: {
                 $and: [
                   { $eq: ["$primaryHookId", "$$sn"] },
-                  {
-                    $eq: [
-                      {
-                        $arrayElemAt: [
-                          "$dataPoint.Metadata.LocationInformation.Location",
-                          0
-                        ]
-                      },
-                      "$$loc"
-                    ]
-                  }
+                  // {
+                  //   $eq: [
+                  //     {
+                  //       $arrayElemAt: [
+                  //         "$dataPoint.Metadata.LocationInformation.Location",
+                  //         0
+                  //       ]
+                  //     },
+                  //     "$$loc"
+                  //   ]
+                  // }
                 ]
               }
             }
@@ -1541,7 +1541,7 @@ exports.getAllMachineReports = asyncWrapper(async (req, res) => {
       $project: {
         _id: 0,
         serialNumber: "$_id.serialNumber",
-        location: "$_id.location",
+        //  location: "$_id.location",
         accountId: "$_id.accountId",
 
         transactionsCount: {
