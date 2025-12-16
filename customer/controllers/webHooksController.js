@@ -2266,112 +2266,10 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
   }
   userActivityResult.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  //Progress- meter code
-  // Get the current time
-  const now = new Date();
-
-  // Calculate time ranges
-  const sixMonthsAgo = new Date(now);
-  sixMonthsAgo.setMonth(now.getMonth() - 6);
-
-  const twelveMonthsAgo = new Date(sixMonthsAgo);
-  twelveMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-  // First aggregation (last 6 months)
-  const lastSixMonths = await webhookPayloadTransactions.aggregate([
-    {
-      // Convert the string to a proper date in a new field
-      $addFields: {
-        transactionDateTime: {
-          $toDate: "$transactionDateTime"
-        }
-      }
-    },
-    {
-      $match: {
-        transactionDateTime: { $gte: sixMonthsAgo },
-        // accountId: new mongoose.Types.ObjectId(accountId),
-        ...matchCondition,
-        // serialNumber: serialNumber
-      }
-    },
-    {
-      $group: {
-        _id: "$transactionType",
-        totalAmount: { $sum: "$amount" },
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        transactionType: "$_id",
-        totalAmount: 1,
-        count: 1
-      }
-    }
-  ]);
-
-  // Second aggregation (previous 6 months)
-  const previousSixMonths = await webhookPayloadTransactions.aggregate([
-    {
-      // Convert the string to a proper date in a new field
-      $addFields: {
-        transactionDateTime: {
-          $toDate: "$transactionDateTime"
-        }
-      }
-    },
 
 
-    {
-      $match: {
-        transactionDateTime: { $gte: twelveMonthsAgo, $lt: sixMonthsAgo },
-        // accountId: new mongoose.Types.ObjectId(accountId),
-        ...matchCondition,
-        // serialNumber: serialNumber
-      }
-    },
-    {
-      $group: {
-        _id: "$transactionType",
-        totalAmount: { $sum: "$amount" },
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        transactionType: "$_id",
-        totalAmount: 1,
-        count: 1
-      }
-    }
-  ]);
+  let progressMeterOfMachine = await returnProgressMeterOfMachineOverLastSixMonths(matchCondition)
 
-  // Merge the two results and calculate percentage increase
-  const percentageIncrease = lastSixMonths.map(recent => {
-    const previous = previousSixMonths.find(prev => prev.transactionType === recent.transactionType);
-
-    const previousTotal = previous ? previous.totalAmount : 0;
-    const recentTotal = recent.totalAmount;
-
-    // Calculate percentage increase
-    let percentage = 0;
-    if (previousTotal > 0) {
-      percentage = ((recentTotal - previousTotal) / previousTotal) * 100;
-    } else if (previousTotal === 0 && recentTotal > 0) {
-      percentage = 100; // If there was no transaction in the previous period but exists now
-    }
-
-    return {
-      transactionType: recent.transactionType,
-      recentTotalAmount: recentTotal,
-      previousTotalAmount: previousTotal,
-      percentageIncrease: percentage,
-
-    };
-  });
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
@@ -2381,10 +2279,117 @@ exports.getPayloadReports = asyncWrapper(async (req, res) => {
       totalSummaryOfMachine,
       machineTransactions,
       userActivity: userActivityResult,
-      percentageIncrease
+      percentageIncrease: progressMeterOfMachine
     }
   })
 })
+
+/**
+ * FUnction to take serial number into account and take previous  six months , then also  six months back data with respect to previous six months 
+ * And calculate hike that data of certain transaction type took between date ranges
+ */
+async function returnProgressMeterOfMachineOverLastSixMonths(matchCondition) {
+  const now = new Date();
+
+  const sixMonthsAgo = new Date(now);
+  sixMonthsAgo.setMonth(now.getMonth() - 6);
+
+  const twelveMonthsAgo = new Date(now);
+  twelveMonthsAgo.setMonth(now.getMonth() - 12);
+
+  const [lastSixMonths, previousSixMonths] = await Promise.all([
+    webhookPayloadTransactions.aggregate([
+      {
+        $addFields: {
+          transactionDateTime: { $toDate: "$transactionDateTime" }
+        }
+      },
+      {
+        $match: {
+          transactionDateTime: { $gte: sixMonthsAgo },
+          ...matchCondition
+        }
+      },
+      {
+        $group: {
+          _id: "$transactionType",
+          totalAmount: { $sum: "$amount" },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          transactionType: "$_id",
+          totalAmount: 1,
+          count: 1
+        }
+      }
+    ]),
+
+    webhookPayloadTransactions.aggregate([
+      {
+        $addFields: {
+          transactionDateTime: { $toDate: "$transactionDateTime" }
+        }
+      },
+      {
+        $match: {
+          transactionDateTime: {
+            $gte: twelveMonthsAgo,
+            $lt: sixMonthsAgo
+          },
+          ...matchCondition
+        }
+      },
+      {
+        $group: {
+          _id: "$transactionType",
+          totalAmount: { $sum: "$amount" },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          transactionType: "$_id",
+          totalAmount: 1,
+          count: 1
+        }
+      }
+    ])
+  ]);
+
+  const lastMap = new Map(lastSixMonths.map(i => [i.transactionType, i]));
+  const prevMap = new Map(previousSixMonths.map(i => [i.transactionType, i]));
+
+  const allTypes = new Set([...lastMap.keys(), ...prevMap.keys()]);
+
+  return [...allTypes].map(type => {
+    const recentTotal = lastMap.get(type)?.totalAmount ?? 0;
+    const previousTotal = prevMap.get(type)?.totalAmount ?? 0;
+
+    let percentageIncrease = 0;
+    let hike = "no-impact";
+
+    if (previousTotal === 0 && recentTotal > 0) {
+      percentageIncrease = 100;
+      hike = "newly-arrived";
+    } else if (previousTotal > 0) {
+      percentageIncrease =
+        ((recentTotal - previousTotal) / previousTotal) * 100;
+      hike = percentageIncrease < 0 ? "negative" : "positive";
+    }
+
+    return {
+      transactionType: type,
+      recentTotalAmount: Number(recentTotal.toFixed(2)),
+      previousTotalAmount: Number(previousTotal.toFixed(2)),
+      percentageIncrease: Number(percentageIncrease.toFixed(2)),
+      hike
+    };
+  });
+}
 
 /**
  * API End-point specifically for registering Session log-in by ONEHUB POS team either via Swagger or other means
