@@ -932,182 +932,217 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
 
 
   let payloadSummary = []
-  let metaPayloadQuery = await webhookMetaPayloadModel.aggregate([
-    {
-      $match: {
-        createdAt: {
-          $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
-          $lte: new Date(),
-        },
-      }
-    },
-    {
-      $facet: {
-        statusCounts: [
-          // {
-          //   $match: {
-          //     ...metaPayloadMatchCondition,
-          //   },
-          // },
-          {
-            $group: {
-              _id: "$status",
-              count: { $sum: 1 },
-            },
+  const [
+    metaPayloadQuery,
+    transactionsQuery,
+    exceptionsCount
+  ] = await Promise.all([
+    webhookMetaPayloadModel.aggregate([
+      {
+        $lookup: {
+          from: "webhookpayloadheaders",
+          localField: "_id",
+          foreignField: "webhookMetaPayloadId",
+          as: "payloadHeader"
+        }
+      },
+      {
+        $addFields: {
+          payloadHeader: { $arrayElemAt: ["$payloadHeader", 0] }
+        }
+      },
+      {
+        $addFields: {
+          transactionDateTime: { $toDate: "$payloadHeader.transactionDateTime" }
+        }
+      },
+      {
+        $project: {
+          payloadHeader: 0
+        }
+      },
+
+      {
+        $match: {
+
+          transactionDateTime: {
+            $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+            $lte: moment().utc().endOf('day').toDate()
           },
-          {
-            $project: {
-              status: "$_id",
-              count: 1,
-              _id: 0,
+        }
+      },
+      {
+        $facet: {
+          statusCounts: [
+            // {
+            //   $match: {
+            //     ...metaPayloadMatchCondition,
+            //   },
+            // },
+            {
+              $group: {
+                _id: "$status",
+                count: { $sum: 1 },
+              },
             },
-          },
-          {
-            $group: {
-              _id: null,
-              statusCountsData: { $push: "$$ROOT" },
+            {
+              $project: {
+                status: "$_id",
+                count: 1,
+                _id: 0,
+              },
             },
-          },
-          {
-            $project: {
-              statusCounts: {
-                $map: {
-                  input: ["received", "in-progress", "executed", "execution-failed"],
-                  as: "status",
-                  in: {
-                    status: "$$status",
-                    count: {
-                      $ifNull: [
-                        {
-                          $getField: {
-                            field: "count",
-                            input: {
-                              $arrayElemAt: [
-                                {
-                                  $filter: {
-                                    input: "$statusCountsData",
-                                    as: "s",
-                                    cond: { $eq: ["$$s.status", "$$status"] },
+            {
+              $group: {
+                _id: null,
+                statusCountsData: { $push: "$$ROOT" },
+              },
+            },
+            {
+              $project: {
+                statusCounts: {
+                  $map: {
+                    input: ["received", "in-progress", "executed", "execution-failed"],
+                    as: "status",
+                    in: {
+                      status: "$$status",
+                      count: {
+                        $ifNull: [
+                          {
+                            $getField: {
+                              field: "count",
+                              input: {
+                                $arrayElemAt: [
+                                  {
+                                    $filter: {
+                                      input: "$statusCountsData",
+                                      as: "s",
+                                      cond: { $eq: ["$$s.status", "$$status"] },
+                                    },
                                   },
-                                },
-                                0,
-                              ],
+                                  0,
+                                ],
+                              },
                             },
                           },
-                        },
-                        0,
-                      ],
+                          0,
+                        ],
+                      },
                     },
                   },
                 },
+                _id: 0,
               },
-              _id: 0,
             },
-          },
-        ],
-        payloadsCount: [
-          // {
-          //   $match: {
-          //     $expr: { $in: ["$primaryHookId", matchCondition.serialNumber.$in || []] },
-          //   },
-          // },
-          {
-            $count: "payloadsCount",
-          },
-          {
-            $project: {
-              payloadsCount: "$payloadsCount",
-              _id: 0,
+          ],
+          payloadsCount: [
+            // {
+            //   $match: {
+            //     $expr: { $in: ["$primaryHookId", matchCondition.serialNumber.$in || []] },
+            //   },
+            // },
+            {
+              $count: "payloadsCount",
             },
-          },
-        ],
-        serialNumbers: [
-          // {
-          //   $match: {
-          //     ...metaPayloadMatchCondition,
-          //   },
-          // },
-          {
-            $group: {
-              _id: null,
-              serialNumbers: { $addToSet: "$primaryHookId" },
+            {
+              $project: {
+                payloadsCount: "$payloadsCount",
+                _id: 0,
+              },
             },
-          },
-          {
-            $project: {
-              serialNumbersCount: { $size: { $ifNull: ["$serialNumbers", []] } },
-              _id: 0,
+          ],
+          serialNumbers: [
+            // {
+            //   $match: {
+            //     ...metaPayloadMatchCondition,
+            //   },
+            // },
+            {
+              $group: {
+                _id: null,
+                serialNumbers: { $addToSet: "$primaryHookId" },
+              },
             },
-          },
-        ],
-      },
-    },
-    {
-      $project: {
-        statusCounts: { $arrayElemAt: ["$statusCounts.statusCounts", 0] },
-        payloadsCount: { $arrayElemAt: ["$payloadsCount.payloadsCount", 0] },
-        serialNumbersCount: { $arrayElemAt: ["$serialNumbers.serialNumbersCount", 0] },
-        _id: 0,
-      },
-    },
-  ]);
-
-  let transactionsQuery = await webhookPayloadTransactions.aggregate([
-    {
-      $match: {
-        // ...matchCondition,
-        createdAt: {
-          $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
-          $lte: new Date(),
-        },
-        userName: { $exists: true, $ne: null, $ne: "" },
-        location: { $exists: true, $ne: null, $ne: "" },
-      },
-    },
-    {
-      $group: {
-        _id: "$_id",
-        userName: { $first: "$userName" },
-        location: { $first: "$location" },
-        transactionType: { $first: "$transactionType" },
-        amount: { $first: "$amount" },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        transactionTypes: { $addToSet: "$transactionType" },
-        users: { $addToSet: "$userName" },
-        locations: { $addToSet: "$location" },
-        transactionIds: {
-          $addToSet: {
-            $cond: {
-              if: { $gt: ["$amount", 0] },
-              then: "$_id",
-              else: "$$REMOVE",
+            {
+              $project: {
+                serialNumbersCount: { $size: { $ifNull: ["$serialNumbers", []] } },
+                _id: 0,
+              },
             },
-          },
+          ],
         },
       },
-    },
-    {
-      $project: {
-        transactionTypesCount: { $size: { $ifNull: ["$transactionTypes", []] } },
-        usersCount: { $size: { $ifNull: ["$users", []] } },
-        locationsCount: { $size: { $ifNull: ["$locations", []] } },
-        transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
-        _id: 0,
+      {
+        $project: {
+          statusCounts: { $arrayElemAt: ["$statusCounts.statusCounts", 0] },
+          payloadsCount: { $arrayElemAt: ["$payloadsCount.payloadsCount", 0] },
+          serialNumbersCount: { $arrayElemAt: ["$serialNumbers.serialNumbersCount", 0] },
+          _id: 0,
+        },
       },
-    },
+    ]),
+    webhookPayloadTransactions.aggregate([
+      {
+        $addFields: {
+          transactionDateTime: { $toDate: '$transactionDateTime' }
+        }
+      },
+      {
+        $match: {
+          // ...matchCondition,
+          transactionDateTime: {
+            $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+            $lte: moment().utc().endOf('day').toDate()
+          },
+          userName: { $exists: true, $ne: null, $ne: "" },
+          location: { $exists: true, $ne: null, $ne: "" },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          userName: { $first: "$userName" },
+          location: { $first: "$location" },
+          transactionType: { $first: "$transactionType" },
+          amount: { $first: "$amount" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          transactionTypes: { $addToSet: "$transactionType" },
+          users: { $addToSet: "$userName" },
+          locations: { $addToSet: "$location" },
+          transactionIds: {
+            $addToSet: {
+              $cond: {
+                if: { $gt: ["$amount", 0] },
+                then: "$_id",
+                else: "$$REMOVE",
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          transactionTypesCount: { $size: { $ifNull: ["$transactionTypes", []] } },
+          usersCount: { $size: { $ifNull: ["$users", []] } },
+          locationsCount: { $size: { $ifNull: ["$locations", []] } },
+          transactionsCount: { $size: { $ifNull: ["$transactionIds", []] } },
+          _id: 0,
+        },
+      },
+    ]),
+    webhookExceptionsModel.find({}
+      // { accountId: accountId }
+      // matchCondition
+    ).countDocuments()
   ]);
 
   payloadSummary = [{ ...metaPayloadQuery[0], ...transactionsQuery[0] }]
 
 
-  const exceptionsCount = await webhookExceptionsModel.find({}
-    // { accountId: accountId }
-    // matchCondition
-  ).countDocuments()
 
 
   const totalAccountSummary = await webhookPayloadTransactions.aggregate([
@@ -1177,196 +1212,194 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     }
   ]);
 
-
-  const topFiveDeviceDetails = await webhookPayloadTransactions.aggregate([
-    {
-      $addFields: {
-        transactionDateTime: { $toDate: '$transactionDateTime' }
-      }
-    },
-    {
-      $match: {
-        //  ...matchCondition,
-        amount: { $exists: true, $ne: null, $gt: 0 },
-        transactionDateTime: {
-          $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
-          $lte: moment().utc().endOf('day').toDate()
-        }
-      }
-    },
-    {
-      $group: {
-        _id: "$serialNumber",
-        location: { $first: "$location" },
-        totalTransactionCount: { $sum: 1 },
-        totalAmount: { $sum: "$amount" },
-        transactions: { $push: "$$ROOT" }
-      }
-    },
-    {
-      $sort: { totalAmount: -1 }
-    },
-    {
-      $limit: 5
-    },
-    {
-      $project: {
-        _id: 0,
-        serialNumber: "$_id",
-        totalAmount: 1,
-        location: 1,
-        totalTransactionCount: 1,
-      }
-    }
-  ]);
-
-  const denominations = await webhookPayloadTransactions.aggregate([
-    {
-      $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId),
-        // ...matchCondition,
-        createdAt: {
-          $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
-          $lte: new Date()
+  let [topFiveDeviceDetails, denominations, latestTransactions, topFiveUsersDetails] = await Promise.all([
+    webhookPayloadTransactions.aggregate([
+      {
+        $addFields: {
+          transactionDateTime: { $toDate: '$transactionDateTime' }
         }
       },
-    },
-    {
-      $unwind: {
-        path: "$denominations",
-        preserveNullAndEmptyArrays: false
-      }
-    },
-    {
-      $match: {
-        "denominations.UnitValue": { $ne: null },
-        "denominations.Count": { $ne: null },
-        "denominations.Currency": { $ne: null }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          serialNumber: "$serialNumber",
-          transactionType: "$transactionType",
-          unitValue: "$denominations.UnitValue",
-          currency: "$denominations.Currency"
-        },
-        totalCount: {
-          $sum: { $ifNull: ["$denominations.Count", 0] }
-        },
-        totalAmount: {
-          $sum: {
-            $multiply: [
-              "$denominations.UnitValue",
-              "$denominations.Count"
-            ]
+      {
+        $match: {
+          //  ...matchCondition,
+          amount: { $exists: true, $ne: null, $gt: 0 },
+          transactionDateTime: {
+            $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+            $lte: moment().utc().endOf('day').toDate()
           }
         }
+      },
+      {
+        $group: {
+          _id: "$serialNumber",
+          location: { $first: "$location" },
+          totalTransactionCount: { $sum: 1 },
+          totalAmount: { $sum: "$amount" },
+          transactions: { $push: "$$ROOT" }
+        }
+      },
+      {
+        $sort: { totalAmount: -1 }
+      },
+      {
+        $limit: 5
+      },
+      {
+        $project: {
+          _id: 0,
+          serialNumber: "$_id",
+          totalAmount: 1,
+          location: 1,
+          totalTransactionCount: 1,
+        }
       }
-    },
-    {
-      $group: {
-        _id: {
+    ]),
+    webhookPayloadTransactions.aggregate([
+      {
+        $match: {
+          // accountId: new mongoose.Types.ObjectId(accountId),
+          // ...matchCondition,
+          createdAt: {
+            $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
+            $lte: new Date()
+          }
+        },
+      },
+      {
+        $unwind: {
+          path: "$denominations",
+          preserveNullAndEmptyArrays: false
+        }
+      },
+      {
+        $match: {
+          "denominations.UnitValue": { $ne: null },
+          "denominations.Count": { $ne: null },
+          "denominations.Currency": { $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            serialNumber: "$serialNumber",
+            transactionType: "$transactionType",
+            unitValue: "$denominations.UnitValue",
+            currency: "$denominations.Currency"
+          },
+          totalCount: {
+            $sum: { $ifNull: ["$denominations.Count", 0] }
+          },
+          totalAmount: {
+            $sum: {
+              $multiply: [
+                "$denominations.UnitValue",
+                "$denominations.Count"
+              ]
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            serialNumber: "$_id.serialNumber",
+            transactionType: "$_id.transactionType"
+          },
+          denominations: {
+            $push: {
+              UnitValue: "$_id.unitValue",
+              Count: "$totalCount",
+              Currency: "$_id.currency"
+            }
+          },
+          totalAmount: { $sum: "$totalAmount" }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
           serialNumber: "$_id.serialNumber",
-          transactionType: "$_id.transactionType"
-        },
-        denominations: {
-          $push: {
-            UnitValue: "$_id.unitValue",
-            Count: "$totalCount",
-            Currency: "$_id.currency"
-          }
-        },
-        totalAmount: { $sum: "$totalAmount" }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        serialNumber: "$_id.serialNumber",
-        transactionType: "$_id.transactionType",
-        denominations: {
-          $cond: {
-            if: { $gt: [{ $size: "$denominations" }, 0] },
-            then: "$denominations",
-            else: []
-          }
-        },
-        totalAmount: 1
-      }
-    }
-  ]);
-
-  const latestTransactions = await webhookPayloadTransactions.aggregate([
-    {
-      $match: {
-        // accountId: new mongoose.Types.ObjectId(accountId),
-        // ...matchCondition,
-        amount: { $ne: 0 }
-      }
-    },
-    {
-      $sort: {
-        transactionDateTime: -1
-      }
-    },
-    {
-      $limit: 10
-    },
-    {
-      $project: {
-        serialNumber: 1,
-        transactionDateTime: 1,
-        userName: 1,
-        amount: 1,
-        location: 1
-      }
-    },
-  ])
-
-  const topFiveUsersDetails = await webhookPayloadTransactions.aggregate([
-    {
-      $addFields: {
-        transactionDateTime: { $toDate: '$transactionDateTime' }
-      }
-    },
-    {
-      $match: {
-        // ...matchCondition,
-        userName: { $ne: "", $exists: true },
-        amount: { $exists: true, $ne: null, $gt: 0 },
-        transactionDateTime: {
-          $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
-          $lte: moment().utc().endOf('day').toDate()
+          transactionType: "$_id.transactionType",
+          denominations: {
+            $cond: {
+              if: { $gt: [{ $size: "$denominations" }, 0] },
+              then: "$denominations",
+              else: []
+            }
+          },
+          totalAmount: 1
         }
       }
-    },
-    {
-      $group: {
-        _id: "$userName",
-        location: { $first: "$location" },
-        totalTransactionCount: { $sum: 1 },
-        totalAmount: { $sum: "$amount" },
-        transactions: { $push: "$$ROOT" }
+    ]),
+    webhookPayloadTransactions.aggregate([
+      {
+        $match: {
+          // accountId: new mongoose.Types.ObjectId(accountId),
+          // ...matchCondition,
+          amount: { $ne: 0 }
+        }
+      },
+      {
+        $sort: {
+          transactionDateTime: -1
+        }
+      },
+      {
+        $limit: 10
+      },
+      {
+        $project: {
+          serialNumber: 1,
+          transactionDateTime: 1,
+          userName: 1,
+          amount: 1,
+          location: 1
+        }
+      },
+    ]),
+    webhookPayloadTransactions.aggregate([
+      {
+        $addFields: {
+          transactionDateTime: { $toDate: '$transactionDateTime' }
+        }
+      },
+      {
+        $match: {
+          // ...matchCondition,
+          userName: { $ne: "", $exists: true },
+          amount: { $exists: true, $ne: null, $gt: 0 },
+          transactionDateTime: {
+            $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+            $lte: moment().utc().endOf('day').toDate()
+          }
+        }
+      },
+      {
+        $group: {
+          _id: "$userName",
+          location: { $first: "$location" },
+          totalTransactionCount: { $sum: 1 },
+          totalAmount: { $sum: "$amount" },
+          transactions: { $push: "$$ROOT" }
+        }
+      },
+      {
+        $sort: { totalAmount: -1 }
+      },
+      {
+        $limit: 6
+      },
+      {
+        $project: {
+          _id: 0,
+          userName: "$_id",
+          totalAmount: 1,
+          location: 1,
+          totalTransactionCount: 1,
+        }
       }
-    },
-    {
-      $sort: { totalAmount: -1 }
-    },
-    {
-      $limit: 6
-    },
-    {
-      $project: {
-        _id: 0,
-        userName: "$_id",
-        totalAmount: 1,
-        location: 1,
-        totalTransactionCount: 1,
-      }
-    }
-  ]);
+    ])
+  ])
 
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
@@ -1380,6 +1413,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       denominations,
       latestTransactions,
       topFiveUsersDetails
+
     }
   })
 })
