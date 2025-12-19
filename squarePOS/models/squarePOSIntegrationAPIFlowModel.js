@@ -69,9 +69,9 @@ const APIUrlFlowSchema = new mongoose.Schema({
 
 
 
-const cardConnectIntegrationsAPIUrlFlowSchema = new mongoose.Schema(
+const squarePOSIntegrationsAPIUrlFlowSchema = new mongoose.Schema(
     {
-        cardConnectIntegrationsAPIUrlFlowId: {
+        squarePOSIntegrationsAPIUrlFlowId: {
             type: mongoose.Schema.Types.ObjectId,
             default: null,
             index: true,
@@ -119,6 +119,6 @@ const cardConnectIntegrationsAPIUrlFlowSchema = new mongoose.Schema(
 
 
 module.exports = mongoose.model(
-    "cardconnectintegrationsapiurlflows",
-    cardConnectIntegrationsAPIUrlFlowSchema
+    "squarePOSintegrationsapiurlflows",
+    squarePOSIntegrationsAPIUrlFlowSchema
 );

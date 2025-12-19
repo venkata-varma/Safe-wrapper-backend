@@ -25,6 +25,7 @@ const errorcontroller = require('./customer/controllers/errorcontroller');
 const webHooksRoute = require('./customer/routes/webHooksRoute')
 const webhookCrons = require('./customer/controllers/webhookCronControllers')
 const integrationCrons = require('./cardConnect/controllers/cardConnectCronScheduleController')
+const SquarePOSRoutes = require('./squarePOS/routes/squarePOSIntegrationRoute')
 //Super Admin Routes.
 
 const SuperAdminAccountRoutes = require('./superAdmin/routes/superAdminAccounts')
@@ -42,6 +43,7 @@ app.use('/static', express.static(path.join(__dirname, 'assets')));
 app.use('/api/merchants/accounts', accountsRoute);
 app.use('/api/merchants/users', usersRoute);
 app.use('/api/merchants/machines', webHooksRoute)
+app.use('/api/square-pos', SquarePOSRoutes)
 
 //Super Admin
 app.use('/api/accounts', SuperAdminAccountRoutes)

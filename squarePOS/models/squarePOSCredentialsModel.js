@@ -30,20 +30,6 @@ const squarePOSIntegrationsCredentialsSchema = new mongoose.Schema(
             default: {},
         },
 
-        authenticationKey: {
-            type: String,
-            default: ""
-        },
-        authorizationType: {
-            type: String,
-            enum: ["Basic auth", "Bearer token", "API key"],
-            default: ""
-        },
-        dataMappingPath: {
-            type: Array,
-            required: [true, "dataMapping path key is mandatory"],
-            default: []
-        },
         primaryKeyValues: {
             type: Object,
             default: {}
@@ -56,7 +42,7 @@ const squarePOSIntegrationsCredentialsSchema = new mongoose.Schema(
         source: {
             type: String,
             required: [true, "Source is mandatory."],
-            default: "card-connect"
+            default: "square-pos"
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
@@ -80,3 +66,4 @@ module.exports = mongoose.model(
     "squareposcredentialsmodel",
     squarePOSIntegrationsCredentialsSchema
 );
+
