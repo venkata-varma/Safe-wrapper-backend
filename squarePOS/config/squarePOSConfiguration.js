@@ -18,18 +18,18 @@ const configurations = {
     getLocations: {
       url: `${baseUrl}/locations`
     },
-    // getCashDrawersShitfts: {
-    //   url: `${baseUrl}/cash-drawers/shifts?location_id=${{ id }}`
-    // },
+    getCashDrawersShitfts: {
+      url: `${baseUrl}/cash-drawers/shifts/{ id }`
+    },
     // getIndividualCashDrawersShift: {
     //   url: `${baseUrl}/cash-drawers/shifts/${{ id }}}`
     // },
     // getCashDrawersShiftsEvents: {
     //   url: `${baseUrl}/cash-drawers/shifts/${{ id }}/events`
     // },
-    // teamMembersList:{
-    //   url: `${baseUrl}/team-members`
-    // },
+    teamMembersList:{
+      url: `${baseUrl}/team-members/search`
+    },
     IndividualteamMember: {
       url: `${baseUrl}/team-members/{id}`
     }

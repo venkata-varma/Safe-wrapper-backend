@@ -11,7 +11,7 @@ const squarePOSAPIConfiguration = require("../config/squarePOSConfiguration")
  * If validation is passed, then function call is passed to next immediate function of respective end-point
  */
 exports.validateAccountExistAndActive = asyncWrapper(async (req, res, next) => {
-    const { accountId } = req.body;
+    const accountId = req.body.accountId || req.params.accountId;
 
     if (!accountId) {
         return res.status(customConstants.statusCodes.BAD_REQUEST).json({
@@ -103,6 +103,46 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
         message: customConstants.messages.MESSAGE_INTEGRATION_CREDENTIALS_SAVED,
         data: {
             squarePOSIntegrationsMasterCredentials: savedCredentials
+        }
+    });
+});
+
+exports.UpdateIntegrationMasterCredentials = asyncWrapper(async (req, res, next) => {
+    const { payload, squareData } = req;
+    const merchant = squareData?.merchant?.[0];
+
+    // Ensure we have the accountId from either params (URL) or body
+    const { accountId } = { ...req.params, ...req.body };
+
+    const filter = {
+        accountId: accountId,
+        source: 'square-pos'
+    };
+
+    const updateData = {
+        ...payload,
+        accountId: accountId,
+        source: 'square-pos',
+        credentials: encryptData({ access_token: payload?.credentials?.accessToken }),
+        primaryKeyValues: {
+            merchantId: merchant?.id,
+            businessName: merchant?.business_name
+        },
+        status: "verified",
+        updatedBy: req.user?._id,
+    };
+
+    let savedCredentials = await squarePOSCredentialsModel.findOneAndUpdate(
+        filter,
+        updateData,
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    return res.status(200).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: "Integration credentials saved successfully.",
+        data: {
+            squarePOSMasterCredentials: savedCredentials
         }
     });
 });

@@ -79,16 +79,12 @@ exports.validateAccountExistAndActiveParams = asyncWrapper(async (req, res, next
 });
 
 
-
-
-
 /**
   * Middleware for Validating existence of "cardConnectIntegrationsMasterId" in params
   * If validation is passed, then function call is passed to next immediate function of respective end-point
  */
 exports.validateintegrationsMasterExistenceParams = asyncWrapper(async (req, res, next) => {
     const { cardConnectIntegrationsMasterId } = req.params;
-
 
     const integrationMasterDetails = await cardconnectIntegrationsMastersModel.findById(cardConnectIntegrationsMasterId)
     if (!integrationMasterDetails) {
@@ -101,7 +97,6 @@ exports.validateintegrationsMasterExistenceParams = asyncWrapper(async (req, res
     next()
 
 });
-
 
 
 /**
@@ -269,7 +264,6 @@ exports.createCardConnectIntegrationMasterSettings = asyncWrapper(async (req, re
         });
 
 })
-
 
 
 /**
