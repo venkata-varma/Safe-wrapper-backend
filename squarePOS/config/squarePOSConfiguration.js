@@ -19,20 +19,20 @@ const configurations = {
       url: `${baseUrl}/locations`
     },
     getCashDrawersShitfts: {
-      url: `${baseUrl}/cash-drawers/shifts/{ id }`
+      url: `${baseUrl}/cash-drawers/shifts?location_id={locationid}`
     },
-    // getIndividualCashDrawersShift: {
-    //   url: `${baseUrl}/cash-drawers/shifts/${{ id }}}`
-    // },
-    // getCashDrawersShiftsEvents: {
-    //   url: `${baseUrl}/cash-drawers/shifts/${{ id }}/events`
-    // },
-    teamMembersList:{
-      url: `${baseUrl}/team-members/search`
+    getIndividualCashDrawersShift: {
+      url: `${baseUrl}/cash-drawers/shifts/{shiftid}`
+    },
+    getCashDrawersShiftsEvents: {
+      url: `${baseUrl}/cash-drawers/shifts/{shiftid}/events`
     },
     IndividualteamMember: {
       url: `${baseUrl}/team-members/{id}`
-    }
+    },
+    teamMembersList: {
+      url: `${baseUrl}/team-members/search`
+    },
   },
 };
 

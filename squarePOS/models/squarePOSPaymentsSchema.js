@@ -79,11 +79,7 @@ const squarePOSPaymentsSchema = new mongoose.Schema(
             // required: [true, "Created by is required."],
             default: null,
         },
-        updatedBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "users",
-            default: null,
-        },
+
 
     },
     { timestamps: true }

@@ -104,5 +104,4 @@ exports.cardConnectScheduleCronJobs = asyncWrapper(async () => {
     });
 
 
-
 });

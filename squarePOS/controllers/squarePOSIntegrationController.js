@@ -7,8 +7,10 @@ const squarePOSMasterCredentialsModel = require('../models/squarePOSCredentialsM
 const squarePOSPaymentsModel = require('../models/squarePOSPaymentsSchema');
 const squarePOSTeamMembersModel = require('../models/squarePOSTeamMembersModel');
 const squarePOSLocationsModel = require('../models/squarePOSLocationsModel')
+const squarePOSCashDrawerShiftsModel = require('../models/squarePOSCashDrawerShiftsModel')
 const { decryptData } = require("../../utils/encryptionAlgorithms")
 const squarePOSAPIConfiguration = require("../config/squarePOSConfiguration")
+const { fetchTeamMembers, fetchIndividualTeamMember, fetchPayments, fetchLocations, fetchCashDrawerShifts, fetchIndividualCashDrawersShift, fetchShiftEvents } = require('../utils/squarePOSAPIConfiguration');
 
 /**
  * Helper to validate credentials against the Square API
@@ -198,44 +200,6 @@ exports.getSquarePOSPayments = asyncWrapper(async (req, res) => {
     });
 });
 
-/* --- Helper Functions --- */
-
-async function fetchTeamMembers(accessToken) {
-    const url = squarePOSAPIConfiguration?.SquarePOS?.teamMembersList?.url;
-    if (!url) return [];
-
-    // Square Team API requires a POST to /search to list members
-    const { data } = await axios.post(url, {}, {
-        headers: getSquareHeaders(accessToken)
-    });
-
-    return data?.team_members || [];
-}
-
-async function fetchPayments(accessToken) {
-    const url = squarePOSAPIConfiguration?.SquarePOS?.getPayments?.url;
-    if (!url) return [];
-    const { data } = await axios.get(url, { headers: getSquareHeaders(accessToken) });
-    return data?.payments || [];
-}
-
-async function fetchLocations(accessToken) {
-    const url = squarePOSAPIConfiguration?.SquarePOS?.getLocations?.url;
-    if (!url) return [];
-    const { data } = await axios.get(url, { headers: getSquareHeaders(accessToken) });
-    return data?.locations || [];
-}
-
-function getSquareHeaders(accessToken) {
-    return {
-        Authorization: `Bearer ${accessToken}`,
-        'Square-Version': '2024-12-18',
-        'Content-Type': 'application/json'
-    };
-}
-
-/* --- Main Controller --- */
-
 exports.syncSquarePOSData = asyncWrapper(async (req, res) => {
     const { accountId } = req.params;
     const userId = req.user._id;
@@ -256,45 +220,80 @@ exports.syncSquarePOSData = asyncWrapper(async (req, res) => {
     }, process.env.CRYPTO_KEY));
 
     const accessToken = decrypted.access_token;
+    console.log("Decrypted Access Token:", accessToken);
 
-    // 2. Fetch Data from Square in Parallel
+    // 2. Initial Fetch: Teams, Locations, Payments
+    console.log("Starting Initial Fetch...");
     const [teamMembers, locations, payments] = await Promise.all([
         fetchTeamMembers(accessToken),
         fetchLocations(accessToken),
         fetchPayments(accessToken)
     ]);
 
-    // 3. Save / Update Data in Database
+    // 3. Sequential Fetch: Shifts -> Individual Details -> Events
+    let allShifts = [];
+    let individualShiftsDetails = [];
+    let allShiftEvents = [];
+
+    for (const loc of locations) {
+        console.log("Processing shifts for location ID:", loc.id);
+        const shifts = await fetchCashDrawerShifts(loc.id, accessToken);
+
+        for (const shift of shifts) {
+            // Fetch Individual Shift Detail
+            // Note: Replace with your actual helper name if different (e.g. fetchIndividualShift)
+            const detail = await fetchIndividualCashDrawersShift(shift.id, accessToken);
+            if (detail) individualShiftsDetails.push(detail);
+
+            // Fetch Shift Events
+            const events = await fetchShiftEvents(shift.id, accessToken);
+            if (events.length > 0) {
+                allShiftEvents.push(...events.map(ev => ({ ...ev, shiftId: shift.id })));
+            }
+
+            allShifts.push({ ...shift, locationId: loc.id });
+        }
+    }
+
+    // 4. Save Tasks
+    // I am including the logic to save Shifts. 
+    // Add additional logic here if you have models for Individual Details or Events.
     const saveTasks = [
-        // Update Team Members
         ...teamMembers.map(member => squarePOSTeamMembersModel.updateOne(
             { referenceId: member.id },
             { $set: { accountId, referenceId: member.id, responseObject: member, createdBy: userId } },
             { upsert: true }
         )),
-        // Update Locations
         ...locations.map(loc => squarePOSLocationsModel.updateOne(
             { referenceId: loc.id },
             { $set: { accountId, referenceId: loc.id, responseObject: loc, createdBy: userId } },
             { upsert: true }
         )),
-        // Update Payments
         ...payments.map(payment => squarePOSPaymentsModel.updateOne(
             { referenceId: payment.id },
             { $set: { accountId, referenceId: payment.id, referenceStatus: payment.status, responseObject: payment, createdBy: userId } },
+            { upsert: true }
+        )),
+        ...allShifts.map(shift => squarePOSCashDrawerShiftsModel.updateOne(
+            { referenceId: shift.id },
+            { $set: { accountId, locationId: shift.locationId, referenceId: shift.id, responseObject: shift, createdBy: userId } },
             { upsert: true }
         ))
     ];
 
     await Promise.all(saveTasks);
 
-    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
-        status: customConstants.messages.MESSAGE_SUCCESS,
-        message: "Square POS sync completed successfully",
+    // 5. Response with required counts
+    return res.status(200).json({
+        status: "success",
+        message: "Square POS full sync completed",
         data: {
             paymentsCount: payments.length,
             teamMembersCount: teamMembers.length,
-            locationsCount: locations.length
+            locationsCount: locations.length,
+            cashDrawerShiftsCount: allShifts.length,
+            IndividualCashDrawersShift: individualShiftsDetails.length,
+            CashDrawersShiftsEvents: allShiftEvents.length
         }
     });
 });
