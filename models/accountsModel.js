@@ -8,15 +8,19 @@ const accountsSchema = new mongoose.Schema({
     },
     accountName: {
         type: String,
-       // required: [true, 'Account name is required.'],
+        // required: [true, 'Account name is required.'],
         default: ""
     },
-    
+
     accountType: {
         type: String,
         // required: [true, "Account type is required"],
         enum: ['customer', 'super-admin', 'merchant'],
         default: "merchant"
+    },
+    integrationsConnected: {
+        type: Array,
+
     },
     companyName: {
         type: String,

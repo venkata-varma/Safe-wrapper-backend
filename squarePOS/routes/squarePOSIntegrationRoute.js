@@ -7,24 +7,24 @@ const auth = require('../../middleware/authentication')
 
 router.use(auth)
 
-router.post('/authticate', validateAccountExistAndActive,
+router.post('/onboard-square-pos-credentials', validateAccountExistAndActive,
     credentialsValidationsMiddleware,
     createIntegrationMasterCredentials)
 
-router.patch('/update-authentication-details/:accountId', validateAccountExistAndActive,
+router.patch('/update-square-pos-credentials/:accountId', validateAccountExistAndActive,
     credentialsValidationsMiddleware,
     UpdateIntegrationMasterCredentials)
 
-router.get('/authentication-details/:accountId', validateAccountExistAndActive,
+router.get('/get-square-pos-credentials/:accountId', validateAccountExistAndActive,
     getSquarePOSIntegrationMasterCredentials)
 
-router.post('/create-integrations-master-settings', validateAccountExistAndActive, createSquarePOSIntegrationMasterSettings)
+router.post('/onboard-square-pos-integration-settings', validateAccountExistAndActive, createSquarePOSIntegrationMasterSettings)
 //validateSquarePOSCredentails
 
-router.get('/integrations-master-settings/:accountId/:integartionSettingsId',
+router.get('/get-square-pos-integration-settings/:accountId',
     validateAccountExistAndActive, getIntegrationMasterSettings)
 
-router.get('/payments/:accountId',
+router.get('/get-square-pos-payments/:accountId',
     validateAccountExistAndActive, getSquarePOSPayments)
 
 router.get('/integration-context/:accountId', validateAccountExistAndActive, syncSquarePOSData)

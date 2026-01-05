@@ -26,7 +26,7 @@ router.get('/get-all-merchant-accounts', accountsControllers.getAllMerchantAccou
 
 
 
-router.get('/get-account-and-card-connect-integration-details/:accountId', accountsControllers.validateAccountStatus, accountsControllers.getAccountAndCardConnectInterationDetails)
+router.get('/get-account-integration-details/:accountId', accountsControllers.validateAccountStatus, accountsControllers.getAccountIntegrationDetails)
 
 
 router.get('/get-super-admin-card-connect-dashboard-statistics', accountsControllers.getSuperAdminCardConnectDashboardStats)

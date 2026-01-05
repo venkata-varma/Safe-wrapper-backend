@@ -41,6 +41,7 @@
     "MESSAGE_DASHBOARD_STATISTICS_RECEIVED": "Received Account's dashbaord statistics successfully.",
     "MESSAGE_VERIFIED": "Authentications has been successfully completed.",
     "ACCOUNT_AND_CARD_CONNECT_INTEGRATION_DETAILS": "Account and card connect integration details retreived succesfully.",
+    "ACCOUNT_INTEGRATIONS_CONNECTIONS_DETAILS": "Integetions-connections details retreived succesfully.",
     "MESSAGE_AUTH_VERIFIED": "Authentication has been successfully completed.",
     "MESSAGE_CONFIGURATION_UPDATE": "Configuration details updated successfully.",
     "MESSAGE_AUTH_UN_VERIFIED": "Authentication failed. Please check your credentials and try again.",
@@ -176,9 +177,9 @@
     "MERCHANT_MERCHANT_NAMES_IN_DROPDOWN": "Getting merchant names in dropdown done succesfully.",
     "ACCOUNT_VALIDATION_FAILED": "Account doesn't exists or is inactive",
     "WEBHOOK_VALIDATION_FAILED": "Webhook doesn't exists / inactive.",
-    "MESSAGE_PAYMENTS_FETCHED_SUCCESSFULLY":"Payments fetched successfully",
-    "MESSAGE_NO_MASTER_SETTINGS_FOUND":"Square POS integration settings not found",
-    "MESSAGE_MASTER_SETTINGS_FETCHED_SUCCESSFULLY":"Master settings fetched successfully"
+    "MESSAGE_PAYMENTS_FETCHED_SUCCESSFULLY": "Payments fetched successfully",
+    "MESSAGE_NO_MASTER_SETTINGS_FOUND": "Square POS integration settings not found",
+    "MESSAGE_MASTER_SETTINGS_FETCHED_SUCCESSFULLY": "Master settings fetched successfully"
   },
   "statusCodes": {
     "FORBIDDEN": 403,

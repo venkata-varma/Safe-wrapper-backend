@@ -25,6 +25,7 @@ Takes an object with two key-value pairs => iv,Encrypted string  and required ke
 Retuns original value 
 */
 async function decryptData(encrypted, key) {
+
     const ivBuffer = Buffer.from(encrypted.iv, 'hex');
     const keyBuffer = Buffer.from(key, 'hex');
     const decipher = crypto.createDecipheriv(process.env.CRYPTO_ALGORITHM, keyBuffer, ivBuffer);

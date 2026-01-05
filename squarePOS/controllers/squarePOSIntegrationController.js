@@ -75,11 +75,7 @@ exports.createSquarePOSIntegrationMasterSettings = asyncWrapper(async (req, res)
 
     let squarePOSConnectIntegrationsSettings = await squarePOSintegrationssettingsModel.create({
         ...req.body,
-        createdBy: req.user._id,
-        // transactionStatusKeys: squarePOSPredefinedKeys.transactionStatusKeys,
-        // transactionTypeKeys: squarePOSPredefinedKeys.transactionTypeKeys,
-        // requiredDatapoints: squarePOSPredefinedKeys.requiredDatapoints,
-        // customerObjectKeys: squarePOSPredefinedKeys.customerObjectKeys   //Not useful as of now
+        createdBy: req.user._id
     });
 
 
@@ -99,14 +95,12 @@ exports.createSquarePOSIntegrationMasterSettings = asyncWrapper(async (req, res)
  * GET Integration Master Settings Details.
  */
 exports.getIntegrationMasterSettings = asyncWrapper(async (req, res) => {
-    const { id } = req.params;
-    console.log(req.params, ":req.params")
-    console.log(id, ":squarePOSIntegrationsSettingId")
+    const { accountId } = req.params;
 
     const squarePOSIntegrationMasterSettings =
-        await squarePOSintegrationssettingsModel.findOne({ squarePOSIntegrationsSettingId: id });
+        await squarePOSintegrationssettingsModel.findOne({ accountId });
 
-    console.log(squarePOSIntegrationMasterSettings, ":squarePOSIntegrationMasterSettings")
+
     if (!squarePOSIntegrationMasterSettings) {
         return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
             status: customConstants.messages.MESSAGE_FAIL,
