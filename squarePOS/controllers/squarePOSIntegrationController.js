@@ -260,22 +260,22 @@ exports.syncSquarePOSData = asyncWrapper(async (req, res) => {
     // Add additional logic here if you have models for Individual Details or Events.
     const saveTasks = [
         ...teamMembers.map(member => squarePOSTeamMembersModel.updateOne(
-            { referenceId: member.id },
+            { referenceId: member.id, accountId },
             { $set: { accountId, referenceId: member.id, responseObject: member, createdBy: userId } },
             { upsert: true }
         )),
         ...locations.map(loc => squarePOSLocationsModel.updateOne(
-            { referenceId: loc.id },
+            { referenceId: loc.id, accountId },
             { $set: { accountId, referenceId: loc.id, responseObject: loc, createdBy: userId } },
             { upsert: true }
         )),
         ...payments.map(payment => squarePOSPaymentsModel.updateOne(
-            { referenceId: payment.id },
+            { referenceId: payment.id, accountId },
             { $set: { accountId, referenceId: payment.id, referenceStatus: payment.status, responseObject: payment, createdBy: userId } },
             { upsert: true }
         )),
         ...allShifts.map(shift => squarePOSCashDrawerShiftsModel.updateOne(
-            { referenceId: shift.id },
+            { referenceId: shift.id, accountId },
             { $set: { accountId, locationId: shift.locationId, referenceId: shift.id, responseObject: shift, createdBy: userId } },
             { upsert: true }
         ))
