@@ -214,65 +214,131 @@ exports.validateAccountStatus = asyncWrapper(async (req, res, next) => {
 
 
 
-exports.getAccountAndCardConnectInterationDetails = asyncWrapper(async (req, res) => {
+exports.getAccountIntegrationDetails = asyncWrapper(async (req, res) => {
     let { accountId } = req.params;
+    let accountDetails = await accountsModel.findOne({ accountId }).select('-password')
 
-    let accountAndCardConnectIntegrationDetails = await accountsModel.aggregate([
-        {
-            $match: {
-                _id: new mongoose.Types.ObjectId(accountId)
-            }
-        },
-        {
-            $lookup: {
-                from: "cardconnectintegrationscredentials",
-                localField: "_id",
-                foreignField: "accountId",
-                as: "cardconnectintegrationscredentials"
-            }
-        },
-        {
-            $lookup: {
-                from: "cardconnectintegrationssettings",
-                localField: "_id",
-                foreignField: "accountId",
-                as: "cardconnectintegrationssettings"
-            }
-        },
-        {
-            $unwind: {
-                path: "$cardconnectintegrationscredentials",
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $unwind: {
-                path: "$cardconnectintegrationssettings",
-                preserveNullAndEmptyArrays: true
-            }
-        }
-    ]);
+    let integrationsConnected = accountDetails?.integrationsConnected
 
-    if (accountAndCardConnectIntegrationDetails.length > 0) {
-        // ensure defaults if null
-        accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials =
-            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials || {};
+    let squarePOSDetails = {}
+    let cardConnectDetails = {}
+    if (integrationsConnected.includes("card-connect")) {
+        let cardConnectCredentials = await accountsModel.aggregate([
+            {
+                $match: {
+                    _id: new mongoose.Types.ObjectId(accountId)
+                }
+            },
+            {
+                $lookup: {
+                    from: "cardconnectintegrationscredentials",
+                    localField: "_id",
+                    foreignField: "accountId",
+                    as: "cardconnectintegrationscredentials"
+                }
+            },
+            {
+                $lookup: {
+                    from: "cardconnectintegrationssettings",
+                    localField: "_id",
+                    foreignField: "accountId",
+                    as: "cardconnectintegrationssettings"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$cardconnectintegrationscredentials",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $unwind: {
+                    path: "$cardconnectintegrationssettings",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+        ])
 
-        accountAndCardConnectIntegrationDetails[0].cardconnectintegrationssettings =
-            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationssettings || {};
+        cardConnectDetails.credentials = cardConnectCredentials?.[0]?.cardconnectintegrationscredentials
+        cardConnectDetails.settings = cardConnectCredentials?.[0]?.cardconnectintegrationssettings
 
-        // decrypt only if credentials exist
-        let encryptedData = accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials?.credentials;
-        if (encryptedData) {
+        if (cardConnectDetails?.credentials?.credentials) {
+            let encryptedData = cardConnectDetails?.credentials?.credentials
+
             let encrypted = { iv: process.env.CRYPTO_IV, encryptedData };
             let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
-            accountAndCardConnectIntegrationDetails[0].cardconnectintegrationscredentials.credentials = decryptConfigCredentials;
+            cardConnectDetails.credentials.credentials = decryptConfigCredentials;
+
         }
+
+
+
     }
+    if (integrationsConnected.includes("square-pos")) {
+        let squarePOSCredentials = await accountsModel.aggregate([
+            {
+                $match: {
+                    _id: new mongoose.Types.ObjectId(accountId)
+                }
+            },
+            {
+                $lookup: {
+                    from: "squareposcredentialsmodels",
+                    localField: "_id",
+                    foreignField: "accountId",
+                    as: "squareposcredentials"
+                }
+            },
+            {
+                $lookup: {
+                    from: "squareposintegrationssettings",
+                    localField: "_id",
+                    foreignField: "accountId",
+                    as: "squareposintegrationssettings"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$squareposcredentials",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $unwind: {
+                    path: "$squareposintegrationssettings",
+                    preserveNullAndEmptyArrays: true
+                }
+            }
+        ])
+
+        squarePOSDetails.credentials = squarePOSCredentials?.[0]?.squareposcredentials
+        squarePOSDetails.settings = squarePOSCredentials?.[0]?.squareposintegrationssettings
+        if (squarePOSDetails?.credentials?.credentials) {
+            let encryptedData = squarePOSDetails?.credentials?.credentials
+
+            let encrypted = { iv: process.env.CRYPTO_IV, encryptedData };
+            let decryptConfigCredentials = JSON.parse(await decryptData(encrypted, process.env.CRYPTO_KEY));
+            squarePOSDetails.credentials.credentials = decryptConfigCredentials;
+
+        }
+
+
+
+    }
+
+    let responseData = [
+        {
+            ...accountDetails?._doc,
+            cardConnectDetails: cardConnectDetails,
+            squarePOSDetails: squarePOSDetails
+        }
+
+    ]
+
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: customConstants.messages.ACCOUNT_AND_CARD_CONNECT_INTEGRATION_DETAILS,
-        data: accountAndCardConnectIntegrationDetails
+        message: customConstants.messages.ACCOUNT_INTEGRATIONS_CONNECTIONS_DETAILS,
+        data: responseData
     });
 });

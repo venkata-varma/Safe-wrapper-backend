@@ -21,7 +21,7 @@ router.use(auth)
 // router.patch('/delete-account/:accountId', accountsControllers.deleteAccount)
 // router.patch('/update-account/:accountId',upload.single('logo'), accountsControllers.validateAccountForUpdate, accountsControllers.updateAccount)
 
-router.get('/get-self-account-and-card-connect-integration-details/:accountId', validateAccountStatus, accountsControllers.getAccountAndCardConnectInterationDetails)
+router.get('/get-self-account-integration-details/:accountId', validateAccountStatus, accountsControllers.getAccountIntegrationDetails)
 
 
 router.patch('/update-merchant-account/:accountId', upload.single('logo'), validateAccountForUpdate, updateAccount)
