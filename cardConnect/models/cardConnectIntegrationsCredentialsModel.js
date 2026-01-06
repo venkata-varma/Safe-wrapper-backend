@@ -15,6 +15,7 @@ const cardConnectIntegrationsCredentialsSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             required: [true, "Account id is mandatory."],
             ref: "accounts",
+            unique: [true, "Account Id must be unique"],
             index: true,
             default: null,
         },
@@ -22,6 +23,7 @@ const cardConnectIntegrationsCredentialsSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             required: [true, "User id is mandatory."],
             ref: "users",
+
             index: true,
             default: null,
         },

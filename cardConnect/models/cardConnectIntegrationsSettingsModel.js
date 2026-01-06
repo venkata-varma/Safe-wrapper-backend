@@ -13,6 +13,7 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "accounts",
         index: true,
+        unique: [true, "Account Id must be unique"],
         default: null,
     },
     userId: {

@@ -15,6 +15,7 @@ const squarePOSIntegrationsCredentialsSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             required: [true, "Account id is mandatory."],
             ref: "accounts",
+            unique: [true, "Account Id must be unique"],
             index: true,
             default: null,
         },

@@ -12,6 +12,7 @@ const squarePOSIntegrationsSettingsSchema = new mongoose.Schema({
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "accounts",
+        unique: [true, "Account Id must be unique"],
         index: true,
         default: null,
     },
@@ -49,7 +50,7 @@ const squarePOSIntegrationsSettingsSchema = new mongoose.Schema({
     //     type: Object,
     //     default: {}
     // },
-  
+
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
