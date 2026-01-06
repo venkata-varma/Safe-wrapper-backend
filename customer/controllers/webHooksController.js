@@ -1588,7 +1588,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         }
       },
       {
-        $sort: { totalAmount: -1 }
+        $sort: { transactionDateTime: -1 }
       },
       {
         $limit: 5
@@ -1605,15 +1605,24 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     ]),
     webhookPayloadTransactions.aggregate([
       {
+        $addFields: {
+          transactionDateTime: { $toDate: '$transactionDateTime' }
+        }
+      },
+      {
+        $sort: { transactionDateTime: -1 }
+      },
+      {
         $match: {
           // accountId: new mongoose.Types.ObjectId(accountId),
           ...matchCondition,
-          createdAt: {
-            $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
-            $lte: new Date()
+          transactionDateTime: {
+            $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
+            $lte: moment().utc().endOf('day').toDate()
           }
         },
       },
+
       {
         $unwind: {
           path: "$denominations",
@@ -1682,6 +1691,12 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
     ]),
     webhookPayloadTransactions.aggregate([
       {
+        $addFields: {
+          transactionDateTime: { $toDate: '$transactionDateTime' }
+        }
+      },
+
+      {
         $match: {
           // accountId: new mongoose.Types.ObjectId(accountId),
           ...matchCondition,
@@ -1711,6 +1726,9 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
         $addFields: {
           transactionDateTime: { $toDate: '$transactionDateTime' }
         }
+      },
+      {
+        $sort: { transactionDateTime: -1 }
       },
       {
         $match: {
