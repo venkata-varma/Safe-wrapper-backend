@@ -85,6 +85,14 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
     const { payload, squareData } = req;
     const merchant = squareData?.merchant?.[0];
 
+    let findExistingAccountsCredentials = await squarePOSCredentialsModel.findOne({ accountId: payload?.accountId })
+    if (findExistingAccountsCredentials) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_SQUARE_POS_AUTHENTICATION_ALREADY_EXISTS_FOR_ACCOUNT,
+
+        });
+    }
     // 1. Prepare data for the Master Credentials table
     let prepareReqObj = {
         ...payload,

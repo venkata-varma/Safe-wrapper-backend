@@ -108,6 +108,8 @@
     "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND": "Respective Integration service provider details not found.",
     "MESSAGE_INTEGRATION_ID_NOT_ACTIVE": "Respective integration is not in active state. Please contact admin.",
     "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials.",
+    "MESSAGE_SQUARE_POS_AUTHENTICATION_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos authentication already exists for the account.",
+    "MESSAGE_SQUARE_POS_SETTINGS_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos settings already exists for the account.",
     "MESSAGE_ONLY_CUSTOMER_ENTRY": "No access. Access restricted for this site.",
     "MESSAGE_WORKORDER_ID_INVALID": "Invalid WorkorderId / Integration .",
     "MESSAGE_USER_TAKEN": "User email address already taken by some one.",

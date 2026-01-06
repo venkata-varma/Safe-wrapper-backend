@@ -72,7 +72,14 @@ exports.getSquarePOSIntegrationMasterCredentials = asyncWrapper(async (req, res)
  * Front-end screen exists for giving values to settings for square pos integration.
  */
 exports.createSquarePOSIntegrationMasterSettings = asyncWrapper(async (req, res) => {
+    let findExistingAccountsSettings = await squarePOSintegrationssettingsModel.findOne({ accountId: req?.body?.accountId })
+    if (findExistingAccountsSettings) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_SQUARE_POS_SETTINGS_ALREADY_EXISTS_FOR_ACCOUNT,
 
+        });
+    }
     let squarePOSConnectIntegrationsSettings = await squarePOSintegrationssettingsModel.create({
         ...req.body,
         createdBy: req.user._id
