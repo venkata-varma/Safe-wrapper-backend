@@ -39,7 +39,7 @@ exports.validateServiceProviders = async (payload) => {
         return {
             statusCode: error.response?.status || 500,
             status: "fail",
-            data: error.response?.data
+            data: error
         };
     }
 };

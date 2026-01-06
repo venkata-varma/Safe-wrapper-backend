@@ -148,6 +148,14 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
 
 
     }
+    let findExistingCardConnectCredentialsForAccount = await cardconnectIntegrationsCredentialsModel.findOne({ accountId: payload?.accountId })
+    if (findExistingCardConnectCredentialsForAccount) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_CARD_CONNECT_AUTHENTICATION_ALREADY_EXISTS_FOR_ACCOUNT,
+
+        });
+    }
     let createCardConnectIntegrationsMasterCredentials = await cardconnectIntegrationsCredentialsModel.create(prepareReqObj);
     //------Insert API service
     let insertAPIUrl = cardConnectPredefinedKeys?.APIUrls?.uat?.[0];
@@ -242,7 +250,14 @@ exports.createCardConnectIntegrationsAPIUrlFlow = asyncWrapper(async (req, res) 
  * Front-end screen exists for giving values to settings for card-connect integration.
  */
 exports.createCardConnectIntegrationMasterSettings = asyncWrapper(async (req, res) => {
+    let findExistingCardConnectSettingsForAccount = await cardConnectIntegrationsSettingsModel.findOne({ accountId: req?.body?.accountId })
+    if (findExistingCardConnectSettingsForAccount) {
+        return res.status(customConstants.statusCodes.BAD_REQUEST).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_CARD_CONNECT_SETTINGS_ALREADY_EXISTS_FOR_ACCOUNT,
 
+        });
+    }
     let createCardConnectIntegrationsSettings = await cardConnectIntegrationsSettingsModel.create({
         ...req.body,
         createdBy: req.user._id,
