@@ -6,6 +6,8 @@ const squarePOSCredentialsModel = require('../models/squarePOSCredentialsModel')
 const { validateServiceProviders } = require('../utils/credentialsValidation');
 const { encryptData } = require("../../utils/encryptionAlgorithms")
 const squarePOSAPIConfiguration = require("../config/squarePOSConfiguration")
+const squarePOSintegrationssettingsModel = require('../models/squarePOSIntegrationSettings')
+
 /**
  * Middleware for Validating existence of "accountId" in payload (body)
  * If validation is passed, then function call is passed to next immediate function of respective end-point
@@ -146,3 +148,34 @@ exports.UpdateIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
         }
     });
 });
+
+
+
+/**
+ * 
+ */
+exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
+    const { integrationSettingsId } = req.params;
+
+    const updatedSettings = await squarePOSintegrationssettingsModel.findOneAndUpdate(
+        { squarePOSIntegrationsSettingId: integrationSettingsId },
+        { $set: req.body },
+        { new: true }
+    );
+
+    if (!updatedSettings) {
+        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_NO_MASTER_SETTINGS_FOUND,
+            data: null
+        });
+    }
+
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_INTEGRATION_UPDATED,
+        data: {
+            squarePOSIntegrationMasterSettings: updatedSettings
+        }
+    });
+})

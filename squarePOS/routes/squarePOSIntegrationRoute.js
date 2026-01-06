@@ -2,7 +2,7 @@ const router = require('express').Router();
 
 const { getSquarePOSIntegrationMasterCredentials, createSquarePOSIntegrationMasterSettings, getIntegrationMasterSettings, getSquarePOSPayments, syncSquarePOSData } = require('../controllers/squarePOSIntegrationController')
 
-const { validateAccountExistAndActive, createIntegrationMasterCredentials, credentialsValidationsMiddleware, UpdateIntegrationMasterCredentials } = require('../controllers/squarePOSMasterContollers');
+const { validateAccountExistAndActive, createIntegrationMasterCredentials, credentialsValidationsMiddleware, UpdateIntegrationMasterCredentials, updateIntegrationMasterSettings } = require('../controllers/squarePOSMasterContollers');
 const auth = require('../../middleware/authentication')
 
 router.use(auth)
@@ -23,6 +23,11 @@ router.post('/onboard-square-pos-integration-settings', validateAccountExistAndA
 
 router.get('/get-square-pos-integration-settings/:accountId',
     validateAccountExistAndActive, getIntegrationMasterSettings)
+
+router.patch('/update-integrations-master-settings/:accountId/:integrationSettingsId',
+    validateAccountExistAndActive, updateIntegrationMasterSettings)
+
+
 
 router.get('/get-square-pos-payments/:accountId',
     validateAccountExistAndActive, getSquarePOSPayments)
