@@ -11,7 +11,10 @@ const squarePOSCashDrawerShiftsModel = require('../models/squarePOSCashDrawerShi
 const { decryptData } = require("../../utils/encryptionAlgorithms")
 const squarePOSAPIConfiguration = require("../config/squarePOSConfiguration")
 const { fetchTeamMembers, fetchIndividualTeamMember, fetchPayments, fetchLocations, fetchCashDrawerShifts, fetchIndividualCashDrawersShift, fetchShiftEvents } = require('../utils/squarePOSAPIConfiguration');
-
+const squarePOSIntegrationsCronsModel = require('../models/squarePOSIntegrationsCronsModel')
+const squarePOSExceptionsModel = require('../models/squarePOSExceptionModel');
+const { executeSquarePOSDataSync } = require('../services/squarePOSDataSyncService')
+const { generateDateRange, generateDateArray } = require('../utils/helpers')
 /**
  * Helper to validate credentials against the Square API
  */
@@ -295,6 +298,189 @@ exports.syncSquarePOSData = asyncWrapper(async (req, res) => {
             cashDrawerShiftsCount: allShifts.length,
             IndividualCashDrawersShift: individualShiftsDetails.length,
             CashDrawersShiftsEvents: allShiftEvents.length
+        }
+    });
+});
+
+
+
+exports.manualPullDateDumpRange = asyncWrapper(async (req, res) => {
+    const { accountId } = req.params;
+    const userId = req.user._id;
+
+    // Fetch settings and credentials in parallel
+    const [settings, credentials] = await Promise.all([
+        squarePOSintegrationssettingsModel.findOne({ accountId }),
+        squarePOSMasterCredentialsModel.findOne({ accountId, source: 'square-pos' })
+    ]);
+
+    if (!settings) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Square POS integration settings not found'
+        });
+    }
+
+    if (!credentials) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Square POS credentials not found'
+        });
+    }
+
+    const dataDumpRange = settings.dataDumpRange || 20; // fallback if missing
+    const dateRange = generateDateRange(dataDumpRange);
+
+    const formattedDateRange = dateRange.map(unformattedDate =>
+        `${unformattedDate.slice(0, 4)}-${unformattedDate.slice(4, 6)}-${unformattedDate.slice(6, 8)}`
+    );
+
+    // Create cron log entry
+    const cronLog = await squarePOSIntegrationsCronsModel.create({
+        accountId,
+        userId,
+        dateRange: formattedDateRange,
+        status: "initiated",
+        cronJobType: "manual",
+        pulledCount: 0,
+        pushedCount: 0,
+        updatedCount: 0
+    });
+
+    // Update settings with last pull info
+    await squarePOSintegrationssettingsModel.findOneAndUpdate(
+        { accountId },
+        {
+            $set: {
+                lastPullDate: new Date(),
+                lastIntegrationsCronId: cronLog._id  // Fixed typo: Intgerations → Integrations
+            }
+        },
+        { new: true, runValidators: true }
+    );
+
+    // Execute the actual sync
+    await executeSquarePOSDataSync({
+        accountId,
+        userId,
+        cronId: cronLog._id,
+        credentials,
+        dateRange // pass raw YYYYMMDD array if your sync function expects it
+    });
+
+    // Mark as completed and get final stats
+    const finalCronDetails = await squarePOSIntegrationsCronsModel.findByIdAndUpdate(
+        cronLog._id,
+        { $set: { status: "completed" } },
+        { new: true, runValidators: true }
+    );
+
+    const exceptionsCount = await squarePOSExceptionsModel.countDocuments({
+        squarePOSIntegrationsCronId: cronLog._id
+    });
+
+    return res.status(200).json({
+        status: 'success',
+        message: 'Manual data sync using dump range completed successfully',
+        data: {
+            finalResult: {
+                accountId: finalCronDetails.accountId,
+                cronId: finalCronDetails._id,
+                cronJobType: finalCronDetails.cronJobType,
+                dateRange: finalCronDetails.dateRange,
+                exceptionsCount,
+                totalFetchedTransactionsCount: finalCronDetails.pulledCount,
+                newlyAddedTransactionsCount: finalCronDetails.pushedCount,
+                updatedTransactionsCount: finalCronDetails.updatedCount
+            }
+        }
+    });
+});
+
+exports.fetchSquarePOSDataForDateRange = asyncWrapper(async (req, res) => {
+    const { fromDate, toDate } = req.body;
+    const { accountId } = req.params;
+    const userId = req.user._id;
+
+    if (!fromDate || !toDate) {
+        return res.status(400).json({
+            status: 'fail',
+            message: 'fromDate and toDate are required in request body'
+        });
+    }
+
+    const credentials = await squarePOSMasterCredentialsModel.findOne({
+        accountId,
+        source: 'square-pos'
+    });
+
+    if (!credentials) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Square POS credentials not found'
+        });
+    }
+
+    const generatedDateArray = generateDateArray(fromDate, toDate);
+
+    const formattedDateRange = generatedDateArray.map(unformattedDate =>
+        `${unformattedDate.slice(0, 4)}-${unformattedDate.slice(4, 6)}-${unformattedDate.slice(6, 8)}`
+    );
+
+    const cronLog = await squarePOSIntegrationsCronsModel.create({
+        accountId,
+        userId,
+        dateRange: formattedDateRange,
+        status: "initiated",
+        cronJobType: "manual",
+        pulledCount: 0,
+        pushedCount: 0,
+        updatedCount: 0
+    });
+
+    await squarePOSintegrationssettingsModel.findOneAndUpdate(
+        { accountId },
+        {
+            $set: {
+                lastPullDate: new Date(),
+                lastIntegrationsCronId: cronLog._id
+            }
+        },
+        { new: true, runValidators: true }
+    );
+
+    await executeSquarePOSDataSync({
+        accountId,
+        userId,
+        cronId: cronLog._id,
+        credentials,
+        dateRange: generatedDateArray
+    });
+
+    const finalCronDetails = await squarePOSIntegrationsCronsModel.findByIdAndUpdate(
+        cronLog._id,
+        { $set: { status: "completed" } },
+        { new: true, runValidators: true }
+    );
+
+    const exceptionsCount = await squarePOSExceptionsModel.countDocuments({
+        squarePOSIntegrationsCronId: cronLog._id
+    });
+
+    return res.status(200).json({
+        status: 'success',
+        message: 'Square POS data synced successfully for custom date range',
+        data: {
+            finalResult: {
+                accountId: finalCronDetails.accountId,
+                cronId: finalCronDetails._id,
+                cronJobType: finalCronDetails.cronJobType,
+                dateRange: finalCronDetails.dateRange,
+                exceptionsCount,
+                totalFetchedTransactionsCount: finalCronDetails.pulledCount,
+                newlyAddedTransactionsCount: finalCronDetails.pushedCount,
+                updatedTransactionsCount: finalCronDetails.updatedCount
+            }
         }
     });
 });

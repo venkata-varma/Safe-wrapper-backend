@@ -1,9 +1,11 @@
 const router = require('express').Router();
 
-const { getSquarePOSIntegrationMasterCredentials, createSquarePOSIntegrationMasterSettings, getIntegrationMasterSettings, getSquarePOSPayments, syncSquarePOSData } = require('../controllers/squarePOSIntegrationController')
+const { getSquarePOSIntegrationMasterCredentials, createSquarePOSIntegrationMasterSettings, getIntegrationMasterSettings, getSquarePOSPayments, syncSquarePOSData, manualPullDateDumpRange, fetchSquarePOSDataForDateRange } = require('../controllers/squarePOSIntegrationController')
 
-const { validateAccountExistAndActive, createIntegrationMasterCredentials, credentialsValidationsMiddleware, UpdateIntegrationMasterCredentials, updateIntegrationMasterSettings } = require('../controllers/squarePOSMasterContollers');
-const auth = require('../../middleware/authentication')
+const { validateAccountExistAndActive, createIntegrationMasterCredentials, credentialsValidationsMiddleware, UpdateIntegrationMasterCredentials, updateIntegrationMasterSettings, getDetailsOfCronJobId } = require('../controllers/squarePOSMasterContollers');
+const auth = require('../../middleware/authentication');
+const { validate } = require('../models/squarePOSExceptionModel');
+
 
 router.use(auth)
 
@@ -28,10 +30,23 @@ router.patch('/update-integrations-master-settings/:accountId/:integrationSettin
     validateAccountExistAndActive, updateIntegrationMasterSettings)
 
 
-
 router.get('/get-square-pos-payments/:accountId',
     validateAccountExistAndActive, getSquarePOSPayments)
 
 router.get('/integration-context/:accountId', validateAccountExistAndActive, syncSquarePOSData)
+
+router.post('/manual-sync/:accountId',
+    validateAccountExistAndActive, manualPullDateDumpRange
+);
+
+router.post('/sync-data-range/:accountId',
+    validateAccountExistAndActive,
+    fetchSquarePOSDataForDateRange
+);
+
+router.get('/cron-job-details/:accountId/:cronJobId',
+    validateAccountExistAndActive,
+    getDetailsOfCronJobId
+)
 
 module.exports = router;

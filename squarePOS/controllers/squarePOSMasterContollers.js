@@ -6,7 +6,9 @@ const squarePOSCredentialsModel = require('../models/squarePOSCredentialsModel')
 const { validateServiceProviders } = require('../utils/credentialsValidation');
 const { encryptData } = require("../../utils/encryptionAlgorithms")
 const squarePOSAPIConfiguration = require("../config/squarePOSConfiguration")
-const squarePOSintegrationssettingsModel = require('../models/squarePOSIntegrationSettings')
+const squarePOSintegrationssettingsModel = require('../models/squarePOSIntegrationSettings');
+const squarePOSIntegrationsCronsModel = require('../models/squarePOSIntegrationsCronsModel');
+const squarePOSExceptionModel = require('../models/squarePOSExceptionModel');
 
 /**
  * Middleware for Validating existence of "accountId" in payload (body)
@@ -186,3 +188,44 @@ exports.updateIntegrationMasterSettings = asyncWrapper(async (req, res) => {
         }
     });
 })
+
+exports.getDetailsOfCronJobId = asyncWrapper(async (req, res) => {
+    const { cronJobId, accountId } = req.params;
+
+    const [cronJobDetails, exceptions] = await Promise.all([
+        squarePOSIntegrationsCronsModel.findById(cronJobId),
+        squarePOSExceptionModel
+            .find({ squarePOSIntegrationsCronId: new mongoose.Types.ObjectId(cronJobId) })
+            .sort({ createdAt: -1 })
+    ]);
+
+    if (!cronJobDetails) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Cron job not found'
+        });
+    }
+
+    // Enrich response with readable counts
+    const enrichedCronDetails = {
+        ...cronJobDetails._doc,
+        totalFetchedTransactionsCount: cronJobDetails.pulledCount || 0,
+        newlyAddedTransactionsCount: cronJobDetails.pushedCount || 0,
+        updatedTransactionsCount: cronJobDetails.updatedCount || 0,
+        exceptionsCount: exceptions.length
+    };
+
+    // Clean up original count fields (optional)
+    delete enrichedCronDetails.pulledCount;
+    delete enrichedCronDetails.pushedCount;
+    delete enrichedCronDetails.updatedCount;
+
+    return res.status(200).json({
+        status: 'success',
+        message: 'Cron job details retrieved successfully',
+        data: {
+            cronDetails: enrichedCronDetails,
+            exceptions
+        }
+    });
+});

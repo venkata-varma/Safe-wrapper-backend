@@ -9,20 +9,20 @@ const squarePOSCashDrawerShiftsSchema = new mongoose.Schema({
         return this._id;
             },
         },
-    // squarePOSIntegrationsCronIdCreate: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "squarePOSintegrationscrons",
-    //     default: null,
-    //     index: true,
+    squarePOSIntegrationsCronIdCreate: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "squareposintegrationscrons",
+        default: null,
+        index: true,
 
-    // },
-    // squarePOSIntegrationsCronIdUpdate: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "squarePOSintegrationscrons",
-    //     default: null,
-    //     index: true,
+    },
+    squarePOSIntegrationsCronIdUpdate: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "squareposintegrationscrons",
+        default: null,
+        index: true,
 
-    // },
+    },
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
         ref:"accounts",
