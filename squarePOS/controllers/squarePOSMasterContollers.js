@@ -62,7 +62,7 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
 
     // Call the generic validatorcredentialsValidation
     let credentialsValidation = await validateServiceProviders(payload);
-    console.log("credentialsValidation===", credentialsValidation)
+    // console.log("credentialsValidation===", credentialsValidation)
 
     if (credentialsValidation.status === "fail" || !credentialsValidation || credentialsValidation.statusCode !== customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS) {
         return res.status(credentialsValidation?.statusCode || 401).json({

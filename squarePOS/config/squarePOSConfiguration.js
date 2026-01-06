@@ -1,6 +1,7 @@
 let currentDate = new Date();
+let isDev = process.env.NODE_ENV !== "prod" ? true : false
 
-const isDev = process.env.NODE_ENV === 'dev';
+// const isDev = process.env.NODE_ENV === 'dev';
 console.log(isDev, "Dev");
 
 const baseUrl = isDev
