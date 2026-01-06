@@ -96,9 +96,8 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
         status: "verified",
         createdBy: req.user?._id,
     };
-    console.log("prepareReqObj===", prepareReqObj)
+
     let savedCredentials = await squarePOSCredentialsModel.create(prepareReqObj);
-    console.log("Saved Credentials: ", savedCredentials);
 
     return res.status(200).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
