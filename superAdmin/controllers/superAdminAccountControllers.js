@@ -24,6 +24,11 @@ let cardConnectCredentialsModel = require('../../cardConnect/models/cardConnectI
 let cardConnectSettingsModel = require('../../cardConnect/models/cardConnectIntegrationsSettingsModel')
 let squarePOSCredentialsModel = require('../../squarePOS/models/squarePOSCredentialsModel')
 let squarePOSSettingsModel = require('../../squarePOS/models/squarePOSIntegrationSettings')
+let webhookMetaPayloadModel = require('../../models/webHookMetaPayloads')
+let webhookPayloadHeadersModel = require('../../models/webhookPayloadHeaders')
+let webhookPayloadTransactionsModel = require('../../models/webhookPayloadTransactions')
+
+
 
 exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
     const getImageUrl = await preSignedUrlToUpload(req.file)
@@ -168,7 +173,6 @@ exports.validationMapMachinesToAccountUpdate = asyncWrapper(async (req, res, nex
     }
     next()
 })
-
 
 /**
  * 
