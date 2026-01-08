@@ -11,7 +11,9 @@ const asyncWrapper = require('./asyncWrapper')
 const accountsModel = require('../../models/accountsModel')
 
 
+
 const initiateCronJob = async (integration) => {
+
     const { accountId } = integration?.accountId;
 
     let integrationsMasterDetails = await accountsModel.aggregate([
@@ -71,22 +73,36 @@ const initiateCronJob = async (integration) => {
 
     await cardConnectIntegrationsSettingsModel.findOneAndUpdate({ accountId }, { $set: { lastPullDate: new Date(), lastIntgerationsCronId: createIntegrationsCron._id } }, { new: true, runValidators: true })
 
-    let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], accountId, createIntegrationsCron._id);
+    try {
+
+        let initiateManualPull = await initiateManualTrigger(dateRange, integrationsMasterDetails[0], accountId, createIntegrationsCron._id);
 
 
-    await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
-        {
-            $set: {
+        await cardConnectIntegrationsCronsModel.findByIdAndUpdate(createIntegrationsCron._id,
+            {
+                $set: {
 
-                status: "completed"
+                    status: "completed"
 
-            }
-        }, { new: true, runValidators: true })
+                }
+            }, { new: true, runValidators: true })
+
+
+    } catch (Error) {
+        console.log("Card-connect cron failed")
+        await cardConnectIntegrationsCronsModel.findOneAndUpdate({ _id: createIntegrationsCron._id },
+            {
+                $set: {
+                    status: "failed"
+                }
+            },
+            { new: true, runValidators: true }
+        )
+    }
 
 
 
 }
-
 
 
 
