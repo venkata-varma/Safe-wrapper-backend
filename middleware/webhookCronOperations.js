@@ -54,6 +54,8 @@ const webhookMetaPayloadsOperations = async (webHookMetaPayloads) => {
 
 }
 
+
+
 const webhookMetaPayloadTransactions = async (dataPoint, webhookMasterId, webhookMetaPayloadId, accountId) => {
     if (dataPoint && dataPoint.Transactions.length > 0) {
         for (let transaction of dataPoint?.Transactions) {
@@ -89,7 +91,7 @@ const webhookMetaPayloadTransactions = async (dataPoint, webhookMasterId, webhoo
                 await webhookPayloadHeaders.updateMany({ serialNumber: { $in: serialNumberHoldedAccount.machines } }, { $set: { accountId: serialNumberHoldedAccount?._id } })
                 await webhookPayloadTransactions.updateMany({ serialNumber: { $in: serialNumberHoldedAccount.machines } }, { $set: { accountId: serialNumberHoldedAccount?._id } })
             }
-            await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "executed" } })
+            await webHookMetaPayloads.findByIdAndUpdate(webhookMetaPayloadId, { $set: { status: "executed", accountId: serialNumberHoldedAccount?.accountId } })
         }
         await webHooksMasterModel.findByIdAndUpdate(webhookMasterId, { $set: { lastPullDate: new Date() } }, { new: true })
 

@@ -187,6 +187,23 @@ exports.mapMachinesToAccount = asyncWrapper(async (req, res) => {
     )
 
 
+    let machineArray = machines?.split(',')
+    await Promise.all([
+        webhookMetaPayloadModel.updateMany(
+            { primaryHookId: { $in: machineArray } },
+            { $set: { accountId } }
+        ),
+        webhookPayloadHeadersModel.updateMany(
+            { serialNumber: { $in: machineArray } },
+            { $set: { accountId } }
+        ),
+        webhookPayloadTransactionsModel.updateMany(
+            { serialNumber: { $in: machineArray } },
+            { $set: { accountId } }
+        )
+    ]);
+
+
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_MACHINES_LINKING_SUCCESSFULL,
@@ -355,6 +372,24 @@ exports.updateLinkedMachinesOfAccount = asyncWrapper(async (req, res) => {
             }
         },
         { new: true });
+
+
+    let machineArray = machines?.split(',')
+    await Promise.all([
+        webhookMetaPayloadModel.updateMany(
+            { primaryHookId: { $in: machineArray } },
+            { $set: { accountId } }
+        ),
+        webhookPayloadHeadersModel.updateMany(
+            { serialNumber: { $in: machineArray } },
+            { $set: { accountId } }
+        ),
+        webhookPayloadTransactionsModel.updateMany(
+            { serialNumber: { $in: machineArray } },
+            { $set: { accountId } }
+        )
+    ]);
+
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
