@@ -23,7 +23,7 @@ exports.fetchTeamMembers = async (accessToken) => {
 /**
  * Fetch details for a specific team member
  */
-exports.fetchIndividualTeamMember = async (memberId, accessToken) => {
+exports.fetchTeamMemberById = async (memberId, accessToken) => {
     let urlTemplate = squarePOSAPIConfiguration?.SquarePOS?.IndividualteamMember?.url;
     if (!urlTemplate || !memberId) return null;
 

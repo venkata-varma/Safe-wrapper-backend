@@ -1,10 +1,11 @@
 const schedule = require('node-schedule')
 const humanToCron = require('human-to-cron')
 const asyncWrapper = require('../middleware/asyncWrapper')
-const squarePOSIntegrationsCronsModel = require('../models/squarePOSCronsModel')
-const squarePOSIntegrationsSettingsModel = require('../models/squarePOSIntegrationSettings')
+const squarePOSIntegrationsCronsModel = require('../models/squarePOSIntegrationsCronsModel')
+const squarePOSIntegrationsSettingsModel = require('../models/squarePOSIntegrationSettingsModel')
 const { schedulerIntegrationCronJobs } = require('../middleware/squarePOSIntegrationScheduleOperations')
 let customConstants = require('../../config/constants.json')
+// const job_each_minute = humanToCron('once each second')
 const job_each_minute = humanToCron('once each minute')
 const job_each_hour = humanToCron('once each hour')
 const job_each_day = humanToCron('once each day')
@@ -33,7 +34,8 @@ const validateTheCronStatus = async (integration) => {
 exports.squarePOSScheduleCronJobs = asyncWrapper(async () => {
     //Each minute
     schedule.scheduleJob(job_each_minute, async () => {
-        const squarePOSIntegrationsMasterSettingsDetails = await squarePOSIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each minute', "periodSettings.currentStatus": "start" }).populate("accountId")
+        // console.log("Square POS Cron Job Triggered - Each Minute");
+        const squarePOSIntegrationsMasterSettingsDetails = await squarePOSIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each minute', "cronStatus": "start" }).populate("accountId")
 
 
 
@@ -54,7 +56,7 @@ exports.squarePOSScheduleCronJobs = asyncWrapper(async () => {
 
     //Each hour
     schedule.scheduleJob(job_each_hour, async () => {
-        const squarePOSIntegrationsMasterSettingsDetails = await squarePOSIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each hour', "periodSettings.currentStatus": "start" }).populate("accountId")
+        const squarePOSIntegrationsMasterSettingsDetails = await squarePOSIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each hour', "cronStatus": "start" }).populate("accountId")
 
 
 
@@ -71,7 +73,7 @@ exports.squarePOSScheduleCronJobs = asyncWrapper(async () => {
 
     //Each day
     schedule.scheduleJob(job_each_day, async () => {
-        const squarePOSIntegrationsMasterSettingsDetails = await squarePOSIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each day', "periodSettings.currentStatus": "start" }).populate("accountId")
+        const squarePOSIntegrationsMasterSettingsDetails = await squarePOSIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each day', "cronStatus": "start" }).populate("accountId")
 
 
 
@@ -88,7 +90,7 @@ exports.squarePOSScheduleCronJobs = asyncWrapper(async () => {
 
     //Each month
     schedule.scheduleJob(job_each_month, async () => {
-        const squarePOSIntegrationsMasterSettingsDetails = await squarePOSIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each month', "periodSettings.currentStatus": "start" }).populate("accountId")
+        const squarePOSIntegrationsMasterSettingsDetails = await squarePOSIntegrationsSettingsModel.find({ "periodSettings.periodType": 'once each month', "cronStatus": "start" }).populate("accountId")
 
 
 

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const squarePOSIntegrationsSettingsModel = require('../models/squarePOSIntegrationSettings');
+const squarePOSIntegrationsSettingsModel = require('../models/squarePOSIntegrationSettingsModel');
 const squarePOSIntegrationsCronsModel = require('../models/squarePOSIntegrationsCronsModel');
 const squarePOSMasterCredentialsModel = require('../models/squarePOSCredentialsModel');
 const accountsModel = require('../../models/accountsModel');
@@ -14,7 +14,7 @@ const initiateCronJob = async (integration) => {
     const createIntegrationsCron = await squarePOSIntegrationsCronsModel.create({
         accountId: masterData.accountId,
         userId: masterData.userId,
-        dateRange,
+        // dateRange,
         status: "initiated",
         cronJobType: "automated"
     });
@@ -66,11 +66,11 @@ const initiateCronJob = async (integration) => {
     const masterData = integrationsMasterDetails[0];
     const dataDumpRange = masterData?.settings?.dataDumpRange;
 
-    console.log("dateDumpRange===", dataDumpRange);
-    console.log("........................................");
+    // console.log("dateDumpRange===", dataDumpRange);
+    // console.log("........................................");
 
     const dateRange = generateDateRange(dataDumpRange);
-    console.log("dateRange===", dateRange);
+    // console.log("dateRange===", dateRange);
 
 
 
@@ -138,6 +138,7 @@ exports.schedulerIntegrationCronJobs = async (integration) => {
             console.log('ScheduleTime is less than scheduleInterval');
         }
     } catch (error) {
+
         console.error('Error in schedulerIntegrationCronJobs:', error);
     }
 };

@@ -108,9 +108,7 @@
     "MESSAGE_INTEGRATION_SERVICE_PROVIDER_DETAILS_NOT_FOUND": "Respective Integration service provider details not found.",
     "MESSAGE_INTEGRATION_ID_NOT_ACTIVE": "Respective integration is not in active state. Please contact admin.",
     "MESSAGE_AUTHENTICATION_FAILURE": "Authentication failed. Please enter valid credentials.",
-    "MESSAGE_SQUARE_POS_AUTHENTICATION_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos authentication already exists for the account.",
     "MESSAGE_CARD_CONNECT_AUTHENTICATION_ALREADY_EXISTS_FOR_ACCOUNT": "Card-connect authentication already exists for the account.",
-    "MESSAGE_SQUARE_POS_SETTINGS_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos settings already exists for the account.",
     "MESSAGE_CARD_CONNECT_SETTINGS_ALREADY_EXISTS_FOR_ACCOUNT": "Card-connect settings already exists for the account.",
     "MESSAGE_ONLY_CUSTOMER_ENTRY": "No access. Access restricted for this site.",
     "MESSAGE_WORKORDER_ID_INVALID": "Invalid WorkorderId / Integration .",
@@ -182,8 +180,15 @@
     "ACCOUNT_VALIDATION_FAILED": "Account doesn't exists or is inactive",
     "WEBHOOK_VALIDATION_FAILED": "Webhook doesn't exists / inactive.",
     "MESSAGE_PAYMENTS_FETCHED_SUCCESSFULLY": "Payments fetched successfully",
+    "MESSAGE_MASTER_SETTINGS_FETCHED_SUCCESSFULLY": "Master settings fetched successfully",
+    "MESSAGE_ACCOUNTID_MISMATCH_TO_UPDATE_CREDENTIALS": "Account ID mismatch: Cannot update credentials for a different account.",
+    "MESSAGE_INTEGRATION_CREDENTIALS_UPDATED": "Successfully updated master credentials.",
+    "MESSAGE_MASTER_CREDENTIALS_FETCHED":"Master credentials fetched successfully",
+
     "MESSAGE_NO_MASTER_SETTINGS_FOUND": "Square POS integration settings not found",
-    "MESSAGE_MASTER_SETTINGS_FETCHED_SUCCESSFULLY": "Master settings fetched successfully"
+    "MESSAGE_SQUARE_POS_MANUAL_PULL":"Square POS data successfully pulled and synchronized",
+    "MESSAGE_SQUARE_POS_SETTINGS_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos integration settings already exists for the account.",
+    "MESSAGE_SQUARE_POS_AUTHENTICATION_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos authentication already exists for the account."
   },
   "statusCodes": {
     "FORBIDDEN": 403,

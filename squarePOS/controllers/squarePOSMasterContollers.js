@@ -6,7 +6,7 @@ const squarePOSCredentialsModel = require('../models/squarePOSCredentialsModel')
 const { validateServiceProviders } = require('../utils/credentialsValidation');
 const { encryptData } = require("../../utils/encryptionAlgorithms")
 const squarePOSAPIConfiguration = require("../config/squarePOSConfiguration")
-const squarePOSintegrationssettingsModel = require('../models/squarePOSIntegrationSettings');
+const squarePOSintegrationssettingsModel = require('../models/squarePOSIntegrationSettingsModel');
 const squarePOSIntegrationsCronsModel = require('../models/squarePOSIntegrationsCronsModel');
 const squarePOSExceptionModel = require('../models/squarePOSExceptionModel');
 
@@ -36,8 +36,7 @@ exports.validateAccountExistAndActive = asyncWrapper(async (req, res, next) => {
 
 });
 /**
- * Middleware for validation of Square POS credentials entered by customer.
- * Values for few keys such as "authorizationType", etc; are hard-coded as said.
+ * Middleware for validation of Square POS credentials entered by user.
  * If credentials are not valid, Error will be thrown. Else, will be stored in Square POS credentials model
  */
 exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) => {
@@ -79,6 +78,45 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
     req.squareData = credentialsValidation.responseData; // Store merchant info
     next();
 });
+
+/**
+ * Middleware for Validating existence of "accountId" in Square POS Master Credentials & Integration Settings collection
+ */
+exports.validateSquareSetup = asyncWrapper(async (req, res, next) => {
+    // 1. Extract accountId from either params or body
+    const accountId = req.params.accountId || req.body.accountId;
+
+    // 2. Fetch both records in parallel for performance
+    const [masterCreds, integrationSettings] = await Promise.all([
+        squarePOSCredentialsModel.findOne({ accountId, source: 'square-pos' }),
+        squarePOSintegrationssettingsModel.findOne({ accountId })
+    ]);
+
+    // 3. Validation Checks
+    if (!masterCreds) {
+        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_CREDENTIALS_RECORD_NOT_FOUND,
+            data: null
+        });
+    }
+
+    if (!integrationSettings) {
+        return res.status(customConstants.statusCodes.ERROR_STATUS_CODE_NOT_FOUND).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_NO_MASTER_SETTINGS_FOUND,
+            data: null
+        });
+    }
+
+    req.validateSquareSetupData = {
+        masterCreds,
+        integrationSettings
+    };
+
+    next();
+});
+
 /**
  * Function call will be passed to this function only if middleware function called "credentialsValidationsMiddleware" is passed & successful. 
  * 
@@ -113,7 +151,7 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_INTEGRATION_CREDENTIALS_SAVED,
         data: {
-            squarePOSIntegrationsMasterCredentials: savedCredentials
+            squarePOSMasterCredentials: savedCredentials
         }
     });
 });
@@ -121,18 +159,27 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
 exports.UpdateIntegrationMasterCredentials = asyncWrapper(async (req, res, next) => {
     const { payload, squareData } = req;
     const merchant = squareData?.merchant?.[0];
+    const accountIdFromBody = req.body.accountId;
+    const credentialsId = req.params.credentialsId;
 
-    // Ensure we have the accountId from either params (URL) or body
-    const { accountId } = { ...req.params, ...req.body };
+    const existingCredentials = await squarePOSCredentialsModel.findById(credentialsId);
 
-    const filter = {
-        accountId: accountId,
-        source: 'square-pos'
-    };
+    if (!existingCredentials) {
+        return res.status(404).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_INTEGRATION_MASTER_CREDENTIALS_RECORD_NOT_FOUND,
+        });
+    }
+    if (existingCredentials.accountId.toString() !== accountIdFromBody) {
+        return res.status(400).json({
+            status: customConstants.messages.MESSAGE_FAIL,
+            message: customConstants.messages.MESSAGE_ACCOUNTID_MISMATCH_TO_UPDATE_CREDENTIALS,
+        });
+    }
 
     const updateData = {
         ...payload,
-        accountId: accountId,
+        accountId: accountIdFromBody,
         source: 'square-pos',
         credentials: encryptData({ access_token: payload?.credentials?.accessToken }),
         primaryKeyValues: {
@@ -143,15 +190,15 @@ exports.UpdateIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
         updatedBy: req.user?._id,
     };
 
-    let savedCredentials = await squarePOSCredentialsModel.findOneAndUpdate(
-        filter,
+    let savedCredentials = await squarePOSCredentialsModel.findByIdAndUpdate(
+        credentialsId,
         updateData,
-        { new: true, upsert: true, setDefaultsOnInsert: true }
+        { new: true }
     );
 
     return res.status(200).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: "Integration credentials saved successfully.",
+        message: customConstants.messages.MESSAGE_INTEGRATION_CREDENTIALS_UPDATED,
         data: {
             squarePOSMasterCredentials: savedCredentials
         }

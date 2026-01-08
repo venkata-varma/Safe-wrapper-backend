@@ -24,7 +24,6 @@ const usersRoute = require('./customer/routes/usersRoute');
 const errorcontroller = require('./customer/controllers/errorcontroller');
 const webHooksRoute = require('./customer/routes/webHooksRoute')
 const webhookCrons = require('./customer/controllers/webhookCronControllers')
-const squarePOSScheduleCronJobs = require('./squarePOS/controllers/squarePOSCronScheduleController');
 const integrationCrons = require('./cardConnect/controllers/cardConnectCronScheduleController')
 //Super Admin Routes.
 
@@ -38,7 +37,7 @@ const cardConnectIntegrationsMasterDataPointsRoute = require('./cardConnect/rout
 
 //Square POS 
 const SquarePOSRoutes = require('./squarePOS/routes/squarePOSIntegrationRoute')
-const squarePOSScheduleCronJobs = require('./squarePOS/middleware/squarePOSIntegrationScheduleOperations')
+const squarePOSScheduleCronJobs = require('./squarePOS/controllers/squarePOSCronScheduleController');
 
 
 

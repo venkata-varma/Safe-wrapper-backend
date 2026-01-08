@@ -23,7 +23,7 @@ let webhookMasterModel = require('../../models/webHooksMasterModel')
 let cardConnectCredentialsModel = require('../../cardConnect/models/cardConnectIntegrationsCredentialsModel')
 let cardConnectSettingsModel = require('../../cardConnect/models/cardConnectIntegrationsSettingsModel')
 let squarePOSCredentialsModel = require('../../squarePOS/models/squarePOSCredentialsModel')
-let squarePOSSettingsModel = require('../../squarePOS/models/squarePOSIntegrationSettings')
+let squarePOSSettingsModel = require('../../squarePOS/models/squarePOSIntegrationSettingsModel')
 
 exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
     const getImageUrl = await preSignedUrlToUpload(req.file)

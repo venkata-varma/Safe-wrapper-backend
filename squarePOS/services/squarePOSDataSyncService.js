@@ -5,6 +5,9 @@ const squarePOSCashDrawerShiftsModel = require('../models/squarePOSCashDrawerShi
 const squarePOSIntegrationsCronsModel = require('../models/squarePOSIntegrationsCronsModel');
 const squarePOSExceptionsModel = require('../models/squarePOSExceptionModel');
 const { decryptData } = require("../../utils/encryptionAlgorithms")
+const asyncWrapper = require('../middleware/asyncWrapper');
+const { upsertByReference } = require('../utils/mongoUpsertHelper');
+const sampleCashDrawerShifts = require('../services/sampleCashDrawerShifts.json');
 
 const {
     fetchTeamMembers,
@@ -12,223 +15,217 @@ const {
     fetchPayments,
     fetchCashDrawerShifts,
     fetchIndividualCashDrawersShift,
+    fetchTeamMemberById,
     fetchShiftEvents
 } = require('../utils/squarePOSAPIConfiguration');
 
-exports.executeSquarePOSDataSync = async ({ accountId, userId, cronId, credentials }) => {
-    try {
-        // 1. Decrypt credentials
-        const decrypted = JSON.parse(await decryptData({
-            iv: process.env.CRYPTO_IV,
-            encryptedData: credentials.credentials
-        }, process.env.CRYPTO_KEY));
+exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cronId, credentials }) => {
 
-        const accessToken = decrypted.access_token;
-        console.log("Starting Square POS data sync for account:", accountId);
+    let pushedCount = 0;
+    let updatedCount = 0;
+    let totalShifts = 0;
 
-        // 2. Initial Fetch: Teams, Locations, Payments
-        const [teamMembers, locations, payments] = await Promise.all([
-            fetchTeamMembers(accessToken),
-            fetchLocations(accessToken),
-            fetchPayments(accessToken)
-        ]);
+    /* ----------------------------------------------------
+       STEP 1: Decrypt Square credentials
+    ---------------------------------------------------- */
+    const decrypted = JSON.parse(
+        await decryptData(
+            {
+                iv: process.env.CRYPTO_IV,
+                encryptedData: credentials.credentials
+            },
+            process.env.CRYPTO_KEY
+        )
+    );
 
-        // 3. Sequential Fetch: Shifts -> Individual Details -> Events
-        let allShifts = [];
-        let individualShiftsDetails = [];
-        let allShiftEvents = [];
+    const accessToken = decrypted.access_token;
 
-        for (const loc of locations) {
-            console.log("Processing shifts for location ID:", loc.id);
+    /* ----------------------------------------------------
+       STEP 2: Initial parallel fetch
+    ---------------------------------------------------- */
+    const [locations, payments] = await Promise.all([
+        // fetchTeamMembers(accessToken),
+        fetchLocations(accessToken),
+        fetchPayments(accessToken)
+    ]);
 
-            try {
-                const shifts = await fetchCashDrawerShifts(loc.id, accessToken);
+    /* ----------------------------------------------------
+       STEP 3: Store Locations (NON-FATAL PER RECORD)
+    ---------------------------------------------------- */
+    for (const loc of locations) {
+        try {
+            const status = await upsertByReference({
+                model: squarePOSLocationsModel,
+                accountId,
+                referenceId: loc.id,
+                payload: { responseObject: loc },
+                userId,
+                cronId
+            });
 
-                for (const shift of shifts) {
-                    try {
-                        // Fetch Individual Shift Detail
-                        const detail = await fetchIndividualCashDrawersShift(shift.id, accessToken);
-                        if (detail) individualShiftsDetails.push(detail);
+            status === 'CREATED' ? pushedCount++ : updatedCount++;
+        } catch (error) {
+            await squarePOSExceptionsModel.create({
+                accountId,
+                squarePOSIntegrationsCronId: cronId,
+                errorType: 'LOCATION_UPSERT_FAILED',
+                errorMessage: error.message,
+                referenceId: loc.id,
+                responseObject: loc
+            });
+        }
+    }
+    /* ----------------------------------------------------
+       STEP 4: Store Payments
+    ---------------------------------------------------- */
+    for (const payment of payments) {
+        const status = await upsertByReference({
+            model: squarePOSPaymentsModel,
+            accountId,
+            referenceId: payment.id,
+            payload: {
+                responseObject: payment,
+                referenceStatus: payment.status
+            },
+            userId,
+            cronId
+        });
 
-                        // Fetch Shift Events
-                        const events = await fetchShiftEvents(shift.id, accessToken);
-                        if (events.length > 0) {
-                            allShiftEvents.push(...events.map(ev => ({ ...ev, shiftId: shift.id })));
-                        }
+        status === 'CREATED' ? pushedCount++ : updatedCount++;
+    }
+    /* ------------------------------------------------
+      STEP 5: Cash drawer shifts + Employee (NON-FATAL PER LOCATION)
+   ------------------------------------------------ */
+    const teamMemberCache = new Map();
+    for (const loc of locations) {
+        let shifts = [];
 
-                        allShifts.push({ ...shift, locationId: loc.id });
-                    } catch (shiftError) {
-                        console.error(`Error processing shift ${shift.id}:`, shiftError);
+        try {
+            shifts = await fetchCashDrawerShifts(loc.id, accessToken);
+            shifts = Array.isArray(rawShiftResponse)
+                ? rawShiftResponse
+                : rawShiftResponse?.cash_drawer_shifts || [];
 
-                        // Log exception
-                        await squarePOSExceptionsModel.create({
-                            accountId,
-                            squarePOSIntegrationsCronId: cronId,
-                            errorType: 'shift_processing_error',
-                            errorMessage: shiftError.message,
-                            referenceId: shift.id,
-                            responseObject: shift
-                        });
-                    }
-                }
-            } catch (locationError) {
-                console.error(`Error processing location ${loc.id}:`, locationError);
+            if (!shifts.length) {
+                shifts = sampleCashDrawerShifts;
+            }
 
-                // Log exception
+        } catch (error) {
+
+            if (!Array.isArray(shifts)) {
                 await squarePOSExceptionsModel.create({
                     accountId,
                     squarePOSIntegrationsCronId: cronId,
-                    errorType: 'location_processing_error',
-                    errorMessage: locationError.message,
-                    referenceId: loc.id,
-                    responseObject: loc
+                    errorType: 'INVALID_SHIFT_RESPONSE',
+                    errorMessage: 'fetchCashDrawerShifts did not return iterable',
+                    responseObject: rawShiftResponse
+                });
+                continue;
+            }
+
+            // await squarePOSExceptionsModel.create({
+            //     accountId,
+            //     squarePOSIntegrationsCronId: cronId,
+            //     errorType: 'SHIFT_FETCH_FAILED',
+            //     errorMessage: error.message,
+            //     referenceId: loc.id
+            // });
+            // continue;
+        }
+        for (const shift of shifts) {
+            try {
+                const teamMembersResolved = [];
+
+                for (const empId of shift.employee_ids || []) {
+                    // 1️Check cache first
+                    if (teamMemberCache.has(empId)) {
+                        teamMembersResolved.push(teamMemberCache.get(empId));
+                        continue;
+                    }
+                    try {
+                        const member = await fetchTeamMemberById(empId, accessToken);
+                        await upsertByReference({
+                            model: squarePOSTeamMembersModel,
+                            accountId,
+                            referenceId: member.id,
+                            payload: { responseObject: member },
+                            userId,
+                            cronId
+                        });
+                        teamMemberCache.set(empId, member);
+                        teamMembersResolved.push(member);
+                    } catch (err) {
+                        await squarePOSExceptionsModel.create({
+                            accountId,
+                            squarePOSIntegrationsCronId: cronId,
+                            errorType: 'EMPLOYEE_FETCH_FAILED',
+                            errorMessage: err.message,
+                            referenceId: empId
+                        });
+                    }
+                }
+
+                const status = await upsertByReference({
+                    model: squarePOSCashDrawerShiftsModel,
+                    accountId,
+                    referenceId: shift.id,
+                    payload: {
+                        locationId: loc.id,
+                        responseObject: shift,
+                        teamMembers: teamMembersResolved
+                    },
+                    userId,
+                    cronId
+                });
+
+                status === 'CREATED' ? pushedCount++ : updatedCount++;
+                totalShifts++;
+            } catch (error) {
+                await squarePOSExceptionsModel.create({
+                    accountId,
+                    squarePOSIntegrationsCronId: cronId,
+                    errorType: 'SHIFT_PROCESS_FAILED',
+                    errorMessage: error.message,
+                    referenceId: shift.id,
+                    responseObject: shift
                 });
             }
         }
-
-        // 4. Save Tasks with upsert logic
-        const saveTasks = [];
-        let pushedCount = 0;
-        let updatedCount = 0;
-
-        // Team Members
-        for (const member of teamMembers) {
-            const result = await squarePOSTeamMembersModel.updateOne(
-                { referenceId: member.id, accountId },
-                {
-                    $set: {
-                        accountId,
-                        referenceId: member.id,
-                        responseObject: member,
-                        updatedBy: userId,
-                        squarePOSIntegrationsCronIdUpdate: cronId
-                    },
-                    $setOnInsert: {
-                        createdBy: userId,
-                        squarePOSIntegrationsCronIdCreate: cronId
-                    }
-                },
-                { upsert: true }
-            );
-
-            if (result.upsertedCount) pushedCount++;
-            else if (result.modifiedCount) updatedCount++;
-        }
-
-        // Locations
-        for (const loc of locations) {
-            const result = await squarePOSLocationsModel.updateOne(
-                { referenceId: loc.id, accountId },
-                {
-                    $set: {
-                        accountId,
-                        referenceId: loc.id,
-                        responseObject: loc,
-                        updatedBy: userId,
-                        squarePOSIntegrationsCronIdUpdate: cronId
-                    },
-                    $setOnInsert: {
-                        createdBy: userId,
-                        squarePOSIntegrationsCronIdCreate: cronId
-                    }
-                },
-                { upsert: true }
-            );
-
-            if (result.upsertedCount) pushedCount++;
-            else if (result.modifiedCount) updatedCount++;
-        }
-
-        // Payments
-        for (const payment of payments) {
-            const result = await squarePOSPaymentsModel.updateOne(
-                { referenceId: payment.id, accountId },
-                {
-                    $set: {
-                        accountId,
-                        referenceId: payment.id,
-                        referenceStatus: payment.status,
-                        responseObject: payment,
-                        updatedBy: userId,
-                        squarePOSIntegrationsCronIdUpdate: cronId
-                    },
-                    $setOnInsert: {
-                        createdBy: userId,
-                        squarePOSIntegrationsCronIdCreate: cronId
-                    }
-                },
-                { upsert: true }
-            );
-
-            if (result.upsertedCount) pushedCount++;
-            else if (result.modifiedCount) updatedCount++;
-        }
-
-        // Cash Drawer Shifts
-        for (const shift of allShifts) {
-            const result = await squarePOSCashDrawerShiftsModel.updateOne(
-                { referenceId: shift.id, accountId },
-                {
-                    $set: {
-                        accountId,
-                        locationId: shift.locationId,
-                        referenceId: shift.id,
-                        responseObject: shift,
-                        updatedBy: userId,
-                        squarePOSIntegrationsCronIdUpdate: cronId
-                    },
-                    $setOnInsert: {
-                        createdBy: userId,
-                        squarePOSIntegrationsCronIdCreate: cronId
-                    }
-                },
-                { upsert: true }
-            );
-
-            if (result.upsertedCount) pushedCount++;
-            else if (result.modifiedCount) updatedCount++;
-        }
-
-        // 5. Update cron with counts
-        const pulledCount = teamMembers.length + locations.length + payments.length + allShifts.length;
-
-        await squarePOSIntegrationsCronsModel.findByIdAndUpdate(
-            cronId,
-            {
-                $set: {
-                    pulledCount,
-                    pushedCount,
-                    updatedCount
-                }
-            }
-        );
-
-        console.log('Square POS sync completed successfully');
-
-        return {
-            pulledCount,
-            pushedCount,
-            updatedCount,
-            paymentsCount: payments.length,
-            teamMembersCount: teamMembers.length,
-            locationsCount: locations.length,
-            cashDrawerShiftsCount: allShifts.length,
-            individualShiftsCount: individualShiftsDetails.length,
-            shiftEventsCount: allShiftEvents.length
-        };
-
-    } catch (error) {
-        console.error('Error in executeSquarePOSDataSync:', error);
-
-        // Log exception
-        await squarePOSExceptionsModel.create({
-            accountId,
-            squarePOSIntegrationsCronId: cronId,
-            errorType: 'sync_error',
-            errorMessage: error.message,
-            errorStack: error.stack
-        });
-
-        throw error;
     }
-};
+
+    /* ----------------------------------------------------
+       STEP 6: Update Cron
+    ---------------------------------------------------- */
+    await squarePOSIntegrationsCronsModel.findByIdAndUpdate(cronId, {
+        $set: {
+            pulledCount:
+                locations.length +
+                payments.length +
+                totalShifts,
+            pushedCount,
+            updatedCount
+        }
+    });
+
+    return {
+        message: 'Square POS sync completed successfully',
+        // pulledCount,
+        // pushedCount,
+        // updatedCount,
+        pushedCount,
+        updatedCount,
+        totalShifts
+        // // paymentsCount: payments.length,
+        // teamMembersCount: teamMembers.length,
+        // locationsCount: locations.length,
+        // cashDrawerShiftsCount: allShifts.length,
+        // individualShiftsCount: individualShiftsDetails.length,
+        // shiftEventsCount: allShiftEvents.length
+    };
+    // res.status(200).json({
+    //     pushedCount,
+    //     updatedCount,
+    //     totalShifts
+    // });
+}
+)

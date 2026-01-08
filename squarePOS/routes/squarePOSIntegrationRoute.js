@@ -2,41 +2,40 @@ const router = require('express').Router();
 
 const { getSquarePOSIntegrationMasterCredentials, createSquarePOSIntegrationMasterSettings, getIntegrationMasterSettings, getSquarePOSPayments, syncSquarePOSData, manualPullDateDumpRange, fetchSquarePOSDataForDateRange } = require('../controllers/squarePOSIntegrationController')
 
-const { validateAccountExistAndActive, createIntegrationMasterCredentials, credentialsValidationsMiddleware, UpdateIntegrationMasterCredentials, updateIntegrationMasterSettings, getDetailsOfCronJobId } = require('../controllers/squarePOSMasterContollers');
+const { validateAccountExistAndActive, validateSquareSetup, createIntegrationMasterCredentials, credentialsValidationsMiddleware, UpdateIntegrationMasterCredentials, updateIntegrationMasterSettings, getDetailsOfCronJobId } = require('../controllers/squarePOSMasterContollers');
 const auth = require('../../middleware/authentication');
 const { validate } = require('../models/squarePOSExceptionModel');
 
 
 router.use(auth)
 
-router.post('/onboard-square-pos-credentials', validateAccountExistAndActive,
+router.post('/credentials', validateAccountExistAndActive,
     credentialsValidationsMiddleware,
-    createIntegrationMasterCredentials)
+    createIntegrationMasterCredentials);
 
-router.patch('/update-square-pos-credentials/:accountId', validateAccountExistAndActive,
+router.patch('/credentials/:credentialsId', validateAccountExistAndActive,
     credentialsValidationsMiddleware,
-    UpdateIntegrationMasterCredentials)
+    UpdateIntegrationMasterCredentials);
 
-router.get('/get-square-pos-credentials/:accountId', validateAccountExistAndActive,
-    getSquarePOSIntegrationMasterCredentials)
+router.get('/credentials/:accountId', validateAccountExistAndActive,
+    getSquarePOSIntegrationMasterCredentials);
 
-router.post('/onboard-square-pos-integration-settings', validateAccountExistAndActive, createSquarePOSIntegrationMasterSettings)
-//validateSquarePOSCredentails
+router.post('/integration-settings', validateAccountExistAndActive, createSquarePOSIntegrationMasterSettings);
 
-router.get('/get-square-pos-integration-settings/:accountId',
+router.get('/integration-settings/:accountId',
     validateAccountExistAndActive, getIntegrationMasterSettings)
 
-router.patch('/update-integrations-master-settings/:accountId/:integrationSettingsId',
+router.patch('/integrations-settings/:integrationSettingsId',
     validateAccountExistAndActive, updateIntegrationMasterSettings)
 
 
-router.get('/get-square-pos-payments/:accountId',
-    validateAccountExistAndActive, getSquarePOSPayments)
+router.get('/payments/:accountId',
+    validateAccountExistAndActive, validateSquareSetup, getSquarePOSPayments)
 
 router.get('/integration-context/:accountId', validateAccountExistAndActive, syncSquarePOSData)
 
 router.post('/manual-sync/:accountId',
-    validateAccountExistAndActive, manualPullDateDumpRange
+    validateAccountExistAndActive, validateSquareSetup, manualPullDateDumpRange
 );
 
 router.post('/sync-data-range/:accountId',
@@ -44,7 +43,7 @@ router.post('/sync-data-range/:accountId',
     fetchSquarePOSDataForDateRange
 );
 
-router.get('/cron-job-details/:accountId/:cronJobId',
+router.get('/cron-job-details/:cronJobId',
     validateAccountExistAndActive,
     getDetailsOfCronJobId
 )
