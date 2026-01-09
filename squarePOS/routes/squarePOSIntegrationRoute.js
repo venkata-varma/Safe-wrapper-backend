@@ -1,6 +1,6 @@
 const router = require('express').Router();
 
-const { getSquarePOSIntegrationMasterCredentials, createSquarePOSIntegrationMasterSettings, getIntegrationMasterSettings, getSquarePOSPayments, syncSquarePOSData, manualPullDateDumpRange, fetchSquarePOSDataForDateRange } = require('../controllers/squarePOSIntegrationController')
+const { getSquarePOSIntegrationMasterCredentials, createSquarePOSIntegrationMasterSettings, getIntegrationMasterSettings, getSquarePOSPayments, syncSquarePOSData, manualPullDataDump, fetchSquarePOSDataForDateRange } = require('../controllers/squarePOSIntegrationController')
 
 const { validateAccountExistAndActive, validateSquareSetup, createIntegrationMasterCredentials, credentialsValidationsMiddleware, UpdateIntegrationMasterCredentials, updateIntegrationMasterSettings, getDetailsOfCronJobId } = require('../controllers/squarePOSMasterContollers');
 const auth = require('../../middleware/authentication');
@@ -35,13 +35,13 @@ router.get('/payments/:accountId',
 router.get('/integration-context/:accountId', validateAccountExistAndActive, syncSquarePOSData)
 
 router.post('/manual-sync/:accountId',
-    validateAccountExistAndActive, validateSquareSetup, manualPullDateDumpRange
+    validateAccountExistAndActive, validateSquareSetup, manualPullDataDump
 );
 
-router.post('/sync-data-range/:accountId',
-    validateAccountExistAndActive,
-    fetchSquarePOSDataForDateRange
-);
+// router.post('/sync-data-range/:accountId',
+//     validateAccountExistAndActive,
+//     fetchSquarePOSDataForDateRange
+// );
 
 router.get('/cron-job-details/:cronJobId',
     validateAccountExistAndActive,

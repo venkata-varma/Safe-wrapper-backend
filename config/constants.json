@@ -188,7 +188,8 @@
     "MESSAGE_NO_MASTER_SETTINGS_FOUND": "Square POS integration settings not found",
     "MESSAGE_SQUARE_POS_MANUAL_PULL":"Square POS data successfully pulled and synchronized",
     "MESSAGE_SQUARE_POS_SETTINGS_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos integration settings already exists for the account.",
-    "MESSAGE_SQUARE_POS_AUTHENTICATION_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos authentication already exists for the account."
+    "MESSAGE_SQUARE_POS_AUTHENTICATION_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos authentication already exists for the account.",
+    "MESSAGE_SQUARE_POS_MANUAL_PULL_FAILED":"Square POS manual pull failed"
   },
   "statusCodes": {
     "FORBIDDEN": 403,
