@@ -436,9 +436,9 @@ exports.fetchSquarePOSDataForDateRange = asyncWrapper(async (req, res) => {
         squarePOSIntegrationsCronId: cronLog._id
     });
 
-    return res.status(200).json({
-        status: 'success',
-        message: 'Square POS data synced successfully for custom date range',
+    return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
+        status: customConstants.messages.MESSAGE_SUCCESS,
+        message: customConstants.messages.MESSAGE_SQUARE_POS_MANUAL_PULL,
         data: {
             finalResult: {
                 accountId: finalCronDetails.accountId,

@@ -64,6 +64,10 @@ const squarePOSCashDrawerShiftsSchema = new mongoose.Schema({
         type: Object,
         required: true
     },
+    teamMembers:{
+        type: Array,
+        default: []
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users'

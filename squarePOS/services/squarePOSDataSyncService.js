@@ -8,6 +8,7 @@ const { decryptData } = require("../../utils/encryptionAlgorithms")
 const asyncWrapper = require('../middleware/asyncWrapper');
 const { upsertByReference } = require('../utils/mongoUpsertHelper');
 const sampleCashDrawerShifts = require('../services/sampleCashDrawerShifts.json');
+const customConstants = require('../../config/constants.json')
 
 const {
     fetchTeamMembers,
@@ -98,18 +99,18 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
    ------------------------------------------------ */
     const teamMemberCache = new Map();
     for (const loc of locations) {
+
         let shifts = [];
 
         try {
-            shifts = await fetchCashDrawerShifts(loc.id, accessToken);
-            shifts = Array.isArray(rawShiftResponse)
-                ? rawShiftResponse
-                : rawShiftResponse?.cash_drawer_shifts || [];
+            const rawShiftResponse = await fetchCashDrawerShifts(loc.id, accessToken);
 
-            if (!shifts.length) {
-                shifts = sampleCashDrawerShifts;
+            if (Array.isArray(rawShiftResponse) && rawShiftResponse.length > 0) {
+                shifts = rawShiftResponse;
             }
-
+            else {
+                shifts = sampleCashDrawerShifts?.sampleRecords || [];
+            }
         } catch (error) {
 
             if (!Array.isArray(shifts)) {
@@ -208,7 +209,7 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
     });
 
     return {
-        message: 'Square POS sync completed successfully',
+        message: customConstants.messages.MESSAGE_SQUARE_POS_MANUAL_PULL,
         // pulledCount,
         // pushedCount,
         // updatedCount,
