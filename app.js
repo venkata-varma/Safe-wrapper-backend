@@ -26,6 +26,7 @@ const webHooksRoute = require('./customer/routes/webHooksRoute')
 const webhookCrons = require('./customer/controllers/webhookCronControllers')
 const integrationCrons = require('./cardConnect/controllers/cardConnectCronScheduleController')
 const SquarePOSRoutes = require('./squarePOS/routes/squarePOSIntegrationRoute')
+const squarePOSDataPointsRoute = require('./squarePOS/routes/squarePOSDataPointsRoute')
 //Super Admin Routes.
 
 const SuperAdminAccountRoutes = require('./superAdmin/routes/superAdminAccounts')
@@ -44,6 +45,7 @@ app.use('/api/merchants/accounts', accountsRoute);
 app.use('/api/merchants/users', usersRoute);
 app.use('/api/merchants/machines', webHooksRoute)
 app.use('/api/square-pos', SquarePOSRoutes)
+app.use('/api/square-pos/data-points', squarePOSDataPointsRoute)
 
 //Super Admin
 app.use('/api/accounts', SuperAdminAccountRoutes)
@@ -71,9 +73,9 @@ app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocum
 // End of swagger configuration
 
 
-webhookCrons.webhookScheduleCronJobs()
+// webhookCrons.webhookScheduleCronJobs()
 
-integrationCrons.cardConnectScheduleCronJobs()
+// integrationCrons.cardConnectScheduleCronJobs()
 
 
 // Error Handling Middleware (optional)
