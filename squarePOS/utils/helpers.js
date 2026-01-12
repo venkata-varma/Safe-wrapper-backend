@@ -1,20 +1,28 @@
+exports.generateSquareDateRange = (dataDumpRange) => {
+    const now = new Date();
 
-exports.generateDateRange = (days) => {
-    const dates = [];
-    const today = new Date();
+    // ----- toDate = end of today (UTC)
+    const toDate = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        23, 59, 59, 999
+    ));
 
-    for (let i = 0; i < days; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
+    // ----- fromDate = (today - dataDumpRange + 1) start of day (UTC)
+    const from = new Date(toDate);
+    from.setUTCDate(from.getUTCDate() - (dataDumpRange - 1));
+    const fromDate = new Date(Date.UTC(
+        from.getUTCFullYear(),
+        from.getUTCMonth(),
+        from.getUTCDate(),
+        0, 0, 0, 0
+    ));
 
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-
-        dates.push(`${yyyy}${mm}${dd}`);
-    }
-
-    return dates;
+    return {
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString()
+    };
 }
 
 // utils/helpers.js

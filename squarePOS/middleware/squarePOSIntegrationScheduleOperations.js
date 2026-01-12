@@ -3,35 +3,12 @@ const squarePOSIntegrationsSettingsModel = require('../models/squarePOSIntegrati
 const squarePOSIntegrationsCronsModel = require('../models/squarePOSIntegrationsCronsModel');
 const squarePOSMasterCredentialsModel = require('../models/squarePOSCredentialsModel');
 const accountsModel = require('../../models/accountsModel');
-const { generateDateRange } = require('../utils/helpers');
+const { generateDateRange, generateSquareDateRange } = require('../utils/helpers');
 const { executeSquarePOSDataSync } = require('../services/squarePOSDataSyncService');
 const asyncWrapper = require('../middleware/asyncWrapper');
 
 const initiateCronJob = async (integration) => {
     const { accountId } = integration?.accountId;
-
-    // Create cron record
-    const createIntegrationsCron = await squarePOSIntegrationsCronsModel.create({
-        accountId: masterData.accountId,
-        userId: masterData.userId,
-        // dateRange,
-        status: "initiated",
-        cronJobType: "automated"
-    });
-
-    // Update last pull date
-    await squarePOSIntegrationsSettingsModel.findOneAndUpdate(
-        { accountId },
-        {
-            $set: {
-                lastPullDate: new Date(),
-                lastIntgerationsCronId: createIntegrationsCron._id
-            }
-        },
-        { new: true, runValidators: true }
-    );
-
-    // Get integration master details with credentials and settings
     const integrationsMasterDetails = await accountsModel.aggregate([
         {
             $match: {
@@ -40,7 +17,7 @@ const initiateCronJob = async (integration) => {
         },
         {
             $lookup: {
-                from: "squareposmastercredentials",
+                from: "squareposcredentialsmodels",
                 localField: "_id",
                 foreignField: "accountId",
                 as: "credentials"
@@ -58,19 +35,40 @@ const initiateCronJob = async (integration) => {
         { $unwind: "$settings" }
     ]);
 
-    if (!integrationsMasterDetails.length) {
+    if (integrationsMasterDetails.length === 0) {
         console.error('No integration details found for accountId:', accountId);
         return;
     }
-
     const masterData = integrationsMasterDetails[0];
+    // Create cron record
+    const createIntegrationsCron = await squarePOSIntegrationsCronsModel.create({
+        accountId: masterData.accountId,
+        userId: masterData.userId,
+        // dateRange,
+        status: "initiated",
+        cronJobType: "automated"
+    });
+    console.log("createIntegrationsCron===", createIntegrationsCron._id)
+
+    // Update last pull date
+    await squarePOSIntegrationsSettingsModel.findOneAndUpdate(
+        { accountId },
+        {
+            $set: {
+                lastPullDate: new Date(),
+                lastIntgerationsCronId: createIntegrationsCron._id
+            }
+        },
+        { new: true, runValidators: true }
+    );
+
+    // Get integration master details with credentials and settings
+
+
     const dataDumpRange = masterData?.settings?.dataDumpRange;
 
-    // console.log("dateDumpRange===", dataDumpRange);
-    // console.log("........................................");
 
-    const dateRange = generateDateRange(dataDumpRange);
-    // console.log("dateRange===", dateRange);
+    const dateRanges = generateSquareDateRange(dataDumpRange);
 
 
 
@@ -82,7 +80,7 @@ const initiateCronJob = async (integration) => {
             userId: masterData.userId,
             cronId: createIntegrationsCron._id,
             credentials: masterData.credentials,
-            dateRange
+            dateRanges
         });
 
         // Mark as completed

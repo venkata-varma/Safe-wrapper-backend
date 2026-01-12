@@ -20,7 +20,7 @@ const {
     fetchShiftEvents
 } = require('../utils/squarePOSAPIConfiguration');
 
-exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cronId, credentials }) => {
+exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cronId, credentials, dateRanges }) => {
 
     let pushedCount = 0;
     let updatedCount = 0;
@@ -38,7 +38,7 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
             process.env.CRYPTO_KEY
         )
     );
-
+    console.log("\x1b[32m%s\x1b[0m", "✔ STEP -1 => Decrypt done ")
     const accessToken = decrypted.access_token;
 
     /* ----------------------------------------------------
@@ -47,35 +47,17 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
     const [locations, payments] = await Promise.all([
         // fetchTeamMembers(accessToken),
         fetchLocations(accessToken),
-        fetchPayments(accessToken)
+        fetchPayments(accessToken, dateRanges)
     ]);
-
+    console.log("\x1b[32m%s\x1b[0m", " ✔ STEP -2 => Fetching locations and payments done ")
     /* ----------------------------------------------------
        STEP 3: Store Locations (NON-FATAL PER RECORD)
     ---------------------------------------------------- */
-    for (const loc of locations) {
-        try {
-            const status = await upsertByReference({
-                model: squarePOSLocationsModel,
-                accountId,
-                referenceId: loc.id,
-                payload: { responseObject: loc },
-                userId,
-                cronId
-            });
 
-            status === 'CREATED' ? pushedCount++ : updatedCount++;
-        } catch (error) {
-            await squarePOSExceptionsModel.create({
-                accountId,
-                squarePOSIntegrationsCronId: cronId,
-                errorType: 'LOCATION_UPSERT_FAILED',
-                errorMessage: error.message,
-                referenceId: loc.id,
-                responseObject: loc
-            });
-        }
-    }
+    //Doing STEP 3 (Storing locations in squarePOSLocationsModel) in STEP-5
+
+    console.log("\x1b[32m%s\x1b[0m", " ✔ STEP -3 =>Storing locations in squarePOSLocationsModel) in STEP-5 ")
+
     /* ----------------------------------------------------
        STEP 4: Store Payments
     ---------------------------------------------------- */
@@ -92,8 +74,9 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
             cronId
         });
 
-        status === 'CREATED' ? pushedCount++ : updatedCount++;
+
     }
+    console.log("\x1b[32m%s\x1b[0m", " ✔ STEP -4 => Upserting payments done ")
     /* ------------------------------------------------
       STEP 5: Cash drawer shifts + Employee (NON-FATAL PER LOCATION)
    ------------------------------------------------ */
@@ -103,7 +86,16 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
         let shifts = [];
 
         try {
-            const rawShiftResponse = await fetchCashDrawerShifts(loc.id, accessToken);
+            const status = await upsertByReference({
+                model: squarePOSLocationsModel,
+                accountId,
+                referenceId: loc.id,
+                payload: { responseObject: loc },
+                userId,
+                cronId
+            });
+
+            const rawShiftResponse = await fetchCashDrawerShifts(loc.id, accessToken, dateRanges);
 
             if (Array.isArray(rawShiftResponse) && rawShiftResponse.length > 0) {
                 shifts = rawShiftResponse;
@@ -113,6 +105,14 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
             }
         } catch (error) {
 
+            await squarePOSExceptionsModel.create({
+                accountId,
+                squarePOSIntegrationsCronId: cronId,
+                errorType: 'LOCATION_UPSERT_FAILED',
+                errorMessage: error.message,
+                referenceId: loc.id,
+                responseObject: loc
+            });
             if (!Array.isArray(shifts)) {
                 await squarePOSExceptionsModel.create({
                     accountId,
@@ -179,8 +179,7 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
                     cronId
                 });
 
-                status === 'CREATED' ? pushedCount++ : updatedCount++;
-                totalShifts++;
+
             } catch (error) {
                 await squarePOSExceptionsModel.create({
                     accountId,
@@ -194,28 +193,11 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
         }
     }
 
-    /* ----------------------------------------------------
-       STEP 6: Update Cron
-    ---------------------------------------------------- */
-    await squarePOSIntegrationsCronsModel.findByIdAndUpdate(cronId, {
-        $set: {
-            pulledCount:
-                locations.length +
-                payments.length +
-                totalShifts,
-            pushedCount,
-            updatedCount
-        }
-    });
+    console.log("\x1b[32m%s\x1b[0m", "✔ STEP -5 =>Looping locations - Getting cash drawer shifts - Getting Individual Team member Done. But, need to call individual call of cash drawer shift")
 
     return {
         message: customConstants.messages.MESSAGE_SQUARE_POS_MANUAL_PULL,
-        // pulledCount,
-        // pushedCount,
-        // updatedCount,
-        pushedCount,
-        updatedCount,
-        totalShifts
+
         // // paymentsCount: payments.length,
         // teamMembersCount: teamMembers.length,
         // locationsCount: locations.length,
@@ -223,10 +205,6 @@ exports.executeSquarePOSDataSync = asyncWrapper(async ({ accountId, userId, cron
         // individualShiftsCount: individualShiftsDetails.length,
         // shiftEventsCount: allShiftEvents.length
     };
-    // res.status(200).json({
-    //     pushedCount,
-    //     updatedCount,
-    //     totalShifts
-    // });
+
 }
 )

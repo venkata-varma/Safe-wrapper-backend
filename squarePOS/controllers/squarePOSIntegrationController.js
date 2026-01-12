@@ -14,7 +14,7 @@ const { fetchTeamMembers, fetchIndividualTeamMember, fetchPayments, fetchLocatio
 const squarePOSIntegrationsCronsModel = require('../models/squarePOSIntegrationsCronsModel')
 const squarePOSExceptionsModel = require('../models/squarePOSExceptionModel');
 const { executeSquarePOSDataSync } = require('../services/squarePOSDataSyncService')
-const { generateDateRange, generateDateArray } = require('../utils/helpers')
+const { generateDateRange, generateDateArray, generateSquareDateRange } = require('../utils/helpers')
 /**
  * Helper to validate credentials against the Square API
  */
@@ -302,12 +302,9 @@ exports.manualPullDataDump = asyncWrapper(async (req, res) => {
     const MasterCredentials = req.validateSquareSetupData.masterCreds;
 
     const dataDumpRange = IntegrationSettings.dataDumpRange || 20;
-    // const dateRange = generateDateRange(dataDumpRange);
 
-    // const formattedDateRange = dateRange.map(unformattedDate =>
-    //     `${unformattedDate.slice(0, 4)}-${unformattedDate.slice(4, 6)}-${unformattedDate.slice(6, 8)}`
-    // );
-
+    let dateRanges = generateSquareDateRange(dataDumpRange)
+    console.log("dateRanges==", dateRanges)
     // Create cron log entry
     /* ----------------------------------------------------
       STEP 1: Create Cron Log (OUTSIDE try/catch)
@@ -317,12 +314,9 @@ exports.manualPullDataDump = asyncWrapper(async (req, res) => {
     const cronLog = await squarePOSIntegrationsCronsModel.create({
         accountId,
         userId,
-        // dateRange: formattedDateRange,
         status: "initiated",
         cronJobType: "manual",
-        pulledCount: 0,
-        pushedCount: 0,
-        updatedCount: 0
+
     });
     try {
         /* ----------------------------------------------------
@@ -347,6 +341,7 @@ exports.manualPullDataDump = asyncWrapper(async (req, res) => {
             userId,
             cronId: cronLog._id,
             credentials: MasterCredentials,
+            dateRanges
         });
 
         /* ----------------------------------------------------
@@ -371,11 +366,9 @@ exports.manualPullDataDump = asyncWrapper(async (req, res) => {
                     accountId: finalCronDetails.accountId,
                     cronId: finalCronDetails._id,
                     cronJobType: finalCronDetails.cronJobType,
-                    // dateRange: finalCronDetails.dateRange,
+
                     exceptionsCount,
-                    totalFetchedTransactionsCount: finalCronDetails.pulledCount,
-                    newlyAddedTransactionsCount: finalCronDetails.pushedCount,
-                    updatedTransactionsCount: finalCronDetails.updatedCount
+
                 }
             }
         });
@@ -393,7 +386,7 @@ exports.manualPullDataDump = asyncWrapper(async (req, res) => {
         const exceptionsCount = await squarePOSExceptionsModel.countDocuments({
             squarePOSIntegrationsCronId: cronLog._id
         });
-       
+
         // await squarePOSExceptionsModel.create({
         //     accountId,
         //     squarePOSIntegrationsCronId: cronId,
@@ -415,7 +408,7 @@ exports.manualPullDataDump = asyncWrapper(async (req, res) => {
         //         headers: error.response?.headers
         //     }
         // });
-         return res.status(customConstants.statusCodes.UNHANDLED_EXCEPTION).json({
+        return res.status(customConstants.statusCodes.UNHANDLED_EXCEPTION).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_SQUARE_POS_MANUAL_PULL_FAILED,
             data: {

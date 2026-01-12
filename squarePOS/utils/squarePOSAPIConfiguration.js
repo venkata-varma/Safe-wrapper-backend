@@ -35,10 +35,18 @@ exports.fetchTeamMemberById = async (memberId, accessToken) => {
 /**
  * Fetch all payments
  */
-exports.fetchPayments = async (accessToken) => {
+exports.fetchPayments = async (accessToken, dateRanges) => {
     const url = squarePOSAPIConfiguration?.SquarePOS?.getPayments?.url;
     if (!url) return [];
-    const { data } = await axios.get(url, { headers: getSquareHeaders(accessToken) });
+    const { data } = await axios.get(url,
+        { headers: getSquareHeaders(accessToken) },
+        {
+            params: {
+                begin_time: dateRanges?.fromDate,
+                end_time: dateRanges?.toDate
+            }
+        }
+    );
     return data?.payments || [];
 };
 
@@ -55,12 +63,20 @@ exports.fetchLocations = async (accessToken) => {
 /**
  * Fetch list of shifts for a specific location
  */
-exports.fetchCashDrawerShifts = async (locationId, accessToken) => {
+exports.fetchCashDrawerShifts = async (locationId, accessToken, dateRanges) => {
     const urlTemplate = squarePOSAPIConfiguration?.SquarePOS?.getCashDrawersShitfts?.url;
     if (!urlTemplate) return [];
 
     const finalUrl = urlTemplate.replace(/{ ?locationid ?}/g, locationId);
-    const response = await axios.get(finalUrl, { headers: getSquareHeaders(accessToken) });
+    const response = await axios.get(finalUrl,
+        { headers: getSquareHeaders(accessToken) },
+        {
+            params: {
+                begin_time: dateRanges?.fromDate,
+                end_time: dateRanges?.toDate
+            }
+        }
+    );
     return response.data?.cash_drawer_shifts || response.data?.items || [];
 };
 
