@@ -28,5 +28,5 @@ router.patch('/update-merchant-account/:accountId', upload.single('logo'), valid
 router.patch('/update-linked-machines-to-account/:accountId', validateAccountForUpdate, validationMapMachinesToAccountUpdate, updateLinkedMachinesOfAccount)
 
 
-
+router.get('/get-merchants-list', accountsControllers.getMerchantsNamesInDropdown)
 module.exports = router;

@@ -23,7 +23,16 @@ let webhookMasterModel = require('../../models/webHooksMasterModel')
 let cardConnectCredentialsModel = require('../../cardConnect/models/cardConnectIntegrationsCredentialsModel')
 let cardConnectSettingsModel = require('../../cardConnect/models/cardConnectIntegrationsSettingsModel')
 let squarePOSCredentialsModel = require('../../squarePOS/models/squarePOSCredentialsModel')
+
 let squarePOSSettingsModel = require('../../squarePOS/models/squarePOSIntegrationSettingsModel')
+
+let squarePOSSettingsModel = require('../../squarePOS/models/squarePOSIntegrationSettings')
+let webhookMetaPayloadModel = require('../../models/webHookMetaPayloads')
+let webhookPayloadHeadersModel = require('../../models/webhookPayloadHeaders')
+let webhookPayloadTransactionsModel = require('../../models/webhookPayloadTransactions')
+
+
+
 
 exports.uploadImageToS3 = asyncWrapper(async (req, res) => {
     const getImageUrl = await preSignedUrlToUpload(req.file)
@@ -169,7 +178,6 @@ exports.validationMapMachinesToAccountUpdate = asyncWrapper(async (req, res, nex
     next()
 })
 
-
 /**
  * 
  */
@@ -185,6 +193,23 @@ exports.mapMachinesToAccount = asyncWrapper(async (req, res) => {
         },
         { new: true, runValidators: true }
     )
+
+
+    let machineArray = machines?.split(',')
+    await Promise.all([
+        webhookMetaPayloadModel.updateMany(
+            { primaryHookId: { $in: machineArray } },
+            { $set: { accountId } }
+        ),
+        webhookPayloadHeadersModel.updateMany(
+            { serialNumber: { $in: machineArray } },
+            { $set: { accountId } }
+        ),
+        webhookPayloadTransactionsModel.updateMany(
+            { serialNumber: { $in: machineArray } },
+            { $set: { accountId } }
+        )
+    ]);
 
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_CREATED).json({
@@ -355,6 +380,24 @@ exports.updateLinkedMachinesOfAccount = asyncWrapper(async (req, res) => {
             }
         },
         { new: true });
+
+
+    let machineArray = machines?.split(',')
+    await Promise.all([
+        webhookMetaPayloadModel.updateMany(
+            { primaryHookId: { $in: machineArray } },
+            { $set: { accountId } }
+        ),
+        webhookPayloadHeadersModel.updateMany(
+            { serialNumber: { $in: machineArray } },
+            { $set: { accountId } }
+        ),
+        webhookPayloadTransactionsModel.updateMany(
+            { serialNumber: { $in: machineArray } },
+            { $set: { accountId } }
+        )
+    ]);
+
 
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,

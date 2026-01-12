@@ -25,5 +25,5 @@ router.get('/get-details-of-cron/:accountId/:cronJobId', validateAccountExistAnd
 
 router.get('/get-merchant-card-connect-dashboard-statistics/:accountId', validateAccountExistAndActiveParams, getMerchantCardConnectDashboardStats)
 
-router.get('/get-merchants-in-dropdown', getMerchantsNamesInDropdown)
+
 module.exports = router
