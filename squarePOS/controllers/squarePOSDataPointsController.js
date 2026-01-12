@@ -12,7 +12,8 @@ let webhookPayloadTransactionsModel = require('../../models/webhookPayloadTransa
 let webhookMetaPayloadModel = require('../../models/webHookMetaPayloads')
 
 /**
- * 
+ * "SquarePOS Reconciliation dashboard"
+ * API to provide options for dropdowns in SquarePOS Reconciliation dashboard
  */
 
 
@@ -84,7 +85,8 @@ exports.getSquarePosPayloadHeaders = asyncWrapper(async (req, res) => {
 })
 
 /**
- * 
+ * "SquarePOS Reconciliation dashboard"
+ * API for providing statistics related to reconciliation between Square-pos and CIMA-Machine
  */
 
 exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, res) => {
