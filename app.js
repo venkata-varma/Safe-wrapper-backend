@@ -82,12 +82,7 @@ app.use('/api-docs', swaggerexpressui.serve, swaggerexpressui.setup(swaggerDocum
 
 squarePOSScheduleCronJobs.squarePOSScheduleCronJobs()
 webhookCrons.webhookScheduleCronJobs()
-
-
-// webhookCrons.webhookScheduleCronJobs()
-
-
-// integrationCrons.cardConnectScheduleCronJobs()
+integrationCrons.cardConnectScheduleCronJobs()
 
 
 // Error Handling Middleware (optional)
