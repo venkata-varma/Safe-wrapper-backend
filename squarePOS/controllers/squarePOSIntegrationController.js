@@ -416,11 +416,8 @@ exports.manualPullDataDump = asyncWrapper(async (req, res) => {
                     accountId: finalCronDetails.accountId,
                     cronId: finalCronDetails._id,
                     cronJobType: finalCronDetails.cronJobType,
-                    // dateRange: finalCronDetails.dateRange,
                     exceptionsCount,
-                    totalFetchedTransactionsCount: finalCronDetails.pulledCount,
-                    newlyAddedTransactionsCount: finalCronDetails.pushedCount,
-                    updatedTransactionsCount: finalCronDetails.updatedCount
+
                 }
             }
         });
