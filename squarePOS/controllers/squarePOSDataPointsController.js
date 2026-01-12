@@ -93,6 +93,9 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
     let { fromDate, toDate, shiftStatus, location, machineTransactionTypes, serialNumbers } = req.body
     let accountId = req.params.accountId
     // console.log("req.body", req.body)
+
+    serialNumbers = serialNumbers.split(',')
+
     if (serialNumbers && serialNumbers.length > 1) {
         throw new Error("Only one serial number can be selected at a time.")
     }
@@ -108,15 +111,15 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
 
 
     // -------- Parse filters --------
-    const shiftStatusArray = (!shiftStatus || shiftStatus === "All")
+    const shiftStatusArray = (!shiftStatus || (shiftStatus).toLowerCase() === "all")
         ? null
         : shiftStatus.split(",").map(s => s.trim());
 
-    const locationArray = (!location || location === "All")
+    const locationArray = (!location || (location).toLowerCase() === "all")
         ? null
         : location.split(",").map(l => l.trim());
 
-    let machineTransactionTypesArray = (!machineTransactionTypes || machineTransactionTypes === "All") ?
+    let machineTransactionTypesArray = (!machineTransactionTypes || (machineTransactionTypes).toLowerCase() === "all") ?
         null : machineTransactionTypes.split(',').map((t) => t.trim())
 
 
@@ -246,6 +249,7 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
 
     //-------------------------------------------
     let transactionTypeCondition = {};
+
 
     if (machineTransactionTypesArray) {
         transactionTypeCondition["dataPoint.Transactions"] = {
