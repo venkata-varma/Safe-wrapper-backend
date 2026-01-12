@@ -12,7 +12,7 @@ const squarePOSExceptionsSchema = new mongoose.Schema(
         },
         squarePOSIntegrationsCronId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "squarePOSintegrationscrons",
+            ref: "squareposintegrationscrons",
             default: null,
             index: true,
 

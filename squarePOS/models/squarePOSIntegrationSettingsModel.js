@@ -12,7 +12,6 @@ const squarePOSIntegrationsSettingsSchema = new mongoose.Schema({
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "accounts",
-        unique: [true, "Account Id must be unique"],
         index: true,
         default: null,
     },
@@ -31,11 +30,6 @@ const squarePOSIntegrationsSettingsSchema = new mongoose.Schema({
             required: [true, 'periodType required'],
             default: ""
         },
-        currentStatus: {
-            type: String,
-            enum: ['start', 'stop'],
-            default: "start"
-        },
         interval: {
             type: Number,
             default: 1
@@ -45,7 +39,11 @@ const squarePOSIntegrationsSettingsSchema = new mongoose.Schema({
             default: new Date()
         }
     },
-
+    cronStatus: {
+        type: String,
+        enum: ['start', 'stop'],
+        default: "start"
+    },
     // requiredDatapoints: {
     //     type: Object,
     //     default: {}
@@ -77,7 +75,7 @@ const squarePOSIntegrationsSettingsSchema = new mongoose.Schema({
     },
     lastIntgerationsCronId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "squarePOSintegrationscrons",
+        ref: "squareposintegrationscrons",
         default: null,
         index: true,
     },

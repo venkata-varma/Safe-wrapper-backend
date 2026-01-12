@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
-const squarePOSIntegrationsCredentialsSchema = new mongoose.Schema(
+const squarePOSCredentialsSchema = new mongoose.Schema(
     {
-        squarePOSIntegrationsCredentialsId: {
+        squarePOSCredentialsId: {
             type: mongoose.Schema.Types.ObjectId,
             default: null,
             index: true,
@@ -65,6 +65,6 @@ const squarePOSIntegrationsCredentialsSchema = new mongoose.Schema(
 
 module.exports = mongoose.model(
     "squareposcredentialsmodel",
-    squarePOSIntegrationsCredentialsSchema
+    squarePOSCredentialsSchema
 );
 

@@ -24,7 +24,7 @@ const squarePOSintegrationsCronsSchema = mongoose.Schema({
     },
     source: {
         type: String,
-        default: "card-connect"
+        default: "square-pos"
     },
     cronJobType: {
         type: String,
