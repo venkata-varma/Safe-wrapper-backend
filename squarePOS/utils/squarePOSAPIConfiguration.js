@@ -37,7 +37,7 @@ exports.fetchTeamMemberById = async (memberId, accessToken) => {
  */
 exports.fetchPayments = async (accessToken, dateRanges) => {
     const url = squarePOSAPIConfiguration?.SquarePOS?.getPayments?.url;
-    console.log("dateRanges===", dateRanges)
+
     if (!url) return [];
     const response = await axios.get(url, {
         headers: getSquareHeaders(accessToken),
