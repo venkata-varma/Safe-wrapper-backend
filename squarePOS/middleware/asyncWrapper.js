@@ -1,6 +1,6 @@
 
 const customConstants = require('../../config/constants.json')
-const {squarePOSExceptionLogs} = require('../utils/sqaurePOSExceptionOperations')
+const { squarePOSExceptionLogs } = require('../utils/sqaurePOSExceptionOperations')
 
 // const asyncWrapper = (fn) => {
 //   return async (req, res, next) => {
@@ -29,7 +29,6 @@ const {squarePOSExceptionLogs} = require('../utils/sqaurePOSExceptionOperations'
 //         await squarePOSExceptionLogs(exceptionObject, error.statusCode || 500,
 //             errorMessage, error.name, res.req?.body || {}, res.req?.url.split('/')[1]
 //         )
-//     //   await cardConnectExceptionLogs(exceptionObject, error.statusCode || 500, errorMessage, error.name, res.req?.body || {}, res.req?.url.split('/')[1], "")
 
 //       if (error.name == "TokenExpiredError") {
 //         res.status(customConstants.statusCodes.UNAUTHORIZED).json({ status: customConstants.messages.MESSAGE_EXPIRED, message: customConstants.messages.MESSAGE_SESSION_EXPIRED })
@@ -66,9 +65,10 @@ const asyncWrapper = (fn) => {
         error.statusCode || 500,
         errorMessage,
         error.name,
-        req?.body || {},
-        req?.originalUrl || 'cron/square-pos-sync'
+        req?.body,
+        req?.originalUrl
       );
+
 
       if (res && error.name === 'TokenExpiredError') {
         return res.status(401).json({

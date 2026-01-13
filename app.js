@@ -26,7 +26,6 @@ const webHooksRoute = require('./customer/routes/webHooksRoute')
 const webhookCrons = require('./customer/controllers/webhookCronControllers')
 const integrationCrons = require('./cardConnect/controllers/cardConnectCronScheduleController')
 
-const SquarePOSRoutes = require('./squarePOS/routes/squarePOSIntegrationRoute')
 const squarePOSDataPointsRoute = require('./squarePOS/routes/squarePOSDataPointsRoute')
 
 //Super Admin Routes.

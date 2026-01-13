@@ -26,7 +26,7 @@ let squarePOSCredentialsModel = require('../../squarePOS/models/squarePOSCredent
 
 let squarePOSSettingsModel = require('../../squarePOS/models/squarePOSIntegrationSettingsModel')
 
-let squarePOSSettingsModel = require('../../squarePOS/models/squarePOSIntegrationSettings')
+
 let webhookMetaPayloadModel = require('../../models/webHookMetaPayloads')
 let webhookPayloadHeadersModel = require('../../models/webhookPayloadHeaders')
 let webhookPayloadTransactionsModel = require('../../models/webhookPayloadTransactions')
