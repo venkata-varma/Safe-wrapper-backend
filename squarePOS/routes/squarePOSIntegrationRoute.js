@@ -25,7 +25,7 @@ router.post('/integration-settings', validateAccountExistAndActive, createSquare
 router.get('/integration-settings/:accountId',
     validateAccountExistAndActive, getIntegrationMasterSettings)
 
-router.patch('/integrations-settings/:integrationSettingsId',
+router.patch('/integration-settings/:integrationSettingsId',
     validateAccountExistAndActive, updateIntegrationMasterSettings)
 
 
