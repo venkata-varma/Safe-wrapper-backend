@@ -55,6 +55,8 @@ exports.executeSquarePOSDataSync = async ({ accountId, userId, cronId, credentia
         fetchLocations(accessToken),
         fetchPayments(accessToken, dateRanges)
     ]);
+
+    console.log("payments===", payments.length)
     console.log("\x1b[32m%s\x1b[0m", " ✔ STEP -2 => Fetching locations and payments done ")
 
 

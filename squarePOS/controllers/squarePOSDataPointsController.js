@@ -10,6 +10,9 @@ let moment = require('moment')
 let webhookPayloadHeadersModel = require('../../models/webhookPayloadHeaders')
 let webhookPayloadTransactionsModel = require('../../models/webhookPayloadTransactions')
 let webhookMetaPayloadModel = require('../../models/webHookMetaPayloads')
+let squarePOSExceptionsModel = require('../models/squarePOSExceptionModel')
+
+
 
 /**
  * "SquarePOS Reconciliation dashboard"
@@ -347,3 +350,41 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
     })
 
 })
+
+
+
+exports.getSquarePOSExceptions = async (accountId, fromDate, toDate, paymentType) => {
+    let matchCondition = {}
+
+    if (accountId) {
+        matchCondition["accountId"] = new mongoose.Types.ObjectId(accountId)
+    } else {
+        matchCondition = {}
+    }
+    let getExceptions = await squarePOSExceptionsModel.aggregate([
+        {
+            $match: matchCondition
+        },
+        {
+            $addFields: {
+                paymentType: paymentType
+            }
+        },
+        {
+            $match: {
+                createdAt: {
+                    $gte: fromDate,
+                    $lte: toDate
+                }
+            }
+        },
+
+        {
+            $sort: {
+                createdAt: -1
+            }
+        },
+    ])
+
+    return getExceptions
+}

@@ -24,7 +24,7 @@ const { authentication } = require("../../utils/authentication");
 const { dashboardFiltersSafeCash, dashboardFiltersCardConnect, getSummaryDetails } = require("../../customer/controllers/smartDashboardFunctions");
 let { getAllCardConnectPayloadHeaders } = require('../../cardConnect/controllers/cardConnectIntegrationsMasterDataPointsController')
 let { getAllCardConnectExceptions } = require('./superAdminAccountControllers')
-
+let { getSquarePOSExceptions } = require('../../squarePOS/controllers/squarePOSDataPointsController')
 /**
  * Middleware function for Create webhook functionality
  * Middleware is to check the status of Respective account
@@ -2158,11 +2158,11 @@ exports.getAllExceptionsWithFilters = asyncWrapper(async (req, res) => {
 
   fromDate = new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss'))
   toDate = new Date(moment(toDate).format('YYYY-MM-DDTHH:mm:ss'))
-
+  let allExceptions
 
 
   if (paymentType === "cima-machine") {
-    machineCashExceptions = await webhookExceptionsModel.aggregate([
+    allExceptions = await webhookExceptionsModel.aggregate([
       {
         $addFields: {
           paymentType: "cima-machine"
@@ -2186,25 +2186,20 @@ exports.getAllExceptionsWithFilters = asyncWrapper(async (req, res) => {
     ])
   }
   if (paymentType === "card-connect") {
-    cardConnectExceptions = await getAllCardConnectExceptions(fromDate, toDate, paymentType)
+    allExceptions = await getAllCardConnectExceptions(fromDate, toDate, paymentType)
   }
-  let allExceptionsCount = machineCashExceptions.length > 0 ? machineCashExceptions.length : cardConnectExceptions.length > 0 ? cardConnectExceptions.length : 0
-  let allExceptions = [
 
-    ...machineCashExceptions,
-    ...cardConnectExceptions
-  ]
+  if (paymentType === "square-pos") {
+    allExceptions = await getSquarePOSExceptions("", fromDate, toDate, paymentType)
+  }
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
     data: {
-      allExceptionsCount,
-      allExceptions
+      allExceptionsCount: allExceptions?.length,
+      allExceptions,
     }
-
-
-
   })
 })
 

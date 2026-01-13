@@ -23,7 +23,7 @@ const { dashboardFiltersCardConnect, dashboardFiltersSafeCash, getSummaryDetails
 const { getMerchantCardConnectPayloadHeaders, getMerchantCardConnectExceptions } = require('../../cardConnect/controllers/cardConnectIntegrationsMasterDataPointsController');
 const cardConnectIntegrationsCredentialsModel = require("../../cardConnect/models/cardConnectIntegrationsCredentialsModel");
 const cardConnectIntegrationsSettingsModel = require("../../cardConnect/models/cardConnectIntegrationsSettingsModel");
-
+let { getSquarePOSExceptions } = require('../../squarePOS/controllers/squarePOSDataPointsController')
 /**
  * Middleware function for Create webhook functionality
  * Middleware is to check the status of Respective account
@@ -2666,14 +2666,14 @@ exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
   let cardConnectExceptions = []
   let { fromDate, toDate, paymentType } = req.query;
 
-
+  let allExceptions
 
 
   fromDate = new Date(moment(fromDate).format('YYYY-MM-DDTHH:mm:ss'))
   toDate = new Date(moment(toDate).format('YYYY-MM-DDTHH:mm:ss'))
 
   if (paymentType === "cima-machine") {
-    machineCashExceptions = await webhookExceptionsModel.aggregate([
+    allExceptions = await webhookExceptionsModel.aggregate([
       {
         $match: {
           accountId: new mongoose.Types.ObjectId(accountId)
@@ -2703,21 +2703,18 @@ exports.getExceptionsOfAccount = asyncWrapper(async (req, res) => {
     ])
   }
   if (paymentType === "card-connect") {
-    cardConnectExceptions = await getMerchantCardConnectExceptions(fromDate, toDate, paymentType, accountId)
+    allExceptions = await getMerchantCardConnectExceptions(fromDate, toDate, paymentType, accountId)
   }
-  let allExceptionsCount = machineCashExceptions.length > 0 ? machineCashExceptions.length : cardConnectExceptions.length > 0 ? cardConnectExceptions.length : 0
-  let allExceptions = [
-
-    ...machineCashExceptions,
-    ...cardConnectExceptions
-  ]
+  if (paymentType === "square-pos") {
+    allExceptions = await getSquarePOSExceptions(accountId, fromDate, toDate, paymentType)
+  }
 
   return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
     status: customConstants.messages.MESSAGE_SUCCESS,
     message: customConstants.messages.MESSAGE_WEBOOK_GET_EXCEPTIONS,
     data: {
-      allExceptionsCount,
-      allExceptions
+      allExceptionsCount: allExceptions?.length,
+      allExceptions,
     }
 
 
