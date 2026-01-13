@@ -35,6 +35,10 @@ const squarePOSintegrationsCronsSchema = mongoose.Schema({
         type: Number,
         default: 0
     },
+    exceptionIds: {
+        type: Array,
+        default: []
+    },
 
     pushedCount: {
         type: Number,
@@ -50,7 +54,7 @@ const squarePOSintegrationsCronsSchema = mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["initiated", "completed", "error", "failed"],
+        enum: ["initiated", "completed", "error", "failed", "completed_with_errors"],
         default: "initiated"
     }
 }, { timestamps: true });

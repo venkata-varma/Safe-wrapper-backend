@@ -44,7 +44,6 @@ const initiateCronJob = async (integration) => {
     const createIntegrationsCron = await squarePOSIntegrationsCronsModel.create({
         accountId: masterData.accountId,
         userId: masterData.userId,
-        // dateRange,
         status: "initiated",
         cronJobType: "automated"
     });

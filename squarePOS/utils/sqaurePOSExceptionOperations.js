@@ -7,7 +7,7 @@ exports.squarePOSExceptionLogs = async (exceptionObject, status, exceptionMessag
     const validObjectId = (id) => {
         return mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : null;
     };
-    await squarePOSExceptionModel.create({
+    let createException = await squarePOSExceptionModel.create({
 
         accountId: validObjectId(exceptionObject?.accountId),
         userId: validObjectId(exceptionObject?.userId),
@@ -16,10 +16,8 @@ exports.squarePOSExceptionLogs = async (exceptionObject, status, exceptionMessag
         exceptionTitle: exceptionTitle,
         exceptionRequestObject: exceptionErrorObject || {},
         exceptionApiService: exceptionApiService,
-        cardConnectTransactionId: transactionId || "",
-        cardConnectIntegrationsCronId: validObjectId(integrationsCronId)
+        squarePOSTransactionId: transactionId || "",
+        squarePOSIntegrationsCronId: validObjectId(integrationsCronId)
     })
-
+    return createException._id
 }
-
-

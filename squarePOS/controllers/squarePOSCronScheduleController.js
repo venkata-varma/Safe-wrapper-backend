@@ -43,7 +43,7 @@ exports.squarePOSScheduleCronJobs = asyncWrapper(async () => {
             for (const integration of squarePOSIntegrationsMasterSettingsDetails) {
 
                 let cronStatus = await validateTheCronStatus(integration)
-                // let cronStatus = true
+
                 if (!cronStatus) {
                     console.log("cronStatus===", cronStatus)
                     await schedulerIntegrationCronJobs(integration)
