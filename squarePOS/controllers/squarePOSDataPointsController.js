@@ -352,7 +352,14 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
 })
 
 
-
+/**
+ * Function that is useful for   Menu --->  "Exceptions"
+ * @param {*} accountId 
+ * @param {*} fromDate 
+ * @param {*} toDate 
+ * @param {*} paymentType 
+ * @returns 
+ */
 exports.getSquarePOSExceptions = async (accountId, fromDate, toDate, paymentType) => {
     let matchCondition = {}
 

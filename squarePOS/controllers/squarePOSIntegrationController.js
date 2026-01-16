@@ -295,7 +295,12 @@ exports.syncSquarePOSData = asyncWrapper(async (req, res) => {
     });
 });
 
-
+/**
+ * Responsible for one of important end-points --->    "/manual-sync/:accountId"
+ * Initiates record in crons model with type as "manual"
+ * Contains a super-funciton called "executeSquarePOSDataSync" which contains other sub-functions
+ * If whole flow is successful, updates the respective cron-job as "completed". Otherwise, as "failed"
+ */
 exports.manualPullDataDump = asyncWrapper(async (req, res) => {
     const { accountId } = req.params;
     const userId = req.user._id;
