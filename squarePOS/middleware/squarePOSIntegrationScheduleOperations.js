@@ -7,8 +7,18 @@ const { generateDateRange, generateSquareDateRange } = require('../utils/helpers
 const { executeSquarePOSDataSync } = require('../services/squarePOSDataSyncService');
 const asyncWrapper = require('../middleware/asyncWrapper');
 
+
+
+/**
+ * 
+ * @param {*} integration 
+ * Main part of for loop on all merchants with square-pos integrated
+ * @returns 
+ */
 const initiateCronJob = async (integration) => {
     const { accountId } = integration?.accountId;
+    // Get integration master details with credentials and settings
+
     const integrationsMasterDetails = await accountsModel.aggregate([
         {
             $match: {
@@ -61,7 +71,6 @@ const initiateCronJob = async (integration) => {
         { new: true, runValidators: true }
     );
 
-    // Get integration master details with credentials and settings
 
 
     const dataDumpRange = masterData?.settings?.dataDumpRange;

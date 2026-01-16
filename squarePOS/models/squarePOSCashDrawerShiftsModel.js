@@ -6,9 +6,9 @@ const squarePOSCashDrawerShiftsSchema = new mongoose.Schema({
         default: null,
         index: true,
         default: function () {
-        return this._id;
-            },
+            return this._id;
         },
+    },
     squarePOSIntegrationsCronIdCreate: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "squareposintegrationscrons",
@@ -25,13 +25,13 @@ const squarePOSCashDrawerShiftsSchema = new mongoose.Schema({
     },
     accountId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref:"accounts",
+        ref: "accounts",
         index: true,
         default: null,
     },
-    userId:{
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref:"users",
+        ref: "users",
         index: true,
         default: null
     },
@@ -43,12 +43,12 @@ const squarePOSCashDrawerShiftsSchema = new mongoose.Schema({
     referenceId: {
         type: String,
         required: true,
-        default: "" 
+        index: true,
+        default: ""
     },
     referenceStatus: {
         type: String,
-        enum: ['OPEN', 'ENDED', 'CLOSED'],
-        index: true
+        enum: ['OPEN', 'ENDED', 'CLOSED']
     },
     openedAt: {
         type: Date
@@ -64,7 +64,7 @@ const squarePOSCashDrawerShiftsSchema = new mongoose.Schema({
         type: Object,
         required: true
     },
-    teamMembers:{
+    teamMembers: {
         type: Array,
         default: []
     },
@@ -72,7 +72,7 @@ const squarePOSCashDrawerShiftsSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users'
     },
-     updatedBy: {
+    updatedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
         default: null,

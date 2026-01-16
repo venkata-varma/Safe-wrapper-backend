@@ -25,7 +25,12 @@ const { squarePOSExceptionLogs } = require('../utils/sqaurePOSExceptionOperation
 
 
 
-
+/**
+ * Most important super-function that runs sub-functions .  Runs in two places 
+ * 1. Manual pull end-point     2. Cron job
+ * @param {*}  
+ * @returns 
+ */
 exports.executeSquarePOSDataSync = async ({ accountId, userId, cronId, credentials, dateRanges }) => {
 
     let exceptionIds = [];

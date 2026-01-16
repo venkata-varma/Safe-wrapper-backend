@@ -44,10 +44,7 @@ const squarePOSIntegrationsSettingsSchema = new mongoose.Schema({
         enum: ['start', 'stop'],
         default: "start"
     },
-    // requiredDatapoints: {
-    //     type: Object,
-    //     default: {}
-    // },
+
 
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
@@ -61,14 +58,7 @@ const squarePOSIntegrationsSettingsSchema = new mongoose.Schema({
         ref: "users",
         default: null,
     },
-    // transactionStatusKeys: {
-    //     type: Array,
-    //     default: []
-    // },
-    // transactionTypeKeys: {
-    //     type: Array,
-    //     default: []
-    // },
+
     lastPullDate: {
         type: Date,
         default: null
@@ -79,13 +69,10 @@ const squarePOSIntegrationsSettingsSchema = new mongoose.Schema({
         default: null,
         index: true,
     },
-    // dataPointsAccess: {
-    //     type: Object,
-    //     default: {}
-    // },
+
     dataDumpRange: {
         type: Number,
-        required: [true, 'data dump range is required'],
+        required: [true, 'Data dump range is required'],
         default: 20
     },
     customerObjectKeys: {
