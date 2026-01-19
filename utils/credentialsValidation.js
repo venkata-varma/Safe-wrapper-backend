@@ -34,7 +34,14 @@ exports.validateServiceProviders = async (payload) => {
         return { statusCode: authResponse?.status, status: customConstants.messages.MESSAGE_SUCCESS, message: customConstants.messages.MESSAGE_CARD_CONNECT_CREDENTIALS_VALIDATION_SUCCESS, responseData: authResponse.data };
     } catch (error) {
 
-        return { statusCode: error?.response?.status, statusText: error?.response?.statusText, status: customConstants?.messages?.MESSAGE_FAIL, message: customConstants?.messages?.MESSAGE_CARD_CONNECT_CREDENTIALS_VALIDATION_FAILED, data: error?.response?.data };
+        return {
+            statusCode: error?.response?.status, statusText: error?.response?.statusText, status: customConstants?.messages?.MESSAGE_FAIL, message: customConstants?.messages?.MESSAGE_CARD_CONNECT_CREDENTIALS_VALIDATION_FAILED,
+            data: {
+                status: error?.response?.status,
+                statusText: error?.response?.statusText,
+                url: error?.config?.url
+            }
+        };
     }
 };
 

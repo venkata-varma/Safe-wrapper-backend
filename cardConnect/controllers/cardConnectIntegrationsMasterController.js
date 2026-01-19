@@ -19,7 +19,8 @@ const { modifyUrl } = require('../utils/authenticationResponse');
 const { default: axios } = require('axios');
 
 const { generateDateRange, generateDateArray } = require('../utils/helpers');
-const { cardConnectPredefinedKeys } = require('../config/predefinedKeys')
+const { cardConnectPredefinedKeys } = require('../config/predefinedKeys');
+const { cardConnectExceptionLogs } = require('../middleware/cardConnectExceptionOperations');
 //------------------------------------------------------------------------------------
 
 
@@ -116,10 +117,29 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
     }
 
     let credentialsValidation = await validateServiceProviders(payload)
-
+    const validObjectId = (id) => {
+        return mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : null;
+    };
 
     if (credentialsValidation.status === "fail" || credentialsValidation === undefined || credentialsValidation.statusCode !== 200) {
-        return res.status(credentialsValidation?.statusCode).json({
+        await cardConnectExceptionLogs(
+            {
+                accountId: validObjectId(req?.body?.accountId),
+                userId: validObjectId(req?.body?.userId),
+
+            },
+            credentialsValidation?.statusCode || 500,
+            credentialsValidation?.message,
+            credentialsValidation?.statusText,
+            credentialsValidation?.data || {},
+            credentialsValidation?.data?.url,
+            ""
+        )
+
+        return res.status(500
+            //  credentialsValidation?.statusCode
+
+        ).json({
             status: credentialsValidation?.status,
             statusCode: credentialsValidation?.statusCode,
             statusText: credentialsValidation?.statusText,

@@ -9,6 +9,8 @@ const squarePOSAPIConfiguration = require("../config/squarePOSConfiguration")
 const squarePOSintegrationssettingsModel = require('../models/squarePOSIntegrationSettingsModel');
 const squarePOSIntegrationsCronsModel = require('../models/squarePOSIntegrationsCronsModel');
 const squarePOSExceptionModel = require('../models/squarePOSExceptionModel');
+const { squarePOSExceptionLogs } = require('../utils/sqaurePOSExceptionOperations');
+const { default: mongoose } = require('mongoose');
 
 /**
  * Middleware for Validating existence of "accountId" in payload (body)
@@ -64,9 +66,30 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
     // Call the generic validatorcredentialsValidation
     let credentialsValidation = await validateServiceProviders(payload);
     // console.log("credentialsValidation===", credentialsValidation)
-
+    const validObjectId = (id) => {
+        return mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : null;
+    };
     if (credentialsValidation.status === "fail" || !credentialsValidation || credentialsValidation.statusCode !== customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS) {
-        return res.status(credentialsValidation?.statusCode || 401).json({
+        //exports.squarePOSExceptionLogs = async (exceptionObject, status, exceptionMessage, exceptionTitle, exceptionErrorObject, exceptionApiService, transactionId, integrationsCronId) 
+
+        await squarePOSExceptionLogs(
+            {
+                accountId: validObjectId(req?.body?.accountId),
+                userId: validObjectId(req?.body?.userId)
+            },
+            credentialsValidation?.data?.status || 500,
+            credentialsValidation?.data?.message,
+            credentialsValidation?.data?.name,
+            credentialsValidation.data?.response?.data || {},
+            credentialsValidation?.data?.config?.url,
+            "",
+            ""
+        );
+
+
+        return res.status(500
+            //    credentialsValidation?.statusCode || 401
+        ).json({
             status: customConstants.messages.MESSAGE_FAIL,
             message: customConstants.messages.MESSAGE_AUTHENTICATION_FAILURE,
             data: credentialsValidation?.data
