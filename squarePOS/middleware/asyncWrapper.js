@@ -40,13 +40,13 @@ const { squarePOSExceptionLogs } = require('../utils/sqaurePOSExceptionOperation
 // }
 
 const asyncWrapper = (fn) => {
-  return async (...args) => {
+  return async (req, res, next) => {
     try {
       await fn(req, res, next)
     } catch (error) {
 
-      const req = args[0];
-      const res = args[1];
+      // const req = args[0];
+      // const res = args[1];
 
 
 
