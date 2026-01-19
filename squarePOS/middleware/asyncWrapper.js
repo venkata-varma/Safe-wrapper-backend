@@ -42,18 +42,21 @@ const { squarePOSExceptionLogs } = require('../utils/sqaurePOSExceptionOperation
 const asyncWrapper = (fn) => {
   return async (...args) => {
     try {
-      await fn(...args);
+      await fn(req, res, next)
     } catch (error) {
 
       const req = args[0];
       const res = args[1];
 
-      const exceptionObject = {
-        ...(req?.user?.accountId?._doc || {}),
-        ...(req?.params || {}),
-        ...(req?.query || {}),
-        ...(req?.body || {})
+
+
+      let exceptionObject = {
+        ...res.req?.user?.accountId?._doc,
+        ...(res.req?.params ?? {}),
+        ...(res.req?.query ?? {}),
+        ...(res.req?.body ?? {}),
       };
+
 
       const errorMessage =
         typeof error.message === 'object'
@@ -65,25 +68,23 @@ const asyncWrapper = (fn) => {
         error.statusCode || 500,
         errorMessage,
         error.name,
-        req?.body,
-        req?.originalUrl
+        res?.req?.body,
+        res?.req?.originalUrl
       );
 
 
-      if (res && error.name === 'TokenExpiredError') {
-        return res.status(401).json({
-          status: 'EXPIRED',
-          message: 'Session expired'
-        });
+      if (error.name === 'TokenExpiredError') {
+        res.status(customConstants.statusCodes.UNAUTHORIZED).json({ status: customConstants.messages.MESSAGE_EXPIRED, message: customConstants.messages.MESSAGE_SESSION_EXPIRED })
+        return;
       }
-
-      if (res) {
-        return res.status(500).json({
-          status: 'error',
-          message: errorMessage
-        });
-      }
-      throw error;
+      next(error)
+      // if (res) {
+      //   return res.status(500).json({
+      //     status: 'error',
+      //     message: errorMessage
+      //   });
+      // }
+      // throw error;
     }
   };
 };
