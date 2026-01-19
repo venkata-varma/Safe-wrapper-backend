@@ -1002,7 +1002,7 @@ exports.getAllWebhookPayoadHeadersOfAccount = asyncWrapper(async (req, res) => {
     machines: accountDetails?.machines
   }
   allMerchants.push(merchantNames)
-  let categories = ["cima-machine", "card-connect"]
+  let categories = ["cima-machine", "card-connect", "square-pos"]
 
 
   console.log(" req.user.accountId.machines", req.user.accountId.machines)

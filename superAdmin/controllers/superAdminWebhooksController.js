@@ -606,7 +606,7 @@ exports.getAllWebhookTransactionsOfAccount = asyncWrapper(async (req, res) => {
 exports.getAllWebhookPayoadHeadersOfAllAccounts = asyncWrapper(async (req, res) => {
   const { serialNumber } = req.query
   let matchCondition = {}
-  let categories = ["cima-machine", "card-connect"]
+  let categories = ["cima-machine", "card-connect", "square-pos"]
 
   let merchantNames = await accountsModel.aggregate([
     {
@@ -663,21 +663,21 @@ exports.getAllWebhookPayoadHeadersOfAllAccounts = asyncWrapper(async (req, res) 
           { $group: { _id: null, transactionTypes: { $addToSet: "$transactionType" } } },
           { $project: { _id: 0, transactionTypes: 1 } }
         ],
-        userNamesOfMachine: [
-          {
-            $group: {
-              _id: "$serialNumber",
-              userNames: { $addToSet: "$userName" }
-            }
-          },
-          {
-            $project: {
-              _id: 0,
-              serialNumber: "$_id",
-              userNames: 1
-            }
-          }
-        ]
+        // userNamesOfMachine: [
+        //   {
+        //     $group: {
+        //       _id: "$serialNumber",
+        //       userNames: { $addToSet: "$userName" }
+        //     }
+        //   },
+        //   {
+        //     $project: {
+        //       _id: 0,
+        //       serialNumber: "$_id",
+        //       userNames: 1
+        //     }
+        //   }
+        // ]
       }
     },
     {
