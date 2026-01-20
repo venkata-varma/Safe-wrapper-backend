@@ -135,7 +135,13 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
     if (locationArray) {
         shiftAndLocationCondition["locationId"] = { $in: locationArray };
     }
-
+    let stats = {
+        ok: 0,
+        warning: 0,
+        alert: 0,
+        netVariance: 0,
+        currency: "USD"
+    }
 
 
     let shiftsTransactions = await squarePOSCashDrawerShiftsModel.aggregate([
@@ -299,57 +305,45 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
 
     if (cashDrawerShiftRecords.length > 0 && machineTransactions.length > 0) {
 
-        for (let i = 0; i < cashDrawerShiftRecords.length; i++) {
+        // depositedAmountInMachine is already initialized in your aggregate as 0
 
-            let firstShift = cashDrawerShiftRecords[i]
-            let secondShift = cashDrawerShiftRecords[i + 1]
+        let shiftIndex = 0;
 
-            let singleShiftRecord
-            if (cashDrawerShiftRecords.length === 1) {
-                singleShiftRecord = firstShift
-                console.log("First & Last record")
+        for (const mxTxn of machineTransactions) {
 
-            } else if ((secondShift && secondShift?.referenceId === cashDrawerShiftRecords[cashDrawerShiftRecords.length - 1]?.referenceId)) {
-                singleShiftRecord = secondShift
-                console.log(" Last record")
-
+            // Move pointer to latest closed shift before this transaction
+            while (
+                shiftIndex + 1 < cashDrawerShiftRecords.length &&
+                cashDrawerShiftRecords[shiftIndex + 1].closedAtDate <= mxTxn.transactionDateTime
+            ) {
+                shiftIndex++;
             }
 
+            // Assign deposit to matched shift
+            if (
+                cashDrawerShiftRecords[shiftIndex] &&
+                cashDrawerShiftRecords[shiftIndex].closedAtDate <= mxTxn.transactionDateTime
+            ) {
+                cashDrawerShiftRecords[shiftIndex].depositedAmountInMachine += mxTxn.totalDepositAmount;
+                cashDrawerShiftRecords[shiftIndex].variance = cashDrawerShiftRecords[shiftIndex]?.expectedAmount?.amount - cashDrawerShiftRecords[shiftIndex]?.depositedAmountInMachine;
+                stats.netVariance = stats.netVariance + cashDrawerShiftRecords[shiftIndex].variance
 
-            for (let mxTxn of machineTransactions) {
-                console.log("Multiple-record-loop")
-                if ((mxTxn?.transactionDateTime > firstShift?.closedAtDate && mxTxn?.transactionDateTime < secondShift?.closedAtDate) && (mxTxn?.totalDepositAmount === firstShift?.receivedAmount?.amount)) {
-                    firstShift.depositedAmountInMachine = mxTxn?.totalDepositAmount
-                    firstShift.variance = firstShift?.expectedAmount?.amount - firstShift?.depositedAmountInMachine
-                    firstShift.reconcilationStatus =
-                        firstShift?.variance === 0 ? "OK" :
-                            firstShift?.variance < 500 ? "ALERT" :
-                                "WARNING";
+                if (cashDrawerShiftRecords[shiftIndex].variance === 0) {
+                    cashDrawerShiftRecords[shiftIndex].reconcilationStatus = "OK"
 
-
+                    stats.ok = stats.ok + 1
                 }
-            }
-            if (singleShiftRecord) {
-                for (let mxTxn of machineTransactions) {
-                    console.log("-single -record-loop")
-                    if ((mxTxn?.transactionDateTime > singleShiftRecord?.closedAtDate) && (mxTxn?.totalDepositAmount === singleShiftRecord?.receivedAmount?.amount)) {
-                        singleShiftRecord.depositedAmountInMachine = mxTxn?.totalDepositAmount
-                        singleShiftRecord.variance = singleShiftRecord?.expectedAmount?.amount - singleShiftRecord?.depositedAmountInMachine
-                        singleShiftRecord.reconcilationStatus =
-                            singleShiftRecord?.variance === 0 ? "OK" :
-                                singleShiftRecord?.variance < 500 ? "ALERT" :
-                                    "WARNING";
-
-
-                    }
+                else if (cashDrawerShiftRecords[shiftIndex].variance < 500) {
+                    cashDrawerShiftRecords[shiftIndex].reconcilationStatus = "ALERT"
+                    stats.alert = stats.alert + 1
+                } else if (cashDrawerShiftRecords[shiftIndex].variance >= 500) {
+                    cashDrawerShiftRecords[shiftIndex].reconcilationStatus = "WARNING"
+                    stats.warning = stats.warning + 1
                 }
+
+
             }
-
-
         }
-
-
-
     }
 
     console.log("shiftsTransactions===", shiftsTransactions[0].cashDrawerShiftRecords.length)
@@ -358,13 +352,7 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
         message: "",
         data: {
             cashDrawerShiftRecords: shiftsTransactions[0]?.cashDrawerShiftRecords,
-            stats: {
-                "ok": 0,
-                "warning": 0,
-                "alert": 0,
-                "netVariance": 0,
-                "currency": "USD"
-            },
+            stats: stats,
 
             machineTransactions
         }
