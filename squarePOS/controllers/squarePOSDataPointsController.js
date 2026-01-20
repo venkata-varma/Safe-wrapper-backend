@@ -322,9 +322,10 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
             // Assign deposit to matched shift
             if (
                 cashDrawerShiftRecords[shiftIndex] &&
-                cashDrawerShiftRecords[shiftIndex].closedAtDate <= mxTxn.transactionDateTime
+                cashDrawerShiftRecords[shiftIndex]?.closedAtDate <= mxTxn?.transactionDateTime &&
+                cashDrawerShiftRecords[shiftIndex]?.receivedAmount?.amount === mxTxn?.totalDepositAmount
             ) {
-                cashDrawerShiftRecords[shiftIndex].depositedAmountInMachine += mxTxn.totalDepositAmount;
+                cashDrawerShiftRecords[shiftIndex].depositedAmountInMachine = mxTxn?.totalDepositAmount;
                 cashDrawerShiftRecords[shiftIndex].variance = cashDrawerShiftRecords[shiftIndex]?.expectedAmount?.amount - cashDrawerShiftRecords[shiftIndex]?.depositedAmountInMachine;
                 stats.netVariance = stats.netVariance + cashDrawerShiftRecords[shiftIndex].variance
 
@@ -349,7 +350,7 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
     console.log("shiftsTransactions===", shiftsTransactions[0].cashDrawerShiftRecords.length)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
-        message: "",
+        message: customConstants.messages.MESSAGE_SQUARE_POS_CASH_DRAWER_RECONCILATION,
         data: {
             cashDrawerShiftRecords: shiftsTransactions[0]?.cashDrawerShiftRecords,
             stats: stats,

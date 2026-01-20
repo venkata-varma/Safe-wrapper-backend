@@ -18,6 +18,7 @@
     "MESSAGE_MACHINES_LINKING_SUCCESSFULL": "Machine/machines linked to account succesfully.",
     "MESSAGE_ACCOUNT_LOGIN": "Account verified successfully.",
     "MESSAGE_PASSWORD_UPDATED": "Password has been updated successfully.",
+    "MESSAGE_SQUARE_POS_CASH_DRAWER_RECONCILATION": "Reconcilation between square-pos and machine deposits done succesfully.",
     "MESSAGE_FIELD_MAPPINGS_BY_SERVICE": "Integration field mappings by service type provided successfully",
     "MESSAGE_UPDATE_FIELD_MAPPINGS_BY_SERVICE": "Updated Integration field mappings by service type successfully",
     "MESSAGE_USER_CREATED": "The user has been successfully added.",
@@ -183,13 +184,12 @@
     "MESSAGE_MASTER_SETTINGS_FETCHED_SUCCESSFULLY": "Master settings fetched successfully",
     "MESSAGE_ACCOUNTID_MISMATCH_TO_UPDATE_CREDENTIALS": "Account ID mismatch: Cannot update credentials for a different account.",
     "MESSAGE_INTEGRATION_CREDENTIALS_UPDATED": "Successfully updated master credentials.",
-    "MESSAGE_MASTER_CREDENTIALS_FETCHED":"Master credentials fetched successfully",
-
+    "MESSAGE_MASTER_CREDENTIALS_FETCHED": "Master credentials fetched successfully",
     "MESSAGE_NO_MASTER_SETTINGS_FOUND": "Square POS integration settings not found",
-    "MESSAGE_SQUARE_POS_MANUAL_PULL":"Square POS data successfully pulled and synchronized",
+    "MESSAGE_SQUARE_POS_MANUAL_PULL": "Square POS data successfully pulled and synchronized",
     "MESSAGE_SQUARE_POS_SETTINGS_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos integration settings already exists for the account.",
     "MESSAGE_SQUARE_POS_AUTHENTICATION_ALREADY_EXISTS_FOR_ACCOUNT": "Square pos authentication already exists for the account.",
-    "MESSAGE_SQUARE_POS_MANUAL_PULL_FAILED":"Square POS manual pull failed"
+    "MESSAGE_SQUARE_POS_MANUAL_PULL_FAILED": "Square POS manual pull failed"
   },
   "statusCodes": {
     "FORBIDDEN": 403,
