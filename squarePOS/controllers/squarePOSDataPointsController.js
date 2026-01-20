@@ -148,18 +148,19 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
         {
             $addFields: {
                 openedAtDate: {
-                    $dateFromString: {
-                        dateString: "$responseObject.opened_at"
-                    }
+                    $dateFromString: { dateString: "$responseObject.opened_at" }
                 },
                 closedAtDate: {
-                    $dateFromString: {
-                        dateString: "$responseObject.closed_at"
-                    }
-                }
+                    $dateFromString: { dateString: "$responseObject.closed_at" }
+                },
+
+                depositedAmountInMachine: 0,
+                variance: 0,
+                reconcilationStatus: null,
+                depositedAmountInMachineCurrency:
+                    "$responseObject.closed_cash_money.currency"
             }
         },
-
         {
             $match: {
                 openedAtDate: {
@@ -184,69 +185,25 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
                 receivedAmount: "$responseObject.closed_cash_money",
                 teamMember: {
                     $arrayElemAt: ["$teamMembers", 0]
-                }
+                },
+                depositedAmountInMachine: 1,
+                depositedAmountInMachineCurrency: 1,
+                variance: 1,
+                reconcilationStatus: 1
 
             }
         },
-        {
-            $addFields: {
-                variance: {
-                    $subtract: [
-                        "$expectedAmount.amount",
-                        "$receivedAmount.amount"
-                    ]
-                }
-            }
-        },
-        {
-            $addFields: {
-                reconciliationStatus: {
-                    $switch: {
-                        branches: [
-                            {
-                                case: { $eq: ["$variance", 0] },
-                                then: "OK"
-                            },
-                            {
-                                case: {
-                                    $lte: [{ $abs: "$variance" }, 500]
-                                },
-                                then: "WARNING"
-                            }
-                        ],
-                        default: "ALERT"
-                    }
-                }
-            }
-        },
+
+
         //Below functionalties are meant or might not meant to be written seperately in functions for readability. As of now, stciking with aggregate to reduce loops
         {
             $facet: {
-                cashDrawerShiftRecords: [
-                    { $sort: { openedAtDate: -1 } }
-                ],
-                stats: [
-                    {
-                        $group: {
-                            _id: null,
-                            ok: {
-                                $sum: { $cond: [{ $eq: ["$reconciliationStatus", "OK"] }, 1, 0] }
-                            },
-                            warning: {
-                                $sum: { $cond: [{ $eq: ["$reconciliationStatus", "WARNING"] }, 1, 0] }
-                            },
-                            alert: {
-                                $sum: { $cond: [{ $eq: ["$reconciliationStatus", "ALERT"] }, 1, 0] }
-                            },
-                            netVariance: { $sum: "$variance" },
-                            currency: { $first: "$currency" }
-                        }
-                    }
-                ]
+                // cashDrawerShiftRecords: [
+                //     { $sort: { closedAtDate: 1 } }
+                // ]
+                cashDrawerShiftRecords: []
             }
         }
-
-
 
     ])
 
@@ -295,6 +252,7 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
                         }
                     }
                 },
+                matchWithShiftFound: false
                 //Below line could be added if necessary
                 // metaData: "$dataPoint.Metadata"
             }
@@ -306,6 +264,11 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
                     $lte: toDate
                 },
 
+            }
+        },
+        {
+            $sort: {
+                transactionDateTime: 1
             }
         },
 
@@ -332,19 +295,77 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
     ])
 
 
-    console.log("shiftsTransactions===", shiftsTransactions.length)
+    let cashDrawerShiftRecords = shiftsTransactions[0]?.cashDrawerShiftRecords
+
+    if (cashDrawerShiftRecords.length > 0 && machineTransactions.length > 0) {
+
+        for (let i = 0; i < cashDrawerShiftRecords.length; i++) {
+
+            let firstShift = cashDrawerShiftRecords[i]
+            let secondShift = cashDrawerShiftRecords[i + 1]
+
+            let singleShiftRecord
+            if (cashDrawerShiftRecords.length === 1) {
+                singleShiftRecord = firstShift
+                console.log("First & Last record")
+
+            } else if ((secondShift && secondShift?.referenceId === cashDrawerShiftRecords[cashDrawerShiftRecords.length - 1]?.referenceId)) {
+                singleShiftRecord = secondShift
+                console.log(" Last record")
+
+            }
+
+
+            for (let mxTxn of machineTransactions) {
+                console.log("Multiple-record-loop")
+                if ((mxTxn?.transactionDateTime > firstShift?.closedAtDate && mxTxn?.transactionDateTime < secondShift?.closedAtDate) && (mxTxn?.totalDepositAmount === firstShift?.receivedAmount?.amount)) {
+                    firstShift.depositedAmountInMachine = mxTxn?.totalDepositAmount
+                    firstShift.variance = firstShift?.expectedAmount?.amount - firstShift?.depositedAmountInMachine
+                    firstShift.reconcilationStatus =
+                        firstShift?.variance === 0 ? "OK" :
+                            firstShift?.variance < 500 ? "ALERT" :
+                                "WARNING";
+
+
+                }
+            }
+            if (singleShiftRecord) {
+                for (let mxTxn of machineTransactions) {
+                    console.log("-single -record-loop")
+                    if ((mxTxn?.transactionDateTime > singleShiftRecord?.closedAtDate) && (mxTxn?.totalDepositAmount === singleShiftRecord?.receivedAmount?.amount)) {
+                        singleShiftRecord.depositedAmountInMachine = mxTxn?.totalDepositAmount
+                        singleShiftRecord.variance = singleShiftRecord?.expectedAmount?.amount - singleShiftRecord?.depositedAmountInMachine
+                        singleShiftRecord.reconcilationStatus =
+                            singleShiftRecord?.variance === 0 ? "OK" :
+                                singleShiftRecord?.variance < 500 ? "ALERT" :
+                                    "WARNING";
+
+
+                    }
+                }
+            }
+
+
+        }
+
+
+
+    }
+
+    console.log("shiftsTransactions===", shiftsTransactions[0].cashDrawerShiftRecords.length)
     return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: "",
         data: {
             cashDrawerShiftRecords: shiftsTransactions[0]?.cashDrawerShiftRecords,
-            stats: shiftsTransactions[0]?.stats[0] || {
+            stats: {
                 "ok": 0,
                 "warning": 0,
                 "alert": 0,
                 "netVariance": 0,
                 "currency": "USD"
             },
+
             machineTransactions
         }
     })
