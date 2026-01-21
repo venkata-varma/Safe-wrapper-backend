@@ -1459,7 +1459,7 @@ exports.getDashboardStatisticsOfAccount = asyncWrapper(async (req, res) => {
       {
         $match: {
           ...matchCondition,
-          createdAt: {
+          transactionDateTime: {
             $gte: moment().utc().subtract(1, 'day').startOf('day').toDate(),
             $lte: moment().utc().endOf('day').toDate()
           },
