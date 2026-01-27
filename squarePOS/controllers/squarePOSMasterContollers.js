@@ -170,6 +170,19 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
 
     let savedCredentials = await squarePOSCredentialsModel.create(prepareReqObj);
 
+    let findAccountDetails = await accountsModel.findById(payload?.accountId)
+    for (let integration of findAccountDetails?.integrationsConnected) {
+
+        if (integration.integration === 'square-pos') {
+
+            integration.status = true
+        }
+
+    }
+
+
+    await findAccountDetails.save()
+
     return res.status(200).json({
         status: customConstants.messages.MESSAGE_SUCCESS,
         message: customConstants.messages.MESSAGE_INTEGRATION_CREDENTIALS_SAVED,

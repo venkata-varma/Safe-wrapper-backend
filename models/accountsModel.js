@@ -1,5 +1,19 @@
 const mongoose = require('mongoose')
 
+const integrationsConnectedSchema = new mongoose.Schema({
+    integration: {
+        type: String,
+        enum: ["card-connect", "square-pos"]
+    },
+    status: {
+        type: Boolean,
+
+        default: false,
+    },
+
+
+})
+
 
 const accountsSchema = new mongoose.Schema({
     accountId: {
@@ -18,10 +32,7 @@ const accountsSchema = new mongoose.Schema({
         enum: ['customer', 'super-admin', 'merchant'],
         default: "merchant"
     },
-    integrationsConnected: {
-        type: Array,
-
-    },
+    integrationsConnected: [integrationsConnectedSchema],
     companyName: {
         type: String,
         required: [true, 'Company name is required.'],

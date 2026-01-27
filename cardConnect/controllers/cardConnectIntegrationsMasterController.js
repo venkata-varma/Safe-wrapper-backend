@@ -158,7 +158,9 @@ exports.credentialsValidationsMiddleware = asyncWrapper(async (req, res, next) =
  * 
  */
 exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next) => {
+
     const payload = req.payload;
+
 
     let prepareReqObj = {
         ...payload,
@@ -191,7 +193,21 @@ exports.createIntegrationMasterCredentials = asyncWrapper(async (req, res, next)
         { upsert: true, new: true }
     );
 
+    let findAccountDetails = await accountsModel.findById(req.payload.accountId)
+    for (let integration of findAccountDetails?.integrationsConnected) {
 
+        if (integration.integration === 'card-connect') {
+
+            integration.status = true
+        }
+
+    }
+
+
+    await findAccountDetails.save()
+
+
+    // findAccountDetails.integrationsConnected[""]
     return res
         .status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS)
         .json({
