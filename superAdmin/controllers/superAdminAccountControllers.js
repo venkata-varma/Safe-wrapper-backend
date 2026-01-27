@@ -507,10 +507,17 @@ exports.getAccountIntegrationDetails = asyncWrapper(async (req, res) => {
     let accountDetails = await accountsModel.findOne({ accountId }).select('-password')
 
     let integrationsConnected = accountDetails?.integrationsConnected
+    let integrationsOfAccount = []
+    integrationsOfAccount = integrationsConnected.map((eachIntegration) => {
+
+        if (eachIntegration?.status === true) {
+            return eachIntegration?.integration
+        }
+    })
 
     let squarePOSDetails = {}
     let cardConnectDetails = {}
-    if (integrationsConnected.includes("card-connect")) {
+    if (integrationsOfAccount.includes("card-connect")) {
         let cardConnectCredentials = await accountsModel.aggregate([
             {
                 $match: {
