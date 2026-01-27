@@ -29,12 +29,12 @@ const cardConnectIntegrationsSettingsSchema = new mongoose.Schema({
             type: String,
             enum: ["once each minute", "once each hour", "once each day", "once each month"],
             required: [true, 'periodType required'],
-            default: ""
+            default: "once each hour"
         },
         currentStatus: {
             type: String,
             enum: ['start', 'stop'],
-            default: "start"
+            default: "stop"
         },
         interval: {
             type: Number,
