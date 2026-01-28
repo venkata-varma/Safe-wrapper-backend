@@ -569,7 +569,7 @@ exports.getAccountIntegrationDetails = asyncWrapper(async (req, res) => {
 
 
     }
-    if (integrationsConnected.includes("square-pos")) {
+    if (integrationsOfAccount.includes("square-pos")) {
         let squarePOSCredentials = await accountsModel.aggregate([
             {
                 $match: {
