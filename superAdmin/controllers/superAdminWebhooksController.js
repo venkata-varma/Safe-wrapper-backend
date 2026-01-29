@@ -2384,7 +2384,7 @@ exports.getWebhookDetailsOfAccount = asyncWrapper(async (req, res) => {
     {
       $project: {
         authenticationCode: 0,
-        webHookUrl: 0
+
       }
     },
     {
