@@ -67,6 +67,11 @@ const squarePOSPaymentsSchema = new mongoose.Schema(
             type: String,
             enum: ["CARD", "CASH"]
         },
+        locationId: {
+            type: String,
+            required: true,
+            index: true
+        },
         // referenceType: {
         //     type: String,
         //     enum: ["", "SALE", "VOID SALE", "VOID REFUND", "UNKNOWN", "REFUND", "CASH ADVANCE", "AUTH REQUEST", "ACCOUNT VERIFY"],
