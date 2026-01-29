@@ -4,7 +4,7 @@ const squarePOSPredefinedKeys = {
 
     cashDrawerShiftsStatuses: ["OPEN", "ENDED", "CLOSED"],
     cashDrawerEventType: ["NO_SALE", "CASH_TENDER_PAYMENT", "OTHER_TENDER_PAYMENT", "CASH_TENDER_CANCELLED_PAYMENT", "OTHER_TENDER_CANCELLED_PAYMENT", "PAID_IN", "PAID_OUT"],
-    paymentStatuses: ["APPROVED", "PENDING", "COMPLETED", "CANCELLED", "FAILED"]
+    cardPaymentStatuses: ["APPROVED", "PENDING", "COMPLETED", "CANCELLED", "FAILED"]
 
 
 
