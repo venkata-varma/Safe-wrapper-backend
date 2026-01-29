@@ -144,106 +144,128 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
         }
 
         // ---------------- FETCH SHIFTS ----------------
+        let [shiftsTransactions, machineTransactions] = await Promise.all([
+            squarePOSCashDrawerShiftsModel.aggregate([
+                {
+                    $match: {
+                        accountId: new mongoose.Types.ObjectId(accountId)
+                    }
+
+                },
+                {
+                    $addFields: {
+                        openedAtDate: {
+                            $dateFromString: { dateString: "$responseObject.opened_at" }
+                        },
+                        closedAtDate: {
+                            $dateFromString: { dateString: "$responseObject.closed_at" }
+                        },
+
+                        depositedAmountInMachine: 0,
+                        variance: 0,
+                        reconcilationStatus: null,
+                        depositedAmountInMachineCurrency:
+                            "$responseObject.closed_cash_money.currency"
+                    }
+                },
+                {
+                    $match: {
+                        openedAtDate: {
+                            $gte: fromDate,
+                            $lte: toDate
+                        },
+                        ...shiftAndLocationCondition
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        referenceId: 1,
+                        accountId: 1,
+                        locationId: 1,
+                        currency: "$responseObject.expected_cash_money.currency",
+                        openedAtDate: 1,
+                        closedAtDate: 1,
+                        status: "$responseObject.state",
+                        expectedAmount: "$responseObject.expected_cash_money",
+                        receivedAmount: "$responseObject.closed_cash_money",
+                        teamMember: {
+                            $arrayElemAt: ["$teamMembers", 0]
+                        },
+                        depositedAmountInMachine: 1,
+                        depositedAmountInMachineCurrency: 1,
+                        variance: 1,
+                        reconcilationStatus: 1
+
+                    }
+                },
 
 
-        let shiftsTransactions = await squarePOSCashDrawerShiftsModel.aggregate([
-            {
-                $match: { accountId: new mongoose.Types.ObjectId(accountId) }
-            },
-            {
-                $addFields: {
-                    openedAtDate: { $dateFromString: { dateString: "$responseObject.opened_at" } },
-                    closedAtDate: { $dateFromString: { dateString: "$responseObject.closed_at" } },
-                    depositedAmountInMachine: 0,
-                    variance: 0,
-                    reconcilationStatus: null,
-                    depositedAmountInMachineCurrency: "$responseObject.closed_cash_money.currency"
-                }
-            },
-            {
-                $match: {
-                    openedAtDate: { $gte: fromDate, $lte: toDate },
-                    ...shiftAndLocationCondition
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    referenceId: 1,
-                    accountId: 1,
-                    locationId: 1,
-                    currency: "$responseObject.expected_cash_money.currency",
-                    openedAtDate: 1,
-                    closedAtDate: 1,
-                    status: "$responseObject.state",
-                    expectedAmount: "$responseObject.expected_cash_money",
-                    receivedAmount: "$responseObject.closed_cash_money",
-                    teamMember: { $arrayElemAt: ["$teamMembers", 0] },
-                    depositedAmountInMachine: 1,
-                    depositedAmountInMachineCurrency: 1,
-                    variance: 1,
-                    reconcilationStatus: 1
-                }
-            },
-            {
-                $sort: { closedAtDate: 1 }
-            },
-            {
-                $facet: {
-                    // cashDrawerShiftRecords: [
-                    //     { $sort: { closedAtDate: 1 } }
-                    // ]
-                    cashDrawerShiftRecords: []
-                }
-            }
-        ])
-        let machineTransactions = await webhookMetaPayloadModel.aggregate([
-            {
-                $match: {
-                    accountId: new mongoose.Types.ObjectId(accountId),
-                    primaryHookId: { $in: serialNumberArray }
-                }
-            },
-            {
-                $addFields: {
-                    transactionDateTime: {
-                        $toDate: {
-                            $arrayElemAt: ["$dataPoint.Transactions.TransactionDateTime", -1]
-                        }
+                //Below functionalties are meant or might not meant to be written seperately in functions for readability. As of now, stciking with aggregate to reduce loops
+                {
+                    $facet: {
+                        // cashDrawerShiftRecords: [
+                        //     { $sort: { closedAtDate: 1 } }
+                        // ]
+                        cashDrawerShiftRecords: []
                     }
                 }
-            },
-            {
-                $match: {
-                    transactionDateTime: { $gte: fromDate, $lte: toDate }
-                }
-            },
-            { $sort: { transactionDateTime: 1 } },
-            {
-                $addFields: {
-                    totalDepositAmount: {
-                        $sum: {
-                            $map: {
-                                input: "$dataPoint.Transactions",
-                                as: "txn",
-                                in: { $ifNull: ["$$txn.Amount", 0] }
+
+            ]),
+            webhookMetaPayloadModel.aggregate([
+                {
+                    $match: {
+                        accountId: new mongoose.Types.ObjectId(accountId),
+                        primaryHookId: { $in: serialNumberArray }
+                    }
+                },
+                {
+                    $addFields: {
+                        transactionDateTime: {
+                            $toDate: {
+                                $arrayElemAt: ["$dataPoint.Transactions.TransactionDateTime", -1]
                             }
                         }
                     }
+                },
+                {
+                    $match: {
+                        transactionDateTime: { $gte: fromDate, $lte: toDate }
+                    }
+                },
+                { $sort: { transactionDateTime: 1 } },
+                {
+                    $addFields: {
+                        totalDepositAmount: {
+                            $sum: {
+                                $map: {
+                                    input: "$dataPoint.Transactions",
+                                    as: "txn",
+                                    in: { $ifNull: ["$$txn.Amount", 0] }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        dataPoint: 0
+                    }
                 }
-            },
-            {
-                $project: {
-                    dataPoint: 0
-                }
-            }
+            ])
+
         ])
-        let cashDrawerShiftRecords = shiftsTransactions[0]?.cashDrawerShiftRecords
+
+
+
         // ---------------- RECONCILIATION LOGIC ----------------
-        let totalDeposits = 0;
-        let outOfBalanceCount = 0;
+        let machineDepositTotal = 0;
+        let totalMachineDeposits = 0;
+        let outOfBalanceUsersCount = 0;
         let stats = { ok: 0, warning: 0, alert: 0, netVariance: 0, currency: "USD" };
 
+
+        let cashDrawerShiftRecords = shiftsTransactions[0]?.cashDrawerShiftRecords
 
         if (cashDrawerShiftRecords.length > 0 && machineTransactions.length > 0) {
 
@@ -267,8 +289,9 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
                     cashDrawerShiftRecords[shiftIndex]?.closedAtDate <= mxTxn?.transactionDateTime &&
                     cashDrawerShiftRecords[shiftIndex]?.receivedAmount?.amount === mxTxn?.totalDepositAmount
                 ) {
-                    console.log("cashDrawerShiftRecords[shiftIndex]===", cashDrawerShiftRecords[shiftIndex])
                     cashDrawerShiftRecords[shiftIndex].depositedAmountInMachine = mxTxn?.totalDepositAmount;
+                    totalMachineDeposits++;  // Count of matched deposits
+                    machineDepositTotal = machineDepositTotal + cashDrawerShiftRecords[shiftIndex].depositedAmountInMachine;
                     cashDrawerShiftRecords[shiftIndex].variance = cashDrawerShiftRecords[shiftIndex]?.expectedAmount?.amount - cashDrawerShiftRecords[shiftIndex]?.depositedAmountInMachine;
                     stats.netVariance = stats.netVariance + cashDrawerShiftRecords[shiftIndex].variance
 
@@ -280,9 +303,11 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
                     else if (cashDrawerShiftRecords[shiftIndex].variance < 500) {
                         cashDrawerShiftRecords[shiftIndex].reconcilationStatus = "WARNING"
                         stats.warning = stats.warning + 1
+                        outOfBalanceUsersCount++
                     } else if (cashDrawerShiftRecords[shiftIndex].variance >= 500) {
                         cashDrawerShiftRecords[shiftIndex].reconcilationStatus = "ALERT"
                         stats.alert = stats.alert + 1
+                        outOfBalanceUsersCount++
                     }
 
 
@@ -290,14 +315,17 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
             }
         }
 
+
+
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: customConstants.messages.MESSAGE_SQUARE_POS_CASH_DRAWER_RECONCILATION,
             data: {
                 cashDrawerShiftRecords: cashDrawerShiftRecords,
                 stats,
-                totalDeposits,
-                outOfBalanceCount,
+                machineDepositTotal,
+                totalMachineDeposits,
+                outOfBalanceUsersCount,
                 machineTransactions
             }
         });
@@ -363,15 +391,13 @@ exports.getSquarePOSShiftTransactionsReconcilation = asyncWrapper(async (req, re
 
         ]);
 
-        const totalDeposits = cardPayments.reduce((sum, p) => sum + (p?.amount?.amount || 0), 0);
+        // const totalDeposits = cardPayments.reduce((sum, p) => sum + (p?.amount?.amount || 0), 0);
 
         return res.status(customConstants.statusCodes.SUCCESS_STATUS_CODE_SUCCESS).json({
             status: customConstants.messages.MESSAGE_SUCCESS,
             message: "Square POS Card Payments fetched successfully",
             data: {
                 cardPaymentRecords: cardPayments,
-                totalDeposits,
-                outOfBalanceCount: 0,
                 count: cardPayments.length
             }
         });
