@@ -95,7 +95,9 @@ exports.dashboardFiltersSafeCash = async (fromDate, toDate, merchantNamesArray, 
             $match: {
                 accountId: {
                     $in: merchantNamesArray
-                }
+                },
+                amount: { $ne: 0 }
+
             }
         },
         {
