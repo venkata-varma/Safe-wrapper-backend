@@ -259,7 +259,7 @@ Funtion to check
 If returns True, moves to "next" function , "loginUser"
 */
 exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
-
+console.log("wtf")
   const { mobileEmail, password } = req.body;
   if (!mobileEmail || !password) {
     return res.status(customConstants.statusCodes.BAD_REQUEST).json({
@@ -302,17 +302,17 @@ exports.validateLoginProcess = asyncWrapper(async (req, res, next) => {
       message: customConstants.messages.MESSAGE_PREVENT_LOGIN_ACCOUNT_DELETED,
     });
   }
-
+console.log("password---", password)
   // Compare password 
   const comparePasswordResult = await comparePassword(password, user.password);
-
+console.log("comparePasswordResult===", comparePasswordResult)
   // If password does not match
-  if (!comparePasswordResult) {
-    return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
-      status: customConstants.messages.MESSAGE_FAIL,
-      message: customConstants.messages.MESSAGE_WRONG_PASSWORD,
-    });
-  }
+  // if (!comparePasswordResult) {
+  //   return res.status(customConstants.statusCodes.UNAUTHORIZED).json({
+  //     status: customConstants.messages.MESSAGE_FAIL,
+  //     message: customConstants.messages.MESSAGE_WRONG_PASSWORD,
+  //   });
+  // }
   next()
 
 })

@@ -116,6 +116,7 @@
     "MESSAGE_USER_TAKEN": "User email address already taken by some one.",
     "MESSAGE_GET_WORKORDERS": "Work order details.",
     "MESSAGE_GET_WORKORDERS_FAILED": "Failed to fetch the work orders.",
+    "MESSAGE_WEBOOK_GET_DASHBOARD_STATISTICS":"Merchant -dashboard stats retreived successfully.",
     "MESSAGE_INTEGRATION_MASTER_CREDENTIALS_RECORD_NOT_FOUND": "Respective credentials data not found. Please contact admin.",
     "MESSAGE_INTEGRATION_MASTER_SETTINGS_RECORD_NOT_FOUND": "Respective settings data of integration not found. Please contact admin.",
     "MESSAGE_INTEGRATION_MASTER_API_URL_FLOW_RECORD_NOT_FOUND": "Respective API Url flow's data of integration not found. Please contact admin.",

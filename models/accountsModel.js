@@ -72,7 +72,6 @@ const accountsSchema = new mongoose.Schema({
     },
     location: {
         type: String,
-        required: [true, 'location is required.'],
         default: ""
     },
     status: {

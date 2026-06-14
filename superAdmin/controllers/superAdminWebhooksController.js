@@ -63,7 +63,7 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
     { accountId: accountId },
     process.env.JWT_SECRET
   )}`;
-
+console.log("webHookAuthenticationCode===", webHookAuthenticationCode)
   const encryptedWebHookAuthCode = encryptData({
     authenticationCode: webHookAuthenticationCode,
   });
@@ -75,10 +75,13 @@ exports.createWebHook = asyncWrapper(async (req, res) => {
     expiresOn: new Date()
   };
 
+  // Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50SWQiOiI2YTIwMmU4ZjM4ZGJmODg1ZDZiY2RkNzciLCJpYXQiOjE3ODA2NjMwNDh9.oq8OE0B0ct9OCyS-RoeNvyoDCd9OdhP3z716viRkMeU
+
   let createWebhook = await webHooksModel.create({
     ...req.body,
     userId: req.user._id,
     webHookUrl,
+    webhookToken:webHookAuthenticationCode,
     authenticationCode: encryptedWebHookAuthCode,
     webhookSettings: defaultWebhookSettings
   });
