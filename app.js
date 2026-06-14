@@ -141,8 +141,8 @@ io.on("connection", (socket) => {
     console.log("Online Users:", onlineUsers);
   });
 });
-server.listen(8201, () => {
-  console.log("Server is working on port 8201");
+server.listen(process.env.PORT, () => {
+  console.log("Server is working on port ", process.env.PORT);
 });
 
 // app.listen(8201, () => {
