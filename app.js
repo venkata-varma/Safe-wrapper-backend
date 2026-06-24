@@ -39,6 +39,8 @@ const superAdminUserRoutes = require("./superAdmin/routes/userRoute");
 const superAdminWebhookRoutes = require("./superAdmin/routes/superAdminWebhookRoutes");
 const superAdminWebhookOperations = require("./superAdmin/routes/webhookOperationRoutes");
 const cardConnectIntegrationsMasterRoute = require("./cardConnect/routes/cardConnectIntegrationsMasterRoute");
+const productMgmtRoute=require("./superAdmin/routes/productManagementRoute")
+
 
 const cardConnectIntegrationsMasterDataPointsRoute = require("./cardConnect/routes/cardConnectIntegrationsMasterDataPointsRoute");
 
@@ -59,6 +61,7 @@ app.use("/api/chat", chatRoute);
 //Super Admin
 app.use("/api/accounts", SuperAdminAccountRoutes);
 app.use("/api/users", superAdminUserRoutes);
+app.use("/api/products-mgmt", productMgmtRoute)
 app.use("/api/machines", superAdminWebhookRoutes);
 app.use("/api/webhook", superAdminWebhookOperations);
 app.use(
